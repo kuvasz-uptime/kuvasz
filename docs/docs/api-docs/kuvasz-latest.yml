@@ -4806,6 +4806,16 @@ components:
           nullable: true
           items:
             type: string
+        categories:
+          type: array
+          description: "Set of monitor categories the window applies to (ignored when\
+            \ 'global' is true). It is additive with 'monitors': the window covers\
+            \ the monitors listed there plus every monitor belonging to one of these\
+            \ categories. A category that is not in use by any monitor is kept, it\
+            \ simply covers nothing."
+          nullable: true
+          items:
+            type: string
         integrations:
           type: array
           description: Set of integration IDs that receive the window's start and
@@ -4816,6 +4826,7 @@ components:
     MaintenanceWindowDetailsDto:
       required:
       - active
+      - categories
       - createdAt
       - enabled
       - global
@@ -4876,6 +4887,15 @@ components:
             type: string
             description: "A unique identifier for a monitor, formatted as 'type:name'."
             example: http:My precious monitor
+        categories:
+          type: array
+          description: "Set of monitor categories the window applies to (ignored when\
+            \ 'global' is true). It is additive with 'monitors': the window covers\
+            \ the monitors listed there plus every monitor belonging to one of these\
+            \ categories. A category that is not in use by any monitor is kept, it\
+            \ simply covers nothing."
+          items:
+            type: string
         integrations:
           type: array
           description: Set of integration IDs that receive the window's start and
@@ -5003,6 +5023,16 @@ components:
             type: string
             description: "A unique identifier for a monitor, formatted as 'type:name'."
             example: http:My precious monitor
+        categories:
+          type: array
+          description: "Set of monitor categories the window applies to (ignored when\
+            \ 'global' is true). It is additive with 'monitors': the window covers\
+            \ the monitors listed there plus every monitor belonging to one of these\
+            \ categories. A category that is not in use by any monitor is kept, it\
+            \ simply covers nothing."
+          nullable: true
+          items:
+            type: string
         integrations:
           type: array
           description: Set of integration IDs that receive the window's start and
@@ -6080,6 +6110,15 @@ components:
           nullable: true
           items:
             type: string
+        categories:
+          type: array
+          description: "Set of monitor categories that are included in the status\
+            \ page. It is additive with 'monitors': the page shows the monitors listed\
+            \ there plus every monitor belonging to one of these categories. A category\
+            \ that is not in use by any monitor is kept, it simply contributes nothing."
+          nullable: true
+          items:
+            type: string
     StatusPageDetailsDto:
       required:
       - activeMaintenanceWindows
@@ -6156,6 +6195,7 @@ components:
             $ref: "#/components/schemas/StatusPageMaintenanceWindowDto"
     StatusPageDto:
       required:
+      - categories
       - createdAt
       - customFaviconUrl
       - customLogoUrl
@@ -6197,6 +6237,14 @@ components:
             type: string
             description: "A unique identifier for a monitor, formatted as 'type:name'."
             example: http:My precious monitor
+        categories:
+          type: array
+          description: "Set of monitor categories that are included in the status\
+            \ page. It is additive with 'monitors': the page shows the monitors listed\
+            \ there plus every monitor belonging to one of these categories. A category\
+            \ that is not in use by any monitor is kept, it simply contributes nothing."
+          items:
+            type: string
         createdAt:
           type: string
           description: Timestamp of when the status page was created
@@ -6486,6 +6534,15 @@ components:
             type: string
             description: "A unique identifier for a monitor, formatted as 'type:name'."
             example: http:My precious monitor
+        categories:
+          type: array
+          description: "Set of monitor categories that are included in the status\
+            \ page. It is additive with 'monitors': the page shows the monitors listed\
+            \ there plus every monitor belonging to one of these categories. A category\
+            \ that is not in use by any monitor is kept, it simply contributes nothing."
+          nullable: true
+          items:
+            type: string
     SystemStatus:
       type: string
       enum:

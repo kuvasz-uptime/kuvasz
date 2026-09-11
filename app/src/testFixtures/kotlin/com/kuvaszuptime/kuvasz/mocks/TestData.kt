@@ -225,6 +225,7 @@ fun createStatusPage(
     slug: String = randomClientSecret(),
     public: Boolean = StatusPageDefaults.CUSTOM_PAGE_PUBLIC,
     monitors: List<MonitorID> = emptyList(),
+    categories: List<String> = emptyList(),
     customLogoUrl: String? = null,
     customFaviconUrl: String? = null,
 ) = dslContext
@@ -237,6 +238,7 @@ fun createStatusPage(
             .setCustomFaviconUrl(customFaviconUrl)
             .setPublic(public)
             .setMonitors(monitors.toTypedArray())
+            .setCategories(categories.toTypedArray())
     )
     .returning(STATUS_PAGE.asterisk())
     .fetchOneOrThrow<StatusPageRecord>()
@@ -253,6 +255,7 @@ fun createMaintenanceWindow(
     start: OffsetDateTime? = null,
     duration: String? = null,
     monitors: List<MonitorID> = emptyList(),
+    categories: List<String> = emptyList(),
     integrations: List<IntegrationID> = emptyList(),
 ): MaintenanceWindowRecord = dslContext
     .insertInto(MAINTENANCE_WINDOW)
@@ -267,6 +270,7 @@ fun createMaintenanceWindow(
             .setStart(start)
             .setDuration(duration)
             .setMonitors(monitors.toTypedArray())
+            .setCategories(categories.toTypedArray())
             .setIntegrations(integrations.toTypedArray())
     )
     .returning(MAINTENANCE_WINDOW.asterisk())

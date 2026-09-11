@@ -9,6 +9,9 @@ object StatusPageDocs {
         "Only PNG format is supported."
     const val PUBLIC = "Whether the status page is publicly accessible"
     const val MONITORS = "Set of monitor IDs that are included in the status page"
+    const val CATEGORIES = "Set of monitor categories that are included in the status page. It is additive with " +
+        "'monitors': the page shows the monitors listed there plus every monitor belonging to one of these " +
+        "categories. A category that is not in use by any monitor is kept, it simply contributes nothing."
     const val CREATED_AT = "Timestamp of when the status page was created"
     const val UPDATED_AT = "Timestamp of when the status page was last updated"
     const val SYSTEM_STATUS = "The cumulated status of the monitors included in the status page"

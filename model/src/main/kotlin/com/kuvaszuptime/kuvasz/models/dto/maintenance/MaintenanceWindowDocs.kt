@@ -15,6 +15,9 @@ object MaintenanceWindowDocs {
         "'cron' and requires 'duration'."
     const val DURATION = "ISO-8601 duration of the window (e.g. 'PT1H30M'). Required for cron and single windows."
     const val MONITORS = "Set of monitor IDs the window applies to (ignored when 'global' is true)"
+    const val CATEGORIES = "Set of monitor categories the window applies to (ignored when 'global' is true). It is " +
+        "additive with 'monitors': the window covers the monitors listed there plus every monitor belonging to one " +
+        "of these categories. A category that is not in use by any monitor is kept, it simply covers nothing."
     const val INTEGRATIONS = "Set of integration IDs that receive the window's start and end notifications"
     const val ACTIVE = "Whether the window is currently active"
     const val NEXT_START = "Timestamp of the next time the window will start, or null if there is no future occurrence"

@@ -18,11 +18,14 @@ import java.time.OffsetDateTime
  *     duration: "PT1H"
  *     monitors:
  *       - "http:Test monitor 1"
+ *     categories:
+ *       - "Payments"
  *     integrations:
  *       - "slack:my-slack"
  */
 @EachProperty(MaintenanceWindowConfig.CONFIG_PREFIX, list = true)
 @Introspected
+@Suppress("ComplexInterface")
 interface MaintenanceWindowConfig : MaintenanceWindowCreator {
 
     override val name: String
@@ -45,6 +48,8 @@ interface MaintenanceWindowConfig : MaintenanceWindowCreator {
     override val duration: String?
 
     override val monitors: List<String>?
+
+    override val categories: List<String>?
 
     override val integrations: List<String>?
 

@@ -12,4 +12,5 @@ class StatusPageImportAdapter(dto: StatusPageExportDto) : StatusPageCreator {
     override val customFaviconUrl: String? = dto.customFaviconUrl
     override val public: Boolean = dto.public
     override val monitors: List<String> = dto.monitors.map { it.toString() }
+    override val categories: List<String> = dto.categories.toList()
 }

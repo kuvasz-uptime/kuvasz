@@ -22,4 +22,6 @@ data class StatusPageCreateDto(
     override val public: Boolean = StatusPageDefaults.CUSTOM_PAGE_PUBLIC,
     @param:Schema(description = StatusPageDocs.MONITORS, required = false)
     override val monitors: List<String>? = emptyList(),
+    @param:Schema(description = StatusPageDocs.CATEGORIES, required = false)
+    override val categories: List<String>? = emptyList(),
 ) : StatusPageCreator

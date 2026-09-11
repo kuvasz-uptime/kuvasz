@@ -38,6 +38,8 @@ object ValidationMessages {
         "one or more letters, digits, or the following symbols: ! # $ % & ' * + - . ^ _ ` | ~"
     const val VALID_DNS_RECORD_MATCHERS = "Each DNS record matcher must have a non-blank value, and REGEX matchers " +
         "must use a valid regular expression"
+    const val REFERENCED_CATEGORY_MAX_SIZE =
+        "A referenced monitor category must be at most ${Validation.MAX_CATEGORY_LENGTH} characters long"
 }
 
 object IntegrationValidationMessages {

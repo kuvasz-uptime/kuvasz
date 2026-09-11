@@ -11,6 +11,7 @@ import com.kuvaszuptime.kuvasz.validation.IntegrationIdValidator
 import com.kuvaszuptime.kuvasz.validation.MonitorIdValidator
 import com.kuvaszuptime.kuvasz.validation.ResolvedIntegrationIds
 import com.kuvaszuptime.kuvasz.validation.ResolvedMonitorIds
+import com.kuvaszuptime.kuvasz.validation.validateCategories
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 
@@ -50,8 +51,15 @@ class MaintenanceWindowImporter(
                 ignoredMonitors.addAll(resolvedMonitors.ignored)
                 ignoredIntegrations.addAll(resolvedIntegrations.ignored)
 
+                // The categories need no resolution: an unused one is a valid selector that covers nothing right now
+                val resolvedCategories = validateCategories(windowToImport.categories.orEmpty())
+
                 maintenanceWindowRepository.upsert(
-                    windowToImport.toMaintenanceWindowRecord(resolvedMonitors.valid, resolvedIntegrations.valid),
+                    windowToImport.toMaintenanceWindowRecord(
+                        resolvedMonitors.valid,
+                        resolvedCategories,
+                        resolvedIntegrations.valid,
+                    ),
                     txCtx,
                 )
             }

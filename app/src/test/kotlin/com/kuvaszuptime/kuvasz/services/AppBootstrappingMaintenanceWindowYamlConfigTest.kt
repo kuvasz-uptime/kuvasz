@@ -57,11 +57,14 @@ class AppBootstrappingMaintenanceWindowYamlConfigTest : StringSpec({
             nightly.duration shouldBe "PT1H"
             nightly.showOnStatusPages shouldBe true
             nightly.monitors shouldContainExactly arrayOf(MonitorID(MonitorType.HTTP_SSL, "test1"))
+            // An absent `categories` key binds to null, which has to end up as an empty array
+            nightly.categories.shouldBeEmpty()
         }
         windows.forOne { oneOff ->
             oneOff.name shouldBe "One-off maintenance"
             oneOff.global shouldBe true
             oneOff.start.shouldNotBeNull()
+            oneOff.categories shouldContainExactlyInAnyOrder arrayOf("Payments", "Search")
         }
     }
 

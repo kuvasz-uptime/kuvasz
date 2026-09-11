@@ -32,4 +32,7 @@ data class StatusPageUpdateDto(
 
     @param:Schema(description = StatusPageDocs.MONITORS, required = false, nullable = true)
     val monitors: Set<MonitorID>?,
+
+    @param:Schema(description = StatusPageDocs.CATEGORIES, required = false, nullable = true)
+    val categories: Set<String>?,
 )

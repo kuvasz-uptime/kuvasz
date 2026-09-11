@@ -71,6 +71,7 @@ class StatusPageRepository(private val dslContext: DSLContext) {
                 .set(STATUS_PAGE.CUSTOM_FAVICON_URL, updatedStatusPage.customFaviconUrl)
                 .set(STATUS_PAGE.PUBLIC, updatedStatusPage.public)
                 .set(STATUS_PAGE.MONITORS, updatedStatusPage.monitors)
+                .set(STATUS_PAGE.CATEGORIES, updatedStatusPage.categories)
                 .set(STATUS_PAGE.UPDATED_AT, getCurrentTimestamp())
                 .where(STATUS_PAGE.ID.eq(updatedStatusPage.id))
                 .returning(STATUS_PAGE.asterisk())

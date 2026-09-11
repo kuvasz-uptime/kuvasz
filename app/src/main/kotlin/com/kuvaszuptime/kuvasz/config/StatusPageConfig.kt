@@ -42,6 +42,8 @@ interface DefaultStatusPageConfig {
  *     monitors:
  *       - "http:Test monitor 1"
  *       - "http:Test monitor 2"
+ *     categories:
+ *       - "Payments"
  */
 @EachProperty(StatusPageConfig.CONFIG_PREFIX, list = true)
 @Introspected
@@ -56,6 +58,8 @@ interface StatusPageConfig : StatusPageCreator {
     override val customFaviconUrl: String?
 
     override val monitors: List<String>?
+
+    override val categories: List<String>?
 
     @get:Bindable(defaultValue = StatusPageDefaults.CUSTOM_PAGE_PUBLIC.toString())
     override val public: Boolean

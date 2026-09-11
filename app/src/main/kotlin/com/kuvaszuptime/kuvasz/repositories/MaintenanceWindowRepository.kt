@@ -114,6 +114,7 @@ class MaintenanceWindowRepository(private val dslContext: DSLContext) {
                 .set(MAINTENANCE_WINDOW.START, updatedWindow.start)
                 .set(MAINTENANCE_WINDOW.DURATION, updatedWindow.duration)
                 .set(MAINTENANCE_WINDOW.MONITORS, updatedWindow.monitors)
+                .set(MAINTENANCE_WINDOW.CATEGORIES, updatedWindow.categories)
                 .set(MAINTENANCE_WINDOW.INTEGRATIONS, updatedWindow.integrations)
                 .set(MAINTENANCE_WINDOW.UPDATED_AT, getCurrentTimestamp())
                 .where(MAINTENANCE_WINDOW.ID.eq(updatedWindow.id))

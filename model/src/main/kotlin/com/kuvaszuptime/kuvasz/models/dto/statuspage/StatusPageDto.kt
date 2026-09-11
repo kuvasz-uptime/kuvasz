@@ -22,6 +22,8 @@ data class StatusPageDto(
     val public: Boolean,
     @param:Schema(description = StatusPageDocs.MONITORS, required = true)
     val monitors: Set<MonitorID>,
+    @param:Schema(description = StatusPageDocs.CATEGORIES, required = true)
+    val categories: Set<String>,
     @param:Schema(description = StatusPageDocs.CREATED_AT, required = true)
     val createdAt: OffsetDateTime,
     @param:Schema(description = StatusPageDocs.UPDATED_AT, required = true)
@@ -37,6 +39,7 @@ data class StatusPageDto(
                 customFaviconUrl = record.customFaviconUrl,
                 public = record.public,
                 monitors = record.monitors.toSet(),
+                categories = record.categories.toSet(),
                 createdAt = record.createdAt,
                 updatedAt = record.updatedAt,
             )

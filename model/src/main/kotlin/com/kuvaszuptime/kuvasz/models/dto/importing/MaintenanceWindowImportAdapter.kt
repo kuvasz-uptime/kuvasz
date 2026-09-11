@@ -17,6 +17,7 @@ class MaintenanceWindowImportAdapter(dto: MaintenanceWindowExportDto) : Maintena
     override val cron: String? = dto.cron
     override val duration: String? = dto.duration
     override val monitors: List<String> = dto.monitors.map { it.toString() }
+    override val categories: List<String> = dto.categories.toList()
     override val integrations: List<String> = dto.integrations.map { it.toString() }
 
     override val start: OffsetDateTime? = dto.start?.let { rawStart ->

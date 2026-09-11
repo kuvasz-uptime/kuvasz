@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.MaintenanceWindowValidationMessages
+import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.dto.importing.MaintenanceWindowImportResultDto
 import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowExportDto
@@ -143,6 +144,7 @@ class MaintenanceWindowControllerTest(
                     inDb.cron.shouldBeNull()
                     inDb.start.shouldBeNull()
                     inDb.monitors.shouldBeEmpty()
+                    inDb.categories.shouldBeEmpty()
                     inDb.integrations.shouldBeEmpty()
                     inDb.createdAt shouldBe inDb.updatedAt
                     created.active.shouldBeTrue()
@@ -162,6 +164,8 @@ class MaintenanceWindowControllerTest(
                         cron = "0 2 * * *",
                         duration = "PT1H",
                         monitors = listOf(MonitorID(MonitorType.HTTP_SSL, monitor.name).toString()),
+                        // Deliberately messy: the references are normalized the same way as a monitor's own category
+                        categories = listOf("  Payments  ", "Search", "Payments", "   "),
                         integrations = listOf(assignedIntegration.toString()),
                     )
                 )
@@ -173,6 +177,8 @@ class MaintenanceWindowControllerTest(
                     inDb.cron shouldBe "0 2 * * *"
                     inDb.duration shouldBe "PT1H"
                     inDb.monitors shouldContainExactly arrayOf(MonitorID(MonitorType.HTTP_SSL, monitor.name))
+                    inDb.categories shouldContainExactlyInAnyOrder arrayOf("Payments", "Search")
+                    created.categories shouldContainExactlyInAnyOrder setOf("Payments", "Search")
                     inDb.integrations shouldContainExactly arrayOf(assignedIntegration)
                     created.nextStart.shouldNotBeNull()
                 }
@@ -294,6 +300,32 @@ class MaintenanceWindowControllerTest(
 
                 then("the non-existing monitor is filtered out and the existing one is persisted") {
                     created.monitors shouldHaveSingleElement MonitorID(MonitorType.HTTP_SSL, monitor.name)
+                }
+            }
+
+            `when`("it references a category that is not in use by any monitor") {
+                val created = client.createMaintenanceWindow(
+                    MaintenanceWindowCreateDto(name = "Ghost category", categories = listOf("Nobody uses me"))
+                )
+
+                then("it is kept, in contrast to a non-existing monitor reference") {
+                    val inDb = maintenanceWindowRepository.findById(created.id).shouldNotBeNull()
+                    inDb.categories shouldContainExactly arrayOf("Nobody uses me")
+                }
+            }
+
+            `when`("it references a category that is longer than the limit") {
+                val response = shouldThrow<HttpClientResponseException> {
+                    client.createMaintenanceWindow(
+                        MaintenanceWindowCreateDto(
+                            name = "Too long category",
+                            categories = listOf("a".repeat(Validation.MAX_CATEGORY_LENGTH + 1)),
+                        )
+                    )
+                }
+
+                then("it should return a 400") {
+                    response.status shouldBe HttpStatus.BAD_REQUEST
                 }
             }
 
@@ -438,6 +470,43 @@ class MaintenanceWindowControllerTest(
                 then("the monitors remain unchanged") {
                     updated.global shouldBe true
                     updated.monitors shouldContainExactlyInAnyOrder setOf(MonitorID(MonitorType.HTTP_SSL, monitor.name))
+                }
+            }
+
+            `when`("the referenced categories are removed via an empty array") {
+                val monitor = createHttpMonitor(httpMonitorRepository, monitorName = "covered")
+                val window = createMaintenanceWindow(
+                    dslContext,
+                    name = "With categories",
+                    monitors = listOf(MonitorID(MonitorType.HTTP_SSL, monitor.name)),
+                    categories = listOf("Payments", "Search"),
+                )
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .set(MaintenanceWindowUpdateDto::categories.name, mapper.createArrayNode())
+
+                val updated = client.updateMaintenanceWindow(window.id, updateDto)
+
+                then("the categories are cleared, while the omitted monitors are left alone") {
+                    updated.categories.shouldBeEmpty()
+                    val inDb = maintenanceWindowRepository.findById(window.id).shouldNotBeNull()
+                    inDb.categories.shouldBeEmpty()
+                    inDb.monitors shouldContainExactly arrayOf(MonitorID(MonitorType.HTTP_SSL, monitor.name))
+                }
+            }
+
+            `when`("the categories are omitted in the update") {
+                val window = createMaintenanceWindow(
+                    dslContext,
+                    name = "Keep categories",
+                    categories = listOf("Payments"),
+                )
+                val updateDto = JsonNodeFactory.instance.objectNode().put(MaintenanceWindowUpdateDto::global.name, true)
+
+                val updated = client.updateMaintenanceWindow(window.id, updateDto)
+
+                then("the categories remain unchanged") {
+                    updated.global shouldBe true
+                    updated.categories shouldContainExactly setOf("Payments")
                 }
             }
 
@@ -599,6 +668,7 @@ class MaintenanceWindowControllerTest(
     private fun exportDto(
         name: String,
         start: String? = OffsetDateTime.now().plusDays(1).toString(),
+        categories: Set<String> = emptySet(),
     ) = MaintenanceWindowExportDto(
         name = name,
         description = null,
@@ -609,6 +679,7 @@ class MaintenanceWindowControllerTest(
         start = start,
         duration = "PT1H",
         monitors = emptySet(),
+        categories = categories,
         integrations = emptySet(),
     )
 

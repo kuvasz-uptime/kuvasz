@@ -8,6 +8,7 @@ import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.StatusPageValidationMessages
+import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.dto.importing.StatusPageImportResultDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.CategoryStatusDto
@@ -617,6 +618,7 @@ class StatusPageControllerTest(
                     pageInDb.createdAt shouldBe createdMonitor.createdAt
                     pageInDb.updatedAt shouldBe pageInDb.createdAt
                     pageInDb.monitors.shouldBeEmpty()
+                    pageInDb.categories.shouldBeEmpty()
                 }
             }
 
@@ -632,7 +634,9 @@ class StatusPageControllerTest(
                         MonitorID(MonitorType.HTTP_SSL, monitor.name).toString(),
                         MonitorID(MonitorType.HTTP_SSL, monitor2.name).toString(),
                         MonitorID(MonitorType.PUSH, monitor3.name).toString(),
-                    )
+                    ),
+                    // Deliberately messy: the references are normalized the same way as a monitor's own category
+                    categories = listOf("  Payments  ", "Search", "Payments", "   "),
                 )
                 val createdPage = statusPageClient.createStatuspage(pageToCreate)
 
@@ -651,6 +655,37 @@ class StatusPageControllerTest(
                         MonitorID(MonitorType.HTTP_SSL, monitor2.name),
                         MonitorID(MonitorType.PUSH, monitor3.name),
                     )
+                    pageInDb.categories shouldContainExactlyInAnyOrder arrayOf("Payments", "Search")
+                    createdPage.categories shouldContainExactlyInAnyOrder setOf("Payments", "Search")
+                }
+            }
+
+            `when`("it is called with a category that is not in use by any monitor") {
+                val pageToCreate = StatusPageCreateDto(
+                    title = "Status Page 1",
+                    slug = "status-page-1",
+                    categories = listOf("Nobody uses me"),
+                )
+                val createdPage = statusPageClient.createStatuspage(pageToCreate)
+
+                then("it should be kept, in contrast to a non-existing monitor reference") {
+                    val pageInDb = statusPageRepository.findById(createdPage.id).shouldNotBeNull()
+                    pageInDb.categories shouldContainExactly arrayOf("Nobody uses me")
+                }
+            }
+
+            `when`("it is called with a category that is longer than the limit") {
+                val pageToCreate = StatusPageCreateDto(
+                    title = "Status Page 1",
+                    slug = "status-page-1",
+                    categories = listOf("a".repeat(Validation.MAX_CATEGORY_LENGTH + 1)),
+                )
+
+                then("it should return a 400") {
+                    val exception = shouldThrow<HttpClientResponseException> {
+                        statusPageClient.createStatuspage(pageToCreate)
+                    }
+                    exception.status shouldBe HttpStatus.BAD_REQUEST
                 }
             }
 
@@ -784,6 +819,10 @@ class StatusPageControllerTest(
                             .add("http:${monitor2.name}")
                             .add("push:${monitor3.name}")
                     )
+                    .set(
+                        StatusPageUpdateDto::categories.name,
+                        mapper.createArrayNode().add("Payments").add("Search")
+                    )
 
                 delay(1000.milliseconds) // Ensure that updatedAt will be different than createdAt
                 statusPageClient.updateStatusPage(statusPage.id, updateDto)
@@ -803,6 +842,7 @@ class StatusPageControllerTest(
                         MonitorID(MonitorType.HTTP_SSL, monitor2.name),
                         MonitorID(MonitorType.PUSH, monitor3.name),
                     )
+                    statusPageInDb.categories shouldContainExactlyInAnyOrder arrayOf("Payments", "Search")
                 }
             }
 
@@ -864,6 +904,69 @@ class StatusPageControllerTest(
                         MonitorID(MonitorType.HTTP_SSL, monitor.name),
                         MonitorID(MonitorType.PUSH, monitor2.name),
                     )
+                }
+            }
+
+            `when`("it is called to remove all the referenced categories") {
+
+                val monitor = createHttpMonitor(httpMonitorRepository, monitorName = "monitor1")
+                val statusPage = createStatusPage(
+                    dslContext,
+                    title = "Status Page 1",
+                    slug = "status-page-1",
+                    monitors = listOf(MonitorID(MonitorType.HTTP_SSL, monitor.name)),
+                    categories = listOf("Payments", "Search"),
+                )
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .set(StatusPageUpdateDto::categories.name, mapper.createArrayNode())
+
+                val updatedPage = statusPageClient.updateStatusPage(statusPage.id, updateDto)
+                val statusPageInDb = statusPageRepository.findById(statusPage.id).shouldNotBeNull()
+
+                then("the categories should be removed, while the omitted monitors are left alone") {
+                    updatedPage.categories.shouldBeEmpty()
+                    statusPageInDb.categories.shouldBeEmpty()
+                    statusPageInDb.monitors shouldContainExactly arrayOf(
+                        MonitorID(MonitorType.HTTP_SSL, monitor.name)
+                    )
+                }
+            }
+
+            `when`("categories are omitted in the update") {
+
+                val statusPage = createStatusPage(
+                    dslContext,
+                    title = "Status Page 1",
+                    slug = "status-page-1",
+                    categories = listOf("Payments"),
+                )
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .put(StatusPageUpdateDto::public.name, false)
+
+                val updatedPage = statusPageClient.updateStatusPage(statusPage.id, updateDto)
+                val statusPageInDb = statusPageRepository.findById(statusPage.id).shouldNotBeNull()
+
+                then("the categories should remain unchanged") {
+                    updatedPage.categories shouldContainExactly setOf("Payments")
+                    statusPageInDb.categories shouldContainExactly arrayOf("Payments")
+                }
+            }
+
+            `when`("it is called with a category that is not in use by any monitor") {
+
+                val statusPage = createStatusPage(dslContext, title = "Status Page 1", slug = "status-page-1")
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .set(
+                        StatusPageUpdateDto::categories.name,
+                        mapper.createArrayNode().add("Nobody uses me")
+                    )
+
+                val updatedPage = statusPageClient.updateStatusPage(statusPage.id, updateDto)
+                val statusPageInDb = statusPageRepository.findById(statusPage.id).shouldNotBeNull()
+
+                then("it should be kept, in contrast to a non-existing monitor reference") {
+                    updatedPage.categories shouldContainExactly setOf("Nobody uses me")
+                    statusPageInDb.categories shouldContainExactly arrayOf("Nobody uses me")
                 }
             }
 
@@ -1075,6 +1178,7 @@ class StatusPageControllerTest(
         slug: String,
         title: String = "Title",
         monitors: Set<MonitorID> = emptySet(),
+        categories: Set<String> = emptySet(),
     ) = StatusPageExportDto(
         title = title,
         slug = slug,
@@ -1082,6 +1186,7 @@ class StatusPageControllerTest(
         customFaviconUrl = null,
         public = true,
         monitors = monitors,
+        categories = categories,
     )
 
     private fun buildStatusPageYaml(vararg statusPages: StatusPageExportDto): ByteArray =

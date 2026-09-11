@@ -12,6 +12,7 @@ import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageDataActions.Compani
 import com.kuvaszuptime.kuvasz.util.transactionResultWithError
 import com.kuvaszuptime.kuvasz.validation.MonitorIdValidator
 import com.kuvaszuptime.kuvasz.validation.throwIfNotEmpty
+import com.kuvaszuptime.kuvasz.validation.validateCategories
 import io.micronaut.cache.annotation.CacheInvalidate
 import io.micronaut.validation.validator.Validator
 import jakarta.inject.Singleton
@@ -51,11 +52,15 @@ class StatusPageActions(
             .let { StatusPageDto.fromStatusPageRecord(it) }
 
     fun createStatusPage(statusPageCreateDto: StatusPageCreateDto): StatusPageRecord {
-        // Validate the raw monitors from the DTO
+        // Validate the raw monitors from the DTO. The categories are only normalized, not checked for existence,
+        // because they are predicates over the monitors that carry them, see validateCategories
         val validatedMonitors =
             monitorIdValidator.validateMonitorIds(statusPageCreateDto.monitors.orEmpty())
+        val validatedCategories = validateCategories(statusPageCreateDto.categories.orEmpty())
 
-        return statusPageRepository.returningInsert(statusPageCreateDto.toStatusPageRecord(validatedMonitors))
+        return statusPageRepository.returningInsert(
+            statusPageCreateDto.toStatusPageRecord(validatedMonitors, validatedCategories)
+        )
     }
 
     @CacheInvalidate(STATUS_PAGES_CACHE_NAME, all = false, parameters = ["statusPageId"])
@@ -82,11 +87,12 @@ class StatusPageActions(
             objectMapper.convertValue<StatusPageUpdateDto>(updatedStatusPage).let { toValidate ->
                 validator.validate(toValidate).throwIfNotEmpty()
             }
-            // Filter out non-existing monitor IDs before updating
-            if (updatedStatusPage.monitors != null) {
-                updatedStatusPage.monitors =
-                    monitorIdValidator.validateMonitorIds(updatedStatusPage.monitors).toTypedArray()
-            }
+            // Filter out non-existing monitor IDs and normalize the categories before updating. Both columns are
+            // NOT NULL, so an explicitly nulled selector is taken as a request to clear it.
+            updatedStatusPage.monitors =
+                monitorIdValidator.validateMonitorIds(updatedStatusPage.monitors ?: emptyArray()).toTypedArray()
+            updatedStatusPage.categories =
+                validateCategories((updatedStatusPage.categories ?: emptyArray()).toList()).toTypedArray()
 
             statusPageRepository.returningUpdate(StatusPageRecord(updatedStatusPage), txCtx)
         }
