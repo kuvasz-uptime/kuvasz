@@ -192,7 +192,7 @@ public class PushMonitor extends TableImpl<PushMonitorRecord> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.asList(Indexes.PUSH_MONITOR_EFFECTIVE_MONITORS_IDX);
+        return Arrays.asList(Indexes.PUSH_MONITOR_CATEGORY_IDX, Indexes.PUSH_MONITOR_EFFECTIVE_MONITORS_IDX);
     }
 
     @Override

@@ -203,7 +203,7 @@ public class TcpMonitor extends TableImpl<TcpMonitorRecord> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.asList(Indexes.TCP_MONITOR_ENABLED_IDX);
+        return Arrays.asList(Indexes.TCP_MONITOR_CATEGORY_IDX, Indexes.TCP_MONITOR_ENABLED_IDX);
     }
 
     @Override

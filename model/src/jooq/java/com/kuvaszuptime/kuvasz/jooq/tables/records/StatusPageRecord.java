@@ -156,6 +156,21 @@ public class StatusPageRecord extends UpdatableRecordImpl<StatusPageRecord> {
         return (OffsetDateTime) get(8);
     }
 
+    /**
+     * Setter for <code>kuvasz.status_page.categories</code>.
+     */
+    public StatusPageRecord setCategories(String[] value) {
+        set(9, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.status_page.categories</code>.
+     */
+    public String[] getCategories() {
+        return (String[]) get(9);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -179,7 +194,7 @@ public class StatusPageRecord extends UpdatableRecordImpl<StatusPageRecord> {
     /**
      * Create a detached, initialised StatusPageRecord
      */
-    public StatusPageRecord(Long id, String title, String slug, String customLogoUrl, String customFaviconUrl, Boolean public_, MonitorID[] monitors, OffsetDateTime createdAt, OffsetDateTime updatedAt) {
+    public StatusPageRecord(Long id, String title, String slug, String customLogoUrl, String customFaviconUrl, Boolean public_, MonitorID[] monitors, OffsetDateTime createdAt, OffsetDateTime updatedAt, String[] categories) {
         super(StatusPage.STATUS_PAGE);
 
         setId(id);
@@ -191,6 +206,7 @@ public class StatusPageRecord extends UpdatableRecordImpl<StatusPageRecord> {
         setMonitors(monitors);
         setCreatedAt(createdAt);
         setUpdatedAt(updatedAt);
+        setCategories(categories);
         resetTouchedOnNotNull();
     }
 
@@ -210,6 +226,7 @@ public class StatusPageRecord extends UpdatableRecordImpl<StatusPageRecord> {
             setMonitors(value.getMonitors());
             setCreatedAt(value.getCreatedAt());
             setUpdatedAt(value.getUpdatedAt());
+            setCategories(value.getCategories());
             resetTouchedOnNotNull();
         }
     }

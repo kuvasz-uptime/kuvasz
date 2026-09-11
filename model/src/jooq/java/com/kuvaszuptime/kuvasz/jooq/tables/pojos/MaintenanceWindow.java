@@ -33,6 +33,7 @@ public class MaintenanceWindow implements Serializable {
     private IntegrationID[] integrations;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
+    private String[] categories;
 
     public MaintenanceWindow() {}
 
@@ -50,6 +51,7 @@ public class MaintenanceWindow implements Serializable {
         this.integrations = value.integrations;
         this.createdAt = value.createdAt;
         this.updatedAt = value.updatedAt;
+        this.categories = value.categories;
     }
 
     public MaintenanceWindow(
@@ -65,7 +67,8 @@ public class MaintenanceWindow implements Serializable {
         MonitorID[] monitors,
         IntegrationID[] integrations,
         OffsetDateTime createdAt,
-        OffsetDateTime updatedAt
+        OffsetDateTime updatedAt,
+        String[] categories
     ) {
         this.id = id;
         this.name = name;
@@ -80,6 +83,7 @@ public class MaintenanceWindow implements Serializable {
         this.integrations = integrations;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.categories = categories;
     }
 
     /**
@@ -277,6 +281,21 @@ public class MaintenanceWindow implements Serializable {
         return this;
     }
 
+    /**
+     * Getter for <code>kuvasz.maintenance_window.categories</code>.
+     */
+    public String[] getCategories() {
+        return this.categories;
+    }
+
+    /**
+     * Setter for <code>kuvasz.maintenance_window.categories</code>.
+     */
+    public MaintenanceWindow setCategories(String[] categories) {
+        this.categories = categories;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -364,6 +383,12 @@ public class MaintenanceWindow implements Serializable {
         }
         else if (!this.updatedAt.equals(other.updatedAt))
             return false;
+        if (this.categories == null) {
+            if (other.categories != null)
+                return false;
+        }
+        else if (!Arrays.deepEquals(this.categories, other.categories))
+            return false;
         return true;
     }
 
@@ -384,6 +409,7 @@ public class MaintenanceWindow implements Serializable {
         result = prime * result + ((this.integrations == null) ? 0 : Arrays.deepHashCode(this.integrations));
         result = prime * result + ((this.createdAt == null) ? 0 : this.createdAt.hashCode());
         result = prime * result + ((this.updatedAt == null) ? 0 : this.updatedAt.hashCode());
+        result = prime * result + ((this.categories == null) ? 0 : Arrays.deepHashCode(this.categories));
         return result;
     }
 
@@ -404,6 +430,7 @@ public class MaintenanceWindow implements Serializable {
         sb.append(", ").append(Arrays.deepToString(integrations));
         sb.append(", ").append(createdAt);
         sb.append(", ").append(updatedAt);
+        sb.append(", ").append(Arrays.deepToString(categories));
 
         sb.append(")");
         return sb.toString();

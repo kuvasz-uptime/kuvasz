@@ -241,7 +241,7 @@ public class DnsMonitor extends TableImpl<DnsMonitorRecord> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.asList(Indexes.DNS_MONITOR_ENABLED_IDX);
+        return Arrays.asList(Indexes.DNS_MONITOR_CATEGORY_IDX, Indexes.DNS_MONITOR_ENABLED_IDX);
     }
 
     @Override

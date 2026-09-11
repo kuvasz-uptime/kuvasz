@@ -203,7 +203,7 @@ public class IcmpMonitor extends TableImpl<IcmpMonitorRecord> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.asList(Indexes.ICMP_MONITOR_ENABLED_IDX);
+        return Arrays.asList(Indexes.ICMP_MONITOR_CATEGORY_IDX, Indexes.ICMP_MONITOR_ENABLED_IDX);
     }
 
     @Override
