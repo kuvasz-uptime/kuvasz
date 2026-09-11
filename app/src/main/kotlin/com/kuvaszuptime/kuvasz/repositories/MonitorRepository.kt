@@ -37,6 +37,7 @@ sealed interface MonitorRepository<R : MonitorRecord, D : MonitorDetailsDto> {
     fun findByName(name: String, txCtx: DSLContext? = null): R?
     fun deleteById(monitorId: Long, txCtx: DSLContext?): Int
     fun fetchByEnabled(enabled: Boolean): List<R>
+    fun fetchDistinctCategories(): List<String>
     fun returningUpdate(updatedMonitor: R, txCtx: DSLContext? = null): R
     fun upsert(monitor: R, txCtx: DSLContext? = null): R
     fun deleteAllExcept(ignoredIds: List<Long>, txCtx: DSLContext? = null): List<MonitorIDWithName>

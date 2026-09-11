@@ -55,6 +55,12 @@ class HttpMonitorRepository(
         .where(HTTP_MONITOR.ENABLED.eq(enabled))
         .fetch()
 
+    override fun fetchDistinctCategories(): List<String> = dslContext
+        .selectDistinct(HTTP_MONITOR.CATEGORY)
+        .from(HTTP_MONITOR)
+        .where(HTTP_MONITOR.CATEGORY.isNotNull)
+        .fetch(HTTP_MONITOR.CATEGORY)
+
     override fun deleteById(monitorId: Long, txCtx: DSLContext?): Int = (txCtx ?: dslContext)
         .deleteFrom(HTTP_MONITOR)
         .where(HTTP_MONITOR.ID.eq(monitorId))

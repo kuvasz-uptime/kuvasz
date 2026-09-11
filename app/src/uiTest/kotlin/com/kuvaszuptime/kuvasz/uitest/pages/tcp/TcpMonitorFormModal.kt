@@ -8,7 +8,6 @@ import com.microsoft.playwright.Page
 class TcpMonitorFormModal(page: Page) : ModalView(page) {
 
     val nameInput: Locator get() = modal.locator("#name-input")
-    val categoryInput: Locator get() = modal.locator("#category-input")
     val hostInput: Locator get() = modal.locator("#host-input")
     val portInput: Locator get() = modal.locator("#port-input")
     val uptimeCheckIntervalInput: Locator get() = modal.locator("#uptimeCheckInterval-input")
@@ -20,7 +19,7 @@ class TcpMonitorFormModal(page: Page) : ModalView(page) {
     }
 
     fun setCategory(value: String): TcpMonitorFormModal {
-        categoryInput.fill(value)
+        fillCategory(value)
         return this
     }
 

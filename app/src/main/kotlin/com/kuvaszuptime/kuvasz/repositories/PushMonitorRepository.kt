@@ -65,6 +65,12 @@ class PushMonitorRepository(
         .where(PUSH_MONITOR.ENABLED.eq(enabled))
         .fetch()
 
+    override fun fetchDistinctCategories(): List<String> = dslContext
+        .selectDistinct(PUSH_MONITOR.CATEGORY)
+        .from(PUSH_MONITOR)
+        .where(PUSH_MONITOR.CATEGORY.isNotNull)
+        .fetch(PUSH_MONITOR.CATEGORY)
+
     override fun deleteById(monitorId: Long, txCtx: DSLContext?): Int = (txCtx ?: dslContext)
         .deleteFrom(PUSH_MONITOR)
         .where(PUSH_MONITOR.ID.eq(monitorId))

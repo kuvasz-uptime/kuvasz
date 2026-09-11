@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.ui.fragments.statuspage
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
+import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.CategoryStatusDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDataDto
@@ -33,18 +34,21 @@ private fun FlowContent.categorizedMonitorList(
     monitors: List<StatusPageMonitorDetailsDto>,
     categoryStatus: List<CategoryStatusDto>,
 ) {
+    val monitorsByCategory = categoryStatus.map { category ->
+        category to monitors.filter { it.category == category.category }
+    }
     // The sections are anchored by their index, because a category is free-form and may not survive slugification
     div {
         classes(ROW, ROW_CARDS, MB_4)
         testId("category-cards")
-        categoryStatus.forEachIndexed { index, category ->
+        monitorsByCategory.forEachIndexed { index, (category, categoryMonitors) ->
             div {
                 classes(COL_SM_6, COL_LG_3)
-                categoryCard(index, category)
+                categoryCard(index, category, categoryMonitors)
             }
         }
     }
-    categoryStatus.forEachIndexed { index, category ->
+    monitorsByCategory.forEachIndexed { index, (category, categoryMonitors) ->
         div {
             id = categoryAnchorId(index)
             classes(CATEGORY_SECTION)
@@ -53,17 +57,22 @@ private fun FlowContent.categorizedMonitorList(
                 classes(MB_3)
                 +category.label()
             }
-            monitorCardGrid(monitors.filter { it.category == category.category })
+            monitorCardGrid(categoryMonitors)
         }
     }
 }
 
 /**
- * A compact card of a category, showing its aggregated status and linking to the section of its monitors.
+ * A compact card of a category, showing its aggregated status and linking to the section of its monitors. The
+ * card is tinted by a gradient of its status, and closes with the distribution of the statuses it contains.
  */
-private fun FlowContent.categoryCard(index: Int, category: CategoryStatusDto) {
+private fun FlowContent.categoryCard(
+    index: Int,
+    category: CategoryStatusDto,
+    categoryMonitors: List<StatusPageMonitorDetailsDto>,
+) {
     a(href = "#${categoryAnchorId(index)}") {
-        classes(CARD, CARD_SM, CARD_LINK, CARD_LINK_POP)
+        classes(CARD, CARD_SM, CARD_LINK, CARD_LINK_POP, CARD_GRADIENT, category.status.cardGradient())
         testId("category-card")
         div {
             classes(CARD_BODY)
@@ -84,6 +93,44 @@ private fun FlowContent.categoryCard(index: Int, category: CategoryStatusDto) {
                         +category.status.title()
                     }
                 }
+            }
+            statusDistributionBar(categoryMonitors)
+        }
+    }
+}
+
+/**
+ * A multi value progress bar of how the statuses are distributed among [monitors], with a tooltip spelling out
+ * the exact numbers. Every monitor lands in exactly one segment.
+ */
+private fun FlowContent.statusDistributionBar(monitors: List<StatusPageMonitorDetailsDto>) {
+    val total = monitors.size.takeIf { it > 0 } ?: return
+
+    // Maintenance wins over the uptime status, so a segment always has the color of the `card-status-start`
+    // stripe of the monitor's own card in the section below, see `cardStatusClass`
+    val maintenanceCnt = monitors.count { it.inMaintenance }
+    val upCnt = monitors.count { !it.inMaintenance && it.uptimeStatus == UptimeStatus.UP }
+    val downCnt = monitors.count { !it.inMaintenance && it.uptimeStatus == UptimeStatus.DOWN }
+    // Whatever is left has no uptime status yet, the enum itself only knows UP and DOWN
+    val pendingCnt = total - maintenanceCnt - upCnt - downCnt
+
+    val segments = listOf(
+        Triple(upCnt, BG_SUCCESS, Messages.statusPageCategoryUpCount),
+        Triple(maintenanceCnt, BG_SECONDARY, Messages.statusPageCategoryMaintenanceCount),
+        Triple(pendingCnt, BG_WARNING, Messages.statusPageCategoryPendingCount),
+        Triple(downCnt, BG_DANGER, Messages.statusPageCategoryDownCount),
+    ).filter { (count, _, _) -> count > 0 }
+
+    div {
+        classes(PROGRESS, PROGRESS_SM, MT_3)
+        testId("category-distribution")
+        tooltip(segments.joinToString(" · ") { (count, _, label) -> label(count) })
+        segments.forEach { (count, color, label) ->
+            div {
+                classes(PROGRESS_BAR, color)
+                attributes["role"] = "progressbar"
+                ariaLabel(label(count))
+                style = "width: ${(count.toDouble() / total).formatAsPercentage()}"
             }
         }
     }

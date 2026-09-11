@@ -15,6 +15,7 @@ import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import io.kotest.matchers.shouldBe
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import java.time.OffsetDateTime
+import java.util.regex.Pattern
 
 @MicronautTest(environments = [PlaywrightSupport.UI_TEST_ENV])
 class PublicStatusPageUiTest(private val httpMonitorRepository: HttpMonitorRepository) : UiTestSpec() {
@@ -221,6 +222,76 @@ class PublicStatusPageUiTest(private val httpMonitorRepository: HttpMonitorRepos
             page.waitForURL("**#*")
             val webSectionId = statusPage.categorySection("Web").getAttribute("id")
             page.url().substringAfter("#") shouldBe webSectionId
+        }
+
+        "a category card is tinted by its status and breaks the monitors down into a distribution bar" {
+            fun payingMonitor(name: String) =
+                createHttpMonitor(httpMonitorRepository, monitorName = name, category = "Payments")
+
+            val up = payingMonitor("Payments UP")
+            val down = payingMonitor("Payments DOWN")
+            // Down *and* under maintenance: the maintenance has to win, like on the card of the monitor itself
+            val maintained = payingMonitor("Payments maintained")
+            // Without an uptime event the monitor is still pending
+            val pending = payingMonitor("Payments pending")
+            val healthy = createHttpMonitor(httpMonitorRepository, monitorName = "Docs", category = "Docs")
+
+            listOf(up to UptimeStatus.UP, down to UptimeStatus.DOWN, maintained to UptimeStatus.DOWN)
+                .plus(healthy to UptimeStatus.UP)
+                .forEach { (monitor, status) ->
+                    createHttpUptimeEventRecord(
+                        dslContext,
+                        monitorId = monitor.id,
+                        status = status,
+                        startedAt = OffsetDateTime.now(),
+                        endedAt = null,
+                    )
+                }
+            createMaintenanceWindow(
+                dslContext,
+                name = "Payment gateway upgrade",
+                description = "Swapping the payment gateway",
+                enabled = true,
+                showOnStatusPages = true,
+                monitors = listOf(MonitorID(MonitorType.HTTP_SSL, maintained.name)),
+            )
+
+            val slug = "distribution-status"
+            createStatusPage(
+                dslContext,
+                title = "Distribution Status",
+                slug = slug,
+                public = true,
+                monitors = listOf(up, down, maintained, pending, healthy)
+                    .map { MonitorID(MonitorType.HTTP_SSL, it.name) },
+            )
+
+            val page = newPage(authenticated = false)
+            val statusPage = PublicStatusPage(page)
+            statusPage.navigate(slug)
+
+            // One UP and one DOWN monitor make the whole category a partial outage, which tints the card yellow
+            assertThat(statusPage.categoryCard("Payments")).containsText("Partial outage")
+            assertThat(statusPage.categoryCard("Payments")).hasClass(Pattern.compile(".*card-gradient-yellow.*"))
+            assertThat(statusPage.categoryCard("Docs")).hasClass(Pattern.compile(".*card-gradient-green.*"))
+
+            // Four monitors of four different statuses, each one taking a quarter of the bar
+            // The widths come back normalized by the browser, `25.00%` as it is rendered turns into `25%` here
+            statusPage.categoryDistributionSegments("Payments") shouldBe listOf(
+                "bg-success" to "25%",
+                "bg-secondary" to "25%",
+                "bg-warning" to "25%",
+                "bg-danger" to "25%",
+            )
+            statusPage.categoryDistributionTooltip("Payments") shouldBe
+                "1 operational · 1 under maintenance · 1 pending · 1 down"
+
+            // A category without any issue is a single, full width segment
+            statusPage.categoryDistributionSegments("Docs") shouldBe listOf("bg-success" to "100%")
+            statusPage.categoryDistributionTooltip("Docs") shouldBe "1 operational"
+
+            // The segments carry the very colors of the status stripes of the monitor cards below them
+            assertThat(statusPage.monitorMaintenanceBadge(maintained.name)).isVisible()
         }
     }
 }

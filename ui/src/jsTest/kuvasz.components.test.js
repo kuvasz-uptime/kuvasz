@@ -11,6 +11,8 @@ const {
     MAINTENANCE_WINDOW_TYPES,
     escapeHtml,
     buildToastMarkup,
+    fetchMonitorCategories,
+    resetCategorySelect,
     upsertHttpMonitorForm,
     upsertPushMonitorForm,
     upsertIcmpMonitorForm,
@@ -26,7 +28,7 @@ const {
 // --------- #1: isValidHttpHeaderName (regex) ---------
 
 test('isValidHttpHeaderName', () => {
-    const form = upsertHttpMonitorForm(null, {}, 'select', [], 0);
+    const form = upsertHttpMonitorForm(null, {}, 'category-select', 'select', [], 0);
     // Empty / nullish is treated as "no error"
     assert.equal(form.isValidHttpHeaderName(''), true);
     assert.equal(form.isValidHttpHeaderName(null), true);
@@ -166,7 +168,7 @@ test('ICMP validators enforce their numeric ranges', () => {
     const msgs = {
         packetCountInvalid: 'PC', timeoutSecondsInvalid: 'TS', packetLossThresholdInvalid: 'PL',
     };
-    const buildForm = () => upsertIcmpMonitorForm(null, msgs, 0);
+    const buildForm = () => upsertIcmpMonitorForm(null, msgs, 'category-select', 0);
 
     // packetCount: valid 1..10
     assertValidatorBoundaries(buildForm, 'packetCount', 'validatePacketCount', 'PC', [
@@ -186,7 +188,7 @@ test('TCP validators enforce port, timeout and the optional latency threshold', 
     const msgs = {
         portInvalid: 'PORT', timeoutMsInvalid: 'TS', latencyThresholdInvalid: 'LT',
     };
-    const buildForm = () => upsertTcpMonitorForm(null, msgs, 0);
+    const buildForm = () => upsertTcpMonitorForm(null, msgs, 'category-select', 0);
 
     // port: valid 1..65535
     assertValidatorBoundaries(buildForm, 'port', 'validatePort', 'PORT', [
@@ -206,7 +208,7 @@ test('Push validators enforce interval, grace period and client secret rules', (
     const msgs = {
         heartbeatIntervalInvalid: 'HB', gracePeriodInvalid: 'GP', clientSecretInvalid: 'CS',
     };
-    const buildForm = () => upsertPushMonitorForm(null, msgs, 0);
+    const buildForm = () => upsertPushMonitorForm(null, msgs, 'category-select', 0);
 
     // heartbeatInterval: minimum 10
     assertValidatorBoundaries(buildForm, 'heartbeatInterval', 'validateHeartbeatInterval', 'HB', [
@@ -225,7 +227,7 @@ test('Push validators enforce interval, grace period and client secret rules', (
 // --------- #5: populateFrom field mapping (shared by reset & clone) ---------
 
 test('HTTP populateFrom copies a source and falls back to defaults', () => {
-    const form = upsertHttpMonitorForm(null, {}, 'select', [], 0);
+    const form = upsertHttpMonitorForm(null, {}, 'category-select', 'select', [], 0);
 
     form.populateFrom({
         name: 'Src', url: 'https://example.com', sensitiveUrl: true, sslExpiryThreshold: 14,
@@ -282,7 +284,7 @@ test('HTTP populateFrom copies a source and falls back to defaults', () => {
 });
 
 test('Push populateFrom copies a source and falls back to defaults', () => {
-    const form = upsertPushMonitorForm(null, {}, 0);
+    const form = upsertPushMonitorForm(null, {}, 'category-select', 0);
 
     form.populateFrom({
         name: 'Src', heartbeatInterval: 30, gracePeriod: 5,
@@ -307,7 +309,7 @@ test('Push populateFrom copies a source and falls back to defaults', () => {
 });
 
 test('ICMP populateFrom copies a source and falls back to defaults', () => {
-    const form = upsertIcmpMonitorForm(null, {}, 0);
+    const form = upsertIcmpMonitorForm(null, {}, 'category-select', 0);
 
     form.populateFrom({
         name: 'Src', host: 'example.com', uptimeCheckInterval: 120, packetCount: 5,
@@ -337,7 +339,7 @@ test('ICMP populateFrom copies a source and falls back to defaults', () => {
 });
 
 test('TCP populateFrom copies a source and falls back to defaults', () => {
-    const form = upsertTcpMonitorForm(null, {}, 0);
+    const form = upsertTcpMonitorForm(null, {}, 'category-select', 0);
 
     form.populateFrom({
         name: 'Src', host: 'example.com', port: 5432, uptimeCheckInterval: 120,
@@ -390,7 +392,7 @@ test('DNS validators enforce resolver port, timeout and the optional latency thr
     const msgs = {
         resolverPortInvalid: 'PORT', timeoutMsInvalid: 'TS', latencyThresholdInvalid: 'LT',
     };
-    const buildForm = () => upsertDnsMonitorForm(null, msgs, 0);
+    const buildForm = () => upsertDnsMonitorForm(null, msgs, 'category-select', 0);
 
     // resolverPort: valid 1..65535
     assertValidatorBoundaries(buildForm, 'resolverPort', 'validateResolverPort', 'PORT', [
@@ -409,7 +411,7 @@ test('DNS validators enforce resolver port, timeout and the optional latency thr
 // --------- DNS: record matcher add/remove + regex validation ---------
 
 test('DNS validateNewMatcher rejects blank values and invalid regex, gates isMatcherAddable', () => {
-    const form = upsertDnsMonitorForm(null, {recordMatcherInvalid: 'RM'}, 0);
+    const form = upsertDnsMonitorForm(null, {recordMatcherInvalid: 'RM'}, 'category-select', 0);
     form.init();
 
     // Blank value is not addable, but not an error either
@@ -440,7 +442,7 @@ test('DNS validateNewMatcher rejects blank values and invalid regex, gates isMat
 });
 
 test('DNS addMatcher/removeMatcher mutate the recordMatchers list', () => {
-    const form = upsertDnsMonitorForm(null, {}, 0);
+    const form = upsertDnsMonitorForm(null, {}, 'category-select', 0);
     form.init();
 
     form.newMatcherRecordType = 'A';
@@ -464,7 +466,7 @@ test('DNS addMatcher/removeMatcher mutate the recordMatchers list', () => {
 });
 
 test('DNS addMatcher ignores a matcher that is already in the list', () => {
-    const form = upsertDnsMonitorForm(null, {}, 0);
+    const form = upsertDnsMonitorForm(null, {}, 'category-select', 0);
     form.init();
 
     const add = (recordType, matchType, value) => {
@@ -489,7 +491,7 @@ test('DNS addMatcher ignores a matcher that is already in the list', () => {
 });
 
 test('DNS validateResponseCodeMatchers conflicts when a non-NOERROR code has matchers', () => {
-    const form = upsertDnsMonitorForm(null, {responseCodeMatchersConflict: 'CONFLICT'}, 0);
+    const form = upsertDnsMonitorForm(null, {responseCodeMatchersConflict: 'CONFLICT'}, 'category-select', 0);
     form.init();
 
     // NOERROR + matchers is fine
@@ -512,7 +514,7 @@ test('DNS validateResponseCodeMatchers conflicts when a non-NOERROR code has mat
 // --------- DNS: populateFrom field mapping ---------
 
 test('DNS populateFrom copies a source and falls back to defaults', () => {
-    const form = upsertDnsMonitorForm(null, {}, 0);
+    const form = upsertDnsMonitorForm(null, {}, 'category-select', 0);
 
     form.populateFrom({
         name: 'Src', host: 'example.com', resolverHost: '8.8.8.8', resolverPort: 5353,
@@ -616,11 +618,11 @@ test('escapeHtml escapes every HTML special character and handles missing values
 
 test('monitor forms populate and reset the category', () => {
     const forms = [
-        upsertHttpMonitorForm(null, {}, 'select', [], 0),
-        upsertPushMonitorForm(null, {}, 0),
-        upsertIcmpMonitorForm(null, {}, 0),
-        upsertTcpMonitorForm(null, {}, 0),
-        upsertDnsMonitorForm(null, {}, 0),
+        upsertHttpMonitorForm(null, {}, 'category-select', 'select', [], 0),
+        upsertPushMonitorForm(null, {}, 'category-select', 0),
+        upsertIcmpMonitorForm(null, {}, 'category-select', 0),
+        upsertTcpMonitorForm(null, {}, 'category-select', 0),
+        upsertDnsMonitorForm(null, {}, 'category-select', 0),
     ];
     forms.forEach((form) => {
         form.populateFrom({category: 'Drive storage'});
@@ -631,7 +633,7 @@ test('monitor forms populate and reset the category', () => {
 });
 
 test('validateCategory flags categories longer than 100 characters', () => {
-    const form = upsertHttpMonitorForm(null, {categoryTooLong: 'too long'}, 'select', [], 0);
+    const form = upsertHttpMonitorForm(null, {categoryTooLong: 'too long'}, 'category-select', 'select', [], 0);
     form.populateFrom(null);
     form.category = 'a'.repeat(101);
     form.validateCategory();
@@ -642,4 +644,97 @@ test('validateCategory flags categories longer than 100 characters', () => {
     form.category = null;
     form.validateCategory();
     assert.equal(form.errors.category, null);
+});
+
+// --------- The category select (TomSelect) ---------
+
+// A TomSelect stub recording what the helpers do to it, standing in for the real widget Node has no DOM for.
+const fakeTomSelect = () => {
+    const instance = new globalThis.TomSelect();
+    instance.options = [];
+    instance.value = null;
+    instance.cleared = 0;
+    instance.clear = () => {
+        instance.cleared += 1;
+        instance.value = null;
+    };
+    instance.addOption = (option) => instance.options.push(option);
+    instance.setValue = (value) => {
+        instance.value = value;
+    };
+    return instance;
+};
+
+// Runs [body] with `document.getElementById` returning an element carrying [tomSelectInstance].
+const withCategorySelect = (tomSelectInstance, body) => {
+    const originalGetElementById = globalThis.document.getElementById;
+    globalThis.document.getElementById = () => ({tomselect: tomSelectInstance});
+    try {
+        body();
+    } finally {
+        globalThis.document.getElementById = originalGetElementById;
+    }
+};
+
+test('resetCategorySelect re-adds and selects the category of the form', () => {
+    const tomSelect = fakeTomSelect();
+    withCategorySelect(tomSelect, () => resetCategorySelect('category-select', 'Drive storage'));
+    assert.equal(tomSelect.cleared, 1);
+    // The option has to be re-added, a non-persisted category is dropped when the selection is cleared
+    assert.deepEqual(tomSelect.options, [{value: 'Drive storage', text: 'Drive storage'}]);
+    assert.equal(tomSelect.value, 'Drive storage');
+});
+
+test('resetCategorySelect only clears when the form has no category', () => {
+    const tomSelect = fakeTomSelect();
+    withCategorySelect(tomSelect, () => resetCategorySelect('category-select', null));
+    assert.equal(tomSelect.cleared, 1);
+    assert.deepEqual(tomSelect.options, []);
+    assert.equal(tomSelect.value, null);
+});
+
+test('resetCategorySelect no-ops before TomSelect is initialized', () => {
+    // `document.getElementById` returns null in this harness, which is what an unrendered modal looks like
+    assert.doesNotThrow(() => resetCategorySelect('category-select', 'Drive storage'));
+});
+
+// Runs [body] with a stubbed global `fetch`, restoring the original afterwards.
+const withFetch = async (stub, body) => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = stub;
+    try {
+        return await body();
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+};
+
+test('fetchMonitorCategories returns the categories of a successful response', async () => {
+    const categories = await withFetch(
+        async () => ({ok: true, json: async () => ['alerting', 'Payments']}),
+        () => fetchMonitorCategories(),
+    );
+    assert.deepEqual(categories, ['alerting', 'Payments']);
+});
+
+test('fetchMonitorCategories fails open on an error response', async () => {
+    const categories = await withFetch(
+        async () => ({ok: false, json: async () => ['alerting']}),
+        () => fetchMonitorCategories(),
+    );
+    assert.deepEqual(categories, []);
+});
+
+test('fetchMonitorCategories fails open when the request throws', async () => {
+    const originalConsoleError = console.error;
+    console.error = () => {};
+    try {
+        const categories = await withFetch(
+            async () => { throw new Error('network down'); },
+            () => fetchMonitorCategories(),
+        );
+        assert.deepEqual(categories, []);
+    } finally {
+        console.error = originalConsoleError;
+    }
 });

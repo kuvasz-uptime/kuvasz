@@ -50,6 +50,12 @@ class TcpMonitorRepository(
         .where(TCP_MONITOR.ENABLED.eq(enabled))
         .fetch()
 
+    override fun fetchDistinctCategories(): List<String> = dslContext
+        .selectDistinct(TCP_MONITOR.CATEGORY)
+        .from(TCP_MONITOR)
+        .where(TCP_MONITOR.CATEGORY.isNotNull)
+        .fetch(TCP_MONITOR.CATEGORY)
+
     override fun deleteById(monitorId: Long, txCtx: DSLContext?): Int = (txCtx ?: dslContext)
         .deleteFrom(TCP_MONITOR)
         .where(TCP_MONITOR.ID.eq(monitorId))

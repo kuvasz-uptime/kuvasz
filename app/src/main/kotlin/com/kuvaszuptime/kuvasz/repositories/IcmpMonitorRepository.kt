@@ -50,6 +50,12 @@ class IcmpMonitorRepository(
         .where(ICMP_MONITOR.ENABLED.eq(enabled))
         .fetch()
 
+    override fun fetchDistinctCategories(): List<String> = dslContext
+        .selectDistinct(ICMP_MONITOR.CATEGORY)
+        .from(ICMP_MONITOR)
+        .where(ICMP_MONITOR.CATEGORY.isNotNull)
+        .fetch(ICMP_MONITOR.CATEGORY)
+
     override fun deleteById(monitorId: Long, txCtx: DSLContext?): Int = (txCtx ?: dslContext)
         .deleteFrom(ICMP_MONITOR)
         .where(ICMP_MONITOR.ID.eq(monitorId))

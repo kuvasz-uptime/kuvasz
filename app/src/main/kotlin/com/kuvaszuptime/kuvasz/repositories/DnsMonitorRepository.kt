@@ -53,6 +53,12 @@ class DnsMonitorRepository(
         .where(DNS_MONITOR.ENABLED.eq(enabled))
         .fetch()
 
+    override fun fetchDistinctCategories(): List<String> = dslContext
+        .selectDistinct(DNS_MONITOR.CATEGORY)
+        .from(DNS_MONITOR)
+        .where(DNS_MONITOR.CATEGORY.isNotNull)
+        .fetch(DNS_MONITOR.CATEGORY)
+
     override fun deleteById(monitorId: Long, txCtx: DSLContext?): Int = (txCtx ?: dslContext)
         .deleteFrom(DNS_MONITOR)
         .where(DNS_MONITOR.ID.eq(monitorId))

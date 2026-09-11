@@ -32,7 +32,9 @@ internal fun FlowContent.monitorUpsertModal(
     val isReadOnlyMode = globals.editabilityState.areMonitorsReadOnly(typeUiConfig.type)
     val isMonitorNameReadOnly = monitor?.statusPages?.isNotEmpty() == true &&
         globals.editabilityState.areStatusPagesReadOnly()
-    val formArgs = listOf(serializedMonitor.toString(), errorMessages.asJsonString()) +
+    // Every type has its own id, because the dashboard renders the create modal of all of them at once
+    val categorySelectId = "${typeUiConfig.slug}-monitor-category-select"
+    val formArgs = listOf(serializedMonitor.toString(), errorMessages.asJsonString(), "'$categorySelectId'") +
         extraFormArgs +
         globals.enabledIntegrations.count { it.value.global }.toString()
 
@@ -98,15 +100,8 @@ internal fun FlowContent.monitorUpsertModal(
                     // Category
                     div {
                         classes(MB_3)
-                        validatedInput(
-                            propName = "category",
-                            label = Messages.monitorCategoryLabel(),
-                            placeholder = Messages.monitorCategoryPlaceholder(),
-                            description = Messages.monitorCategoryDescription(),
-                            required = false,
-                            onInput = "validateCategory()",
-                            disabledIf = "$isReadOnlyMode",
-                        )
+                        testId("category-select")
+                        categorySelector(categorySelectId, isReadOnlyMode, monitor?.category)
                     }
                     fields(isReadOnlyMode)
 
@@ -134,4 +129,51 @@ internal fun FlowContent.monitorUpsertModal(
         }
     }
     handleFormResetOnModalClose(modalId = modalId, eventName = modalClosedEvent)
+}
+
+/**
+ * The category field: a single-value TomSelect offering the categories that are already in use, while still
+ * accepting a brand new one. The options are loaded by [initCategorySelect] from the internal API.
+ */
+private fun FlowContent.categorySelector(
+    categorySelectId: String,
+    isReadOnlyMode: Boolean,
+    currentCategory: String?,
+) {
+    formLabel(
+        label = Messages.monitorCategoryLabel(),
+        inputName = categorySelectId,
+        description = Messages.monitorCategoryDescription(),
+    )
+    select {
+        classes(FORM_SELECT)
+        id = categorySelectId
+        name = categorySelectId
+        xModel("category")
+        xBindErrorClass("category")
+        xInitNextTick(
+            "{ initCategorySelect('#$categorySelectId', ${Messages.monitorCategoryAddNew().asJsonString()}) }"
+        )
+        if (isReadOnlyMode) disabled = true
+        // The empty option is what Alpine binds to for a monitor without a category. TomSelect keeps it out of the
+        // dropdown (`allowEmptyOption` is off), so it never shows up as a blank row to pick.
+        option { value = "" }
+        // The already persisted category has to be in the DOM before Alpine binds the select to `category`,
+        // the rest of the options only arrive when the fetch of `initCategorySelect` resolves
+        currentCategory?.let { category ->
+            option {
+                value = category
+                selected = true
+                +category
+            }
+        }
+    }
+    templateTag {
+        xIf("errors.category")
+        div {
+            // TomSelect nests the `select` into its own wrapper, so the sibling selector of Bootstrap can't kick in
+            classes(INVALID_FEEDBACK, D_BLOCK)
+            xText("errors.category")
+        }
+    }
 }

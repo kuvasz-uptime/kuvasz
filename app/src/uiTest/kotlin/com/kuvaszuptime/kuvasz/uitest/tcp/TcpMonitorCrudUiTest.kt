@@ -34,7 +34,7 @@ class TcpMonitorCrudUiTest : UiTestSpec() {
             val updatedName = "E2E TCP Monitor Renamed"
             val configureModal = details.openConfigureModal()
             // The category is pre-filled from the monitor and can be cleared
-            assertThat(configureModal.categoryInput).hasValue("Payments")
+            assertThat(configureModal.selectedCategory).hasText("Payments")
             configureModal.setName(updatedName).setCategory("").save()
             assertThat(details.heading(updatedName)).isVisible()
             assertThat(details.categoryBadge).hasCount(0)

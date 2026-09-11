@@ -813,6 +813,7 @@ const isValidSlug = (slug) => {
 const upsertHttpMonitorForm = (
     monitor,
     errorMessages,
+    categorySelectId,
     acceptedStatusCodeSelectId,
     supportedHttpStatusCodes,
     globalIntegrationCount
@@ -849,6 +850,7 @@ const upsertHttpMonitorForm = (
             this.requestMethod = source?.requestMethod || 'GET';
             this.integrations = source?.integrations || [];
             this.category = source?.category || null;
+            resetCategorySelect(categorySelectId, this.category);
             this.selectedHttpStatusCodes = source?.expectedStatusCodes?.map(code => code.toString()) || [];
             this.expectedKeyword = source?.expectedKeyword || null;
             this.expectedKeywordCaseSensitive = source?.expectedKeywordCaseSensitive || false;
@@ -1109,6 +1111,7 @@ const upsertHttpMonitorForm = (
 const upsertPushMonitorForm = (
     monitor,
     errorMessages,
+    categorySelectId,
     globalIntegrationCount
 ) => {
     const originalMonitor = monitor || null;
@@ -1136,6 +1139,7 @@ const upsertPushMonitorForm = (
             this.clientSecret = source?.clientSecret || createRandomSecret();
             this.integrations = source?.integrations || [];
             this.category = source?.category || null;
+            resetCategorySelect(categorySelectId, this.category);
             this.errors = {};
             this.formError = null;
         },
@@ -1302,6 +1306,7 @@ const upsertPushMonitorForm = (
 const upsertIcmpMonitorForm = (
     monitor,
     errorMessages,
+    categorySelectId,
     globalIntegrationCount
 ) => {
     const originalMonitor = monitor || null;
@@ -1331,6 +1336,7 @@ const upsertIcmpMonitorForm = (
             this.failureCountThreshold = source?.failureCountThreshold || 1;
             this.integrations = source?.integrations || [];
             this.category = source?.category || null;
+            resetCategorySelect(categorySelectId, this.category);
             this.metricsHistoryEnabled = (source?.metricsHistoryEnabled != null ? source?.metricsHistoryEnabled : true);
             this.errors = {};
             this.formError = null;
@@ -1503,6 +1509,7 @@ const upsertIcmpMonitorForm = (
 const upsertTcpMonitorForm = (
     monitor,
     errorMessages,
+    categorySelectId,
     globalIntegrationCount
 ) => {
     const originalMonitor = monitor || null;
@@ -1532,6 +1539,7 @@ const upsertTcpMonitorForm = (
             this.failureCountThreshold = source?.failureCountThreshold || 1;
             this.integrations = source?.integrations || [];
             this.category = source?.category || null;
+            resetCategorySelect(categorySelectId, this.category);
             this.metricsHistoryEnabled = (source?.metricsHistoryEnabled != null ? source?.metricsHistoryEnabled : true);
             this.errors = {};
             this.formError = null;
@@ -1706,6 +1714,7 @@ const upsertTcpMonitorForm = (
 const upsertDnsMonitorForm = (
     monitor,
     errorMessages,
+    categorySelectId,
     globalIntegrationCount
 ) => {
     const originalMonitor = monitor || null;
@@ -1741,6 +1750,7 @@ const upsertDnsMonitorForm = (
             this.failureCountThreshold = source?.failureCountThreshold || 1;
             this.integrations = source?.integrations || [];
             this.category = source?.category || null;
+            resetCategorySelect(categorySelectId, this.category);
             this.metricsHistoryEnabled = (source?.metricsHistoryEnabled != null ? source?.metricsHistoryEnabled : true);
             this.newMatcherRecordType = 'A';
             this.newMatcherMatchType = 'CONTAINS';
@@ -2154,6 +2164,63 @@ const resetTomSelectState = (elementId, afterReset = (tomSelectInstance) => {
     if (monitorSelect?.tomselect instanceof TomSelect) {
         afterReset(monitorSelect.tomselect);
     }
+};
+
+/*
+ Loads the categories that are already in use by a monitor, to offer them on the monitor forms. Fails open with an
+ empty list: the select takes a brand new category anyway, so an unreachable endpoint must not block the form.
+*/
+const fetchMonitorCategories = async () => {
+    try {
+        const response = await fetch('/api/internal/monitors/categories');
+        return response.ok ? await response.json() : [];
+    } catch (error) {
+        console.error('Error fetching the monitor categories:', error);
+        return [];
+    }
+};
+
+/*
+ The single value category select of the monitor forms: it offers the already existing categories with an
+ autocomplete, but a brand new one can be typed in as well.
+*/
+const initCategorySelect = (selector, addLabel) => {
+    const tomSelect = new TomSelect(selector, {
+        create: true,
+        persist: false,
+        maxItems: 1,
+        plugins: ['clear_button'],
+        render: {
+            option_create: (data, escape) => `<div class="create">${escape(addLabel)}: <strong>${escape(data.input)}</strong></div>`
+        }
+    });
+    const loadOptions = () => fetchMonitorCategories().then(categories => {
+        // Already known options are ignored by TomSelect, so re-opening the modal just picks up the new ones
+        tomSelect.addOptions(categories.map(category => ({value: category, text: category})));
+    });
+    /*
+     The options are loaded when the modal opens, not when it's rendered. The dashboard renders the create modal of
+     all five monitor types at once, and a form nobody opens shouldn't cost a request.
+    */
+    const modal = tomSelect.input.closest('.modal');
+    if (modal) {
+        modal.addEventListener('show.bs.modal', loadOptions);
+    } else {
+        loadOptions();
+    }
+};
+
+/*
+ Restores the category of the form after a reset (edit, clone). The option itself has to be re-added, because a
+ category that isn't persisted yet is dropped by TomSelect as soon as the selection is cleared (persist: false).
+*/
+const resetCategorySelect = (elementId, category) => {
+    resetTomSelectState(elementId, (ts) => {
+        if (category) {
+            ts.addOption({value: category, text: category});
+            ts.setValue(category, true);
+        }
+    });
 };
 
 const renderMonitorOption = (data, escape) => {
@@ -2616,6 +2683,9 @@ if (typeof module !== 'undefined' && module.exports) {
         toDateTimeLocalValue,
         resolveMaintenanceWindowType,
         createRandomSecret,
+        // Helpers of the category select
+        fetchMonitorCategories,
+        resetCategorySelect,
         // Alpine x-data component factories
         upsertHttpMonitorForm,
         upsertPushMonitorForm,
