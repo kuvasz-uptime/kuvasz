@@ -8,6 +8,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.IcmpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.icmp.idWithName
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
@@ -27,8 +28,12 @@ class IcmpMonitorRepository(
     private val dslContext: DSLContext,
 ) : MonitorRepository<IcmpMonitorRecord, IcmpMonitorDetailsDto> {
 
-    override fun fetchAllWithDetails(enabled: Boolean?, monitorNames: List<String>?): List<IcmpMonitorDetailsDto> =
-        getMonitorsWithDetails(enabled = enabled, monitorNames = monitorNames)
+    override fun fetchAllWithDetails(
+        enabled: Boolean?,
+        monitorNames: List<String>?,
+        categories: List<String>?,
+    ): List<IcmpMonitorDetailsDto> =
+        getMonitorsWithDetails(enabled = enabled, monitorNames = monitorNames, categories = categories)
 
     override fun findById(monitorId: Long, txCtx: DSLContext?): IcmpMonitorRecord? = (txCtx ?: dslContext)
         .selectFrom(ICMP_MONITOR)
@@ -49,6 +54,12 @@ class IcmpMonitorRepository(
         .where(ICMP_MONITOR.ENABLED.eq(enabled))
         .fetch()
 
+    override fun fetchDistinctCategories(): List<String> = dslContext
+        .selectDistinct(ICMP_MONITOR.CATEGORY)
+        .from(ICMP_MONITOR)
+        .where(ICMP_MONITOR.CATEGORY.isNotNull)
+        .fetch(ICMP_MONITOR.CATEGORY)
+
     override fun deleteById(monitorId: Long, txCtx: DSLContext?): Int = (txCtx ?: dslContext)
         .deleteFrom(ICMP_MONITOR)
         .where(ICMP_MONITOR.ID.eq(monitorId))
@@ -60,6 +71,7 @@ class IcmpMonitorRepository(
         uptimeStatus: List<UptimeStatus> = emptyList(),
         sortedBy: SortField<*>? = null,
         monitorNames: List<String>? = null,
+        categories: List<String>? = null,
     ): List<IcmpMonitorDetailsDto> =
         monitorDetailsSelect()
             .apply {
@@ -67,7 +79,7 @@ class IcmpMonitorRepository(
                 uptimeStatus.takeIf { it.isNotEmpty() }?.let {
                     and(latestUptimeEventSelect.field(ICMP_UPTIME_EVENT.STATUS)!!.`in`(it))
                 }
-                monitorNames?.let { and(ICMP_MONITOR.NAME.`in`(it)) }
+                selectionCondition(ICMP_MONITOR.NAME, ICMP_MONITOR.CATEGORY, monitorNames, categories)?.let { and(it) }
                 sortedBy?.let { orderBy(it, ICMP_MONITOR.ID.asc()) }
             }
             .fetchInto(IcmpMonitorDetailsDto::class.java)
@@ -105,6 +117,7 @@ class IcmpMonitorRepository(
                 .set(ICMP_MONITOR.ENABLED, updatedMonitor.enabled)
                 .set(ICMP_MONITOR.INTEGRATIONS, updatedMonitor.integrations)
                 .set(ICMP_MONITOR.METRICS_HISTORY_ENABLED, updatedMonitor.metricsHistoryEnabled)
+                .set(ICMP_MONITOR.CATEGORY, updatedMonitor.normalizedCategory)
                 .set(ICMP_MONITOR.UPDATED_AT, getCurrentTimestamp())
                 .where(ICMP_MONITOR.ID.eq(updatedMonitor.id))
                 .returning(ICMP_MONITOR.asterisk())
@@ -152,6 +165,7 @@ class IcmpMonitorRepository(
         .select(
             ICMP_MONITOR.ID.`as`(IcmpMonitorDetailsDto::id.name),
             ICMP_MONITOR.NAME.`as`(IcmpMonitorDetailsDto::name.name),
+            ICMP_MONITOR.CATEGORY.`as`(IcmpMonitorDetailsDto::category.name),
             ICMP_MONITOR.HOST.`as`(IcmpMonitorDetailsDto::host.name),
             ICMP_MONITOR.UPTIME_CHECK_INTERVAL.`as`(IcmpMonitorDetailsDto::uptimeCheckInterval.name),
             ICMP_MONITOR.PACKET_COUNT.`as`(IcmpMonitorDetailsDto::packetCount.name),
@@ -170,8 +184,7 @@ class IcmpMonitorRepository(
             latestUptimeEventSelect.field(ICMP_UPTIME_EVENT.ERROR)!!.`as`(IcmpMonitorDetailsDto::uptimeError.name),
             DSL.array(arrayOf<String>()).`as`(IcmpMonitorDetailsDto::effectiveIntegrations.name),
             ICMP_MONITOR.INTEGRATIONS.`as`(IcmpMonitorDetailsDto::integrations.name),
-            DSL.coalesce(statusPagesSubselect.field("slugs"), DSL.array(arrayOf<String>()))
-                .`as`(IcmpMonitorDetailsDto::statusPages.name),
+            statusPagesField.`as`(IcmpMonitorDetailsDto::statusPages.name),
             // Placeholders for fields populated by the actions layer, not by SQL
             DSL.array(arrayOf<String>()).`as`(IcmpMonitorDetailsDto::maintenanceWindows.name),
             DSL.inline(false).`as`(IcmpMonitorDetailsDto::inMaintenance.name),
@@ -187,5 +200,7 @@ class IcmpMonitorRepository(
                         .concat(ICMP_MONITOR.NAME)
                 )
         )
+        .leftJoin(categoryStatusPagesSubselect)
+        .on(pageCategoryField.eq(ICMP_MONITOR.CATEGORY))
         .where(DSL.trueCondition())
 }

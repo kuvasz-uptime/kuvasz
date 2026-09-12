@@ -103,6 +103,11 @@ public class StatusPage extends TableImpl<StatusPageRecord> {
      */
     public final TableField<StatusPageRecord, OffsetDateTime> UPDATED_AT = createField(DSL.name("updated_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false).defaultValue(DSL.field(DSL.raw("now()"), SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "");
 
+    /**
+     * The column <code>kuvasz.status_page.categories</code>.
+     */
+    public final TableField<StatusPageRecord, String[]> CATEGORIES = createField(DSL.name("categories"), SQLDataType.CLOB.array().nullable(false).defaultValue(DSL.field(DSL.raw("ARRAY[]::text[]"), SQLDataType.CLOB.array())), this, "");
+
     private StatusPage(Name alias, Table<StatusPageRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }
@@ -139,7 +144,7 @@ public class StatusPage extends TableImpl<StatusPageRecord> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.asList(Indexes.STATUS_PAGE_MONITORS_IDX);
+        return Arrays.asList(Indexes.STATUS_PAGE_CATEGORIES_IDX, Indexes.STATUS_PAGE_MONITORS_IDX);
     }
 
     @Override

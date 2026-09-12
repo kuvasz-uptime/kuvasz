@@ -18,9 +18,13 @@ interface StatusPageCreator {
     val customFaviconUrl: String?
     val public: Boolean
     val monitors: List<String>?
+    val categories: List<String>?
 }
 
-fun StatusPageCreator.toStatusPageRecord(validatedMonitors: Set<MonitorID>): StatusPageRecord =
+fun StatusPageCreator.toStatusPageRecord(
+    validatedMonitors: Set<MonitorID>,
+    validatedCategories: Set<String>,
+): StatusPageRecord =
     StatusPageRecord()
         .setTitle(title)
         .setSlug(slug)
@@ -28,3 +32,4 @@ fun StatusPageCreator.toStatusPageRecord(validatedMonitors: Set<MonitorID>): Sta
         .setCustomFaviconUrl(customFaviconUrl)
         .setPublic(public)
         .setMonitors(validatedMonitors.toTypedArray())
+        .setCategories(validatedCategories.toTypedArray())

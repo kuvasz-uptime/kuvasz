@@ -4,6 +4,7 @@
 package com.kuvaszuptime.kuvasz.jooq.tables;
 
 
+import com.kuvaszuptime.kuvasz.jooq.Indexes;
 import com.kuvaszuptime.kuvasz.jooq.Keys;
 import com.kuvaszuptime.kuvasz.jooq.Kuvasz;
 import com.kuvaszuptime.kuvasz.jooq.TextArrayToIntegrationIdArrayConverter;
@@ -23,6 +24,7 @@ import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
 import org.jooq.Identity;
+import org.jooq.Index;
 import org.jooq.InverseForeignKey;
 import org.jooq.Name;
 import org.jooq.Path;
@@ -191,6 +193,11 @@ public class HttpMonitor extends TableImpl<HttpMonitorRecord> {
      */
     public final TableField<HttpMonitorRecord, Boolean> SENSITIVE_URL = createField(DSL.name("sensitive_url"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("false"), SQLDataType.BOOLEAN)), this, "");
 
+    /**
+     * The column <code>kuvasz.http_monitor.category</code>.
+     */
+    public final TableField<HttpMonitorRecord, String> CATEGORY = createField(DSL.name("category"), SQLDataType.CLOB, this, "");
+
     private HttpMonitor(Name alias, Table<HttpMonitorRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }
@@ -256,6 +263,11 @@ public class HttpMonitor extends TableImpl<HttpMonitorRecord> {
     @Override
     public Schema getSchema() {
         return aliased() ? null : Kuvasz.KUVASZ;
+    }
+
+    @Override
+    public List<Index> getIndexes() {
+        return Arrays.asList(Indexes.HTTP_MONITOR_CATEGORY_IDX);
     }
 
     @Override

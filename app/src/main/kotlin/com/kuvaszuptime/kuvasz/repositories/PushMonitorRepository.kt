@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.PushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.push.idWithName
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
@@ -31,8 +32,12 @@ class PushMonitorRepository(
     private val dslContext: DSLContext,
 ) : MonitorRepository<PushMonitorRecord, PushMonitorDetailsDto> {
 
-    override fun fetchAllWithDetails(enabled: Boolean?, monitorNames: List<String>?): List<PushMonitorDetailsDto> =
-        getMonitorsWithDetails(enabled = enabled, monitorNames = monitorNames)
+    override fun fetchAllWithDetails(
+        enabled: Boolean?,
+        monitorNames: List<String>?,
+        categories: List<String>?,
+    ): List<PushMonitorDetailsDto> =
+        getMonitorsWithDetails(enabled = enabled, monitorNames = monitorNames, categories = categories)
 
     override fun findById(monitorId: Long, txCtx: DSLContext?): PushMonitorRecord? = (txCtx ?: dslContext)
         .selectFrom(PUSH_MONITOR)
@@ -64,6 +69,12 @@ class PushMonitorRepository(
         .where(PUSH_MONITOR.ENABLED.eq(enabled))
         .fetch()
 
+    override fun fetchDistinctCategories(): List<String> = dslContext
+        .selectDistinct(PUSH_MONITOR.CATEGORY)
+        .from(PUSH_MONITOR)
+        .where(PUSH_MONITOR.CATEGORY.isNotNull)
+        .fetch(PUSH_MONITOR.CATEGORY)
+
     override fun deleteById(monitorId: Long, txCtx: DSLContext?): Int = (txCtx ?: dslContext)
         .deleteFrom(PUSH_MONITOR)
         .where(PUSH_MONITOR.ID.eq(monitorId))
@@ -75,6 +86,7 @@ class PushMonitorRepository(
         uptimeStatus: List<UptimeStatus> = emptyList(),
         sortedBy: SortField<*>? = null,
         monitorNames: List<String>? = null,
+        categories: List<String>? = null,
     ): List<PushMonitorDetailsDto> =
         monitorDetailsSelect()
             .apply {
@@ -82,7 +94,7 @@ class PushMonitorRepository(
                 uptimeStatus.takeIf { it.isNotEmpty() }?.let {
                     and(latestUptimeEventSelect.field(PUSH_UPTIME_EVENT.STATUS)!!.`in`(it))
                 }
-                monitorNames?.let { and(PUSH_MONITOR.NAME.`in`(it)) }
+                selectionCondition(PUSH_MONITOR.NAME, PUSH_MONITOR.CATEGORY, monitorNames, categories)?.let { and(it) }
                 sortedBy?.let { orderBy(it, PUSH_MONITOR.ID.asc()) }
             }
             .fetchInto(PushMonitorDetailsDto::class.java)
@@ -117,6 +129,7 @@ class PushMonitorRepository(
                 .set(PUSH_MONITOR.CLIENT_SECRET, updatedMonitor.clientSecret)
                 .set(PUSH_MONITOR.INTEGRATIONS, updatedMonitor.integrations)
                 .set(PUSH_MONITOR.FAILURE_COUNT_THRESHOLD, updatedMonitor.failureCountThreshold)
+                .set(PUSH_MONITOR.CATEGORY, updatedMonitor.normalizedCategory)
                 .set(PUSH_MONITOR.UPDATED_AT, getCurrentTimestamp())
                 .where(PUSH_MONITOR.ID.eq(updatedMonitor.id))
                 .returning(PUSH_MONITOR.asterisk())
@@ -164,6 +177,7 @@ class PushMonitorRepository(
         .select(
             PUSH_MONITOR.ID.`as`(PushMonitorDetailsDto::id.name),
             PUSH_MONITOR.NAME.`as`(PushMonitorDetailsDto::name.name),
+            PUSH_MONITOR.CATEGORY.`as`(PushMonitorDetailsDto::category.name),
             PUSH_MONITOR.HEARTBEAT_INTERVAL.`as`(PushMonitorDetailsDto::heartbeatInterval.name),
             PUSH_MONITOR.GRACE_PERIOD.`as`(PushMonitorDetailsDto::gracePeriod.name),
             PUSH_MONITOR.CLIENT_SECRET.`as`(PushMonitorDetailsDto::clientSecret.name),
@@ -180,8 +194,7 @@ class PushMonitorRepository(
             latestUptimeEventSelect.field(PUSH_UPTIME_EVENT.ERROR)!!.`as`(PushMonitorDetailsDto::uptimeError.name),
             DSL.array(arrayOf<String>()).`as`(PushMonitorDetailsDto::effectiveIntegrations.name),
             PUSH_MONITOR.INTEGRATIONS.`as`(PushMonitorDetailsDto::integrations.name),
-            DSL.coalesce(statusPagesSubselect.field("slugs"), DSL.array(arrayOf<String>()))
-                .`as`(PushMonitorDetailsDto::statusPages.name),
+            statusPagesField.`as`(PushMonitorDetailsDto::statusPages.name),
             nextExpectedHeartbeatField.`as`(PushMonitorDetailsDto::nextExpectedHeartbeat.name),
             // Placeholders for fields populated by the actions layer, not by SQL
             DSL.array(arrayOf<String>()).`as`(PushMonitorDetailsDto::maintenanceWindows.name),
@@ -198,6 +211,8 @@ class PushMonitorRepository(
                         .concat(PUSH_MONITOR.NAME)
                 )
         )
+        .leftJoin(categoryStatusPagesSubselect)
+        .on(pageCategoryField.eq(PUSH_MONITOR.CATEGORY))
         .where(DSL.trueCondition())
 
     /**

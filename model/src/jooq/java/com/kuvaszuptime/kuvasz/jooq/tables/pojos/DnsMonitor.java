@@ -43,6 +43,7 @@ public class DnsMonitor implements Serializable {
     private IntegrationID[] integrations;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
+    private String category;
 
     public DnsMonitor() {}
 
@@ -66,6 +67,7 @@ public class DnsMonitor implements Serializable {
         this.integrations = value.integrations;
         this.createdAt = value.createdAt;
         this.updatedAt = value.updatedAt;
+        this.category = value.category;
     }
 
     public DnsMonitor(
@@ -87,7 +89,8 @@ public class DnsMonitor implements Serializable {
         Boolean metricsHistoryEnabled,
         IntegrationID[] integrations,
         OffsetDateTime createdAt,
-        OffsetDateTime updatedAt
+        OffsetDateTime updatedAt,
+        String category
     ) {
         this.id = id;
         this.name = name;
@@ -108,6 +111,7 @@ public class DnsMonitor implements Serializable {
         this.integrations = integrations;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.category = category;
     }
 
     /**
@@ -395,6 +399,21 @@ public class DnsMonitor implements Serializable {
         return this;
     }
 
+    /**
+     * Getter for <code>kuvasz.dns_monitor.category</code>.
+     */
+    public String getCategory() {
+        return this.category;
+    }
+
+    /**
+     * Setter for <code>kuvasz.dns_monitor.category</code>.
+     */
+    public DnsMonitor setCategory(String category) {
+        this.category = category;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -518,6 +537,12 @@ public class DnsMonitor implements Serializable {
         }
         else if (!this.updatedAt.equals(other.updatedAt))
             return false;
+        if (this.category == null) {
+            if (other.category != null)
+                return false;
+        }
+        else if (!this.category.equals(other.category))
+            return false;
         return true;
     }
 
@@ -544,6 +569,7 @@ public class DnsMonitor implements Serializable {
         result = prime * result + ((this.integrations == null) ? 0 : Arrays.deepHashCode(this.integrations));
         result = prime * result + ((this.createdAt == null) ? 0 : this.createdAt.hashCode());
         result = prime * result + ((this.updatedAt == null) ? 0 : this.updatedAt.hashCode());
+        result = prime * result + ((this.category == null) ? 0 : this.category.hashCode());
         return result;
     }
 
@@ -570,6 +596,7 @@ public class DnsMonitor implements Serializable {
         sb.append(", ").append(Arrays.deepToString(integrations));
         sb.append(", ").append(createdAt);
         sb.append(", ").append(updatedAt);
+        sb.append(", ").append(category);
 
         sb.append(")");
         return sb.toString();

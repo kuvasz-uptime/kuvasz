@@ -85,11 +85,11 @@ class StatusPageCacheTest(
             )
             val mockHttpMonitorActions = getMock(httpMonitorActions)
             every {
-                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
             } returns mockHttpMonitorList
             val mockPushMonitorActions = getMock(pushMonitorActions)
             every {
-                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null)
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
             } returns mockPushMonitorList
 
             val result = statusPageActions.getCachedDefaultStatusPageData()
@@ -100,8 +100,8 @@ class StatusPageCacheTest(
                 result.monitors shouldContainExactlyInAnyOrder mockHttpMonitorList + mockPushMonitorList
                 result shouldBe result2
                 verify(exactly = 1) {
-                    mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(any(), any())
-                    mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(any(), any())
+                    mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(any(), any(), any())
+                    mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(any(), any(), any())
                 }
             }
         }
@@ -201,6 +201,7 @@ class StatusPageCacheTest(
                 mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(
                     Duration.ofDays(30),
                     statusPageRecord().monitors?.toList(),
+                    statusPageRecord().categories?.toList(),
                 )
             } returns mockMonitorList
             val mockPushMonitorActions = getMock(pushMonitorActions)
@@ -208,6 +209,7 @@ class StatusPageCacheTest(
                 mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(
                     Duration.ofDays(30),
                     statusPageRecord().monitors?.toList(),
+                    statusPageRecord().categories?.toList(),
                 )
             } returns mockPushMonitorList
 
@@ -224,8 +226,8 @@ class StatusPageCacheTest(
                 result.systemStatus shouldBe SystemStatus.PENDING
                 verify(exactly = 1) {
                     repoMock.findById(any(), any())
-                    mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(any(), any())
-                    mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(any(), any())
+                    mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(any(), any(), any())
+                    mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(any(), any(), any())
                 }
             }
         }

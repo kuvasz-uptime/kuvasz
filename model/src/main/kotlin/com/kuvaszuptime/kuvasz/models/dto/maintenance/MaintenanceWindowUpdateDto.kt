@@ -47,6 +47,9 @@ data class MaintenanceWindowUpdateDto(
     @param:Schema(description = MaintenanceWindowDocs.MONITORS, required = false, nullable = true)
     val monitors: Set<MonitorID>?,
 
+    @param:Schema(description = MaintenanceWindowDocs.CATEGORIES, required = false, nullable = true)
+    val categories: Set<String>?,
+
     @param:Schema(description = MaintenanceWindowDocs.INTEGRATIONS, required = false, nullable = true)
     val integrations: Set<IntegrationID>?,
 ) : MaintenanceSchedule

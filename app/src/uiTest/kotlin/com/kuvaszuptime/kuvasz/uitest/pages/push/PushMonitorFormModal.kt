@@ -19,6 +19,11 @@ class PushMonitorFormModal(page: Page) : ModalView(page) {
         return this
     }
 
+    fun setCategory(value: String): PushMonitorFormModal {
+        fillCategory(value)
+        return this
+    }
+
     fun setHeartbeatInterval(value: String): PushMonitorFormModal {
         heartbeatIntervalInput.fill(value)
         return this

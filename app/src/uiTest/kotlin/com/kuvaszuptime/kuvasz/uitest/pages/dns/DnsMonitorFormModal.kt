@@ -22,6 +22,11 @@ class DnsMonitorFormModal(page: Page) : ModalView(page) {
         return this
     }
 
+    fun setCategory(value: String): DnsMonitorFormModal {
+        fillCategory(value)
+        return this
+    }
+
     fun setHost(value: String): DnsMonitorFormModal {
         hostInput.fill(value)
         return this

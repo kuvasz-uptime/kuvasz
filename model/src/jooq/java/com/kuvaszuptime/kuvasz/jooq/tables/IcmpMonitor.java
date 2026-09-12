@@ -129,6 +129,11 @@ public class IcmpMonitor extends TableImpl<IcmpMonitorRecord> {
      */
     public final TableField<IcmpMonitorRecord, OffsetDateTime> UPDATED_AT = createField(DSL.name("updated_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false).defaultValue(DSL.field(DSL.raw("now()"), SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "");
 
+    /**
+     * The column <code>kuvasz.icmp_monitor.category</code>.
+     */
+    public final TableField<IcmpMonitorRecord, String> CATEGORY = createField(DSL.name("category"), SQLDataType.CLOB, this, "");
+
     private IcmpMonitor(Name alias, Table<IcmpMonitorRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }
@@ -198,7 +203,7 @@ public class IcmpMonitor extends TableImpl<IcmpMonitorRecord> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.asList(Indexes.ICMP_MONITOR_ENABLED_IDX);
+        return Arrays.asList(Indexes.ICMP_MONITOR_CATEGORY_IDX, Indexes.ICMP_MONITOR_ENABLED_IDX);
     }
 
     @Override

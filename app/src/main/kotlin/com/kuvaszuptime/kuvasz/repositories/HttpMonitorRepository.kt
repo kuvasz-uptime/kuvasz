@@ -11,6 +11,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.http.idWithName
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
@@ -32,8 +33,12 @@ class HttpMonitorRepository(
 
     private val jsonToMapConverter = JsonNodeToMapConverter()
 
-    override fun fetchAllWithDetails(enabled: Boolean?, monitorNames: List<String>?): List<HttpMonitorDetailsDto> =
-        getMonitorsWithDetails(enabled = enabled, monitorNames = monitorNames)
+    override fun fetchAllWithDetails(
+        enabled: Boolean?,
+        monitorNames: List<String>?,
+        categories: List<String>?,
+    ): List<HttpMonitorDetailsDto> =
+        getMonitorsWithDetails(enabled = enabled, monitorNames = monitorNames, categories = categories)
 
     override fun findById(monitorId: Long, txCtx: DSLContext?): HttpMonitorRecord? = (txCtx ?: dslContext)
         .selectFrom(HTTP_MONITOR)
@@ -54,6 +59,12 @@ class HttpMonitorRepository(
         .where(HTTP_MONITOR.ENABLED.eq(enabled))
         .fetch()
 
+    override fun fetchDistinctCategories(): List<String> = dslContext
+        .selectDistinct(HTTP_MONITOR.CATEGORY)
+        .from(HTTP_MONITOR)
+        .where(HTTP_MONITOR.CATEGORY.isNotNull)
+        .fetch(HTTP_MONITOR.CATEGORY)
+
     override fun deleteById(monitorId: Long, txCtx: DSLContext?): Int = (txCtx ?: dslContext)
         .deleteFrom(HTTP_MONITOR)
         .where(HTTP_MONITOR.ID.eq(monitorId))
@@ -67,6 +78,7 @@ class HttpMonitorRepository(
         sslCheckEnabled: Boolean? = null,
         sortedBy: SortField<*>? = null,
         monitorNames: List<String>? = null,
+        categories: List<String>? = null,
     ): List<HttpMonitorDetailsDto> =
         monitorDetailsSelect()
             .apply {
@@ -76,7 +88,7 @@ class HttpMonitorRepository(
                 }
                 sslStatus.takeIf { it.isNotEmpty() }?.let { and(SSL_EVENT.STATUS.`in`(it)) }
                 sslCheckEnabled?.let { and(HTTP_MONITOR.SSL_CHECK_ENABLED.eq(it)) }
-                monitorNames?.let { and(HTTP_MONITOR.NAME.`in`(it)) }
+                selectionCondition(HTTP_MONITOR.NAME, HTTP_MONITOR.CATEGORY, monitorNames, categories)?.let { and(it) }
                 sortedBy?.let { orderBy(it, HTTP_MONITOR.ID.asc()) }
             }
             .fetchInto(HttpMonitorDetailsDto::class.java)
@@ -126,6 +138,7 @@ class HttpMonitorRepository(
                 .set(HTTP_MONITOR.REQUEST_HEADERS, updatedMonitor.requestHeaders)
                 .set(HTTP_MONITOR.EXPECTED_HEADERS, updatedMonitor.expectedHeaders)
                 .set(HTTP_MONITOR.REQUEST_BODY, updatedMonitor.requestBody)
+                .set(HTTP_MONITOR.CATEGORY, updatedMonitor.normalizedCategory)
                 .where(HTTP_MONITOR.ID.eq(updatedMonitor.id))
                 .returning(HTTP_MONITOR.asterisk())
                 .fetchOneOrThrow<HttpMonitorRecord>()
@@ -206,8 +219,8 @@ class HttpMonitorRepository(
             HTTP_MONITOR.REQUEST_HEADERS.`as`(HttpMonitorDetailsDto::requestHeaders.name).convert(jsonToMapConverter),
             HTTP_MONITOR.EXPECTED_HEADERS.`as`(HttpMonitorDetailsDto::expectedHeaders.name).convert(jsonToMapConverter),
             HTTP_MONITOR.REQUEST_BODY.`as`(HttpMonitorDetailsDto::requestBody.name),
-            DSL.coalesce(statusPagesSubselect.field("slugs"), DSL.array(arrayOf<String>()))
-                .`as`(HttpMonitorDetailsDto::statusPages.name),
+            HTTP_MONITOR.CATEGORY.`as`(HttpMonitorDetailsDto::category.name),
+            statusPagesField.`as`(HttpMonitorDetailsDto::statusPages.name),
             // Placeholders for fields populated by the actions layer, not by SQL
             DSL.array(arrayOf<String>()).`as`(HttpMonitorDetailsDto::maintenanceWindows.name),
             DSL.inline(false).`as`(HttpMonitorDetailsDto::inMaintenance.name),
@@ -225,5 +238,7 @@ class HttpMonitorRepository(
                         .concat(HTTP_MONITOR.NAME)
                 )
         )
+        .leftJoin(categoryStatusPagesSubselect)
+        .on(pageCategoryField.eq(HTTP_MONITOR.CATEGORY))
         .where(DSL.trueCondition())
 }

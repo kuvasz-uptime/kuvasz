@@ -11,6 +11,7 @@ import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -88,6 +89,23 @@ class StatusPageImporterTest(
                     result.ignoredMonitors shouldContainExactly listOf(ghostId.toString())
                 }
             }
+
+            `when`("a status page references a category that is not in use by any monitor") {
+                val withCategories = exportDto(
+                    slug = "with-categories",
+                    categories = setOf("Payments", "Nobody uses me"),
+                )
+                val result = statusPageImporter.importStatusPageConfigs(
+                    listOf(StatusPageImportAdapter(withCategories)),
+                    dryRun = false,
+                )
+
+                then("every category is imported as-is and none of them is reported as ignored") {
+                    val persisted = statusPageRepository.findBySlug("with-categories").shouldNotBeNull()
+                    persisted.categories.toList() shouldContainExactlyInAnyOrder listOf("Payments", "Nobody uses me")
+                    result.ignoredMonitors.shouldBeEmpty()
+                }
+            }
         }
 
         given("StatusPageImporter.importStatusPagesFromBackup()") {
@@ -129,6 +147,7 @@ class StatusPageImporterTest(
         title: String = "Title",
         slug: String,
         monitors: Set<MonitorID> = emptySet(),
+        categories: Set<String> = emptySet(),
     ) = StatusPageExportDto(
         title = title,
         slug = slug,
@@ -136,6 +155,7 @@ class StatusPageImporterTest(
         customFaviconUrl = null,
         public = true,
         monitors = monitors,
+        categories = categories,
     )
 
     @MockBean(StatusPageCacheInvalidator::class)

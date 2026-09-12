@@ -118,6 +118,11 @@ public class PushMonitor extends TableImpl<PushMonitorRecord> {
      */
     public final TableField<PushMonitorRecord, Long> FAILURE_COUNT_THRESHOLD = createField(DSL.name("failure_count_threshold"), SQLDataType.BIGINT.nullable(false).defaultValue(DSL.field(DSL.raw("1"), SQLDataType.BIGINT)), this, "");
 
+    /**
+     * The column <code>kuvasz.push_monitor.category</code>.
+     */
+    public final TableField<PushMonitorRecord, String> CATEGORY = createField(DSL.name("category"), SQLDataType.CLOB, this, "");
+
     private PushMonitor(Name alias, Table<PushMonitorRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }
@@ -187,7 +192,7 @@ public class PushMonitor extends TableImpl<PushMonitorRecord> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.asList(Indexes.PUSH_MONITOR_EFFECTIVE_MONITORS_IDX);
+        return Arrays.asList(Indexes.PUSH_MONITOR_CATEGORY_IDX, Indexes.PUSH_MONITOR_EFFECTIVE_MONITORS_IDX);
     }
 
     @Override

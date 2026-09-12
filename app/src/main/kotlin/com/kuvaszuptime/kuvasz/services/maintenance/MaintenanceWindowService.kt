@@ -11,11 +11,12 @@ class MaintenanceWindowService(
     private val calculator: MaintenanceWindowCalculator,
 ) {
 
-    fun isUnderMaintenance(monitorId: MonitorID): Boolean =
-        maintenanceWindowRepository.findActiveCandidatesForMonitor(monitorId).any { calculator.isActive(it) }
+    fun isUnderMaintenance(monitorId: MonitorID, category: String?): Boolean =
+        maintenanceWindowRepository.findActiveCandidatesForMonitor(monitorId, category).any { calculator.isActive(it) }
 
-    fun getWindowsForMonitor(monitorId: MonitorID): List<MaintenanceWindowDetailsDto> =
-        maintenanceWindowRepository.findActiveCandidatesForMonitor(monitorId).map { it.toDetailsDto(calculator) }
+    fun getWindowsForMonitor(monitorId: MonitorID, category: String?): List<MaintenanceWindowDetailsDto> =
+        maintenanceWindowRepository.findActiveCandidatesForMonitor(monitorId, category)
+            .map { it.toDetailsDto(calculator) }
 
     /**
      * Batch variant of [getWindowsForMonitor] for many monitors: resolves the affecting windows for all of them with a
@@ -23,8 +24,8 @@ class MaintenanceWindowService(
      * monitor gets an entry, even if it has no windows.
      */
     fun getWindowsForMonitors(
-        monitorIds: List<MonitorID>,
+        monitorsWithCategory: Map<MonitorID, String?>,
     ): Map<MonitorID, List<MaintenanceWindowDetailsDto>> =
-        maintenanceWindowRepository.findActiveCandidatesForMonitors(monitorIds)
+        maintenanceWindowRepository.findActiveCandidatesForMonitors(monitorsWithCategory)
             .mapValues { (_, windows) -> windows.map { it.toDetailsDto(calculator) } }
 }

@@ -472,6 +472,7 @@ class DnsMonitorControllerTest(
                     .put("resolverHost", "8.8.8.8")
                     .put("resolverPort", 5353)
                     .put("transport", DnsTransport.TCP.name)
+                    .put("category", "New category")
                 updateNode.replace("recordMatchers", mapper.valueToTree(newMatchers))
                 updateNode.replace("driftRecordTypes", mapper.valueToTree(listOf(DnsRecordType.NS, DnsRecordType.MX)))
                 val updatedMonitor = monitorClient.updateMonitor(monitor.id, updateNode)
@@ -484,6 +485,7 @@ class DnsMonitorControllerTest(
                     persisted.transport shouldBe DnsTransport.TCP
                     persisted.driftRecordTypes.toList() shouldBe listOf(DnsRecordType.NS, DnsRecordType.MX)
                     persisted.recordMatchersAsList() shouldBe newMatchers
+                    persisted.category shouldBe "New category"
                 }
 
                 then("it should reschedule checks") {
@@ -995,7 +997,90 @@ class DnsMonitorControllerTest(
                 }
             }
         }
-    }
+    
+        given("the category of a DNS monitor") {
+            fun createWithCategory(category: String?, monitorName: String = randomClientSecret()) =
+                monitorClient.createMonitor(
+                    DnsMonitorCreateDto(
+                        name = monitorName,
+                        host = "example.com",
+                        uptimeCheckInterval = 60,
+                        category = category,
+                    )
+                )
+
+            `when`("it is too long on creation") {
+                val ex = shouldThrow<HttpClientResponseException> { createWithCategory("a".repeat(101)) }
+
+                then("it should return a 400 with the interpolated maximum in its message") {
+                    ex.status shouldBe HttpStatus.BAD_REQUEST
+                    ex.message shouldContain "Monitor category must be at most 100 characters long"
+                }
+            }
+
+            `when`("it is exactly as long as the maximum") {
+                val created = createWithCategory("a".repeat(100))
+
+                then("it should be accepted") {
+                    created.category shouldBe "a".repeat(100)
+                }
+            }
+
+            `when`("it is blank or padded on creation") {
+                val blank = createWithCategory("   ")
+                val padded = createWithCategory("  Core services  ")
+
+                then("a blank one should be persisted as null and a padded one trimmed") {
+                    monitorRepository.findById(blank.id, null).shouldNotBeNull().category.shouldBeNull()
+                    monitorRepository.findById(padded.id, null).shouldNotBeNull().category shouldBe "Core services"
+                }
+            }
+
+            `when`("it is too long on update") {
+                val monitor = createDnsMonitor(monitorRepository, category = "Old category")
+                val updateNode = mapper.createObjectNode().put("category", "a".repeat(101))
+                val ex = shouldThrow<HttpClientResponseException> {
+                    monitorClient.updateMonitor(monitor.id, updateNode)
+                }
+
+                then("it should return a 400 and leave the monitor untouched") {
+                    ex.status shouldBe HttpStatus.BAD_REQUEST
+                    ex.message shouldContain "Monitor category must be at most 100 characters long"
+                    monitorRepository.findById(monitor.id, null).shouldNotBeNull().category shouldBe "Old category"
+                }
+            }
+
+            `when`("it is blank or padded on update") {
+                val blanked = createDnsMonitor(monitorRepository, category = "Old category")
+                val padded = createDnsMonitor(monitorRepository, category = "Old category")
+                monitorClient.updateMonitor(blanked.id, mapper.createObjectNode().put("category", "   "))
+                monitorClient.updateMonitor(padded.id, mapper.createObjectNode().put("category", "  Payments  "))
+
+                then("a blank one should be cleared and a padded one trimmed") {
+                    monitorRepository.findById(blanked.id, null).shouldNotBeNull().category.shouldBeNull()
+                    monitorRepository.findById(padded.id, null).shouldNotBeNull().category shouldBe "Payments"
+                }
+            }
+
+            `when`("it is explicitly set to null on update") {
+                val monitor = createDnsMonitor(monitorRepository, category = "Old category")
+                monitorClient.updateMonitor(monitor.id, mapper.createObjectNode().putNull("category"))
+
+                then("it should be cleared") {
+                    monitorRepository.findById(monitor.id, null).shouldNotBeNull().category.shouldBeNull()
+                }
+            }
+
+            `when`("it is not part of the update at all") {
+                val monitor = createDnsMonitor(monitorRepository, category = "Old category")
+                monitorClient.updateMonitor(monitor.id, mapper.createObjectNode().put("enabled", false))
+
+                then("it should be left untouched") {
+                    monitorRepository.findById(monitor.id, null).shouldNotBeNull().category shouldBe "Old category"
+                }
+            }
+        }
+}
 
     @MockBean(StatCalculator::class)
     fun mockStatCalculator() = mockk<StatCalculator>()

@@ -42,4 +42,6 @@ data class TcpMonitorCreateDto(
         defaultValue = TcpMonitorDefaults.METRICS_HISTORY_ENABLED.toString()
     )
     override val metricsHistoryEnabled: Boolean = TcpMonitorDefaults.METRICS_HISTORY_ENABLED,
+    @param:Schema(description = MonitorDocs.CATEGORY, required = false, nullable = true)
+    override val category: String? = null,
 ) : TcpMonitorCreator

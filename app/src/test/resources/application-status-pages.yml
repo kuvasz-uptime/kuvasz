@@ -13,6 +13,9 @@ status-pages:
     public: false
     monitors:
       - "http:test1"
+    categories:
+      - "Payments"
+      - "Search"
   - title: Status Page 3
     slug: status-page-3
     monitors:

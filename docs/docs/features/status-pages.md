@@ -20,6 +20,7 @@ Both types supports the following features:
     - average response time (a.k.a. "latency") if recorded
     - number of incidents per day
 - **Server-side caching**: To improve performance, status pages are cached on the server-side. You can configure the cache duration to balance between performance and data freshness.
+- **Monitor categories**: If you assign a [category](../management/http-monitors.md#category) to your monitors (e.g. a product or service name), the status page groups them into one section per category, each with its own aggregated status.
 
 !!!tip 
 

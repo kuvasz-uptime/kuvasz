@@ -13,6 +13,7 @@ data class PushMonitorExportDto(
     val enabled: Boolean,
     val integrations: Set<IntegrationID>,
     val failureCountThreshold: Long,
+    val category: String? = null,
 ) {
     companion object {
         fun fromMonitorRecord(record: PushMonitorRecord): PushMonitorExportDto {
@@ -24,6 +25,7 @@ data class PushMonitorExportDto(
                 enabled = record.enabled,
                 integrations = record.integrations.toSet(),
                 failureCountThreshold = record.failureCountThreshold,
+                category = record.category,
             )
         }
     }

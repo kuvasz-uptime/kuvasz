@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorCreator
+import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.validation.SupportedStatusCodes
 import com.kuvaszuptime.kuvasz.validation.ValidHeaderNames
 import com.kuvaszuptime.kuvasz.validation.WellFormedJsonString
@@ -68,6 +69,7 @@ interface HttpMonitorCreator : MonitorCreator<HttpMonitorRecord> {
     @get:NotNull(message = MonitorValidationMessages.FAILURE_COUNT_THRESHOLD_NOT_NULL)
     @get:Positive(message = MonitorValidationMessages.FAILURE_COUNT_THRESHOLD_POSITIVE)
     val failureCountThreshold: Long
+
     override fun toMonitorRecord(validatedIntegrations: Set<IntegrationID>): HttpMonitorRecord =
         HttpMonitorRecord()
             .setName(name)
@@ -91,4 +93,5 @@ interface HttpMonitorCreator : MonitorCreator<HttpMonitorRecord> {
             .setExpectedHeaders(expectedHeaders.orEmpty().toJsonNode())
             .setRequestBody(requestBody)
             .setFailureCountThreshold(failureCountThreshold)
+            .setCategory(normalizedCategory)
 }

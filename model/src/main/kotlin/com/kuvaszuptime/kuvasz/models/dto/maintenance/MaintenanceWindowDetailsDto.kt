@@ -29,6 +29,8 @@ data class MaintenanceWindowDetailsDto(
     val duration: String?,
     @param:Schema(description = MaintenanceWindowDocs.MONITORS, required = true)
     val monitors: Set<MonitorID>,
+    @param:Schema(description = MaintenanceWindowDocs.CATEGORIES, required = true)
+    val categories: Set<String>,
     @param:Schema(description = MaintenanceWindowDocs.INTEGRATIONS, required = true)
     val integrations: Set<IntegrationID>,
     @param:Schema(description = MaintenanceWindowDocs.ACTIVE, required = true)
@@ -59,6 +61,7 @@ data class MaintenanceWindowDetailsDto(
             start = record.start,
             duration = record.duration,
             monitors = record.monitors.toSet(),
+            categories = record.categories.toSet(),
             integrations = record.integrations.toSet(),
             active = active,
             nextStart = nextStart,

@@ -11,6 +11,7 @@ import kotlinx.html.*
 import kotlin.time.Duration.Companion.seconds
 
 internal const val MONITOR_TARGET_MAX_LENGTH = 40
+internal const val MONITOR_CATEGORY_MAX_LENGTH = 40
 
 /**
  * The heading of a monitor's details page: its status, id, name and a list of badges. The badge naming the monitor's
@@ -60,6 +61,17 @@ internal fun FlowContent.monitorDetailsHeading(
                                 icon = typeUiConfig.icon,
                                 color = typeUiConfig.color
                             )
+                        }
+                        monitor.category?.let { category ->
+                            li {
+                                classes(LIST_INLINE_ITEM, ALIGN_MIDDLE)
+                                testId("monitor-category-badge")
+                                inlineStatusBadge(
+                                    text = category.abbreviate(MONITOR_CATEGORY_MAX_LENGTH),
+                                    icon = Icon.TAG,
+                                    color = Color.DEFAULT,
+                                )
+                            }
                         }
                         extraBadges()
                     }

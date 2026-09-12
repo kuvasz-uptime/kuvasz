@@ -155,6 +155,18 @@ tasks.withType<Test> {
 }
 
 /**
+ * Every distinct test configuration boots its own Micronaut context (with its own connection pool), and those stay
+ * cached for the lifetime of the worker JVM, so its footprint grows with the number of specs. Recycling the worker
+ * caps that growth, which the suite needs: without it its memory use only ever climbs. The threshold is a trade-off,
+ * because the shared Postgres container is a per-JVM singleton that every fork has to start again.
+ * It is deliberately not applied to `uiTest`: that suite is smaller than the threshold anyway, and forking it would
+ * also mean booting a fresh browser.
+ */
+tasks.named<Test>("test") {
+    forkEvery = 100
+}
+
+/**
  * A dedicated `uiTest` source set holding the browser-driven (Playwright) end-to-end suite. It boots the real
  * Micronaut app in-process against the shared Testcontainers Postgres and drives it through a headless Chromium.
  * It is intentionally NOT part of `check` (run it explicitly via `./gradlew :app:uiTest`) and is excluded from the

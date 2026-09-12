@@ -374,12 +374,16 @@ class TcpMonitorControllerTest(
             `when`("a monitor is updated") {
                 val monitor = createTcpMonitor(monitorRepository, host = "1.1.1.1", port = 80)
 
-                val updateNode = mapper.createObjectNode().put("host", "8.8.8.8").put("port", 443)
+                val updateNode = mapper.createObjectNode()
+                    .put("host", "8.8.8.8")
+                    .put("port", 443)
+                    .put("category", "New category")
                 val updatedMonitor = monitorClient.updateMonitor(monitor.id, updateNode)
 
                 then("it should update the monitor") {
                     updatedMonitor.host shouldBe "8.8.8.8"
                     updatedMonitor.port shouldBe 443
+                    updatedMonitor.category shouldBe "New category"
                     monitorRepository.findById(monitor.id, null).shouldNotBeNull().port shouldBe 443
                 }
 
@@ -860,7 +864,91 @@ class TcpMonitorControllerTest(
                 }
             }
         }
-    }
+    
+        given("the category of a TCP monitor") {
+            fun createWithCategory(category: String?, monitorName: String = randomClientSecret()) =
+                monitorClient.createMonitor(
+                    TcpMonitorCreateDto(
+                        name = monitorName,
+                        host = "127.0.0.1",
+                        port = 5432,
+                        uptimeCheckInterval = 60,
+                        category = category,
+                    )
+                )
+
+            `when`("it is too long on creation") {
+                val ex = shouldThrow<HttpClientResponseException> { createWithCategory("a".repeat(101)) }
+
+                then("it should return a 400 with the interpolated maximum in its message") {
+                    ex.status shouldBe HttpStatus.BAD_REQUEST
+                    ex.message shouldContain "Monitor category must be at most 100 characters long"
+                }
+            }
+
+            `when`("it is exactly as long as the maximum") {
+                val created = createWithCategory("a".repeat(100))
+
+                then("it should be accepted") {
+                    created.category shouldBe "a".repeat(100)
+                }
+            }
+
+            `when`("it is blank or padded on creation") {
+                val blank = createWithCategory("   ")
+                val padded = createWithCategory("  Core services  ")
+
+                then("a blank one should be persisted as null and a padded one trimmed") {
+                    monitorRepository.findById(blank.id, null).shouldNotBeNull().category.shouldBeNull()
+                    monitorRepository.findById(padded.id, null).shouldNotBeNull().category shouldBe "Core services"
+                }
+            }
+
+            `when`("it is too long on update") {
+                val monitor = createTcpMonitor(monitorRepository, category = "Old category")
+                val updateNode = mapper.createObjectNode().put("category", "a".repeat(101))
+                val ex = shouldThrow<HttpClientResponseException> {
+                    monitorClient.updateMonitor(monitor.id, updateNode)
+                }
+
+                then("it should return a 400 and leave the monitor untouched") {
+                    ex.status shouldBe HttpStatus.BAD_REQUEST
+                    ex.message shouldContain "Monitor category must be at most 100 characters long"
+                    monitorRepository.findById(monitor.id, null).shouldNotBeNull().category shouldBe "Old category"
+                }
+            }
+
+            `when`("it is blank or padded on update") {
+                val blanked = createTcpMonitor(monitorRepository, category = "Old category")
+                val padded = createTcpMonitor(monitorRepository, category = "Old category")
+                monitorClient.updateMonitor(blanked.id, mapper.createObjectNode().put("category", "   "))
+                monitorClient.updateMonitor(padded.id, mapper.createObjectNode().put("category", "  Payments  "))
+
+                then("a blank one should be cleared and a padded one trimmed") {
+                    monitorRepository.findById(blanked.id, null).shouldNotBeNull().category.shouldBeNull()
+                    monitorRepository.findById(padded.id, null).shouldNotBeNull().category shouldBe "Payments"
+                }
+            }
+
+            `when`("it is explicitly set to null on update") {
+                val monitor = createTcpMonitor(monitorRepository, category = "Old category")
+                monitorClient.updateMonitor(monitor.id, mapper.createObjectNode().putNull("category"))
+
+                then("it should be cleared") {
+                    monitorRepository.findById(monitor.id, null).shouldNotBeNull().category.shouldBeNull()
+                }
+            }
+
+            `when`("it is not part of the update at all") {
+                val monitor = createTcpMonitor(monitorRepository, category = "Old category")
+                monitorClient.updateMonitor(monitor.id, mapper.createObjectNode().put("enabled", false))
+
+                then("it should be left untouched") {
+                    monitorRepository.findById(monitor.id, null).shouldNotBeNull().category shouldBe "Old category"
+                }
+            }
+        }
+}
 
     @MockBean(StatCalculator::class)
     fun mockStatCalculator() = mockk<StatCalculator>()

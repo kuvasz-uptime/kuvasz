@@ -59,7 +59,9 @@ data class HttpMonitorDto(
     @param:Schema(description = MonitorDocs.CREATED_AT, required = true)
     val createdAt: OffsetDateTime,
     @param:Schema(description = MonitorDocs.UPDATED_AT, required = true, nullable = true)
-    val updatedAt: OffsetDateTime?
+    val updatedAt: OffsetDateTime?,
+    @param:Schema(description = MonitorDocs.CATEGORY, required = true, nullable = true)
+    val category: String? = null,
 ) {
     companion object {
         fun fromMonitorRecord(record: HttpMonitorRecord) =
@@ -88,6 +90,7 @@ data class HttpMonitorDto(
                 requestBody = record.requestBody,
                 createdAt = record.createdAt,
                 updatedAt = record.updatedAt,
+                category = record.category,
             )
     }
 }

@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDocs
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.WithCategory
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordMatcher
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsResponseCodeMatchers
@@ -19,6 +20,7 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Positive
+import jakarta.validation.constraints.Size
 
 @Introspected
 @ValidDnsResponseCode
@@ -92,4 +94,8 @@ data class DnsMonitorUpdateDto(
     @get:NotNull
     @param:Schema(description = DnsMonitorDocs.METRICS_HISTORY_ENABLED, required = false, nullable = false)
     val metricsHistoryEnabled: Boolean?,
-) : DnsResponseCodeMatchers
+
+    @get:Size(max = Validation.MAX_CATEGORY_LENGTH, message = MonitorValidationMessages.CATEGORY_MAX_SIZE)
+    @param:Schema(description = MonitorDocs.CATEGORY, required = false, nullable = true)
+    override val category: String?,
+) : DnsResponseCodeMatchers, WithCategory

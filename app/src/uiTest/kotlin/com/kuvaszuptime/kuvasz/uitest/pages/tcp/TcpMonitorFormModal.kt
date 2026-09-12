@@ -18,6 +18,11 @@ class TcpMonitorFormModal(page: Page) : ModalView(page) {
         return this
     }
 
+    fun setCategory(value: String): TcpMonitorFormModal {
+        fillCategory(value)
+        return this
+    }
+
     fun setHost(value: String): TcpMonitorFormModal {
         hostInput.fill(value)
         return this

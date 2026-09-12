@@ -80,6 +80,7 @@ class StatusPageCreateDtoDefaultsTest : BehaviorSpec({
         then("the default values should be set correctly") {
             dto.public shouldBe StatusPageDefaults.CUSTOM_PAGE_PUBLIC
             dto.monitors.shouldBeEmpty()
+            dto.categories.shouldBeEmpty()
             dto.customLogoUrl shouldBe null
             dto.customFaviconUrl shouldBe null
         }

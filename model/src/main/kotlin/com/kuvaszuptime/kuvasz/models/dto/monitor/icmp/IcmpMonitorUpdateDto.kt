@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDocs
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.WithCategory
 import io.micronaut.core.annotation.Introspected
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.Max
@@ -11,6 +12,7 @@ import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Positive
+import jakarta.validation.constraints.Size
 
 @Introspected
 data class IcmpMonitorUpdateDto(
@@ -66,4 +68,8 @@ data class IcmpMonitorUpdateDto(
     @get:NotNull
     @param:Schema(description = IcmpMonitorDocs.METRICS_HISTORY_ENABLED, required = false, nullable = false)
     val metricsHistoryEnabled: Boolean?,
-)
+
+    @get:Size(max = Validation.MAX_CATEGORY_LENGTH, message = MonitorValidationMessages.CATEGORY_MAX_SIZE)
+    @param:Schema(description = MonitorDocs.CATEGORY, required = false, nullable = true)
+    override val category: String?,
+) : WithCategory

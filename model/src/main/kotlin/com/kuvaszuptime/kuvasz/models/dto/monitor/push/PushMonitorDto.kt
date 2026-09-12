@@ -31,6 +31,8 @@ data class PushMonitorDto(
     val updatedAt: OffsetDateTime,
     @param:Schema(description = MonitorDocs.FAILURE_COUNT_THRESHOLD, required = true)
     val failureCountThreshold: Long,
+    @param:Schema(description = MonitorDocs.CATEGORY, required = true, nullable = true)
+    val category: String? = null,
 ) {
     companion object {
         fun fromMonitorRecord(record: PushMonitorRecord) =
@@ -46,6 +48,7 @@ data class PushMonitorDto(
                 createdAt = record.createdAt,
                 updatedAt = record.updatedAt,
                 failureCountThreshold = record.failureCountThreshold,
+                category = record.category,
             )
     }
 }

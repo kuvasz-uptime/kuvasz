@@ -19,6 +19,11 @@ class HttpMonitorFormModal(page: Page) : ModalView(page) {
         return this
     }
 
+    fun setCategory(value: String): HttpMonitorFormModal {
+        fillCategory(value)
+        return this
+    }
+
     fun setUrl(value: String): HttpMonitorFormModal {
         urlInput.fill(value)
         return this

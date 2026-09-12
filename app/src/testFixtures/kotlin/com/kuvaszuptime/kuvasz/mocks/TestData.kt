@@ -76,6 +76,7 @@ fun createHttpMonitor(
     requestBody: String? = null,
     failureCountThreshold: Long = 1L,
     sensitiveUrl: Boolean = false,
+    category: String? = null,
 ): HttpMonitorRecord {
     val monitor = HttpMonitorRecord()
         .setName(monitorName)
@@ -101,6 +102,7 @@ fun createHttpMonitor(
         .setRequestBody(requestBody)
         .setFailureCountThreshold(failureCountThreshold)
         .setSensitiveUrl(sensitiveUrl)
+        .setCategory(category)
     return repository.returningInsert(monitor)
 }
 
@@ -114,6 +116,7 @@ fun createPushMonitor(
     integrations: List<IntegrationID> = emptyList(),
     lastHeartbeat: OffsetDateTime? = null,
     failureCountThreshold: Long = 1L,
+    category: String? = null,
 ): PushMonitorRecord {
     val monitor = PushMonitorRecord()
         .setName(monitorName)
@@ -125,6 +128,7 @@ fun createPushMonitor(
         .setIntegrations(integrations.toTypedArray())
         .setLastHeartbeat(lastHeartbeat)
         .setFailureCountThreshold(failureCountThreshold)
+        .setCategory(category)
     return repository.returningInsert(monitor)
 }
 
@@ -221,6 +225,7 @@ fun createStatusPage(
     slug: String = randomClientSecret(),
     public: Boolean = StatusPageDefaults.CUSTOM_PAGE_PUBLIC,
     monitors: List<MonitorID> = emptyList(),
+    categories: List<String> = emptyList(),
     customLogoUrl: String? = null,
     customFaviconUrl: String? = null,
 ) = dslContext
@@ -233,6 +238,7 @@ fun createStatusPage(
             .setCustomFaviconUrl(customFaviconUrl)
             .setPublic(public)
             .setMonitors(monitors.toTypedArray())
+            .setCategories(categories.toTypedArray())
     )
     .returning(STATUS_PAGE.asterisk())
     .fetchOneOrThrow<StatusPageRecord>()
@@ -249,6 +255,7 @@ fun createMaintenanceWindow(
     start: OffsetDateTime? = null,
     duration: String? = null,
     monitors: List<MonitorID> = emptyList(),
+    categories: List<String> = emptyList(),
     integrations: List<IntegrationID> = emptyList(),
 ): MaintenanceWindowRecord = dslContext
     .insertInto(MAINTENANCE_WINDOW)
@@ -263,6 +270,7 @@ fun createMaintenanceWindow(
             .setStart(start)
             .setDuration(duration)
             .setMonitors(monitors.toTypedArray())
+            .setCategories(categories.toTypedArray())
             .setIntegrations(integrations.toTypedArray())
     )
     .returning(MAINTENANCE_WINDOW.asterisk())
@@ -280,6 +288,7 @@ fun createIcmpMonitor(
     failureCountThreshold: Long = 1L,
     integrations: List<IntegrationID> = emptyList(),
     metricsHistoryEnabled: Boolean = true,
+    category: String? = null,
 ): IcmpMonitorRecord {
     val monitor = IcmpMonitorRecord()
         .setName(monitorName)
@@ -293,6 +302,7 @@ fun createIcmpMonitor(
         .setCreatedAt(getCurrentTimestamp())
         .setIntegrations(integrations.toTypedArray())
         .setMetricsHistoryEnabled(metricsHistoryEnabled)
+        .setCategory(category)
     return repository.returningInsert(monitor)
 }
 
@@ -308,6 +318,7 @@ fun createTcpMonitor(
     failureCountThreshold: Long = 1L,
     integrations: List<IntegrationID> = emptyList(),
     metricsHistoryEnabled: Boolean = true,
+    category: String? = null,
 ): TcpMonitorRecord {
     val monitor = TcpMonitorRecord()
         .setName(monitorName)
@@ -321,6 +332,7 @@ fun createTcpMonitor(
         .setCreatedAt(getCurrentTimestamp())
         .setIntegrations(integrations.toTypedArray())
         .setMetricsHistoryEnabled(metricsHistoryEnabled)
+        .setCategory(category)
     return repository.returningInsert(monitor)
 }
 
@@ -343,6 +355,7 @@ fun createDnsMonitor(
     failureCountThreshold: Long = 1L,
     integrations: List<IntegrationID> = emptyList(),
     metricsHistoryEnabled: Boolean = true,
+    category: String? = null,
 ): DnsMonitorRecord {
     val monitor = DnsMonitorRecord()
         .setName(monitorName)
@@ -362,6 +375,7 @@ fun createDnsMonitor(
         .setCreatedAt(getCurrentTimestamp())
         .setIntegrations(integrations.toTypedArray())
         .setMetricsHistoryEnabled(metricsHistoryEnabled)
+        .setCategory(category)
     return repository.returningInsert(monitor)
 }
 

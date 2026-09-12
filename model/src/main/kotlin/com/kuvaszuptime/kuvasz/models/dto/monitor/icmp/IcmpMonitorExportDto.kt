@@ -16,6 +16,7 @@ data class IcmpMonitorExportDto(
     val enabled: Boolean,
     val integrations: Set<IntegrationID>,
     val metricsHistoryEnabled: Boolean,
+    val category: String? = null,
 ) {
     companion object {
         fun fromMonitorRecord(record: IcmpMonitorRecord): IcmpMonitorExportDto {
@@ -30,6 +31,7 @@ data class IcmpMonitorExportDto(
                 enabled = record.enabled,
                 integrations = record.integrations.toSet(),
                 metricsHistoryEnabled = record.metricsHistoryEnabled,
+                category = record.category,
             )
         }
     }

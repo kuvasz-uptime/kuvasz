@@ -118,7 +118,7 @@ class HttpCheckScheduler(
     @Suppress("TooGenericExceptionCaught")
     internal fun runSSLCheck(monitor: HttpMonitorRecord) {
         try {
-            if (maintenanceWindowService.isUnderMaintenance(monitor.monitorId())) {
+            if (maintenanceWindowService.isUnderMaintenance(monitor.monitorId(), monitor.category)) {
                 // SSL checks only run once a day, so simply skipping them under maintenance could delay a check until
                 // the next day (or indefinitely for daily recurring maintenance). Instead, we re-schedule the check
                 // with a short initial delay, effectively retrying until the maintenance window is over.

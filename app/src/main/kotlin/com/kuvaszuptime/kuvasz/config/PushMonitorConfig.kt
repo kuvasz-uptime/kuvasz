@@ -28,4 +28,6 @@ interface PushMonitorConfig : PushMonitorCreator, MonitorConfig {
 
     @get:Bindable(defaultValue = PushMonitorDefaults.FAILURE_COUNT_THRESHOLD.toString())
     override val failureCountThreshold: Long
+
+    override val category: String?
 }

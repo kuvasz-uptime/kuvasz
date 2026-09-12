@@ -813,6 +813,7 @@ const isValidSlug = (slug) => {
 const upsertHttpMonitorForm = (
     monitor,
     errorMessages,
+    categorySelectId,
     acceptedStatusCodeSelectId,
     supportedHttpStatusCodes,
     globalIntegrationCount
@@ -848,6 +849,8 @@ const upsertHttpMonitorForm = (
             this.followRedirects = (source?.followRedirects != null ? source?.followRedirects : true);
             this.requestMethod = source?.requestMethod || 'GET';
             this.integrations = source?.integrations || [];
+            this.category = source?.category || null;
+            resetCategorySelect(categorySelectId, this.category);
             this.selectedHttpStatusCodes = source?.expectedStatusCodes?.map(code => code.toString()) || [];
             this.expectedKeyword = source?.expectedKeyword || null;
             this.expectedKeywordCaseSensitive = source?.expectedKeywordCaseSensitive || false;
@@ -940,6 +943,7 @@ const upsertHttpMonitorForm = (
             this.errors = {};
             this.formError = null;
             this.validateName();
+            this.validateCategory();
             this.validateUrl();
             this.validateSslExpiryThreshold();
             this.validateFailureCountThreshold();
@@ -952,6 +956,14 @@ const upsertHttpMonitorForm = (
                 this.errors.name = errorMessages.nameRequired;
             } else {
                 this.errors.name = null;
+            }
+        },
+
+        validateCategory() {
+            if (this.category && this.category.length > 100) {
+                this.errors.category = this.errorMessages.categoryTooLong;
+            } else {
+                this.errors.category = null;
             }
         },
 
@@ -1037,6 +1049,7 @@ const upsertHttpMonitorForm = (
                     uptimeCheckInterval: this.uptimeCheckInterval,
                     requestMethod: this.requestMethod,
                     integrations: this.integrations,
+                    category: sanitizeTextInput(this.category),
                     expectedStatusCodes: this.selectedHttpStatusCodes,
                     expectedKeyword: sanitizeTextInput(this.expectedKeyword),
                     expectedKeywordCaseSensitive: this.expectedKeywordCaseSensitive,
@@ -1098,6 +1111,7 @@ const upsertHttpMonitorForm = (
 const upsertPushMonitorForm = (
     monitor,
     errorMessages,
+    categorySelectId,
     globalIntegrationCount
 ) => {
     const originalMonitor = monitor || null;
@@ -1124,6 +1138,8 @@ const upsertPushMonitorForm = (
             this.failureCountThreshold = source?.failureCountThreshold || 1;
             this.clientSecret = source?.clientSecret || createRandomSecret();
             this.integrations = source?.integrations || [];
+            this.category = source?.category || null;
+            resetCategorySelect(categorySelectId, this.category);
             this.errors = {};
             this.formError = null;
         },
@@ -1159,6 +1175,7 @@ const upsertPushMonitorForm = (
             this.errors = {};
             this.formError = null;
             this.validateName();
+            this.validateCategory();
             this.validateHeartbeatInterval();
             this.validateGracePeriod();
             this.validateClientSecret();
@@ -1170,6 +1187,14 @@ const upsertPushMonitorForm = (
                 this.errors.name = errorMessages.nameRequired;
             } else {
                 this.errors.name = null;
+            }
+        },
+
+        validateCategory() {
+            if (this.category && this.category.length > 100) {
+                this.errors.category = this.errorMessages.categoryTooLong;
+            } else {
+                this.errors.category = null;
             }
         },
 
@@ -1225,6 +1250,7 @@ const upsertPushMonitorForm = (
                     gracePeriod: this.gracePeriod,
                     clientSecret: this.clientSecret,
                     integrations: this.integrations,
+                    category: sanitizeTextInput(this.category),
                     failureCountThreshold: this.failureCountThreshold
                 };
                 if (!this.isUpdate) {
@@ -1280,6 +1306,7 @@ const upsertPushMonitorForm = (
 const upsertIcmpMonitorForm = (
     monitor,
     errorMessages,
+    categorySelectId,
     globalIntegrationCount
 ) => {
     const originalMonitor = monitor || null;
@@ -1308,6 +1335,8 @@ const upsertIcmpMonitorForm = (
             this.packetLossThreshold = source?.packetLossThreshold || 100;
             this.failureCountThreshold = source?.failureCountThreshold || 1;
             this.integrations = source?.integrations || [];
+            this.category = source?.category || null;
+            resetCategorySelect(categorySelectId, this.category);
             this.metricsHistoryEnabled = (source?.metricsHistoryEnabled != null ? source?.metricsHistoryEnabled : true);
             this.errors = {};
             this.formError = null;
@@ -1331,6 +1360,7 @@ const upsertIcmpMonitorForm = (
             this.errors = {};
             this.formError = null;
             this.validateName();
+            this.validateCategory();
             this.validateHost();
             this.validateUptimeCheckInterval();
             this.validatePacketCount();
@@ -1344,6 +1374,14 @@ const upsertIcmpMonitorForm = (
                 this.errors.name = this.errorMessages.nameRequired;
             } else {
                 this.errors.name = null;
+            }
+        },
+
+        validateCategory() {
+            if (this.category && this.category.length > 100) {
+                this.errors.category = this.errorMessages.categoryTooLong;
+            } else {
+                this.errors.category = null;
             }
         },
 
@@ -1416,6 +1454,7 @@ const upsertIcmpMonitorForm = (
                     packetLossThreshold: this.packetLossThreshold,
                     failureCountThreshold: this.failureCountThreshold,
                     integrations: this.integrations,
+                    category: sanitizeTextInput(this.category),
                     metricsHistoryEnabled: this.metricsHistoryEnabled,
                 };
                 if (!this.isUpdate) {
@@ -1470,6 +1509,7 @@ const upsertIcmpMonitorForm = (
 const upsertTcpMonitorForm = (
     monitor,
     errorMessages,
+    categorySelectId,
     globalIntegrationCount
 ) => {
     const originalMonitor = monitor || null;
@@ -1498,6 +1538,8 @@ const upsertTcpMonitorForm = (
             this.latencyThresholdMs = source?.latencyThresholdMs != null ? source.latencyThresholdMs : '';
             this.failureCountThreshold = source?.failureCountThreshold || 1;
             this.integrations = source?.integrations || [];
+            this.category = source?.category || null;
+            resetCategorySelect(categorySelectId, this.category);
             this.metricsHistoryEnabled = (source?.metricsHistoryEnabled != null ? source?.metricsHistoryEnabled : true);
             this.errors = {};
             this.formError = null;
@@ -1521,6 +1563,7 @@ const upsertTcpMonitorForm = (
             this.errors = {};
             this.formError = null;
             this.validateName();
+            this.validateCategory();
             this.validateHost();
             this.validatePort();
             this.validateUptimeCheckInterval();
@@ -1534,6 +1577,14 @@ const upsertTcpMonitorForm = (
                 this.errors.name = this.errorMessages.nameRequired;
             } else {
                 this.errors.name = null;
+            }
+        },
+
+        validateCategory() {
+            if (this.category && this.category.length > 100) {
+                this.errors.category = this.errorMessages.categoryTooLong;
+            } else {
+                this.errors.category = null;
             }
         },
 
@@ -1608,6 +1659,7 @@ const upsertTcpMonitorForm = (
                     latencyThresholdMs: (this.latencyThresholdMs === '' || this.latencyThresholdMs == null) ? null : parseInt(this.latencyThresholdMs),
                     failureCountThreshold: this.failureCountThreshold,
                     integrations: this.integrations,
+                    category: sanitizeTextInput(this.category),
                     metricsHistoryEnabled: this.metricsHistoryEnabled,
                 };
                 if (!this.isUpdate) {
@@ -1662,6 +1714,7 @@ const upsertTcpMonitorForm = (
 const upsertDnsMonitorForm = (
     monitor,
     errorMessages,
+    categorySelectId,
     globalIntegrationCount
 ) => {
     const originalMonitor = monitor || null;
@@ -1696,6 +1749,8 @@ const upsertDnsMonitorForm = (
             this.latencyThresholdMs = source?.latencyThresholdMs != null ? source.latencyThresholdMs : '';
             this.failureCountThreshold = source?.failureCountThreshold || 1;
             this.integrations = source?.integrations || [];
+            this.category = source?.category || null;
+            resetCategorySelect(categorySelectId, this.category);
             this.metricsHistoryEnabled = (source?.metricsHistoryEnabled != null ? source?.metricsHistoryEnabled : true);
             this.newMatcherRecordType = 'A';
             this.newMatcherMatchType = 'CONTAINS';
@@ -1723,6 +1778,7 @@ const upsertDnsMonitorForm = (
             this.errors = {};
             this.formError = null;
             this.validateName();
+            this.validateCategory();
             this.validateHost();
             this.validateResolverPort();
             this.validateUptimeCheckInterval();
@@ -1737,6 +1793,14 @@ const upsertDnsMonitorForm = (
                 this.errors.name = this.errorMessages.nameRequired;
             } else {
                 this.errors.name = null;
+            }
+        },
+
+        validateCategory() {
+            if (this.category && this.category.length > 100) {
+                this.errors.category = this.errorMessages.categoryTooLong;
+            } else {
+                this.errors.category = null;
             }
         },
 
@@ -1873,6 +1937,7 @@ const upsertDnsMonitorForm = (
                     latencyThresholdMs: (this.latencyThresholdMs === '' || this.latencyThresholdMs == null) ? null : parseInt(this.latencyThresholdMs),
                     failureCountThreshold: this.failureCountThreshold,
                     integrations: this.integrations,
+                    category: sanitizeTextInput(this.category),
                     metricsHistoryEnabled: this.metricsHistoryEnabled,
                 };
                 if (!this.isUpdate) {
@@ -1929,6 +1994,7 @@ const upsertStatusPageForm = (
     errorMessages,
     monitorSelectId,
     selectableMonitors,
+    categorySelectId,
 ) => {
     const originalStatusPage = statusPage || null;
     return {
@@ -1937,6 +2003,11 @@ const upsertStatusPageForm = (
         formError: null,
         isUpdate: !!statusPage,
         selectableMonitors: selectableMonitors || [],
+        /*
+         The persisted categories have to be in the DOM as options before TomSelect takes the select over, because
+         the rest of them only arrives when the fetch resolves. Never reassigned, so it cannot loop with x-model.
+        */
+        initialCategories: originalStatusPage?.categories || [],
         imagePreviewState: {},
 
         init() {
@@ -1949,6 +2020,7 @@ const upsertStatusPageForm = (
             this.customLogoUrl = originalStatusPage?.customLogoUrl || null;
             this.customFaviconUrl = originalStatusPage?.customFaviconUrl || null;
             this.selectedMonitors = originalStatusPage?.monitors || [];
+            this.selectedCategories = originalStatusPage?.categories || [];
             this.public = (originalStatusPage?.public != null ? originalStatusPage?.public : false);
             this.errors = {};
             this.formError = null;
@@ -1958,6 +2030,7 @@ const upsertStatusPageForm = (
                     ts.addItem(monitor, true);
                 });
             });
+            resetCategoryMultiSelect(categorySelectId, this.selectedCategories);
         },
 
         validate() {
@@ -2004,6 +2077,7 @@ const upsertStatusPageForm = (
                     customLogoUrl: this.customLogoUrl,
                     customFaviconUrl: this.customFaviconUrl,
                     monitors: this.selectedMonitors,
+                    categories: this.selectedCategories,
                     public: this.public
                 };
 
@@ -2099,6 +2173,103 @@ const resetTomSelectState = (elementId, afterReset = (tomSelectInstance) => {
     if (monitorSelect?.tomselect instanceof TomSelect) {
         afterReset(monitorSelect.tomselect);
     }
+};
+
+/*
+ Loads every category the instance knows about: the ones in use by a monitor, plus the ones that are only referenced
+ by a status page or a maintenance window. Fails open with an empty list: the selects take a brand new category
+ anyway, so an unreachable endpoint must not block the form.
+*/
+const fetchCategories = async () => {
+    try {
+        const response = await fetch('/api/internal/categories');
+        return response.ok ? await response.json() : [];
+    } catch (error) {
+        console.error('Error fetching the categories:', error);
+        return [];
+    }
+};
+
+// The "add a brand new one" row of a category select, shared by the single and the multi value variants
+const categoryCreateRenderer = (addLabel) => ({
+    option_create: (data, escape) => `<div class="create">${escape(addLabel)}: <strong>${escape(data.input)}</strong></div>`
+});
+
+/*
+ The options are loaded when the modal opens, not when it's rendered. The dashboard renders the create modal of all
+ five monitor types at once, and a form nobody opens shouldn't cost a request.
+*/
+const loadCategoryOptions = (tomSelect) => {
+    const loadOptions = () => fetchCategories().then(categories => {
+        // Already known options are ignored by TomSelect, so re-opening the modal just picks up the new ones
+        tomSelect.addOptions(categories.map(category => ({value: category, text: category})));
+    });
+    const modal = tomSelect.input.closest('.modal');
+    if (modal) {
+        modal.addEventListener('show.bs.modal', loadOptions);
+    } else {
+        loadOptions();
+    }
+};
+
+/*
+ The single value category select of the monitor forms: it offers the already existing categories with an
+ autocomplete, but a brand new one can be typed in as well.
+*/
+const initCategorySelect = (selector, addLabel) => {
+    const tomSelect = new TomSelect(selector, {
+        create: true,
+        persist: false,
+        maxItems: 1,
+        plugins: ['clear_button'],
+        render: categoryCreateRenderer(addLabel)
+    });
+    loadCategoryOptions(tomSelect);
+};
+
+/*
+ The multi value category select of the status page and maintenance window forms, where the categories select the
+ covered monitors in addition to the ones picked explicitly. A category that is not in use by any monitor yet is
+ accepted here too, it simply covers nothing until a monitor is tagged with it.
+*/
+const initCategoryMultiSelect = (selector, addLabel) => {
+    const tomSelect = new TomSelect(selector, {
+        create: true,
+        persist: false,
+        maxOptions: null,
+        plugins: ['clear_button', 'remove_button'],
+        render: categoryCreateRenderer(addLabel),
+        onItemAdd: function () {
+            this.setTextboxValue('');
+        }
+    });
+    loadCategoryOptions(tomSelect);
+};
+
+/*
+ Restores the category of the form after a reset (edit, clone). The option itself has to be re-added, because a
+ category that isn't persisted yet is dropped by TomSelect as soon as the selection is cleared (persist: false).
+*/
+const resetCategorySelect = (elementId, category) => {
+    resetTomSelectState(elementId, (ts) => {
+        if (category) {
+            ts.addOption({value: category, text: category});
+            ts.setValue(category, true);
+        }
+    });
+};
+
+/*
+ The multi value counterpart of resetCategorySelect. The options have to be re-added for the same reason: a category
+ that the endpoint does not offer (yet) is dropped by TomSelect as soon as the selection is cleared.
+*/
+const resetCategoryMultiSelect = (elementId, categories) => {
+    resetTomSelectState(elementId, (ts) => {
+        (categories || []).forEach(category => {
+            ts.addOption({value: category, text: category});
+            ts.addItem(category, true);
+        });
+    });
 };
 
 const renderMonitorOption = (data, escape) => {
@@ -2356,6 +2527,7 @@ const upsertMaintenanceWindowForm = (
     errorMessages,
     monitorSelectId,
     selectableMonitors,
+    categorySelectId,
 ) => {
     const originalWindow = maintenanceWindow || null;
     return {
@@ -2364,6 +2536,8 @@ const upsertMaintenanceWindowForm = (
         formError: null,
         isUpdate: !!maintenanceWindow,
         selectableMonitors: selectableMonitors || [],
+        // See the same field on upsertStatusPageForm
+        initialCategories: originalWindow?.categories || [],
         // The integrations accordion expects this; maintenance windows never auto-apply global integrations
         globalIntegrationCount: 0,
 
@@ -2383,6 +2557,7 @@ const upsertMaintenanceWindowForm = (
             this.showOnStatusPages =
                 (originalWindow?.showOnStatusPages != null ? originalWindow.showOnStatusPages : false);
             this.selectedMonitors = originalWindow?.monitors || [];
+            this.selectedCategories = originalWindow?.categories || [];
             this.integrations = originalWindow?.integrations || [];
             this.errors = {};
             this.formError = null;
@@ -2392,6 +2567,7 @@ const upsertMaintenanceWindowForm = (
                     ts.addItem(monitor, true);
                 });
             });
+            resetCategoryMultiSelect(categorySelectId, this.selectedCategories);
         },
 
         validate() {
@@ -2495,6 +2671,7 @@ const upsertMaintenanceWindowForm = (
                 start: isSingle && this.start ? new Date(this.start).toISOString() : null,
                 duration: isManual ? null : this.duration,
                 monitors: this.selectedMonitors,
+                categories: this.selectedCategories,
                 integrations: this.integrations
             };
         },
@@ -2561,6 +2738,10 @@ if (typeof module !== 'undefined' && module.exports) {
         toDateTimeLocalValue,
         resolveMaintenanceWindowType,
         createRandomSecret,
+        // Helpers of the category select
+        fetchCategories,
+        resetCategorySelect,
+        resetCategoryMultiSelect,
         // Alpine x-data component factories
         upsertHttpMonitorForm,
         upsertPushMonitorForm,

@@ -1,9 +1,9 @@
 package com.kuvaszuptime.kuvasz.services.statuspage
 
 import com.kuvaszuptime.kuvasz.config.DefaultStatusPageConfig
-import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.records.MaintenanceWindowRecord
 import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.CategoryStatusDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDataDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageMaintenanceWindowDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageMonitorDetailsDto
@@ -41,7 +41,9 @@ class StatusPageDataActions(
         val monitors = monitorDataProviders.flatMap { provider ->
             provider.getStatusPageDataOfEnabledMonitors(
                 period = Duration.parse(DEFAULT_METRICS_PERIOD),
+                // No selector at all: the default page always shows every enabled monitor
                 monitorIds = null,
+                categories = null,
             )
         }
 
@@ -51,7 +53,8 @@ class StatusPageDataActions(
             title = defaultStatusPageConfig.title,
             customLogoUrl = defaultStatusPageConfig.customLogoUrl,
             customFaviconUrl = defaultStatusPageConfig.customFaviconUrl,
-            systemStatus = calculateSystemStatus(monitors),
+            systemStatus = SystemStatus.fromMonitors(monitors),
+            categoryStatus = calculateCategoryStatus(monitors),
             generatedAt = getCurrentTimestamp(),
             monitors = monitors,
             activeMaintenanceWindows = activeAndUpcomingWindows.active,
@@ -59,26 +62,32 @@ class StatusPageDataActions(
         )
     }
 
-    private fun calculateSystemStatus(monitors: List<StatusPageMonitorDetailsDto>) =
-        if (monitors.isEmpty()) {
-            SystemStatus.PENDING
-        } else {
-            val monitorStatusMap = monitors.groupBy { it.uptimeStatus }
-            val monitorCnt = monitors.size
-            val upCnt = monitorStatusMap[UptimeStatus.UP]?.size ?: 0
-            val downCnt = monitorStatusMap[UptimeStatus.DOWN]?.size ?: 0
-            val maintenanceCnt = monitors.count { it.inMaintenance }
-            when {
-                // Outages always take precedence over maintenance
-                downCnt == monitorCnt -> SystemStatus.MAJOR_OUTAGE
-                upCnt > 0 && downCnt > 0 -> SystemStatus.PARTIAL_OUTAGE
-                // Maintenance takes precedence over the operational/pending states
-                downCnt == 0 && maintenanceCnt == monitorCnt -> SystemStatus.MAINTENANCE
-                downCnt == 0 && maintenanceCnt > 0 -> SystemStatus.PARTIAL_MAINTENANCE
-                upCnt == monitorCnt -> SystemStatus.OPERATIONAL
-                else -> SystemStatus.PENDING
+    /**
+     * The aggregated status of every category, ordered by the category name, with the uncategorized monitors last.
+     * Stays empty as long as none of the monitors is categorized, which keeps the plain, ungrouped status page.
+     */
+    private fun calculateCategoryStatus(monitors: List<StatusPageMonitorDetailsDto>): List<CategoryStatusDto> {
+        val groups = monitors.groupBy { it.category }
+        val namedCategories = groups.keys.filterNotNull()
+        if (namedCategories.isEmpty()) return emptyList()
+
+        val calculatedNamedGroups = namedCategories
+            .sortedBy { it.lowercase() }
+            .map { category ->
+                CategoryStatusDto(
+                    category = category,
+                    status = SystemStatus.fromMonitors(groups.getValue(category)),
+                )
             }
-        }
+
+        return if (groups.containsKey(null)) {
+            // Ungrouped monitors are present
+            calculatedNamedGroups + CategoryStatusDto(
+                category = null,
+                status = SystemStatus.fromMonitors(groups.getValue(null)),
+            )
+        } else calculatedNamedGroups
+    }
 
     @Cacheable(STATUS_PAGES_CACHE_NAME)
     fun getCachedStatusPageData(statusPageId: Long) = getStatusPageData(statusPageId)
@@ -89,6 +98,7 @@ class StatusPageDataActions(
             provider.getStatusPageDataOfEnabledMonitors(
                 period = Duration.parse(DEFAULT_METRICS_PERIOD),
                 monitorIds = statusPage.monitors?.toList(),
+                categories = statusPage.categories?.toList(),
             )
         }
 
@@ -99,7 +109,8 @@ class StatusPageDataActions(
             customLogoUrl = statusPage.customLogoUrl,
             customFaviconUrl = statusPage.customFaviconUrl,
             generatedAt = getCurrentTimestamp(),
-            systemStatus = calculateSystemStatus(monitors),
+            systemStatus = SystemStatus.fromMonitors(monitors),
+            categoryStatus = calculateCategoryStatus(monitors),
             monitors = monitors,
             activeMaintenanceWindows = activeAndUpcomingWindows.active,
             upcomingMaintenanceWindows = activeAndUpcomingWindows.upcoming,
@@ -109,14 +120,15 @@ class StatusPageDataActions(
     private fun resolveMaintenanceWindows(
         monitors: List<StatusPageMonitorDetailsDto>,
     ): ActiveAndUpcomingWindows {
-        val pageMonitorIds = monitors.mapNotNullTo(mutableSetOf()) { monitor ->
+        val pageMonitorIds = monitors.mapNotNull { monitor ->
             MonitorType.fromIdentifier(monitor.type)?.let { type -> MonitorID(type, monitor.name) }
-        }
+        }.toSet()
+        val pageCategories = monitors.mapNotNull { it.category }.toSet()
         val now = getCurrentTimestamp()
         val upcomingUntil = now.plus(UPCOMING_LOOKAHEAD)
 
         val relevantWindows = maintenanceWindowRepository.fetchEnabledOnStatusPages()
-            .filter { window -> window.affectsAnyOf(pageMonitorIds) }
+            .filter { window -> window.affectsAnyOf(pageMonitorIds, pageCategories) }
 
         val active = relevantWindows
             .filter { maintenanceWindowCalculator.isActive(it, now) }
@@ -150,8 +162,10 @@ class StatusPageDataActions(
         end = interval?.end,
     )
 
-    private fun MaintenanceWindowRecord.affectsAnyOf(monitorIds: Set<MonitorID>): Boolean =
-        global || monitors.any { it in monitorIds }
+    private fun MaintenanceWindowRecord.affectsAnyOf(
+        monitorIds: Set<MonitorID>,
+        pageCategories: Set<String>,
+    ): Boolean = global || monitors.any { it in monitorIds } || categories.any { it in pageCategories }
 
     private data class ActiveAndUpcomingWindows(
         val active: List<StatusPageMaintenanceWindowDto>,

@@ -8,6 +8,7 @@ import com.kuvaszuptime.kuvasz.models.MonitorNotFoundException
 import com.kuvaszuptime.kuvasz.models.dto.event.TcpUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.TcpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorId
+import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorsWithCategory
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorUpdateDto
@@ -66,7 +67,8 @@ class TcpMonitorActions(
     fun getMonitorDetails(monitorId: Long): TcpMonitorDetailsDto {
         val monitorFromRepo =
             monitorRepository.getMonitorWithDetails(monitorId) ?: throw MonitorNotFoundException(monitorId)
-        val windows = maintenanceWindowService.getWindowsForMonitor(monitorFromRepo.monitorId())
+        val windows =
+            maintenanceWindowService.getWindowsForMonitor(monitorFromRepo.monitorId(), monitorFromRepo.category)
 
         return monitorFromRepo.copy(
             nextUptimeCheck = checkScheduler.getNextCheck(monitorId),
@@ -84,7 +86,7 @@ class TcpMonitorActions(
         sortedBy: SortField<*>? = null,
     ): List<TcpMonitorDetailsDto> {
         val monitors = monitorRepository.getMonitorsWithDetails(enabled, uptimeStatus, sortedBy)
-        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(monitors.map { it.monitorId() })
+        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(monitors.monitorsWithCategory())
 
         return monitors.map { detailsDto ->
             val windows = windowsByMonitor[detailsDto.monitorId()].orEmpty()
@@ -160,10 +162,12 @@ class TcpMonitorActions(
     override fun getStatusPageDataOfEnabledMonitors(
         period: Duration,
         monitorIds: List<MonitorID>?,
+        categories: List<String>?,
     ): List<StatusPageTcpMonitorDetailsDto> =
         buildStatusPageData(
             period = period,
             monitorIds = monitorIds,
+            categories = categories,
         ) { monitor, uptime ->
             val latencyMetrics = monitor.metricsHistoryEnabled.takeIf { it }
                 ?.let { metricsLogRepository.getLatencyMetrics(monitor.id, period) }
@@ -176,6 +180,7 @@ class TcpMonitorActions(
                 uptimeStatus = monitor.uptimeStatus,
                 uptimeStatusHistory = uptime.uptimeStatusHistory,
                 inMaintenance = uptime.inMaintenance,
+                category = monitor.category,
             )
         }
 }
