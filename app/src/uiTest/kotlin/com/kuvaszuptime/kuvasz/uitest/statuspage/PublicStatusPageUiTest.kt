@@ -12,6 +12,7 @@ import com.kuvaszuptime.kuvasz.uitest.PlaywrightSupport
 import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
 import com.kuvaszuptime.kuvasz.uitest.pages.statuspage.PublicStatusPage
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import java.time.OffsetDateTime
@@ -109,6 +110,95 @@ class PublicStatusPageUiTest(private val httpMonitorRepository: HttpMonitorRepos
             assertThat(statusPage.monitorMaintenanceBadge(monitor.name)).containsText(UptimeStatus.UP.literal)
             // A manual window has no scheduled timeframe, so no timeframe pill is rendered
             assertThat(statusPage.maintenanceTimeframe()).hasCount(0)
+        }
+
+        "a status page selects its monitors by category, on top of the ones listed explicitly" {
+            val payments = createHttpMonitor(httpMonitorRepository, monitorName = "Payments API", category = "Payments")
+            val billing = createHttpMonitor(httpMonitorRepository, monitorName = "Billing API", category = "Payments")
+            createHttpMonitor(httpMonitorRepository, monitorName = "Search API", category = "Search")
+            val pinned = createHttpMonitor(httpMonitorRepository, monitorName = "Landing page")
+
+            val slug = "category-selected-status"
+            createStatusPage(
+                dslContext,
+                title = "Category Selected",
+                slug = slug,
+                public = true,
+                monitors = listOf(MonitorID(MonitorType.HTTP_SSL, pinned.name)),
+                categories = listOf("Payments"),
+            )
+
+            val page = newPage(authenticated = false)
+            val statusPage = PublicStatusPage(page)
+            statusPage.navigate(slug)
+
+            // The whole Payments category is shown, next to the explicitly pinned, uncategorized monitor
+            statusPage.monitorNames shouldContainExactlyInAnyOrder
+                listOf(payments.name, billing.name, pinned.name)
+        }
+
+        "a category that no monitor belongs to leaves the status page empty instead of breaking it" {
+            createHttpMonitor(httpMonitorRepository, monitorName = "Search API", category = "Search")
+
+            val slug = "orphan-category-status"
+            createStatusPage(
+                dslContext,
+                title = "Orphan Category",
+                slug = slug,
+                public = true,
+                categories = listOf("Nobody uses me"),
+            )
+
+            val page = newPage(authenticated = false)
+            val statusPage = PublicStatusPage(page)
+            statusPage.navigate(slug)
+
+            // The page renders, the unmatched category simply contributes nothing
+            assertThat(statusPage.title("Orphan Category")).isVisible()
+            assertThat(statusPage.monitorCards).hasCount(0)
+        }
+
+        "a maintenance window scoped to a category grays out every monitor of that category" {
+            val payments = createHttpMonitor(httpMonitorRepository, monitorName = "Payments API", category = "Payments")
+            val search = createHttpMonitor(httpMonitorRepository, monitorName = "Search API", category = "Search")
+            listOf(payments, search).forEach { monitor ->
+                createHttpUptimeEventRecord(
+                    dslContext,
+                    monitorId = monitor.id,
+                    status = UptimeStatus.UP,
+                    startedAt = OffsetDateTime.now(),
+                    endedAt = null,
+                )
+            }
+
+            val slug = "category-maintenance-status"
+            createStatusPage(
+                dslContext,
+                title = "Category Maintenance",
+                slug = slug,
+                public = true,
+                monitors = listOf(
+                    MonitorID(MonitorType.HTTP_SSL, payments.name),
+                    MonitorID(MonitorType.HTTP_SSL, search.name),
+                ),
+            )
+            // A manual (unscheduled) enabled window is permanently active for the monitors it covers
+            createMaintenanceWindow(
+                dslContext,
+                name = "Payments upgrade",
+                enabled = true,
+                showOnStatusPages = true,
+                categories = listOf("Payments"),
+            )
+
+            val page = newPage(authenticated = false)
+            val statusPage = PublicStatusPage(page)
+            statusPage.navigate(slug)
+
+            assertThat(statusPage.maintenanceBanner()).containsText("Payments upgrade")
+            // Only the monitor of the covered category is grayed out
+            assertThat(statusPage.monitorMaintenanceBadge(payments.name)).isVisible()
+            assertThat(statusPage.monitorMaintenanceBadge(search.name)).hasCount(0)
         }
 
         "an active scheduled maintenance window renders its timeframe as a start-end pill" {

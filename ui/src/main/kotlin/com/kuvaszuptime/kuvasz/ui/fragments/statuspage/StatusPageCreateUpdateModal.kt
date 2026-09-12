@@ -25,6 +25,7 @@ internal fun FlowContent.statusPageCreateUpdateModal(
     val serializedMonitors = configuredMonitors.asJsonString()
     val modalClosedEvent = "status-page-upsert-modal-closed"
     val monitorsSelectId = "status-page-monitors-select"
+    val categoriesSelectId = "status-page-categories-select"
     val isReadOnlyMode = globals.editabilityState.areStatusPagesReadOnly()
     div {
         id = modalId
@@ -34,7 +35,8 @@ internal fun FlowContent.statusPageCreateUpdateModal(
                 |$serializedStatusPage, 
                 |$serializedErrorMessages, 
                 |'$monitorsSelectId', 
-                |$serializedMonitors)
+                |$serializedMonitors, 
+                |'$categoriesSelectId')
             """.trimMargin()
         )
         attributes["@$modalClosedEvent.window"] = "resetState()"
@@ -137,6 +139,7 @@ internal fun FlowContent.statusPageCreateUpdateModal(
                     // Monitors
                     div {
                         classes(MB_3)
+                        testId("multi-select")
                         formLabel(
                             label = Messages.monitors(),
                             description = Messages.statusPageMonitorsDescription(),
@@ -146,6 +149,21 @@ internal fun FlowContent.statusPageCreateUpdateModal(
                         monitorSelector(
                             xModelName = "selectedMonitors",
                             monitorsSelectId = monitorsSelectId,
+                            isReadOnly = isReadOnlyMode,
+                        )
+                    }
+                    // Categories
+                    div {
+                        classes(MB_3)
+                        testId("categories-select")
+                        formLabel(
+                            label = Messages.categories(),
+                            description = Messages.statusPageCategoriesDescription(),
+                            inputName = categoriesSelectId,
+                            required = false,
+                        )
+                        categorySelector(
+                            categoriesSelectId = categoriesSelectId,
                             isReadOnly = isReadOnlyMode,
                         )
                     }
@@ -198,6 +216,37 @@ fun FlowContent.monitorSelector(
                 xBindValue("monitor")
                 xText("monitor")
                 xBindSelected("selectedMonitors.includes(monitor)")
+            }
+        }
+    }
+}
+
+/**
+ * The multi value category picker of the status page and maintenance window forms. In contrast to
+ * [monitorSelector], the selectable options are not known server-side: they are loaded from the internal endpoint
+ * when the modal opens. Only the already selected ones are rendered here, so that TomSelect finds them in the DOM
+ * when it takes the select over.
+ */
+fun FlowContent.categorySelector(
+    categoriesSelectId: String,
+    isReadOnly: Boolean,
+) {
+    select {
+        classes(FORM_SELECT)
+        id = categoriesSelectId
+        multiple = true
+        xModel("selectedCategories")
+        xInitNextTick(
+            "{ initCategoryMultiSelect('#$categoriesSelectId', ${Messages.monitorCategoryAddNew().asJsonString()}) }"
+        )
+        if (isReadOnly) disabled = true
+        templateTag {
+            xFor("category in initialCategories")
+            xBindKey("category")
+            optionTag {
+                xBindValue("category")
+                xText("category")
+                selected = true
             }
         }
     }

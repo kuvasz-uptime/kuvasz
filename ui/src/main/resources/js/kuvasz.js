@@ -1994,6 +1994,7 @@ const upsertStatusPageForm = (
     errorMessages,
     monitorSelectId,
     selectableMonitors,
+    categorySelectId,
 ) => {
     const originalStatusPage = statusPage || null;
     return {
@@ -2002,6 +2003,11 @@ const upsertStatusPageForm = (
         formError: null,
         isUpdate: !!statusPage,
         selectableMonitors: selectableMonitors || [],
+        /*
+         The persisted categories have to be in the DOM as options before TomSelect takes the select over, because
+         the rest of them only arrives when the fetch resolves. Never reassigned, so it cannot loop with x-model.
+        */
+        initialCategories: originalStatusPage?.categories || [],
         imagePreviewState: {},
 
         init() {
@@ -2014,6 +2020,7 @@ const upsertStatusPageForm = (
             this.customLogoUrl = originalStatusPage?.customLogoUrl || null;
             this.customFaviconUrl = originalStatusPage?.customFaviconUrl || null;
             this.selectedMonitors = originalStatusPage?.monitors || [];
+            this.selectedCategories = originalStatusPage?.categories || [];
             this.public = (originalStatusPage?.public != null ? originalStatusPage?.public : false);
             this.errors = {};
             this.formError = null;
@@ -2023,6 +2030,7 @@ const upsertStatusPageForm = (
                     ts.addItem(monitor, true);
                 });
             });
+            resetCategoryMultiSelect(categorySelectId, this.selectedCategories);
         },
 
         validate() {
@@ -2069,6 +2077,7 @@ const upsertStatusPageForm = (
                     customLogoUrl: this.customLogoUrl,
                     customFaviconUrl: this.customFaviconUrl,
                     monitors: this.selectedMonitors,
+                    categories: this.selectedCategories,
                     public: this.public
                 };
 
@@ -2181,6 +2190,28 @@ const fetchCategories = async () => {
     }
 };
 
+// The "add a brand new one" row of a category select, shared by the single and the multi value variants
+const categoryCreateRenderer = (addLabel) => ({
+    option_create: (data, escape) => `<div class="create">${escape(addLabel)}: <strong>${escape(data.input)}</strong></div>`
+});
+
+/*
+ The options are loaded when the modal opens, not when it's rendered. The dashboard renders the create modal of all
+ five monitor types at once, and a form nobody opens shouldn't cost a request.
+*/
+const loadCategoryOptions = (tomSelect) => {
+    const loadOptions = () => fetchCategories().then(categories => {
+        // Already known options are ignored by TomSelect, so re-opening the modal just picks up the new ones
+        tomSelect.addOptions(categories.map(category => ({value: category, text: category})));
+    });
+    const modal = tomSelect.input.closest('.modal');
+    if (modal) {
+        modal.addEventListener('show.bs.modal', loadOptions);
+    } else {
+        loadOptions();
+    }
+};
+
 /*
  The single value category select of the monitor forms: it offers the already existing categories with an
  autocomplete, but a brand new one can be typed in as well.
@@ -2191,24 +2222,28 @@ const initCategorySelect = (selector, addLabel) => {
         persist: false,
         maxItems: 1,
         plugins: ['clear_button'],
-        render: {
-            option_create: (data, escape) => `<div class="create">${escape(addLabel)}: <strong>${escape(data.input)}</strong></div>`
+        render: categoryCreateRenderer(addLabel)
+    });
+    loadCategoryOptions(tomSelect);
+};
+
+/*
+ The multi value category select of the status page and maintenance window forms, where the categories select the
+ covered monitors in addition to the ones picked explicitly. A category that is not in use by any monitor yet is
+ accepted here too, it simply covers nothing until a monitor is tagged with it.
+*/
+const initCategoryMultiSelect = (selector, addLabel) => {
+    const tomSelect = new TomSelect(selector, {
+        create: true,
+        persist: false,
+        maxOptions: null,
+        plugins: ['clear_button', 'remove_button'],
+        render: categoryCreateRenderer(addLabel),
+        onItemAdd: function () {
+            this.setTextboxValue('');
         }
     });
-    const loadOptions = () => fetchCategories().then(categories => {
-        // Already known options are ignored by TomSelect, so re-opening the modal just picks up the new ones
-        tomSelect.addOptions(categories.map(category => ({value: category, text: category})));
-    });
-    /*
-     The options are loaded when the modal opens, not when it's rendered. The dashboard renders the create modal of
-     all five monitor types at once, and a form nobody opens shouldn't cost a request.
-    */
-    const modal = tomSelect.input.closest('.modal');
-    if (modal) {
-        modal.addEventListener('show.bs.modal', loadOptions);
-    } else {
-        loadOptions();
-    }
+    loadCategoryOptions(tomSelect);
 };
 
 /*
@@ -2221,6 +2256,19 @@ const resetCategorySelect = (elementId, category) => {
             ts.addOption({value: category, text: category});
             ts.setValue(category, true);
         }
+    });
+};
+
+/*
+ The multi value counterpart of resetCategorySelect. The options have to be re-added for the same reason: a category
+ that the endpoint does not offer (yet) is dropped by TomSelect as soon as the selection is cleared.
+*/
+const resetCategoryMultiSelect = (elementId, categories) => {
+    resetTomSelectState(elementId, (ts) => {
+        (categories || []).forEach(category => {
+            ts.addOption({value: category, text: category});
+            ts.addItem(category, true);
+        });
     });
 };
 
@@ -2479,6 +2527,7 @@ const upsertMaintenanceWindowForm = (
     errorMessages,
     monitorSelectId,
     selectableMonitors,
+    categorySelectId,
 ) => {
     const originalWindow = maintenanceWindow || null;
     return {
@@ -2487,6 +2536,8 @@ const upsertMaintenanceWindowForm = (
         formError: null,
         isUpdate: !!maintenanceWindow,
         selectableMonitors: selectableMonitors || [],
+        // See the same field on upsertStatusPageForm
+        initialCategories: originalWindow?.categories || [],
         // The integrations accordion expects this; maintenance windows never auto-apply global integrations
         globalIntegrationCount: 0,
 
@@ -2506,6 +2557,7 @@ const upsertMaintenanceWindowForm = (
             this.showOnStatusPages =
                 (originalWindow?.showOnStatusPages != null ? originalWindow.showOnStatusPages : false);
             this.selectedMonitors = originalWindow?.monitors || [];
+            this.selectedCategories = originalWindow?.categories || [];
             this.integrations = originalWindow?.integrations || [];
             this.errors = {};
             this.formError = null;
@@ -2515,6 +2567,7 @@ const upsertMaintenanceWindowForm = (
                     ts.addItem(monitor, true);
                 });
             });
+            resetCategoryMultiSelect(categorySelectId, this.selectedCategories);
         },
 
         validate() {
@@ -2618,6 +2671,7 @@ const upsertMaintenanceWindowForm = (
                 start: isSingle && this.start ? new Date(this.start).toISOString() : null,
                 duration: isManual ? null : this.duration,
                 monitors: this.selectedMonitors,
+                categories: this.selectedCategories,
                 integrations: this.integrations
             };
         },
@@ -2687,6 +2741,7 @@ if (typeof module !== 'undefined' && module.exports) {
         // Helpers of the category select
         fetchCategories,
         resetCategorySelect,
+        resetCategoryMultiSelect,
         // Alpine x-data component factories
         upsertHttpMonitorForm,
         upsertPushMonitorForm,

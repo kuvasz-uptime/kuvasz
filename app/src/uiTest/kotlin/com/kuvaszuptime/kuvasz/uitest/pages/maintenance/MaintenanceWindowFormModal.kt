@@ -17,7 +17,10 @@ class MaintenanceWindowFormModal(page: Page) : ModalView(page) {
     private val globalToggle: Locator get() = modal.locator("input[name='global']")
 
     // The TomSelect monitor multi-select; hidden for global windows (which apply to every monitor).
-    val monitorSelector: Locator get() = modal.locator(".ts-wrapper")
+    val monitorSelector: Locator get() = modal.getByTestId("multi-select")
+
+    // The TomSelect category multi-select, hidden for global windows just like the monitors above.
+    val categorySelector: Locator get() = modal.getByTestId("categories-select")
 
     fun setGlobal(value: Boolean): MaintenanceWindowFormModal = apply {
         if (value) globalToggle.check() else globalToggle.uncheck()

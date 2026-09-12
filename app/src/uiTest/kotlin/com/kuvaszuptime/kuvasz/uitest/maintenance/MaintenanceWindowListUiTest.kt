@@ -57,6 +57,30 @@ class MaintenanceWindowListUiTest(private val httpMonitorRepository: HttpMonitor
             assertThat(list.monitorsCell("Scoped Window")).hasText("2")
         }
 
+        "a category-scoped window shows its category count in the categories column" {
+            createMaintenanceWindow(
+                dslContext,
+                name = "Category Window",
+                global = false,
+                categories = listOf("Payments", "Search"),
+            )
+
+            val page = newPage()
+            val list = MaintenanceWindowListPage(page)
+            list.navigate()
+            assertThat(list.categoriesCell("Category Window")).hasText("2")
+        }
+
+        "a global window shows a placeholder in the categories column" {
+            createMaintenanceWindow(dslContext, name = "Global Window", global = true, categories = listOf("Ignored"))
+
+            val page = newPage()
+            val list = MaintenanceWindowListPage(page)
+            list.navigate()
+            // A global window covers every monitor, so its selectors are irrelevant
+            assertThat(list.categoriesCell("Global Window")).hasText("-")
+        }
+
         "the list shows a placeholder instead of an empty table when there is no maintenance window" {
             val page = newPage()
             val list = MaintenanceWindowListPage(page)

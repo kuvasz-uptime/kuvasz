@@ -27,6 +27,8 @@ class StatusPageListPage(private val page: Page) {
         rowByTitle(title).getByTestId("status-page-toggle-visibility-button").click()
     }
 
+    fun categoriesCell(title: String): Locator = rowByTitle(title).getByTestId("status-page-categories")
+
     fun publicIndicator(title: String): Locator = rowByTitle(title).getByTestId("status-page-public-indicator")
 
     fun privateIndicator(title: String): Locator = rowByTitle(title).getByTestId("status-page-private-indicator")

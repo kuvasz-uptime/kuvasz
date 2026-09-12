@@ -122,6 +122,7 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
                 // Accepted status codes
                 div {
                     classes(MB_3)
+                    testId("multi-select")
                     formLabel(
                         label = Messages.expectedStatusCodesLabel(),
                         description = Messages.expectedStatusCodesDescription(),

@@ -85,6 +85,70 @@ class StatusPageCrudUiTest(private val httpMonitorRepository: HttpMonitorReposit
             assertThat(reopened.slugInput).hasValue(originalSlug)
         }
 
+        "a status page can be selected by category, keeping the picked categories across a reopen" {
+            createHttpMonitor(httpMonitorRepository, monitorName = "Categorized", category = "Payments")
+
+            val page = newPage()
+            val list = StatusPageListPage(page)
+            list.navigate()
+
+            val modal = list.openCreateModal()
+                .setTitle("Category Based Page")
+                .setSlug("category-based-page")
+            // The already used category is offered by the internal endpoint, a brand new one is created in place
+            modal.offeredSelectableCategories shouldBe listOf("Payments")
+            modal.selectCategory("Payments")
+            modal.selectCategory("Brand new")
+            assertThat(modal.selectedCategories).hasCount(2)
+            modal.save()
+            page.waitForURL("**/status-pages/*")
+
+            val details = StatusPageDetailsPage(page)
+            val reopened = details.openConfigureModal()
+            assertThat(reopened.selectedCategories).hasCount(2)
+            // The chips come back in the order they were picked in, which is how the array is persisted
+            assertThat(reopened.selectedCategories).containsText(arrayOf("Payments", "Brand new"))
+        }
+
+        "the categories of a status page can be cleared entirely" {
+            val page = newPage()
+            val list = StatusPageListPage(page)
+            list.navigate()
+
+            list.openCreateModal()
+                .setTitle("Cleared Categories")
+                .setSlug("cleared-categories")
+                .also { it.selectCategory("Payments") }
+                .save()
+            page.waitForURL("**/status-pages/*")
+
+            val details = StatusPageDetailsPage(page)
+            val modal = details.openConfigureModal()
+            assertThat(modal.selectedCategories).hasCount(1)
+            modal.clearCategories()
+            modal.save()
+
+            // The empty array has to reach the server, not be treated as "leave it alone"
+            val reopened = details.openConfigureModal()
+            assertThat(reopened.selectedCategories).hasCount(0)
+        }
+
+        "the categories of an abandoned status page form are reset when the modal is reopened" {
+            val page = newPage()
+            val list = StatusPageListPage(page)
+            list.navigate()
+
+            val modal = list.openCreateModal()
+                .setTitle("Abandoned Categories")
+                .setSlug("abandoned-categories")
+            modal.selectCategory("Payments")
+            assertThat(modal.selectedCategories).hasCount(1)
+            modal.dismiss()
+
+            val reopened = list.openCreateModal()
+            assertThat(reopened.selectedCategories).hasCount(0)
+        }
+
         "the status-page modal's monitors select adds a seeded monitor" {
             createHttpMonitor(httpMonitorRepository, monitorName = "Selectable Monitor")
 
@@ -149,6 +213,23 @@ class StatusPageCrudUiTest(private val httpMonitorRepository: HttpMonitorReposit
 
             details.visibilityToggleButton.click()
             assertThat(details.visibilityBadge(Messages.private())).isVisible()
+        }
+
+        "the status page list counts the selected monitors and categories separately" {
+            createHttpMonitor(httpMonitorRepository, monitorName = "Counted Monitor")
+            createStatusPage(
+                dslContext,
+                title = "Counted Page",
+                slug = "counted-page",
+                monitors = listOf(MonitorID(MonitorType.HTTP_SSL, "Counted Monitor")),
+                categories = listOf("Payments", "Search"),
+            )
+
+            val page = newPage()
+            val list = StatusPageListPage(page)
+            list.navigate()
+
+            assertThat(list.categoriesCell("Counted Page")).hasText("2")
         }
 
         "the status page list is sorted by title, regardless of its casing" {

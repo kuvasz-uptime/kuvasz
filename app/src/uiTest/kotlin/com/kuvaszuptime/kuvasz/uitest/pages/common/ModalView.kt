@@ -26,16 +26,17 @@ abstract class ModalView(protected val page: Page) {
     fun validationError(message: String): Locator =
         modal.locator(".invalid-feedback").filter(Locator.FilterOptions().setHasText(message))
 
-    // The multi-select TomSelect of this modal, scoped by the `multi` class TomSelect puts on its wrapper, so it
-    // stays unambiguous next to the single-value category field of the monitor forms.
-    private val multiSelectField: Locator get() = modal.locator(".ts-wrapper.multi")
+    // The main multi-select TomSelect of this modal: the accepted status codes on the HTTP monitor form, the
+    // monitors on the status page and maintenance window ones. Pinned by its own wrapper, because those two forms
+    // carry a second multi-select for the categories, see [categoriesField].
+    private val multiSelectField: Locator get() = modal.getByTestId("multi-select")
 
     // The selected chips of the (single) TomSelect multi-select in this modal.
     val selectedOptions: Locator get() = multiSelectField.locator(".ts-control .item")
 
     // The options of the monitor multi-select, in the order the app offers them. TomSelect hides the `select` it is
     // built on, so their labels are read from the DOM instead of through the visibility-aware `allInnerTexts()`.
-    val monitorOptions: Locator get() = modal.locator("select[multiple] option")
+    val monitorOptions: Locator get() = multiSelectField.locator("select[multiple] option")
 
     val monitorOptionNames: List<String> get() = monitorOptions.allTextContents().map { it.trim() }
 
@@ -52,11 +53,7 @@ abstract class ModalView(protected val page: Page) {
     val selectedCategory: Locator get() = categoryField.locator(".ts-control .item")
 
     // The categories the field offers once its dropdown is open, in the order the app lists them.
-    val offeredCategories: List<String>
-        get() {
-            categoryField.locator(".ts-control").click()
-            return categoryField.locator(".ts-dropdown .option").allTextContents().map { it.trim() }
-        }
+    val offeredCategories: List<String> get() = openedDropdownOptionsOf(categoryField)
 
     // Picks [value] in the category field, creating it when no existing category matches. An empty [value] clears
     // the selection through the clear button of the widget.
@@ -79,5 +76,41 @@ abstract class ModalView(protected val page: Page) {
             .filter(Locator.FilterOptions().setHasText(optionText))
             .first()
             .click()
+    }
+
+    // The category multi-select of the status page and maintenance window forms, which selects whole categories of
+    // monitors in addition to the ones picked one by one.
+    protected val categoriesField: Locator get() = modal.getByTestId("categories-select")
+
+    // The selected categories, as the chips TomSelect renders for them.
+    val selectedCategories: Locator get() = categoriesField.locator(".ts-control .item")
+
+    // The categories the field offers once its dropdown is open, in the order the app lists them.
+    val offeredSelectableCategories: List<String> get() = openedDropdownOptionsOf(categoriesField)
+
+    /**
+     * Opens the dropdown of a category field and reads the options it offers. The first option is awaited, because
+     * the options are fetched from the internal endpoint when the modal opens: reading them right after the click
+     * would race the response. `allTextContents()` does not auto-wait on its own.
+     */
+    private fun openedDropdownOptionsOf(field: Locator): List<String> {
+        field.locator(".ts-control").click()
+        val options = field.locator(".ts-dropdown .option")
+        options.first().waitFor()
+        return options.allTextContents().map { it.trim() }
+    }
+
+    // Adds [category] to the selection, creating it when no existing category matches.
+    fun selectCategory(category: String) {
+        categoriesField.locator(".ts-control").click()
+        val textbox = categoriesField.locator(".ts-control input")
+        textbox.fill(category)
+        // Enter takes the highlighted row, which is the matching category, or the "add new" one when there is none
+        textbox.press("Enter")
+    }
+
+    // Clears every selected category through the clear button of the widget.
+    fun clearCategories() {
+        categoriesField.locator(".clear-button").click()
     }
 }

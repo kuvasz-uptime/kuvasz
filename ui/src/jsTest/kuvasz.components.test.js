@@ -13,6 +13,7 @@ const {
     buildToastMarkup,
     fetchCategories,
     resetCategorySelect,
+    resetCategoryMultiSelect,
     upsertHttpMonitorForm,
     upsertPushMonitorForm,
     upsertIcmpMonitorForm,
@@ -658,10 +659,12 @@ const fakeTomSelect = () => {
         instance.cleared += 1;
         instance.value = null;
     };
+    instance.items = [];
     instance.addOption = (option) => instance.options.push(option);
     instance.setValue = (value) => {
         instance.value = value;
     };
+    instance.addItem = (value) => instance.items.push(value);
     return instance;
 };
 
@@ -696,6 +699,33 @@ test('resetCategorySelect only clears when the form has no category', () => {
 test('resetCategorySelect no-ops before TomSelect is initialized', () => {
     // `document.getElementById` returns null in this harness, which is what an unrendered modal looks like
     assert.doesNotThrow(() => resetCategorySelect('category-select', 'Drive storage'));
+});
+
+test('resetCategoryMultiSelect re-adds and selects every category of the form', () => {
+    const tomSelect = fakeTomSelect();
+    withCategorySelect(tomSelect, () => resetCategoryMultiSelect('categories-select', ['Payments', 'Search']));
+    assert.equal(tomSelect.cleared, 1);
+    // Same reason as above: an option the endpoint does not offer is dropped when the selection is cleared
+    assert.deepEqual(tomSelect.options, [
+        {value: 'Payments', text: 'Payments'},
+        {value: 'Search', text: 'Search'},
+    ]);
+    assert.deepEqual(tomSelect.items, ['Payments', 'Search']);
+});
+
+test('resetCategoryMultiSelect only clears when the form has no categories', () => {
+    const tomSelect = fakeTomSelect();
+    withCategorySelect(tomSelect, () => resetCategoryMultiSelect('categories-select', []));
+    assert.equal(tomSelect.cleared, 1);
+    assert.deepEqual(tomSelect.options, []);
+    assert.deepEqual(tomSelect.items, []);
+});
+
+test('resetCategoryMultiSelect tolerates a missing category list', () => {
+    const tomSelect = fakeTomSelect();
+    withCategorySelect(tomSelect, () => resetCategoryMultiSelect('categories-select', undefined));
+    assert.equal(tomSelect.cleared, 1);
+    assert.deepEqual(tomSelect.items, []);
 });
 
 // Runs [body] with a stubbed global `fetch`, restoring the original afterwards.
