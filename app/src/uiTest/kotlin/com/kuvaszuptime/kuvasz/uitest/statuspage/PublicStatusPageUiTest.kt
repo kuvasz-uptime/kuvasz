@@ -291,8 +291,8 @@ class PublicStatusPageUiTest(private val httpMonitorRepository: HttpMonitorRepos
             val statusPage = PublicStatusPage(page)
             statusPage.navigate(slug)
 
-            // One card and one section per category, the uncategorized monitors landing in "Other" at the end
-            val expectedLabels = listOf("Backend services", "Web", "Other")
+            // One card and one section per category, the uncategorized monitors landing in "Others" at the end
+            val expectedLabels = listOf("Backend services", "Web", "Others")
             assertThat(statusPage.categoryCards).hasCount(expectedLabels.size)
             assertThat(statusPage.categorySections).hasCount(expectedLabels.size)
             statusPage.categoryLabels shouldBe expectedLabels
@@ -305,7 +305,7 @@ class PublicStatusPageUiTest(private val httpMonitorRepository: HttpMonitorRepos
             assertThat(statusPage.monitorCards).hasCount(listOf(backend, web, other).size)
             assertThat(statusPage.categorySection("Backend services").getByText("Backend API")).isVisible()
             assertThat(statusPage.categorySection("Web").getByText("Website")).isVisible()
-            assertThat(statusPage.categorySection("Other").getByText("Some other service")).isVisible()
+            assertThat(statusPage.categorySection("Others").getByText("Some other service")).isVisible()
 
             // A card links to the anchor of its own section
             statusPage.categoryCard("Web").click()
