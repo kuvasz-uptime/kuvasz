@@ -19,6 +19,7 @@ interface StatusPageCreator {
     val public: Boolean
     val monitors: List<String>?
     val categories: List<String>?
+    val displayCategories: Boolean
 }
 
 fun StatusPageCreator.toStatusPageRecord(
@@ -33,3 +34,4 @@ fun StatusPageCreator.toStatusPageRecord(
         .setPublic(public)
         .setMonitors(validatedMonitors.toTypedArray())
         .setCategories(validatedCategories.toTypedArray())
+        .setDisplayCategories(displayCategories)

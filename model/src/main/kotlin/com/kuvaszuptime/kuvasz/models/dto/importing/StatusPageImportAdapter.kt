@@ -13,4 +13,5 @@ class StatusPageImportAdapter(dto: StatusPageExportDto) : StatusPageCreator {
     override val public: Boolean = dto.public
     override val monitors: List<String> = dto.monitors.map { it.toString() }
     override val categories: List<String> = dto.categories.toList()
+    override val displayCategories: Boolean = dto.displayCategories
 }

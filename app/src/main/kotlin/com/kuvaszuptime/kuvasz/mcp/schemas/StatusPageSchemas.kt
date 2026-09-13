@@ -29,6 +29,7 @@ data class StatusPageSchema(
     val public: Boolean,
     val monitorCount: Int,
     val categories: Set<String>,
+    val displayCategories: Boolean,
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime,
 ) {
@@ -40,6 +41,7 @@ data class StatusPageSchema(
             public = dto.public,
             monitorCount = dto.monitors.size,
             categories = dto.categories,
+            displayCategories = dto.displayCategories,
             createdAt = dto.createdAt,
             updatedAt = dto.updatedAt,
         )

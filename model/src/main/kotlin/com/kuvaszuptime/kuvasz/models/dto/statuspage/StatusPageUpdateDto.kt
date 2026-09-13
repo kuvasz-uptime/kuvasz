@@ -35,4 +35,8 @@ data class StatusPageUpdateDto(
 
     @param:Schema(description = StatusPageDocs.CATEGORIES, required = false, nullable = true)
     val categories: Set<String>?,
+
+    @get:NotNull
+    @param:Schema(description = StatusPageDocs.DISPLAY_CATEGORIES, required = false, nullable = false)
+    val displayCategories: Boolean?,
 )

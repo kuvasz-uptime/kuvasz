@@ -2021,6 +2021,8 @@ const upsertStatusPageForm = (
             this.customFaviconUrl = originalStatusPage?.customFaviconUrl || null;
             this.selectedMonitors = originalStatusPage?.monitors || [];
             this.selectedCategories = originalStatusPage?.categories || [];
+            this.displayCategories =
+                (originalStatusPage?.displayCategories != null ? originalStatusPage.displayCategories : true);
             this.public = (originalStatusPage?.public != null ? originalStatusPage?.public : false);
             this.errors = {};
             this.formError = null;
@@ -2078,6 +2080,7 @@ const upsertStatusPageForm = (
                     customFaviconUrl: this.customFaviconUrl,
                     monitors: this.selectedMonitors,
                     categories: this.selectedCategories,
+                    displayCategories: this.displayCategories,
                     public: this.public
                 };
 

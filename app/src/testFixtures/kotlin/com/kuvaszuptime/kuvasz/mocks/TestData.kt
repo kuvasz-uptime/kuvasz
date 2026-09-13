@@ -226,6 +226,7 @@ fun createStatusPage(
     public: Boolean = StatusPageDefaults.CUSTOM_PAGE_PUBLIC,
     monitors: List<MonitorID> = emptyList(),
     categories: List<String> = emptyList(),
+    displayCategories: Boolean = StatusPageDefaults.DISPLAY_CATEGORIES,
     customLogoUrl: String? = null,
     customFaviconUrl: String? = null,
 ) = dslContext
@@ -239,6 +240,7 @@ fun createStatusPage(
             .setPublic(public)
             .setMonitors(monitors.toTypedArray())
             .setCategories(categories.toTypedArray())
+            .setDisplayCategories(displayCategories)
     )
     .returning(STATUS_PAGE.asterisk())
     .fetchOneOrThrow<StatusPageRecord>()

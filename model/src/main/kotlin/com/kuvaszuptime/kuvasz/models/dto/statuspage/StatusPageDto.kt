@@ -24,6 +24,8 @@ data class StatusPageDto(
     val monitors: Set<MonitorID>,
     @param:Schema(description = StatusPageDocs.CATEGORIES, required = true)
     val categories: Set<String>,
+    @param:Schema(description = StatusPageDocs.DISPLAY_CATEGORIES, required = true)
+    val displayCategories: Boolean,
     @param:Schema(description = StatusPageDocs.CREATED_AT, required = true)
     val createdAt: OffsetDateTime,
     @param:Schema(description = StatusPageDocs.UPDATED_AT, required = true)
@@ -40,6 +42,7 @@ data class StatusPageDto(
                 public = record.public,
                 monitors = record.monitors.toSet(),
                 categories = record.categories.toSet(),
+                displayCategories = record.displayCategories,
                 createdAt = record.createdAt,
                 updatedAt = record.updatedAt,
             )

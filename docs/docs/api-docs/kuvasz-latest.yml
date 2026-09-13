@@ -6119,12 +6119,20 @@ components:
           nullable: true
           items:
             type: string
+        displayCategories:
+          type: boolean
+          description: "Whether the monitors are displayed grouped into their categories\
+            \ on the page. It only affects the rendering: the categories still select\
+            \ the monitors of the page, and the per-category statuses are calculated\
+            \ and returned either way"
+          default: true
     StatusPageDetailsDto:
       required:
       - activeMaintenanceWindows
       - categoryStatus
       - customFaviconUrl
       - customLogoUrl
+      - displayCategories
       - generatedAt
       - id
       - monitors
@@ -6181,6 +6189,12 @@ components:
             \ last. Empty if none of the monitors is categorized"
           items:
             $ref: "#/components/schemas/CategoryStatusDto"
+        displayCategories:
+          type: boolean
+          description: "Whether the monitors are displayed grouped into their categories\
+            \ on the page. It only affects the rendering: the categories still select\
+            \ the monitors of the page, and the per-category statuses are calculated\
+            \ and returned either way"
         activeMaintenanceWindows:
           type: array
           description: The maintenance windows that are shown on the status page and
@@ -6199,6 +6213,7 @@ components:
       - createdAt
       - customFaviconUrl
       - customLogoUrl
+      - displayCategories
       - id
       - monitors
       - public
@@ -6245,6 +6260,12 @@ components:
             \ that is not in use by any monitor is kept, it simply contributes nothing."
           items:
             type: string
+        displayCategories:
+          type: boolean
+          description: "Whether the monitors are displayed grouped into their categories\
+            \ on the page. It only affects the rendering: the categories still select\
+            \ the monitors of the page, and the per-category statuses are calculated\
+            \ and returned either way"
         createdAt:
           type: string
           description: Timestamp of when the status page was created
@@ -6543,6 +6564,13 @@ components:
           nullable: true
           items:
             type: string
+        displayCategories:
+          type: boolean
+          description: "Whether the monitors are displayed grouped into their categories\
+            \ on the page. It only affects the rendering: the categories still select\
+            \ the monitors of the page, and the per-category statuses are calculated\
+            \ and returned either way"
+          nullable: false
     SystemStatus:
       type: string
       enum:

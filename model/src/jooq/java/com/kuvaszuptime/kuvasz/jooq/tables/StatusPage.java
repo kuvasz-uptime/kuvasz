@@ -108,6 +108,11 @@ public class StatusPage extends TableImpl<StatusPageRecord> {
      */
     public final TableField<StatusPageRecord, String[]> CATEGORIES = createField(DSL.name("categories"), SQLDataType.CLOB.array().nullable(false).defaultValue(DSL.field(DSL.raw("ARRAY[]::text[]"), SQLDataType.CLOB.array())), this, "");
 
+    /**
+     * The column <code>kuvasz.status_page.display_categories</code>.
+     */
+    public final TableField<StatusPageRecord, Boolean> DISPLAY_CATEGORIES = createField(DSL.name("display_categories"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("true"), SQLDataType.BOOLEAN)), this, "");
+
     private StatusPage(Name alias, Table<StatusPageRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }

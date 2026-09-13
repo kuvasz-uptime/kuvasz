@@ -171,6 +171,21 @@ public class StatusPageRecord extends UpdatableRecordImpl<StatusPageRecord> {
         return (String[]) get(9);
     }
 
+    /**
+     * Setter for <code>kuvasz.status_page.display_categories</code>.
+     */
+    public StatusPageRecord setDisplayCategories(Boolean value) {
+        set(10, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.status_page.display_categories</code>.
+     */
+    public Boolean getDisplayCategories() {
+        return (Boolean) get(10);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -194,7 +209,7 @@ public class StatusPageRecord extends UpdatableRecordImpl<StatusPageRecord> {
     /**
      * Create a detached, initialised StatusPageRecord
      */
-    public StatusPageRecord(Long id, String title, String slug, String customLogoUrl, String customFaviconUrl, Boolean public_, MonitorID[] monitors, OffsetDateTime createdAt, OffsetDateTime updatedAt, String[] categories) {
+    public StatusPageRecord(Long id, String title, String slug, String customLogoUrl, String customFaviconUrl, Boolean public_, MonitorID[] monitors, OffsetDateTime createdAt, OffsetDateTime updatedAt, String[] categories, Boolean displayCategories) {
         super(StatusPage.STATUS_PAGE);
 
         setId(id);
@@ -207,6 +222,7 @@ public class StatusPageRecord extends UpdatableRecordImpl<StatusPageRecord> {
         setCreatedAt(createdAt);
         setUpdatedAt(updatedAt);
         setCategories(categories);
+        setDisplayCategories(displayCategories);
         resetTouchedOnNotNull();
     }
 
@@ -227,6 +243,7 @@ public class StatusPageRecord extends UpdatableRecordImpl<StatusPageRecord> {
             setCreatedAt(value.getCreatedAt());
             setUpdatedAt(value.getUpdatedAt());
             setCategories(value.getCategories());
+            setDisplayCategories(value.getDisplayCategories());
             resetTouchedOnNotNull();
         }
     }

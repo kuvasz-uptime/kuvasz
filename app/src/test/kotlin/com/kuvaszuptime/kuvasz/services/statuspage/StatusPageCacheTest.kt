@@ -121,6 +121,8 @@ class StatusPageCacheTest(
                 MonitorID(MonitorType.HTTP_SSL, "test-monitor-2"),
                 MonitorID(MonitorType.PUSH, "test-monitor-3"),
             ).toTypedArray()
+            categories = emptyArray()
+            displayCategories = true
             createdAt = getCurrentTimestamp()
             updatedAt = getCurrentTimestamp()
         }

@@ -27,6 +27,8 @@ data class StatusPageDetailsDto(
     val monitors: List<StatusPageMonitorDetailsDto>,
     @param:Schema(description = StatusPageDocs.CATEGORY_STATUS, required = true)
     val categoryStatus: List<CategoryStatusDto> = emptyList(),
+    @param:Schema(description = StatusPageDocs.DISPLAY_CATEGORIES, required = true)
+    val displayCategories: Boolean = StatusPageDefaults.DISPLAY_CATEGORIES,
     @param:Schema(description = StatusPageDocs.ACTIVE_MAINTENANCE_WINDOWS, required = true)
     val activeMaintenanceWindows: List<StatusPageMaintenanceWindowDto> = emptyList(),
     @param:Schema(description = StatusPageDocs.UPCOMING_MAINTENANCE_WINDOWS, required = true)

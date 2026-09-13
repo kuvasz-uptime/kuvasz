@@ -13,6 +13,7 @@ import io.micronaut.core.bind.annotation.Bindable
  *   title: "Status - Kuvasz Uptime"
  *   custom-logo-url: "https://example.com/logo.png"
  *   custom-favicon-url: "https://example.com/favicon.png"
+ *   display-categories: true
  */
 @ConfigurationProperties(DefaultStatusPageConfig.CONFIG_PREFIX)
 interface DefaultStatusPageConfig {
@@ -26,6 +27,9 @@ interface DefaultStatusPageConfig {
 
     @get:Bindable(defaultValue = StatusPageDefaults.TITLE)
     val title: String
+
+    @get:Bindable(defaultValue = StatusPageDefaults.DISPLAY_CATEGORIES.toString())
+    val displayCategories: Boolean
 
     companion object {
         private const val CONFIG_PREFIX = "default-status-page"
@@ -44,6 +48,7 @@ interface DefaultStatusPageConfig {
  *       - "http:Test monitor 2"
  *     categories:
  *       - "Payments"
+ *     display-categories: true
  */
 @EachProperty(StatusPageConfig.CONFIG_PREFIX, list = true)
 @Introspected
@@ -60,6 +65,9 @@ interface StatusPageConfig : StatusPageCreator {
     override val monitors: List<String>?
 
     override val categories: List<String>?
+
+    @get:Bindable(defaultValue = StatusPageDefaults.DISPLAY_CATEGORIES.toString())
+    override val displayCategories: Boolean
 
     @get:Bindable(defaultValue = StatusPageDefaults.CUSTOM_PAGE_PUBLIC.toString())
     override val public: Boolean

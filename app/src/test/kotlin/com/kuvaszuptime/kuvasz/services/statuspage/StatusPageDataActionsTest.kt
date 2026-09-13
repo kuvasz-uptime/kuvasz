@@ -801,6 +801,7 @@ class StatusPageDataActionsTest(
             ).toTypedArray()
             // A record coming from the DB never has a null here, the column is NOT NULL with an empty default
             categories = emptyArray()
+            displayCategories = true
             createdAt = getCurrentTimestamp()
             updatedAt = getCurrentTimestamp()
         }
@@ -1177,6 +1178,8 @@ class StatusPageDataActionsTest(
                     MonitorID(MonitorType.ICMP, "icmp-monitor-2"),
                 ).toTypedArray()
                 categories = emptyArray()
+                displayCategories = true
+                displayCategories = true
                 createdAt = getCurrentTimestamp()
                 updatedAt = getCurrentTimestamp()
             }
@@ -1289,6 +1292,8 @@ class StatusPageDataActionsTest(
                     MonitorID(MonitorType.TCP, "tcp-monitor-2"),
                 ).toTypedArray()
                 categories = emptyArray()
+                displayCategories = true
+                displayCategories = true
                 createdAt = getCurrentTimestamp()
                 updatedAt = getCurrentTimestamp()
             }

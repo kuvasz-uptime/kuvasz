@@ -101,6 +101,19 @@ class StatusPageToolsTest(
                 }
             }
 
+            `when`("a status page hides the grouping of its categories") {
+                createStatusPage(dslContext, categories = listOf("Payments"), displayCategories = false)
+                val response = callToolWithMcpClient(LIST_STATUS_PAGES)
+
+                then("the flag is exposed while the categories stay visible as selectors") {
+                    val pageList = response.structuredContentAs<StatusPageListSchema>().shouldNotBeNull()
+                    pageList.statusPages.forOne { statusPage ->
+                        statusPage.displayCategories shouldBe false
+                        statusPage.categories shouldContainExactlyInAnyOrder setOf("Payments")
+                    }
+                }
+            }
+
             `when`("a status page selects its monitors by category as well") {
                 createStatusPage(dslContext, categories = listOf("Payments", "Search"))
                 val response = callToolWithMcpClient(LIST_STATUS_PAGES)
@@ -110,6 +123,7 @@ class StatusPageToolsTest(
                     pageList.statusPages.forOne { statusPage ->
                         statusPage.monitorCount shouldBe 0
                         statusPage.categories shouldContainExactlyInAnyOrder setOf("Payments", "Search")
+                        statusPage.displayCategories shouldBe true
                     }
                 }
             }

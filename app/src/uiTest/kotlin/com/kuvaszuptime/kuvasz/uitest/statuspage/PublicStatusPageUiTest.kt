@@ -112,6 +112,33 @@ class PublicStatusPageUiTest(private val httpMonitorRepository: HttpMonitorRepos
             assertThat(statusPage.maintenanceTimeframe()).hasCount(0)
         }
 
+        "a status page with the category display turned off renders one ungrouped list" {
+            val payments = createHttpMonitor(httpMonitorRepository, monitorName = "Payments API", category = "Payments")
+            val search = createHttpMonitor(httpMonitorRepository, monitorName = "Search API", category = "Search")
+
+            val slug = "ungrouped-status"
+            createStatusPage(
+                dslContext,
+                title = "Ungrouped",
+                slug = slug,
+                public = true,
+                monitors = listOf(
+                    MonitorID(MonitorType.HTTP_SSL, payments.name),
+                    MonitorID(MonitorType.HTTP_SSL, search.name),
+                ),
+                displayCategories = false,
+            )
+
+            val page = newPage(authenticated = false)
+            val statusPage = PublicStatusPage(page)
+            statusPage.navigate(slug)
+
+            // Every monitor is still there, the grouping is simply not revealed
+            statusPage.monitorNames shouldContainExactlyInAnyOrder listOf(payments.name, search.name)
+            assertThat(statusPage.categoryCards).hasCount(0)
+            assertThat(statusPage.categorySections).hasCount(0)
+        }
+
         "a status page selects its monitors by category, on top of the ones listed explicitly" {
             val payments = createHttpMonitor(httpMonitorRepository, monitorName = "Payments API", category = "Payments")
             val billing = createHttpMonitor(httpMonitorRepository, monitorName = "Billing API", category = "Payments")

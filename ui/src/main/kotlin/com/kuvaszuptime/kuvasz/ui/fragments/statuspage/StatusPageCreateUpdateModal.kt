@@ -167,6 +167,16 @@ internal fun FlowContent.statusPageCreateUpdateModal(
                             isReadOnly = isReadOnlyMode,
                         )
                     }
+                    div {
+                        classes(MB_3)
+                        testId("display-categories-toggle")
+                        toggleSwitch(
+                            propName = "displayCategories",
+                            label = Messages.statusPageDisplayCategoriesLabel(),
+                            description = Messages.statusPageDisplayCategoriesDescription(),
+                            isDisabled = isReadOnlyMode,
+                        )
+                    }
                 }
                 // Modal footer
                 upsertModalFooter(

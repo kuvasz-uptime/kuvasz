@@ -18,6 +18,7 @@ data class StatusPageDataDto(
     val categoryStatus: List<CategoryStatusDto> = emptyList(),
     val activeMaintenanceWindows: List<StatusPageMaintenanceWindowDto> = emptyList(),
     val upcomingMaintenanceWindows: List<StatusPageMaintenanceWindowDto> = emptyList(),
+    val displayCategories: Boolean = StatusPageDefaults.DISPLAY_CATEGORIES,
 )
 
 /**

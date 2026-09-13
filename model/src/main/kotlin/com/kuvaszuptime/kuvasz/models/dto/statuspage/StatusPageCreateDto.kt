@@ -24,4 +24,10 @@ data class StatusPageCreateDto(
     override val monitors: List<String>? = emptyList(),
     @param:Schema(description = StatusPageDocs.CATEGORIES, required = false)
     override val categories: List<String>? = emptyList(),
+    @param:Schema(
+        description = StatusPageDocs.DISPLAY_CATEGORIES,
+        required = false,
+        defaultValue = StatusPageDefaults.DISPLAY_CATEGORIES.toString(),
+    )
+    override val displayCategories: Boolean = StatusPageDefaults.DISPLAY_CATEGORIES,
 ) : StatusPageCreator

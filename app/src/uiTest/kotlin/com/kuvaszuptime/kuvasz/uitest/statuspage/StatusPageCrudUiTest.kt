@@ -110,6 +110,24 @@ class StatusPageCrudUiTest(private val httpMonitorRepository: HttpMonitorReposit
             assertThat(reopened.selectedCategories).containsText(arrayOf("Payments", "Brand new"))
         }
 
+        "the category display of a status page can be turned off from the form" {
+            val page = newPage()
+            val list = StatusPageListPage(page)
+            list.navigate()
+
+            val modal = list.openCreateModal()
+                .setTitle("Ungrouped Page")
+                .setSlug("ungrouped-page")
+            // On by default, so the monitors of a categorized page are grouped unless it is turned off
+            assertThat(modal.displayCategoriesToggle).isChecked()
+            modal.setDisplayCategories(false)
+            modal.save()
+            page.waitForURL("**/status-pages/*")
+
+            val reopened = StatusPageDetailsPage(page).openConfigureModal()
+            assertThat(reopened.displayCategoriesToggle).not().isChecked()
+        }
+
         "the categories of a status page can be cleared entirely" {
             val page = newPage()
             val list = StatusPageListPage(page)

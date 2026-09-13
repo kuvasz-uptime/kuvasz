@@ -81,6 +81,7 @@ class StatusPageCreateDtoDefaultsTest : BehaviorSpec({
             dto.public shouldBe StatusPageDefaults.CUSTOM_PAGE_PUBLIC
             dto.monitors.shouldBeEmpty()
             dto.categories.shouldBeEmpty()
+            dto.displayCategories shouldBe StatusPageDefaults.DISPLAY_CATEGORIES
             dto.customLogoUrl shouldBe null
             dto.customFaviconUrl shouldBe null
         }

@@ -22,8 +22,9 @@ import com.kuvaszuptime.kuvasz.util.timeAgo
 import kotlinx.html.*
 
 fun FlowContent.systemStatusMonitorList(pageData: StatusPageDataDto) {
-    if (pageData.categoryStatus.isEmpty()) {
-        // None of the monitors is categorized -> keep the plain, ungrouped list
+    // The page can opt out of the grouping even when its monitors are categorized: the categories still select them
+    // and their aggregated statuses are still calculated, they are just not revealed to the visitors here
+    if (pageData.categoryStatus.isEmpty() || !pageData.displayCategories) {
         monitorCardGrid(pageData.monitors)
     } else {
         categorizedMonitorList(pageData.monitors, pageData.categoryStatus)

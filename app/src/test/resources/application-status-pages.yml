@@ -16,6 +16,7 @@ status-pages:
     categories:
       - "Payments"
       - "Search"
+    display-categories: false
   - title: Status Page 3
     slug: status-page-3
     monitors:

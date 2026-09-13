@@ -148,6 +148,7 @@ class StatusPageImporterTest(
         slug: String,
         monitors: Set<MonitorID> = emptySet(),
         categories: Set<String> = emptySet(),
+        displayCategories: Boolean = true,
     ) = StatusPageExportDto(
         title = title,
         slug = slug,
@@ -156,6 +157,7 @@ class StatusPageImporterTest(
         public = true,
         monitors = monitors,
         categories = categories,
+        displayCategories = displayCategories,
     )
 
     @MockBean(StatusPageCacheInvalidator::class)
