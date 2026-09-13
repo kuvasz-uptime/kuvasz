@@ -2,8 +2,8 @@ package com.kuvaszuptime.kuvasz.mcp.schemas
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
-import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.CategoryStatusDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDataDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIcmpMonitorDetailsDto
@@ -28,6 +28,7 @@ data class StatusPageSchema(
     val slug: String,
     val public: Boolean,
     val monitorCount: Int,
+    val categories: Set<String>,
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime,
 ) {
@@ -38,6 +39,7 @@ data class StatusPageSchema(
             slug = dto.slug,
             public = dto.public,
             monitorCount = dto.monitors.size,
+            categories = dto.categories,
             createdAt = dto.createdAt,
             updatedAt = dto.updatedAt,
         )

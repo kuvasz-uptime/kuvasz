@@ -399,6 +399,19 @@ class HttpMonitorReferencedByStatusPageMcpToolsTest(
                     )
                 }
             }
+
+            `when`("the read-only page only reaches the monitor through its category") {
+                val monitor = createHttpMonitor(httpMonitorRepository, category = "Payments")
+                createStatusPage(dslContext, categories = listOf("Payments"))
+                appConfig.disableStatusPageExternalWrite()
+
+                val response = callToolWithMcpClient(DELETE_HTTP_MONITOR, mapOf("monitorId" to monitor.id))
+
+                then("the deletion is allowed, because a category reference cannot be broken by it") {
+                    response.isError shouldBe false
+                    response.structuredContentAs<DeleteResultSchema>().shouldNotBeNull().deleted shouldBe true
+                }
+            }
         }
     }
 }

@@ -52,8 +52,11 @@ class MaintenanceWindowTools(
             "for a recurring window; or 'start' + 'duration' for a one-off window. " +
             "Refer to the docs for the available fields and defaults: " +
             "https://kuvasz-uptime.dev/management/maintenance-windows/. " +
-            "Referenced monitors that do not exist are silently dropped; the available integrations can be found via " +
-            "the $LIST_INTEGRATIONS tool. " +
+            "'monitors' and 'categories' are additive: the window covers the monitors listed by ID plus every " +
+            "monitor belonging to one of the categories, and both are ignored when 'global' is true. " +
+            "Referenced monitors that do not exist are silently dropped, while a category that is not in use by any " +
+            "monitor is kept and simply covers nothing. " +
+            "The available integrations can be found via the $LIST_INTEGRATIONS tool. " +
             "This tool will work only if 'areMaintenanceWindowsReadOnly' from the $GET_APP_SETTINGS tool " +
             "call is 'false', otherwise it will return with an error.",
         annotations = Tool.ToolAnnotations(readOnlyHint = false, destructiveHint = false, idempotentHint = false)

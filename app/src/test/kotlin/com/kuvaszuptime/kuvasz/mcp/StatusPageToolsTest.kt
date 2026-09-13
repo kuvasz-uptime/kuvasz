@@ -18,6 +18,7 @@ import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.testutils.shouldHaveError
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -97,6 +98,19 @@ class StatusPageToolsTest(
                 then("it should return monitorCount matching the number of configured monitors") {
                     val pageList = response.structuredContentAs<StatusPageListSchema>().shouldNotBeNull()
                     pageList.statusPages.forOne { it.monitorCount shouldBe 2 }
+                }
+            }
+
+            `when`("a status page selects its monitors by category as well") {
+                createStatusPage(dslContext, categories = listOf("Payments", "Search"))
+                val response = callToolWithMcpClient(LIST_STATUS_PAGES)
+
+                then("the categories are exposed next to the explicit monitor count") {
+                    val pageList = response.structuredContentAs<StatusPageListSchema>().shouldNotBeNull()
+                    pageList.statusPages.forOne { statusPage ->
+                        statusPage.monitorCount shouldBe 0
+                        statusPage.categories shouldContainExactlyInAnyOrder setOf("Payments", "Search")
+                    }
                 }
             }
         }
