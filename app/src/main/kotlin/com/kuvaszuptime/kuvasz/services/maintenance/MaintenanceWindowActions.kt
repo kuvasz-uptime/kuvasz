@@ -15,6 +15,7 @@ import com.kuvaszuptime.kuvasz.util.transactionResultWithError
 import com.kuvaszuptime.kuvasz.validation.IntegrationIdValidator
 import com.kuvaszuptime.kuvasz.validation.MonitorIdValidator
 import com.kuvaszuptime.kuvasz.validation.throwIfNotEmpty
+import com.kuvaszuptime.kuvasz.validation.validateCategories
 import io.micronaut.cache.annotation.CacheInvalidate
 import io.micronaut.validation.validator.Validator
 import jakarta.inject.Singleton
@@ -53,12 +54,16 @@ class MaintenanceWindowActions(
     @CacheInvalidate(STATUS_PAGES_CACHE_NAME, all = true)
     fun createMaintenanceWindow(createDto: MaintenanceWindowCreateDto): MaintenanceWindowDetailsDto {
         createDto.validateScheduleConsistency()
-        // Non-existing monitors are silently dropped, but integrations must exist
+        // Non-existing monitors are silently dropped, but integrations must exist. The categories are only
+        // normalized, not checked for existence, because they are predicates over the monitors that carry them
         val validatedMonitors = monitorIdValidator.validateMonitorIds(createDto.monitors.orEmpty())
+        val validatedCategories = validateCategories(createDto.categories.orEmpty())
         val validatedIntegrations = integrationIdValidator.validateIntegrationIds(createDto.integrations.orEmpty())
 
         return maintenanceWindowRepository
-            .returningInsert(createDto.toMaintenanceWindowRecord(validatedMonitors, validatedIntegrations))
+            .returningInsert(
+                createDto.toMaintenanceWindowRecord(validatedMonitors, validatedCategories, validatedIntegrations)
+            )
             .also { scheduler.onWindowCreated(it) }
             .toDetailsDto(calculator)
     }
@@ -94,13 +99,15 @@ class MaintenanceWindowActions(
                 validator.validate(toValidate).throwIfNotEmpty()
                 toValidate.validateScheduleConsistency()
             }
-            // Filter out non-existing monitor IDs, and ensure that the referenced integrations exist
-            if (updatedWindow.monitors != null) {
-                updatedWindow.monitors = monitorIdValidator.validateMonitorIds(updatedWindow.monitors).toTypedArray()
-            }
-            if (updatedWindow.integrations != null) {
-                integrationIdValidator.validateIntegrationIds(updatedWindow.integrations)
-            }
+            // Filter out non-existing monitor IDs, normalize the categories, and ensure that the referenced
+            // integrations exist. All three columns are NOT NULL, so an explicitly nulled one is taken as a
+            // request to clear it.
+            updatedWindow.monitors =
+                monitorIdValidator.validateMonitorIds(updatedWindow.monitors ?: emptyArray()).toTypedArray()
+            updatedWindow.categories =
+                validateCategories((updatedWindow.categories ?: emptyArray()).toList()).toTypedArray()
+            updatedWindow.integrations = updatedWindow.integrations ?: emptyArray()
+            integrationIdValidator.validateIntegrationIds(updatedWindow.integrations)
 
             maintenanceWindowRepository.returningUpdate(MaintenanceWindowRecord(updatedWindow), txCtx)
         }

@@ -29,6 +29,7 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
         createTitle = Messages.createNewHttpMonitor(),
         errorMessages = mapOf(
             "nameRequired" to Messages.errorNameRequired(),
+            "categoryTooLong" to Messages.errorCategoryTooLong(),
             "urlRequired" to Messages.errorMissingUrl(),
             "urlInvalid" to Messages.errorInvalidUrl(),
             "nameAlreadyExists" to Messages.errorNameAlreadyExists(),
@@ -121,6 +122,7 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
                 // Accepted status codes
                 div {
                     classes(MB_3)
+                    testId("multi-select")
                     formLabel(
                         label = Messages.expectedStatusCodesLabel(),
                         description = Messages.expectedStatusCodesDescription(),

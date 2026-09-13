@@ -32,7 +32,9 @@ There are three ways to manage your maintenance windows in _Kuvasz_: through the
         monitors: # (8)!
           - "http:My monitor 1"
           - "push:My backup 1"
-        integrations: # (9)!
+        categories: # (9)!
+          - "Payments"
+        integrations: # (10)!
           - "slack:my-slack"
       # ... other maintenance windows
     ```
@@ -45,7 +47,8 @@ There are three ways to manage your maintenance windows in _Kuvasz_: through the
     6. A **cron expression** for a recurring window. Mutually exclusive with `start` and requires `duration`. Standard cron syntax with extensions (`#`, `L`, `W`) is supported, and it is evaluated in the **server's time zone**.
     7. The **ISO-8601 duration** of the window (e.g. `PT1H30M`). Required for recurring and one-off windows.
     8. The set of monitors the window applies to (ignored when `global` is `true`). Reference monitors by their type and name, in the format `<type>:<name>`, where the supported types are `http`, `push`, `icmp`, `tcp` and `dns`, e.g. `http:My HTTP Monitor`.
-    9. The set of integrations that receive the window's start and end notifications. Reference them in the format `<type>:<name>`, e.g. `slack:my-slack`.
+    9. The set of monitor categories the window applies to (ignored when `global` is `true`). Every monitor belonging to one of them is covered, in addition to the ones listed under `monitors`.
+    10. The set of integrations that receive the window's start and end notifications. Reference them in the format `<type>:<name>`, e.g. `slack:my-slack`.
 
     For a **one-off window**, replace `cron` with a `start` timestamp instead:
 
@@ -231,9 +234,35 @@ The **ISO-8601 duration** of the window (e.g. `PT1H30M`). Required for recurring
 <!-- md:type list -->
 <!-- md:yaml_prop `monitors` -->
 
-The set of **monitors the window applies to** (ignored when `global` is `true`).
+The set of **monitors the window applies to** (ignored when `global` is `true`). It can be combined with [**Categories**](#categories) below, in which case the window covers both.
 
 If you're using YAML, or the API, the format is `"{type}:{name}"`, where `type` is the alias of the monitor's type, and `name` is the name of the monitor. The supported types are `http`, `push`, `icmp`, `tcp` and `dns`. Example: `http:My HTTP Monitor`, `push:My backup 1`, `icmp:My ICMP Monitor`, `tcp:My TCP Monitor`, `dns:My DNS Monitor`.
+
+### Categories
+
+<!-- md:version 4.4.0 -->
+<!-- md:default empty -->
+<!-- md:type list -->
+<!-- md:yaml_prop `categories` -->
+
+The set of [**monitor categories the window applies to**](http-monitors.md#category) (ignored when `global` is `true`). Every monitor belonging to one of them is covered, which lets you put a whole product or service into maintenance without listing its monitors one by one.
+
+The two selectors are **additive**: the window covers the monitors listed under [**Monitors**](#monitors) **plus** every monitor of the categories listed here.
+
+```yaml title="Putting a whole category into maintenance"
+maintenance-windows:
+  - name: "Payments migration"
+    start: "2026-08-01T22:00:00Z"
+    duration: "PT2H"
+    categories:
+      - "Payments"
+```
+
+Because the covered set is resolved **when the check runs**, it always reflects the categories of your monitors at that moment: a monitor you tag with _Payments_ while the window is active is covered from its next check on, and one you re-tag away from it stops being covered.
+
+!!!tip "Categories that are not in use"
+
+    A category that **no monitor belongs to** is kept as you configured it and simply covers nothing for now, so you can prepare a window ahead of the monitors it is meant to cover.
 
 ### Integrations
 

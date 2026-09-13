@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorCreator
+import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.validation.ValidDnsRecordMatchers
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
@@ -59,6 +60,7 @@ interface DnsMonitorCreator : DnsResponseCodeMatchers, MonitorCreator<DnsMonitor
     val enabled: Boolean
     override val integrations: List<String>?
     val metricsHistoryEnabled: Boolean
+
     override fun toMonitorRecord(validatedIntegrations: Set<IntegrationID>): DnsMonitorRecord =
         DnsMonitorRecord()
             .setName(name)
@@ -77,4 +79,5 @@ interface DnsMonitorCreator : DnsResponseCodeMatchers, MonitorCreator<DnsMonitor
             .setEnabled(enabled)
             .setIntegrations(validatedIntegrations.toTypedArray())
             .setMetricsHistoryEnabled(metricsHistoryEnabled)
+            .setCategory(normalizedCategory)
 }

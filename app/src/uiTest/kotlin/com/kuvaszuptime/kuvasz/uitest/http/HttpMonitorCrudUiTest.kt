@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
 import com.kuvaszuptime.kuvasz.uitest.pages.http.HttpMonitorDetailsPage
 import com.kuvaszuptime.kuvasz.uitest.pages.http.HttpMonitorListPage
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
+import io.kotest.matchers.shouldBe
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 
 @MicronautTest(environments = [PlaywrightSupport.UI_TEST_ENV])
@@ -22,17 +23,25 @@ class HttpMonitorCrudUiTest : UiTestSpec() {
             list.openCreateModal()
                 .setName(originalName)
                 .setUrl("https://example.com")
+                .setCategory("Payments")
                 .save()
             page.waitForURL("**/http-monitors/*")
             val details = HttpMonitorDetailsPage(page)
             assertThat(details.heading(originalName)).isVisible()
+            // The category is shown as a badge in the header
+            assertThat(details.categoryBadge).containsText("Payments")
 
             // Renaming is allowed since the monitor isn't on a status page.
             val updatedName = "E2E Monitor Renamed"
-            details.openConfigureModal()
+            val configureModal = details.openConfigureModal()
+            // The category is pre-filled from the monitor and can be cleared
+            assertThat(configureModal.selectedCategory).hasText("Payments")
+            configureModal
                 .setName(updatedName)
+                .setCategory("")
                 .save()
             assertThat(details.heading(updatedName)).isVisible()
+            assertThat(details.categoryBadge).hasCount(0)
 
             list.navigate()
             assertThat(list.rowByName(updatedName)).isVisible()
@@ -71,6 +80,45 @@ class HttpMonitorCrudUiTest : UiTestSpec() {
             list.navigate()
             assertThat(list.rows).hasCount(2)
             assertThat(list.rowByName(clonedName)).hasCount(1)
+        }
+
+        "the category field offers the already existing categories and takes a brand new one" {
+            val page = newPage()
+            val list = HttpMonitorListPage(page)
+            list.navigate()
+
+            // Two monitors seeding the categories the field is expected to offer afterwards
+            list.openCreateModal()
+                .setName("Category Source 1")
+                .setUrl("https://category-source-1.example.com")
+                .setCategory("Payments")
+                .save()
+            page.waitForURL("**/http-monitors/*")
+            list.navigate()
+            list.openCreateModal()
+                .setName("Category Source 2")
+                .setUrl("https://category-source-2.example.com")
+                .setCategory("alerting")
+                .save()
+            page.waitForURL("**/http-monitors/*")
+
+            list.navigate()
+            val modal = list.openCreateModal()
+            // Ordered case-insensitively by the endpoint backing the autocomplete
+            modal.offeredCategories shouldBe listOf("alerting", "Payments")
+
+            // A category that doesn't exist yet is created right in the field
+            modal.setName("Category Creator")
+                .setUrl("https://category-creator.example.com")
+                .setCategory("Drive storage")
+            assertThat(modal.selectedCategory).hasText("Drive storage")
+            modal.save()
+            page.waitForURL("**/http-monitors/*")
+            assertThat(HttpMonitorDetailsPage(page).categoryBadge).containsText("Drive storage")
+
+            // ...and it is offered from then on
+            list.navigate()
+            list.openCreateModal().offeredCategories shouldBe listOf("alerting", "Drive storage", "Payments")
         }
 
         "the HTTP monitor modal's accepted-status-codes select adds a chosen code" {

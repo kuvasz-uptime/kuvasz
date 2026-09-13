@@ -12,6 +12,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorDocs.MONITORS_40
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitoringStatsDto
+import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.check.dns.DnsMonitorActions
 import io.micronaut.http.HttpStatus
@@ -57,10 +58,12 @@ class DnsMonitorController(
     override fun getMonitorsWithDetails(
         @QueryValue enabled: Boolean?,
         @QueryValue uptimeStatus: List<UptimeStatus>?,
+        @QueryValue category: String?,
     ): List<DnsMonitorDetailsDto> =
         monitorActions.getMonitorsWithDetails(
             enabled = enabled,
             uptimeStatus = uptimeStatus.orEmpty(),
+            categoryFilter = CategoryFilter.fromQueryParam(category),
         )
 
     @ApiResponses(

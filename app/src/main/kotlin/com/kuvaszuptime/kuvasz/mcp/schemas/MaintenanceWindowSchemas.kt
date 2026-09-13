@@ -65,6 +65,7 @@ data class MaintenanceWindowSchema(
     val start: OffsetDateTime?,
     val duration: String?,
     val monitors: Set<String>,
+    val categories: Set<String>,
     val integrations: Set<String>,
     val active: Boolean,
     val nextStart: OffsetDateTime?,
@@ -84,6 +85,7 @@ data class MaintenanceWindowSchema(
             start = dto.start,
             duration = dto.duration,
             monitors = dto.monitors.map { it.toString() }.toSet(),
+            categories = dto.categories,
             integrations = dto.integrations.map { it.toString() }.toSet(),
             active = dto.active,
             nextStart = dto.nextStart,
@@ -109,6 +111,7 @@ data class MaintenanceWindowCreatorSchema(
     @get:ValidDuration
     val duration: String? = null,
     val monitors: List<String>?,
+    val categories: List<String>?,
     val integrations: List<String>?,
 ) {
     fun toDto() = MaintenanceWindowCreateDto(
@@ -121,6 +124,7 @@ data class MaintenanceWindowCreatorSchema(
         start = start,
         duration = duration,
         monitors = monitors.orEmpty(),
+        categories = categories.orEmpty(),
         integrations = integrations.orEmpty(),
     )
 }

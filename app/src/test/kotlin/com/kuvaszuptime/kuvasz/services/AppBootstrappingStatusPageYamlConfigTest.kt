@@ -83,6 +83,10 @@ class AppBootstrappingStatusPageYamlConfigTest : StringSpec({
                 MonitorID(MonitorType.HTTP_SSL, "test2"),
                 MonitorID(MonitorType.PUSH, "test1"),
             )
+            // An absent `categories` key binds to null, which has to end up as an empty array
+            firstPage.categories.shouldBeEmpty()
+            // ...and an absent `display-categories` falls back to the default
+            firstPage.displayCategories shouldBe true
         }
 
         pagesInDb.forOne { secondPage ->
@@ -92,6 +96,8 @@ class AppBootstrappingStatusPageYamlConfigTest : StringSpec({
             secondPage.monitors shouldContainExactlyInAnyOrder arrayOf(
                 MonitorID(MonitorType.HTTP_SSL, "test1"),
             )
+            secondPage.categories shouldContainExactlyInAnyOrder arrayOf("Payments", "Search")
+            secondPage.displayCategories shouldBe false
         }
 
         pagesInDb.forOne { thirdPage ->

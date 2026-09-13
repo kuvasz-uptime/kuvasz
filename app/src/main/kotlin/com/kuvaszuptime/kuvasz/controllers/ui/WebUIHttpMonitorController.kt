@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HTTP_MONITOR
 import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IncidentRepository
 import com.kuvaszuptime.kuvasz.security.ui.WebSecured
@@ -21,6 +22,7 @@ import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.PathVariable
 import io.micronaut.http.annotation.Produces
+import io.micronaut.http.annotation.QueryValue
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.annotation.ExecuteOn
 import io.swagger.v3.oas.annotations.Hidden
@@ -59,8 +61,13 @@ class WebUIHttpMonitorController(
 
     @Get("/http-monitors")
     @WebSecured
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
-    fun httpMonitors() = renderHttpMonitorsPage(appGlobals)
+    fun httpMonitors(@QueryValue category: String?) = renderHttpMonitorsPage(
+        globals = appGlobals,
+        categoryFilter = CategoryFilter.fromQueryParam(category),
+        availableCategories = monitorRepository.fetchDistinctCategories().sortedBy { it.lowercase() },
+    )
 
     @Get("/http-monitors/{monitorId}")
     @WebSecured
@@ -84,8 +91,11 @@ class WebUIHttpMonitorController(
     @WebSecured
     @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
-    fun httpMonitorTable(): String {
-        val monitors = monitorActions.getMonitorsWithDetails(sortedBy = HTTP_MONITOR.NAME.ascIgnoreCase())
+    fun httpMonitorTable(@QueryValue category: String?): String {
+        val monitors = monitorActions.getMonitorsWithDetails(
+            sortedBy = HTTP_MONITOR.NAME.ascIgnoreCase(),
+            categoryFilter = CategoryFilter.fromQueryParam(category),
+        )
 
         return renderHttpMonitorList(monitors, appGlobals.editabilityState)
     }

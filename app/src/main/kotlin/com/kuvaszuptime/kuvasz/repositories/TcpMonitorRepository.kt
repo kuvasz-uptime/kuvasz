@@ -8,6 +8,8 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.TcpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
+import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.tcp.idWithName
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
@@ -27,8 +29,12 @@ class TcpMonitorRepository(
     private val dslContext: DSLContext,
 ) : MonitorRepository<TcpMonitorRecord, TcpMonitorDetailsDto> {
 
-    override fun fetchAllWithDetails(enabled: Boolean?, monitorNames: List<String>?): List<TcpMonitorDetailsDto> =
-        getMonitorsWithDetails(enabled = enabled, monitorNames = monitorNames)
+    override fun fetchAllWithDetails(
+        enabled: Boolean?,
+        monitorNames: List<String>?,
+        categories: List<String>?,
+    ): List<TcpMonitorDetailsDto> =
+        getMonitorsWithDetails(enabled = enabled, monitorNames = monitorNames, categories = categories)
 
     override fun findById(monitorId: Long, txCtx: DSLContext?): TcpMonitorRecord? = (txCtx ?: dslContext)
         .selectFrom(TCP_MONITOR)
@@ -49,6 +55,12 @@ class TcpMonitorRepository(
         .where(TCP_MONITOR.ENABLED.eq(enabled))
         .fetch()
 
+    override fun fetchDistinctCategories(): List<String> = dslContext
+        .selectDistinct(TCP_MONITOR.CATEGORY)
+        .from(TCP_MONITOR)
+        .where(TCP_MONITOR.CATEGORY.isNotNull)
+        .fetch(TCP_MONITOR.CATEGORY)
+
     override fun deleteById(monitorId: Long, txCtx: DSLContext?): Int = (txCtx ?: dslContext)
         .deleteFrom(TCP_MONITOR)
         .where(TCP_MONITOR.ID.eq(monitorId))
@@ -60,6 +72,8 @@ class TcpMonitorRepository(
         uptimeStatus: List<UptimeStatus> = emptyList(),
         sortedBy: SortField<*>? = null,
         monitorNames: List<String>? = null,
+        categories: List<String>? = null,
+        categoryFilter: CategoryFilter? = null,
     ): List<TcpMonitorDetailsDto> =
         monitorDetailsSelect()
             .apply {
@@ -67,7 +81,8 @@ class TcpMonitorRepository(
                 uptimeStatus.takeIf { it.isNotEmpty() }?.let {
                     and(latestUptimeEventSelect.field(TCP_UPTIME_EVENT.STATUS)!!.`in`(it))
                 }
-                monitorNames?.let { and(TCP_MONITOR.NAME.`in`(it)) }
+                selectionCondition(TCP_MONITOR.NAME, TCP_MONITOR.CATEGORY, monitorNames, categories)?.let { and(it) }
+                categoryFilterCondition(TCP_MONITOR.CATEGORY, categoryFilter)?.let { and(it) }
                 sortedBy?.let { orderBy(it, TCP_MONITOR.ID.asc()) }
             }
             .fetchInto(TcpMonitorDetailsDto::class.java)
@@ -105,6 +120,7 @@ class TcpMonitorRepository(
                 .set(TCP_MONITOR.ENABLED, updatedMonitor.enabled)
                 .set(TCP_MONITOR.INTEGRATIONS, updatedMonitor.integrations)
                 .set(TCP_MONITOR.METRICS_HISTORY_ENABLED, updatedMonitor.metricsHistoryEnabled)
+                .set(TCP_MONITOR.CATEGORY, updatedMonitor.normalizedCategory)
                 .set(TCP_MONITOR.UPDATED_AT, getCurrentTimestamp())
                 .where(TCP_MONITOR.ID.eq(updatedMonitor.id))
                 .returning(TCP_MONITOR.asterisk())
@@ -152,6 +168,7 @@ class TcpMonitorRepository(
         .select(
             TCP_MONITOR.ID.`as`(TcpMonitorDetailsDto::id.name),
             TCP_MONITOR.NAME.`as`(TcpMonitorDetailsDto::name.name),
+            TCP_MONITOR.CATEGORY.`as`(TcpMonitorDetailsDto::category.name),
             TCP_MONITOR.HOST.`as`(TcpMonitorDetailsDto::host.name),
             TCP_MONITOR.PORT.`as`(TcpMonitorDetailsDto::port.name),
             TCP_MONITOR.UPTIME_CHECK_INTERVAL.`as`(TcpMonitorDetailsDto::uptimeCheckInterval.name),

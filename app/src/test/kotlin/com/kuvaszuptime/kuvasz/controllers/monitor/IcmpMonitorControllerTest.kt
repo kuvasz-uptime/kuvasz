@@ -101,7 +101,11 @@ class IcmpMonitorControllerTest(
                     endedAt = null,
                 )
 
-                val response = monitorClient.getMonitorsWithDetails(enabled = null, uptimeStatus = null)
+                val response = monitorClient.getMonitorsWithDetails(
+                    enabled = null,
+                    uptimeStatus = null,
+                    category = null,
+                )
 
                 then("it should return them with details") {
                     response shouldHaveSize 1
@@ -124,7 +128,11 @@ class IcmpMonitorControllerTest(
                 createIcmpMonitor(monitorRepository, enabled = true)
                 createIcmpMonitor(monitorRepository, enabled = false)
 
-                val response = monitorClient.getMonitorsWithDetails(enabled = false, uptimeStatus = null)
+                val response = monitorClient.getMonitorsWithDetails(
+                    enabled = false,
+                    uptimeStatus = null,
+                    category = null,
+                )
 
                 then("only disabled monitors should be returned") {
                     response shouldHaveSize 1
@@ -152,11 +160,76 @@ class IcmpMonitorControllerTest(
                 )
 
                 val response =
-                    monitorClient.getMonitorsWithDetails(enabled = null, uptimeStatus = listOf(UptimeStatus.UP))
+                    monitorClient.getMonitorsWithDetails(
+                        enabled = null,
+                        uptimeStatus = listOf(UptimeStatus.UP),
+                        category = null,
+                    )
 
                 then("only UP monitors should be returned") {
                     response shouldHaveSize 1
                     response.first().id shouldBe upMonitor.id
+                }
+            }
+            `when`("filtering by a category") {
+                val payments = createIcmpMonitor(monitorRepository, monitorName = "pays", category = "Payments")
+                createIcmpMonitor(monitorRepository, monitorName = "searches", category = "Search")
+                createIcmpMonitor(monitorRepository, monitorName = "plain", category = null)
+
+                val response = monitorClient.getMonitorsWithDetails(
+                    enabled = null,
+                    uptimeStatus = null,
+                    category = "Payments",
+                )
+
+                then("only the monitors of that category should be returned") {
+                    response.map { it.id } shouldContainExactly listOf(payments.id)
+                }
+            }
+
+            `when`("filtering by an empty category") {
+                createIcmpMonitor(monitorRepository, monitorName = "pays", category = "Payments")
+                val plain = createIcmpMonitor(monitorRepository, monitorName = "plain", category = null)
+
+                // An empty value is the uncategorized selector, in contrast to omitting the parameter entirely
+                val response = monitorClient.getMonitorsWithDetails(
+                    enabled = null,
+                    uptimeStatus = null,
+                    category = "",
+                )
+
+                then("only the monitors without a category should be returned") {
+                    response.map { it.id } shouldContainExactly listOf(plain.id)
+                }
+            }
+
+            `when`("combining the category filter with the other options") {
+                val enabledPayments = createIcmpMonitor(monitorRepository, monitorName = "pays", category = "Payments")
+                createIcmpMonitor(monitorRepository, monitorName = "paused", category = "Payments", enabled = false)
+                createIcmpMonitor(monitorRepository, monitorName = "searches", category = "Search")
+
+                val response = monitorClient.getMonitorsWithDetails(
+                    enabled = true,
+                    uptimeStatus = null,
+                    category = "Payments",
+                )
+
+                then("they should narrow the result together") {
+                    response.map { it.id } shouldContainExactly listOf(enabledPayments.id)
+                }
+            }
+
+            `when`("filtering by a category no monitor belongs to") {
+                createIcmpMonitor(monitorRepository, monitorName = "pays", category = "Payments")
+
+                val response = monitorClient.getMonitorsWithDetails(
+                    enabled = null,
+                    uptimeStatus = null,
+                    category = "Nobody uses me",
+                )
+
+                then("an empty list should be returned") {
+                    response.shouldBeEmpty()
                 }
             }
         }
@@ -307,13 +380,16 @@ class IcmpMonitorControllerTest(
 
         given("PATCH /api/v2/icmp-monitors/{id}") {
             `when`("a monitor is updated") {
-                val monitor = createIcmpMonitor(monitorRepository, host = "1.1.1.1")
+                val monitor = createIcmpMonitor(monitorRepository, host = "1.1.1.1", category = "Old category")
 
-                val updateNode = mapper.createObjectNode().put("host", "8.8.8.8")
+                val updateNode = mapper.createObjectNode()
+                    .put("host", "8.8.8.8")
+                    .put("category", "New category")
                 val updatedMonitor = monitorClient.updateMonitor(monitor.id, updateNode)
 
                 then("it should update the monitor") {
                     updatedMonitor.host shouldBe "8.8.8.8"
+                    updatedMonitor.category shouldBe "New category"
                 }
 
                 then("it should reschedule checks") {
@@ -839,7 +915,90 @@ class IcmpMonitorControllerTest(
                 }
             }
         }
-    }
+    
+        given("the category of a ICMP monitor") {
+            fun createWithCategory(category: String?, monitorName: String = randomClientSecret()) =
+                monitorClient.createMonitor(
+                    IcmpMonitorCreateDto(
+                        name = monitorName,
+                        host = "127.0.0.1",
+                        uptimeCheckInterval = 60,
+                        category = category,
+                    )
+                )
+
+            `when`("it is too long on creation") {
+                val ex = shouldThrow<HttpClientResponseException> { createWithCategory("a".repeat(101)) }
+
+                then("it should return a 400 with the interpolated maximum in its message") {
+                    ex.status shouldBe HttpStatus.BAD_REQUEST
+                    ex.message shouldContain "Monitor category must be at most 100 characters long"
+                }
+            }
+
+            `when`("it is exactly as long as the maximum") {
+                val created = createWithCategory("a".repeat(100))
+
+                then("it should be accepted") {
+                    created.category shouldBe "a".repeat(100)
+                }
+            }
+
+            `when`("it is blank or padded on creation") {
+                val blank = createWithCategory("   ")
+                val padded = createWithCategory("  Core services  ")
+
+                then("a blank one should be persisted as null and a padded one trimmed") {
+                    monitorRepository.findById(blank.id, null).shouldNotBeNull().category.shouldBeNull()
+                    monitorRepository.findById(padded.id, null).shouldNotBeNull().category shouldBe "Core services"
+                }
+            }
+
+            `when`("it is too long on update") {
+                val monitor = createIcmpMonitor(monitorRepository, category = "Old category")
+                val updateNode = mapper.createObjectNode().put("category", "a".repeat(101))
+                val ex = shouldThrow<HttpClientResponseException> {
+                    monitorClient.updateMonitor(monitor.id, updateNode)
+                }
+
+                then("it should return a 400 and leave the monitor untouched") {
+                    ex.status shouldBe HttpStatus.BAD_REQUEST
+                    ex.message shouldContain "Monitor category must be at most 100 characters long"
+                    monitorRepository.findById(monitor.id, null).shouldNotBeNull().category shouldBe "Old category"
+                }
+            }
+
+            `when`("it is blank or padded on update") {
+                val blanked = createIcmpMonitor(monitorRepository, category = "Old category")
+                val padded = createIcmpMonitor(monitorRepository, category = "Old category")
+                monitorClient.updateMonitor(blanked.id, mapper.createObjectNode().put("category", "   "))
+                monitorClient.updateMonitor(padded.id, mapper.createObjectNode().put("category", "  Payments  "))
+
+                then("a blank one should be cleared and a padded one trimmed") {
+                    monitorRepository.findById(blanked.id, null).shouldNotBeNull().category.shouldBeNull()
+                    monitorRepository.findById(padded.id, null).shouldNotBeNull().category shouldBe "Payments"
+                }
+            }
+
+            `when`("it is explicitly set to null on update") {
+                val monitor = createIcmpMonitor(monitorRepository, category = "Old category")
+                monitorClient.updateMonitor(monitor.id, mapper.createObjectNode().putNull("category"))
+
+                then("it should be cleared") {
+                    monitorRepository.findById(monitor.id, null).shouldNotBeNull().category.shouldBeNull()
+                }
+            }
+
+            `when`("it is not part of the update at all") {
+                val monitor = createIcmpMonitor(monitorRepository, category = "Old category")
+                monitorClient.updateMonitor(monitor.id, mapper.createObjectNode().put("enabled", false))
+
+                then("it should be left untouched") {
+                    monitorRepository.findById(monitor.id, null).shouldNotBeNull().category shouldBe "Old category"
+                }
+            }
+        }
+}
 
     @MockBean(StatCalculator::class)
     fun mockStatCalculator() = mockk<StatCalculator>()

@@ -79,11 +79,13 @@ interface MaintenanceWindowCreator : MaintenanceSchedule {
     override val duration: String?
 
     val monitors: List<String>?
+    val categories: List<String>?
     val integrations: List<String>?
 }
 
 fun MaintenanceWindowCreator.toMaintenanceWindowRecord(
     validatedMonitors: Set<MonitorID>,
+    validatedCategories: Set<String>,
     validatedIntegrations: Set<IntegrationID>,
 ): MaintenanceWindowRecord =
     MaintenanceWindowRecord()
@@ -96,4 +98,5 @@ fun MaintenanceWindowCreator.toMaintenanceWindowRecord(
         .setStart(start)
         .setDuration(duration)
         .setMonitors(validatedMonitors.toTypedArray())
+        .setCategories(validatedCategories.toTypedArray())
         .setIntegrations(validatedIntegrations.toTypedArray())

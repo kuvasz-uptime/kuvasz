@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.shouldHaveError
 import com.kuvaszuptime.kuvasz.models.shouldHaveSingleError
 import io.kotest.core.spec.style.BehaviorSpec
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.micronaut.validation.validator.DefaultValidator
@@ -115,6 +116,35 @@ class PushMonitorCreateDtoTest(validator: DefaultValidator) : BehaviorSpec({
                 )
             }
         }
+
+        `when`("the category is longer than the maximum") {
+            val dto = PushMonitorCreateDto(
+                name = "Test Monitor",
+                heartbeatInterval = 20,
+                clientSecret = randomClientSecret(),
+                category = "a".repeat(101),
+            )
+
+            then("bean validation should signal an error naming the interpolated maximum") {
+                validator.validate(dto).shouldHaveSingleError(
+                    propertyPath = "category",
+                    message = "Monitor category must be at most 100 characters long"
+                )
+            }
+        }
+
+        `when`("the category is exactly as long as the maximum") {
+            val dto = PushMonitorCreateDto(
+                name = "Test Monitor",
+                heartbeatInterval = 20,
+                clientSecret = randomClientSecret(),
+                category = "a".repeat(100),
+            )
+
+            then("bean validation should NOT signal an error") {
+                validator.validate(dto).shouldBeEmpty()
+            }
+        }
     }
 })
 
@@ -132,6 +162,24 @@ class PushMonitorCreateDtoDefaultsTest : BehaviorSpec({
             dto.gracePeriod shouldBe PushMonitorDefaults.GRACE_PERIOD_SECONDS
             dto.integrations shouldBe emptyList()
             dto.failureCountThreshold shouldBe 1
+            dto.category shouldBe null
+        }
+    }
+
+    given("the toMonitorRecord() mapping of the category") {
+        val baseDto = PushMonitorCreateDto(
+            name = "Test Monitor",
+            heartbeatInterval = 20,
+            clientSecret = randomClientSecret(),
+        )
+
+        `when`("the category is null, blank or padded with whitespace") {
+            then("it should be persisted as null or trimmed") {
+                baseDto.copy(category = null).toMonitorRecord(emptySet()).category shouldBe null
+                baseDto.copy(category = "   ").toMonitorRecord(emptySet()).category shouldBe null
+                baseDto.copy(category = " Core services ").toMonitorRecord(emptySet()).category shouldBe
+                    "Core services"
+            }
         }
     }
 })

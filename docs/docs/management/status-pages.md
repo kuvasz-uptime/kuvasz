@@ -28,6 +28,9 @@
           - "icmp:My ICMP Monitor"
           - "tcp:My TCP Monitor"
           - "dns:My DNS Monitor"
+        categories: # (9)!
+          - "Payments"
+        display-categories: true # (10)!
       # ... other status pages
     ```
 
@@ -39,6 +42,8 @@
     6. The `custom-logo-url` field is the URL of the custom logo to be displayed on the status page.
     7. The `custom-favicon-url` field is the URL of the custom favicon to be used for the status page.
     8. The `monitors` field is a list of monitors to be displayed on the status page. You can reference monitors by their type and name, in the format `<type>:<name>`, e.g., `http:My HTTP Monitor`, `push:My backup 1`, `icmp:My ICMP Monitor`, `tcp:My TCP Monitor`, `dns:My DNS Monitor`.
+    9. The `categories` field is a list of monitor categories. Every monitor belonging to one of them is displayed on the page, in addition to the ones listed under `monitors`.
+    10. The `display-categories` field decides whether the monitors are shown grouped into their categories. It only affects the rendering, not which monitors the page contains.
 
     !!!info "Consequences of describing your status pages as YAML"
 
@@ -57,6 +62,7 @@
         The import reconciles your status pages: pages with the same **slug** will be **updated** with the values from the backup, pages that exist in the database but are **not in the backup** will be **deleted**, and pages in the backup that do not exist will be **created**.
 
         - Referenced monitors that no longer exist are **skipped** (with a warning) instead of failing the import, so import your monitors **before** your status pages when restoring everything. A reference that is **malformed** (not in the `<type>:<name>` format) is a different case and **fails** the whole import, so you can catch typos instead of silently dropping them.
+        - Referenced **categories are always restored as they are**, even the ones no monitor belongs to at the moment, so the order in which you import your monitors and your status pages does not matter for them.
         - An **empty backup** (no `status-pages`, or an empty list) is treated as a **no-op**: it will **not** delete your existing status pages, guarding against accidentally uploading a truncated or wrong file. To remove the last status page, use the regular delete operation instead.
         - The import **does not** switch the status pages to read-only mode; you can keep managing them through the UI and API afterwards.
         - If your status pages are currently managed via YAML (read-only mode), the import is **disabled**: the endpoint returns **HTTP 405** and the dropdown item is greyed out. Manage them through your YAML configuration instead.
@@ -205,6 +211,30 @@ The URL of the **custom logo** to be displayed on the default status page, next 
 
 The URL of the **custom favicon** to be used for the default status page. If not set, the default _Kuvasz_ favicon will be used.
 
+### Display categories
+
+<!-- md:version 4.4.0 -->
+<!-- md:default true -->
+<!-- md:type boolean -->
+<!-- md:yaml_prop `display-categories` -->
+
+=== "YAML"
+
+    ```yaml hl_lines="3"
+    default-status-page:
+      # ...
+      display-categories: false
+      # ...
+    ```
+
+=== "ENV"
+
+    ```bash
+    DEFAULT_STATUS_PAGE_DISPLAY_CATEGORIES=false
+    ```
+
+Whether the default status page **displays its monitors grouped into their categories**. Turning it off shows a single, ungrouped list instead. It only affects the rendering, see the [same setting](#display-categories_1) of the custom status pages for the details.
+
 ## Custom status pages
 
 You can create **multiple custom status pages**, each with its own configuration and set of monitors. Custom status pages can be created, modified, and deleted via the _Web UI_, the _REST API_, or by defining them in the _YAML_ configuration file.
@@ -259,13 +289,55 @@ The URL of the **custom favicon** to be used for the custom status page. If not 
 <!-- md:type list -->
 <!-- md:yaml_prop `monitors` -->
 
-A list of **monitors to assign** to the status page.
+A list of **monitors to assign** to the status page. It can be combined with [**Categories**](#categories) below, in which case the page shows both.
 
 If you're using YAML, or the API, the format is `"{type}:{name}"`, where `type` is the alias of the monitor's type, and `name` is the name of the monitor. The supported types are `http`, `push`, `icmp`, `tcp` and `dns`. Example: `http:My HTTP Monitor`, `push:My backup 1`, `icmp:My ICMP Monitor`, `tcp:My TCP Monitor`, `dns:My DNS Monitor`.
 
 !!!tip
 
     You can add/keep **disabled monitors in the list**, but they will not be visible on the status page. This is useful if you want to enable them later without modifying the status page's configuration.
+
+### Categories
+
+<!-- md:version 4.4.0 -->
+<!-- md:default empty -->
+<!-- md:type list -->
+<!-- md:yaml_prop `categories` -->
+
+A list of [**monitor categories**](http-monitors.md#category) to assign to the status page. Every monitor belonging to one of them is displayed, so you can describe a page once and let it follow your monitors as you add, re-tag or remove them.
+
+The two selectors are **additive**: the page shows the monitors listed under [**Monitors**](#monitors) **plus** every monitor of the categories listed here. A monitor picked up by both ways is displayed only once.
+
+```yaml title="A page combining the two selectors"
+status-pages:
+  - title: "Platform"
+    slug: "platform"
+    monitors:
+      - "http:Landing page" # (1)!
+    categories:
+      - "Payments" # (2)!
+      - "Search"
+```
+
+1. A single, uncategorized monitor, pinned to the page explicitly.
+2. Every monitor of the _Payments_ and _Search_ categories, whichever they happen to be at the moment.
+
+!!!tip "Categories that are not in use"
+
+    A category that **no monitor belongs to** is perfectly valid: it is kept as you configured it and simply adds nothing to the page for now. As soon as you tag a monitor with it, that monitor shows up. This means you can prepare a page before its monitors exist, and that emptying a category does not silently rewrite your configuration.
+
+### Display categories
+
+<!-- md:version 4.4.0 -->
+<!-- md:default true -->
+<!-- md:type boolean -->
+<!-- md:yaml_prop `display-categories` -->
+
+Whether the page **displays its monitors grouped into their categories**, each group with its own aggregated status. Turn it off to show a **single, ungrouped list** instead.
+
+This is a **display-only switch**. It changes nothing about which monitors the page contains or how their statuses are calculated: the [**categories**](#categories) still select monitors, monitors keep the categories they inherit, and the per-category statuses are still returned by the API and the MCP server. It only decides what the visitors of the page get to see.
+
+It is useful when you group your monitors for your own sake — to select them onto pages and into maintenance windows — but you'd rather not reveal that internal structure publicly.
 
 ## Caching
 

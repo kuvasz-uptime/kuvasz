@@ -62,6 +62,7 @@ public class HttpMonitor implements Serializable {
     private String requestBody;
     private Long failureCountThreshold;
     private Boolean sensitiveUrl;
+    private String category;
 
     public HttpMonitor() {}
 
@@ -90,6 +91,7 @@ public class HttpMonitor implements Serializable {
         this.requestBody = value.requestBody;
         this.failureCountThreshold = value.failureCountThreshold;
         this.sensitiveUrl = value.sensitiveUrl;
+        this.category = value.category;
     }
 
     public HttpMonitor(
@@ -116,7 +118,8 @@ public class HttpMonitor implements Serializable {
         JsonNode expectedHeaders,
         String requestBody,
         Long failureCountThreshold,
-        Boolean sensitiveUrl
+        Boolean sensitiveUrl,
+        String category
     ) {
         this.id = id;
         this.name = name;
@@ -142,6 +145,7 @@ public class HttpMonitor implements Serializable {
         this.requestBody = requestBody;
         this.failureCountThreshold = failureCountThreshold;
         this.sensitiveUrl = sensitiveUrl;
+        this.category = category;
     }
 
     /**
@@ -512,6 +516,21 @@ public class HttpMonitor implements Serializable {
         return this;
     }
 
+    /**
+     * Getter for <code>kuvasz.http_monitor.category</code>.
+     */
+    public String getCategory() {
+        return this.category;
+    }
+
+    /**
+     * Setter for <code>kuvasz.http_monitor.category</code>.
+     */
+    public HttpMonitor setCategory(String category) {
+        this.category = category;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -665,6 +684,12 @@ public class HttpMonitor implements Serializable {
         }
         else if (!this.sensitiveUrl.equals(other.sensitiveUrl))
             return false;
+        if (this.category == null) {
+            if (other.category != null)
+                return false;
+        }
+        else if (!this.category.equals(other.category))
+            return false;
         return true;
     }
 
@@ -696,6 +721,7 @@ public class HttpMonitor implements Serializable {
         result = prime * result + ((this.requestBody == null) ? 0 : this.requestBody.hashCode());
         result = prime * result + ((this.failureCountThreshold == null) ? 0 : this.failureCountThreshold.hashCode());
         result = prime * result + ((this.sensitiveUrl == null) ? 0 : this.sensitiveUrl.hashCode());
+        result = prime * result + ((this.category == null) ? 0 : this.category.hashCode());
         return result;
     }
 
@@ -727,6 +753,7 @@ public class HttpMonitor implements Serializable {
         sb.append(", ").append(requestBody);
         sb.append(", ").append(failureCountThreshold);
         sb.append(", ").append(sensitiveUrl);
+        sb.append(", ").append(category);
 
         sb.append(")");
         return sb.toString();

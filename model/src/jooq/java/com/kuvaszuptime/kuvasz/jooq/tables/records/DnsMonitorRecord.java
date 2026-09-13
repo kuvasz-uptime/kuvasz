@@ -313,6 +313,21 @@ public class DnsMonitorRecord extends UpdatableRecordImpl<DnsMonitorRecord> impl
         return (OffsetDateTime) get(18);
     }
 
+    /**
+     * Setter for <code>kuvasz.dns_monitor.category</code>.
+     */
+    public DnsMonitorRecord setCategory(String value) {
+        set(19, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.dns_monitor.category</code>.
+     */
+    public String getCategory() {
+        return (String) get(19);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -336,7 +351,7 @@ public class DnsMonitorRecord extends UpdatableRecordImpl<DnsMonitorRecord> impl
     /**
      * Create a detached, initialised DnsMonitorRecord
      */
-    public DnsMonitorRecord(Long id, String name, String host, String resolverHost, Integer resolverPort, DnsTransport transport, JsonNode recordMatchers, DnsResponseCode expectedResponseCode, Boolean driftDetectionEnabled, DnsRecordType[] driftRecordTypes, Integer uptimeCheckInterval, Integer timeoutMs, Integer latencyThresholdMs, Long failureCountThreshold, Boolean enabled, Boolean metricsHistoryEnabled, IntegrationID[] integrations, OffsetDateTime createdAt, OffsetDateTime updatedAt) {
+    public DnsMonitorRecord(Long id, String name, String host, String resolverHost, Integer resolverPort, DnsTransport transport, JsonNode recordMatchers, DnsResponseCode expectedResponseCode, Boolean driftDetectionEnabled, DnsRecordType[] driftRecordTypes, Integer uptimeCheckInterval, Integer timeoutMs, Integer latencyThresholdMs, Long failureCountThreshold, Boolean enabled, Boolean metricsHistoryEnabled, IntegrationID[] integrations, OffsetDateTime createdAt, OffsetDateTime updatedAt, String category) {
         super(DnsMonitor.DNS_MONITOR);
 
         setId(id);
@@ -358,6 +373,7 @@ public class DnsMonitorRecord extends UpdatableRecordImpl<DnsMonitorRecord> impl
         setIntegrations(integrations);
         setCreatedAt(createdAt);
         setUpdatedAt(updatedAt);
+        setCategory(category);
         resetTouchedOnNotNull();
     }
 
@@ -387,6 +403,7 @@ public class DnsMonitorRecord extends UpdatableRecordImpl<DnsMonitorRecord> impl
             setIntegrations(value.getIntegrations());
             setCreatedAt(value.getCreatedAt());
             setUpdatedAt(value.getUpdatedAt());
+            setCategory(value.getCategory());
             resetTouchedOnNotNull();
         }
     }

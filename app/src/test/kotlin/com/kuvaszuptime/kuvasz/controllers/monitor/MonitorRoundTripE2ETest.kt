@@ -66,6 +66,7 @@ class MonitorRoundTripE2ETest(
                     expectedHeaders = mapOf("X-Expected-Header" to "ExpectedValue"),
                     requestBody = "{\"key\": \"value\"}",
                     integrations = listOf(IntegrationID(IntegrationType.SLACK, "disabled")),
+                    category = "roundtrip-category",
                 )
                 val pushMonitor = createPushMonitor(
                     pushMonitorRepository,
@@ -75,6 +76,7 @@ class MonitorRoundTripE2ETest(
                     gracePeriod = 54321,
                     clientSecret = "ab".repeat(18),
                     failureCountThreshold = 3,
+                    category = "roundtrip-category",
                 )
                 val icmpMonitor = createIcmpMonitor(
                     icmpMonitorRepository,
@@ -87,6 +89,7 @@ class MonitorRoundTripE2ETest(
                     packetLossThreshold = 50,
                     failureCountThreshold = 3L,
                     metricsHistoryEnabled = false,
+                    category = "roundtrip-category",
                 )
                 val tcpMonitor = createTcpMonitor(
                     tcpMonitorRepository,
@@ -94,6 +97,7 @@ class MonitorRoundTripE2ETest(
                     host = "example.com",
                     port = 5432,
                     monitorName = "roundtrip-tcp",
+                    category = "roundtrip-category",
                     uptimeCheckInterval = 120,
                     timeoutMs = 10000,
                     latencyThresholdMs = 250,
@@ -116,6 +120,7 @@ class MonitorRoundTripE2ETest(
                     expectedResponseCode = DnsResponseCode.NOERROR,
                     driftDetectionEnabled = true,
                     driftRecordTypes = listOf(DnsRecordType.NS, DnsRecordType.MX),
+                    category = "roundtrip-category",
                     timeoutMs = 10000,
                     latencyThresholdMs = 250,
                     failureCountThreshold = 3L,
@@ -187,6 +192,7 @@ class MonitorRoundTripE2ETest(
                     restoredHttp.requestHeadersAsMap() shouldBe httpMonitor.requestHeadersAsMap()
                     restoredHttp.expectedHeadersAsMap() shouldBe httpMonitor.expectedHeadersAsMap()
                     restoredHttp.requestBody shouldBe httpMonitor.requestBody
+                    restoredHttp.category shouldBe "roundtrip-category"
 
                     val restoredPush = pushMonitorRepository.findByName("roundtrip-push").shouldNotBeNull()
                     restoredPush.heartbeatInterval shouldBe pushMonitor.heartbeatInterval
@@ -194,6 +200,7 @@ class MonitorRoundTripE2ETest(
                     restoredPush.clientSecret shouldBe pushMonitor.clientSecret
                     restoredPush.enabled shouldBe pushMonitor.enabled
                     restoredPush.failureCountThreshold shouldBe pushMonitor.failureCountThreshold
+                    restoredPush.category shouldBe "roundtrip-category"
 
                     val restoredIcmp = icmpMonitorRepository.findByName("roundtrip-icmp").shouldNotBeNull()
                     restoredIcmp.host shouldBe icmpMonitor.host
@@ -204,6 +211,7 @@ class MonitorRoundTripE2ETest(
                     restoredIcmp.failureCountThreshold shouldBe icmpMonitor.failureCountThreshold
                     restoredIcmp.enabled shouldBe icmpMonitor.enabled
                     restoredIcmp.metricsHistoryEnabled shouldBe icmpMonitor.metricsHistoryEnabled
+                    restoredIcmp.category shouldBe "roundtrip-category"
 
                     val restoredTcp = tcpMonitorRepository.findByName("roundtrip-tcp").shouldNotBeNull()
                     restoredTcp.host shouldBe tcpMonitor.host
@@ -214,6 +222,7 @@ class MonitorRoundTripE2ETest(
                     restoredTcp.failureCountThreshold shouldBe tcpMonitor.failureCountThreshold
                     restoredTcp.enabled shouldBe tcpMonitor.enabled
                     restoredTcp.metricsHistoryEnabled shouldBe tcpMonitor.metricsHistoryEnabled
+                    restoredTcp.category shouldBe "roundtrip-category"
 
                     val restoredDns = dnsMonitorRepository.findByName("roundtrip-dns").shouldNotBeNull()
                     restoredDns.host shouldBe dnsMonitor.host
@@ -228,6 +237,7 @@ class MonitorRoundTripE2ETest(
                     restoredDns.timeoutMs shouldBe dnsMonitor.timeoutMs
                     restoredDns.latencyThresholdMs shouldBe dnsMonitor.latencyThresholdMs
                     restoredDns.failureCountThreshold shouldBe dnsMonitor.failureCountThreshold
+                    restoredDns.category shouldBe "roundtrip-category"
                     restoredDns.enabled shouldBe dnsMonitor.enabled
                     restoredDns.metricsHistoryEnabled shouldBe dnsMonitor.metricsHistoryEnabled
 

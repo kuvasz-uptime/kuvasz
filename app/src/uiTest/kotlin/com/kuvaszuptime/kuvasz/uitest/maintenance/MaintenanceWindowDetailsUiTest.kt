@@ -76,5 +76,35 @@ class MaintenanceWindowDetailsUiTest(private val httpMonitorRepository: HttpMoni
             details.badgeTextsOf(Messages.maintenanceWindowAffectedMonitors()) shouldBe
                 listOf("http:alpha", "http:bravo", "http:Charlie", "http:Delta")
         }
+
+        "a global window shows the all-monitors badge in the affected-categories row too" {
+            val window = createMaintenanceWindow(
+                dslContext,
+                name = "Global Window",
+                global = true,
+                categories = listOf("Ignored"),
+            )
+
+            val page = newPage()
+            val details = MaintenanceWindowDetailsPage(page)
+            details.navigate(window.id)
+            assertThat(details.detailRow(Messages.maintenanceWindowAffectedCategories()))
+                .containsText(Messages.maintenanceWindowGlobalScope())
+        }
+
+        "the affected-category badges are sorted, regardless of the casing" {
+            val window = createMaintenanceWindow(
+                dslContext,
+                name = "Sorted Categories Window",
+                categories = listOf("Charlie", "bravo", "Delta", "alpha"),
+            )
+
+            val page = newPage()
+            val details = MaintenanceWindowDetailsPage(page)
+            details.navigate(window.id)
+
+            details.badgeTextsOf(Messages.maintenanceWindowAffectedCategories()) shouldBe
+                listOf("alpha", "bravo", "Charlie", "Delta")
+        }
     }
 }

@@ -56,9 +56,78 @@ class MaintenanceWindowRepositoryTest(
                 )
 
                 then("it returns the enabled global and explicitly-assigned windows only") {
-                    repository.findActiveCandidatesForMonitor(coveredMonitor)
+                    repository.findActiveCandidatesForMonitor(coveredMonitor, null)
                         .map { it.name } shouldContainExactlyInAnyOrder
                         listOf("global", "assigned")
+                }
+            }
+
+            `when`("a window covers the category the monitor currently belongs to") {
+                createMaintenanceWindow(
+                    dslContext,
+                    name = "by-category",
+                    enabled = true,
+                    categories = listOf("Payments"),
+                )
+                createMaintenanceWindow(
+                    dslContext,
+                    name = "other-category",
+                    enabled = true,
+                    categories = listOf("Search"),
+                )
+                createMaintenanceWindow(
+                    dslContext,
+                    name = "disabled-category",
+                    enabled = false,
+                    categories = listOf("Payments"),
+                )
+
+                then("only the enabled window of that category is returned") {
+                    repository.findActiveCandidatesForMonitor(coveredMonitor, "Payments")
+                        .map { it.name } shouldContainExactly listOf("by-category")
+                }
+
+                then("an uncategorized monitor is not reached by any of them") {
+                    repository.findActiveCandidatesForMonitor(coveredMonitor, null).shouldBeEmpty()
+                }
+
+                then("a category reference only differing in its casing does not match") {
+                    repository.findActiveCandidatesForMonitor(coveredMonitor, "payments").shouldBeEmpty()
+                }
+            }
+
+            `when`("a window lists the monitor explicitly and another one covers its category") {
+                createMaintenanceWindow(
+                    dslContext,
+                    name = "assigned",
+                    enabled = true,
+                    monitors = listOf(coveredMonitor),
+                )
+                createMaintenanceWindow(
+                    dslContext,
+                    name = "by-category",
+                    enabled = true,
+                    categories = listOf("Payments"),
+                )
+
+                then("both are returned, the two selectors being additive") {
+                    repository.findActiveCandidatesForMonitor(coveredMonitor, "Payments")
+                        .map { it.name } shouldContainExactlyInAnyOrder listOf("assigned", "by-category")
+                }
+            }
+
+            `when`("a single window lists the monitor and covers its category as well") {
+                createMaintenanceWindow(
+                    dslContext,
+                    name = "both-ways",
+                    enabled = true,
+                    monitors = listOf(coveredMonitor),
+                    categories = listOf("Payments"),
+                )
+
+                then("it is returned only once") {
+                    repository.findActiveCandidatesForMonitor(coveredMonitor, "Payments")
+                        .map { it.name } shouldContainExactly listOf("both-ways")
                 }
             }
         }
@@ -76,7 +145,9 @@ class MaintenanceWindowRepositoryTest(
                 createMaintenanceWindow(dslContext, name = "disabled-global", enabled = false, global = true)
 
                 then("each monitor is keyed to only the enabled windows affecting it, in a single query") {
-                    val result = repository.findActiveCandidatesForMonitors(listOf(coveredMonitor, otherMonitor))
+                    val result = repository.findActiveCandidatesForMonitors(
+                        mapOf(coveredMonitor to null, otherMonitor to null)
+                    )
 
                     result.getValue(coveredMonitor).map { it.name } shouldContainExactlyInAnyOrder
                         listOf("global", "assigned")
@@ -94,9 +165,51 @@ class MaintenanceWindowRepositoryTest(
                 )
 
                 then("it still gets an (empty) entry") {
-                    val result = repository.findActiveCandidatesForMonitors(listOf(coveredMonitor, otherMonitor))
+                    val result = repository.findActiveCandidatesForMonitors(
+                        mapOf(coveredMonitor to null, otherMonitor to null)
+                    )
 
                     result.getValue(coveredMonitor).map { it.name } shouldContainExactly listOf("assigned")
+                    result.getValue(otherMonitor).shouldBeEmpty()
+                }
+            }
+
+            `when`("the requested monitors belong to different categories") {
+                createMaintenanceWindow(
+                    dslContext,
+                    name = "payments",
+                    enabled = true,
+                    categories = listOf("Payments"),
+                )
+                createMaintenanceWindow(dslContext, name = "search", enabled = true, categories = listOf("Search"))
+                createMaintenanceWindow(dslContext, name = "global", enabled = true, global = true)
+
+                then("every monitor is matched against its own category within the single query") {
+                    val result = repository.findActiveCandidatesForMonitors(
+                        mapOf(coveredMonitor to "Payments", otherMonitor to "Search")
+                    )
+
+                    result.getValue(coveredMonitor).map { it.name } shouldContainExactlyInAnyOrder
+                        listOf("global", "payments")
+                    result.getValue(otherMonitor).map { it.name } shouldContainExactlyInAnyOrder
+                        listOf("global", "search")
+                }
+            }
+
+            `when`("one of the requested monitors is uncategorized") {
+                createMaintenanceWindow(
+                    dslContext,
+                    name = "payments",
+                    enabled = true,
+                    categories = listOf("Payments"),
+                )
+
+                then("the null category matches nothing instead of erroring out") {
+                    val result = repository.findActiveCandidatesForMonitors(
+                        mapOf(coveredMonitor to "Payments", otherMonitor to null)
+                    )
+
+                    result.getValue(coveredMonitor).map { it.name } shouldContainExactly listOf("payments")
                     result.getValue(otherMonitor).shouldBeEmpty()
                 }
             }
@@ -105,7 +218,7 @@ class MaintenanceWindowRepositoryTest(
                 createMaintenanceWindow(dslContext, name = "global", enabled = true, global = true)
 
                 then("it returns an empty map without querying") {
-                    repository.findActiveCandidatesForMonitors(emptyList()).shouldBeEmptyMap()
+                    repository.findActiveCandidatesForMonitors(emptyMap()).shouldBeEmptyMap()
                 }
             }
         }

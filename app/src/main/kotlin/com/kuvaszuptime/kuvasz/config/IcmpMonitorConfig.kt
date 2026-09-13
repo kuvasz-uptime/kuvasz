@@ -8,6 +8,7 @@ import io.micronaut.core.bind.annotation.Bindable
 
 @EachProperty(IcmpMonitorConfig.CONFIG_PREFIX, list = true)
 @Introspected
+@Suppress("ComplexInterface")
 interface IcmpMonitorConfig : IcmpMonitorCreator, MonitorConfig {
 
     companion object {
@@ -37,4 +38,6 @@ interface IcmpMonitorConfig : IcmpMonitorCreator, MonitorConfig {
 
     @get:Bindable(defaultValue = IcmpMonitorDefaults.METRICS_HISTORY_ENABLED.toString())
     override val metricsHistoryEnabled: Boolean
+
+    override val category: String?
 }

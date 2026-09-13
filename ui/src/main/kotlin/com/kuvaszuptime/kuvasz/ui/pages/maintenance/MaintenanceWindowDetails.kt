@@ -129,6 +129,24 @@ private fun FlowContent.maintenanceWindowDetailsContent(
                                     }
                                 }
                             }
+                            propertyRow(Messages.maintenanceWindowAffectedCategories()) {
+                                if (window.global) {
+                                    inlineBadge(
+                                        text = Messages.maintenanceWindowGlobalScope(),
+                                        color = Color.GREEN_LT,
+                                    )
+                                } else if (window.categories.isEmpty()) {
+                                    noData()
+                                } else {
+                                    window.categories.sortedBy { it.lowercase() }.forEach { category ->
+                                        span {
+                                            classes(ME_2)
+                                            testId("affected-category")
+                                            inlineBadge(text = category)
+                                        }
+                                    }
+                                }
+                            }
                             propertyRow(Messages.integrationsLabel()) {
                                 if (window.integrations.isEmpty()) {
                                     noData()

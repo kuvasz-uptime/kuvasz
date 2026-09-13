@@ -46,7 +46,7 @@ class HeartbeatCheckerTest(
         val mockDbEventHandler = mockk<DatabaseEventHandler>(relaxed = true)
         val mockPendingFailureRepo = mockk<PendingFailureRepository>()
         val maintenanceWindowServiceMock = mockk<MaintenanceWindowService> {
-            every { isUnderMaintenance(any()) } returns false
+            every { isUnderMaintenance(any(), any()) } returns false
         }
         val heartbeatChecker = HeartbeatChecker(
             dslCtx = dslContext,
@@ -240,9 +240,13 @@ class HeartbeatCheckerTest(
                 val testSubscriber = TestSubscriber<PushUptimeMonitorEvent>()
                 dispatcher.subscribeToPushMonitorEvents { it.forwardToSubscriber(testSubscriber) }
 
+                // Categorized on purpose: the checker has to hand the monitor's own category to the lookup, since a
+                // window may cover it through that instead of listing it explicitly
                 val maintainedMonitor = PushMonitorRecord().apply {
                     id = 10
                     name = "maintained"
+                    // `WithCategory` exposes it as a val, so the record's own setter is the way in
+                    setCategory("Payments")
                     failureCountThreshold = 1
                 }
                 val normalMonitor = PushMonitorRecord().apply {
@@ -255,7 +259,9 @@ class HeartbeatCheckerTest(
                     normalMonitor
                 )
                 every { uptimeEventRepoMock.getPreviousEventByMonitorId(any(), any()) } returns null
-                every { maintenanceWindowServiceMock.isUnderMaintenance(maintainedMonitor.monitorId()) } returns true
+                every {
+                    maintenanceWindowServiceMock.isUnderMaintenance(maintainedMonitor.monitorId(), "Payments")
+                } returns true
 
                 heartbeatChecker.checkHeartbeats()
 

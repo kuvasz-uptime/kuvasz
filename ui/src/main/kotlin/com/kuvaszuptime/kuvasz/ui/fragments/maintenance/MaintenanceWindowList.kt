@@ -53,6 +53,10 @@ fun renderMaintenanceWindowList(maintenanceWindows: List<MaintenanceWindowDetail
                                 classes(D_NONE, D_MD_TABLE_CELL, TEXT_CENTER)
                                 +Messages.monitors()
                             }
+                            th {
+                                classes(D_NONE, D_MD_TABLE_CELL, TEXT_CENTER)
+                                +Messages.categories()
+                            }
                             // Actions
                             if (!isReadOnlyMode) {
                                 th {}
@@ -111,6 +115,13 @@ private fun TBODY.maintenanceWindowListItem(isReadOnlyMode: Boolean, window: Mai
             } else {
                 +window.monitors.size.toString()
             }
+        }
+        // Categories
+        td {
+            classes(D_NONE, D_MD_TABLE_CELL, TEXT_CENTER)
+            testId("maintenance-window-categories")
+            // A global window covers everything, so its selectors are irrelevant, see the cell above
+            if (window.global) +"-" else +window.categories.size.toString()
         }
         // Actions
         if (!isReadOnlyMode) {

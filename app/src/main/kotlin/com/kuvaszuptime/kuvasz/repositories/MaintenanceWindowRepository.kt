@@ -44,43 +44,78 @@ class MaintenanceWindowRepository(private val dslContext: DSLContext) {
         .and(MAINTENANCE_WINDOW.SHOW_ON_STATUS_PAGES.eq(true))
         .fetch()
 
-    fun findActiveCandidatesForMonitor(monitorId: MonitorID): List<MaintenanceWindowRecord> = dslContext
+    /**
+     * The enabled windows that may affect the given monitor: the global ones, the ones listing it explicitly, and the
+     * ones covering the category it currently belongs to. The three are additive, and an uncategorized monitor can
+     * only be reached by the first two.
+     */
+    fun findActiveCandidatesForMonitor(
+        monitorId: MonitorID,
+        category: String?,
+    ): List<MaintenanceWindowRecord> = dslContext
         .selectFrom(MAINTENANCE_WINDOW)
         .where(MAINTENANCE_WINDOW.ENABLED.eq(true))
         .and(
-            MAINTENANCE_WINDOW.GLOBAL.eq(true)
-                .or(MAINTENANCE_WINDOW.MONITORS.contains(arrayOf(monitorId)))
+            DSL.or(
+                listOfNotNull(
+                    MAINTENANCE_WINDOW.GLOBAL.eq(true),
+                    MAINTENANCE_WINDOW.MONITORS.contains(arrayOf(monitorId)),
+                    category?.let { MAINTENANCE_WINDOW.CATEGORIES.contains(arrayOf(it)) },
+                )
+            )
         )
         .fetch()
 
     /**
      * Batch variant of [findActiveCandidatesForMonitor]: for the given monitors, returns the enabled windows that
-     * affect each of them (global, or explicitly assigned) in a single query, keyed by monitor. Every requested monitor
-     * gets an entry, even if no window affects it.
+     * affect each of them (global, explicitly assigned, or covered by their category) in a single query, keyed by
+     * monitor. Every requested monitor gets an entry, even if no window affects it.
+     *
+     * The monitors are passed in as their IDs mapped to the category they currently belong to, which is unnested
+     * into a two-column derived table to keep the whole resolution on the database side.
      */
     fun findActiveCandidatesForMonitors(
-        monitorIds: List<MonitorID>,
+        monitorsWithCategory: Map<MonitorID, String?>,
     ): Map<MonitorID, List<MaintenanceWindowRecord>> {
-        if (monitorIds.isEmpty()) return emptyMap()
+        if (monitorsWithCategory.isEmpty()) return emptyMap()
 
-        val requestedIds = monitorIds.mapTo(mutableSetOf()) { it.toString() }.toTypedArray()
+        val requestedIds = monitorsWithCategory.keys.map { it.toString() }.toTypedArray()
+        val requestedCategories = monitorsWithCategory.values.toTypedArray()
         val monitorIdField = DSL.field("m.monitor_id", SQLDataType.CLOB)
+        val categoryField = DSL.field("m.category", SQLDataType.CLOB)
 
         val windowsByMonitorId = dslContext
             .select(listOf(monitorIdField) + MAINTENANCE_WINDOW.fields().toList())
             .from(MAINTENANCE_WINDOW)
             .crossJoin(
-                DSL.unnest(DSL.`val`(requestedIds, SQLDataType.CLOB.array())).`as`("m", "monitor_id")
+                DSL.table(
+                    "unnest({0}, {1})",
+                    DSL.`val`(requestedIds, SQLDataType.CLOB.array()),
+                    DSL.`val`(requestedCategories, SQLDataType.CLOB.array()),
+                ).`as`("m", "monitor_id", "category")
             )
             .where(MAINTENANCE_WINDOW.ENABLED.eq(true))
             .and(
                 MAINTENANCE_WINDOW.GLOBAL.eq(true)
+                    // MONITORS is a converted MonitorID[], so it cannot be compared to the unnested text column
+                    // through the DSL, unlike the plain text[] of CATEGORIES right below
                     .or(DSL.condition("{0} @> array[{1}]", MAINTENANCE_WINDOW.MONITORS, monitorIdField))
+                    .or(
+                        categoryField.isNotNull
+                            .and(MAINTENANCE_WINDOW.CATEGORIES.contains(DSL.array(categoryField)))
+                    )
             )
             .fetchGroups({ it.get(monitorIdField) }, { it.into(MAINTENANCE_WINDOW) })
 
-        return monitorIds.associateWith { windowsByMonitorId[it.toString()].orEmpty() }
+        return monitorsWithCategory.keys.associateWith { windowsByMonitorId[it.toString()].orEmpty() }
     }
+
+    fun fetchDistinctCategories(): List<String> = dslContext
+        .select(MAINTENANCE_WINDOW.CATEGORIES)
+        .from(MAINTENANCE_WINDOW)
+        .fetch(MAINTENANCE_WINDOW.CATEGORIES)
+        .flatMap { it.toList() }
+        .distinct()
 
     fun deleteById(id: Long, ctx: DSLContext = dslContext): Int = ctx
         .deleteFrom(MAINTENANCE_WINDOW)
@@ -114,6 +149,7 @@ class MaintenanceWindowRepository(private val dslContext: DSLContext) {
                 .set(MAINTENANCE_WINDOW.START, updatedWindow.start)
                 .set(MAINTENANCE_WINDOW.DURATION, updatedWindow.duration)
                 .set(MAINTENANCE_WINDOW.MONITORS, updatedWindow.monitors)
+                .set(MAINTENANCE_WINDOW.CATEGORIES, updatedWindow.categories)
                 .set(MAINTENANCE_WINDOW.INTEGRATIONS, updatedWindow.integrations)
                 .set(MAINTENANCE_WINDOW.UPDATED_AT, getCurrentTimestamp())
                 .where(MAINTENANCE_WINDOW.ID.eq(updatedWindow.id))

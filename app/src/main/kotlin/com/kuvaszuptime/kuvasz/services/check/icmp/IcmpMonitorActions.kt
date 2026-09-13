@@ -11,7 +11,9 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorId
+import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorsWithCategory
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIcmpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.IcmpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
@@ -66,7 +68,8 @@ class IcmpMonitorActions(
     fun getMonitorDetails(monitorId: Long): IcmpMonitorDetailsDto {
         val monitorFromRepo =
             monitorRepository.getMonitorWithDetails(monitorId) ?: throw MonitorNotFoundException(monitorId)
-        val windows = maintenanceWindowService.getWindowsForMonitor(monitorFromRepo.monitorId())
+        val windows =
+            maintenanceWindowService.getWindowsForMonitor(monitorFromRepo.monitorId(), monitorFromRepo.category)
 
         return monitorFromRepo.copy(
             nextUptimeCheck = checkScheduler.getNextCheck(monitorId),
@@ -82,9 +85,15 @@ class IcmpMonitorActions(
         enabled: Boolean? = null,
         uptimeStatus: List<UptimeStatus> = emptyList(),
         sortedBy: SortField<*>? = null,
+        categoryFilter: CategoryFilter? = null,
     ): List<IcmpMonitorDetailsDto> {
-        val monitors = monitorRepository.getMonitorsWithDetails(enabled, uptimeStatus, sortedBy)
-        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(monitors.map { it.monitorId() })
+        val monitors = monitorRepository.getMonitorsWithDetails(
+            enabled = enabled,
+            uptimeStatus = uptimeStatus,
+            sortedBy = sortedBy,
+            categoryFilter = categoryFilter,
+        )
+        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(monitors.monitorsWithCategory())
 
         return monitors.map { detailsDto ->
             val windows = windowsByMonitor[detailsDto.monitorId()].orEmpty()
@@ -162,10 +171,12 @@ class IcmpMonitorActions(
     override fun getStatusPageDataOfEnabledMonitors(
         period: Duration,
         monitorIds: List<MonitorID>?,
+        categories: List<String>?,
     ): List<StatusPageIcmpMonitorDetailsDto> =
         buildStatusPageData(
             period = period,
             monitorIds = monitorIds,
+            categories = categories,
         ) { monitor, uptime ->
             val latencyMetrics = monitor.metricsHistoryEnabled.takeIf { it }
                 ?.let { metricsLogRepository.getLatencyMetrics(monitor.id, period) }
@@ -181,6 +192,7 @@ class IcmpMonitorActions(
                 uptimeStatus = monitor.uptimeStatus,
                 uptimeStatusHistory = uptime.uptimeStatusHistory,
                 inMaintenance = uptime.inMaintenance,
+                category = monitor.category,
             )
         }
 }

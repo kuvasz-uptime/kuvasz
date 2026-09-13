@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
 import com.kuvaszuptime.kuvasz.uitest.pages.maintenance.MaintenanceWindowDetailsPage
 import com.kuvaszuptime.kuvasz.uitest.pages.maintenance.MaintenanceWindowListPage
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
+import io.kotest.matchers.shouldBe
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 
 @MicronautTest(environments = [PlaywrightSupport.UI_TEST_ENV])
@@ -125,6 +126,66 @@ class MaintenanceWindowCrudUiTest(private val httpMonitorRepository: HttpMonitor
             assertThat(reopened.nameInput).hasValue(originalName)
             assertThat(reopened.cronInput).hasValue(originalCron)
             assertThat(reopened.typeRadio(MaintenanceWindowType.CRON)).isChecked()
+        }
+
+        "a window can be scoped to categories, which survive a reopen and show up on the details page" {
+            createHttpMonitor(httpMonitorRepository, monitorName = "Categorized", category = "Payments")
+
+            val page = newPage()
+            val list = MaintenanceWindowListPage(page)
+            list.navigate()
+
+            val modal = list.openCreateModal().setName("Category Scoped Window")
+            // The already used category is offered by the internal endpoint, a brand new one is created in place
+            modal.offeredSelectableCategories shouldBe listOf("Payments")
+            modal.selectCategory("Payments")
+            modal.selectCategory("Brand new")
+            assertThat(modal.selectedCategories).hasCount(2)
+            modal.save()
+            page.waitForURL("**/maintenance-windows/*")
+
+            val details = MaintenanceWindowDetailsPage(page)
+            assertThat(details.affectedCategories).hasCount(2)
+            assertThat(details.affectedCategories).containsText(arrayOf("Brand new", "Payments"))
+
+            val reopened = details.openConfigureModal()
+            assertThat(reopened.selectedCategories).hasCount(2)
+        }
+
+        "the categories of a maintenance window can be cleared entirely" {
+            val page = newPage()
+            val list = MaintenanceWindowListPage(page)
+            list.navigate()
+
+            val created = list.openCreateModal().setName("Cleared Categories")
+            created.selectCategory("Payments")
+            created.save()
+            page.waitForURL("**/maintenance-windows/*")
+
+            val details = MaintenanceWindowDetailsPage(page)
+            val modal = details.openConfigureModal()
+            assertThat(modal.selectedCategories).hasCount(1)
+            modal.clearCategories()
+            modal.save()
+
+            // The empty array has to reach the server, not be treated as "leave it alone"
+            assertThat(details.affectedCategories).hasCount(0)
+            val reopened = details.openConfigureModal()
+            assertThat(reopened.selectedCategories).hasCount(0)
+        }
+
+        "the categories of an abandoned maintenance window form are reset when the modal is reopened" {
+            val page = newPage()
+            val list = MaintenanceWindowListPage(page)
+            list.navigate()
+
+            val modal = list.openCreateModal().setName("Abandoned Categories")
+            modal.selectCategory("Payments")
+            assertThat(modal.selectedCategories).hasCount(1)
+            modal.dismiss()
+
+            val reopened = list.openCreateModal()
+            assertThat(reopened.selectedCategories).hasCount(0)
         }
 
         "the modal's monitor multi-select adds a seeded monitor" {

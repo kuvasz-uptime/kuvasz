@@ -107,6 +107,7 @@ class HttpMonitorActionsTest(
                 val result = httpMonitorActions.getStatusPageDataOfEnabledMonitors(
                     period = Duration.ofDays(7),
                     monitorIds = null,
+                    categories = null,
                 )
 
                 then("it should return all the enabled monitors") {
@@ -201,7 +202,8 @@ class HttpMonitorActionsTest(
                 // Executing the method under test
                 val result = httpMonitorActions.getStatusPageDataOfEnabledMonitors(
                     period = Duration.ofDays(7),
-                    monitorIds = listOf(enabledMonitor.monitorId())
+                    monitorIds = listOf(enabledMonitor.monitorId()),
+                    categories = null,
                 )
 
                 then("it should return only the requested monitor's data") {

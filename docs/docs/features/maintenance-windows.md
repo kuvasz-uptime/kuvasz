@@ -22,7 +22,7 @@ A maintenance window has a **schedule**, a **scope**, and an optional set of **i
 
 Regardless of the schedule, you can configure:
 
-- **Scope**: a window can be **global** (it applies to every monitor), or scoped to a **specific set of monitors**.
+- **Scope**: a window can be **global** (it applies to every monitor), or scoped to a **specific set of monitors**, to whole [**monitor categories**](../management/maintenance-windows.md#categories), or to both at once. Scoping by category means you can put a whole product into maintenance without listing its monitors, and the covered set follows your monitors as you re-tag them.
 - **Notified integrations**: the integrations that should receive the window's **start and end** notifications.
 - **Status page visibility**: whether the window may be [displayed on your status pages](status-pages.md), so your users can see that a maintenance is active or coming up.
 

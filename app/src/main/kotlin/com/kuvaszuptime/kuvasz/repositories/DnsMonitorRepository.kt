@@ -9,6 +9,8 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.DnsMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
+import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.dns.idWithName
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
@@ -30,8 +32,12 @@ class DnsMonitorRepository(
 
     private val matcherListConverter = JsonNodeToMatcherListConverter()
 
-    override fun fetchAllWithDetails(enabled: Boolean?, monitorNames: List<String>?): List<DnsMonitorDetailsDto> =
-        getMonitorsWithDetails(enabled = enabled, monitorNames = monitorNames)
+    override fun fetchAllWithDetails(
+        enabled: Boolean?,
+        monitorNames: List<String>?,
+        categories: List<String>?,
+    ): List<DnsMonitorDetailsDto> =
+        getMonitorsWithDetails(enabled = enabled, monitorNames = monitorNames, categories = categories)
 
     override fun findById(monitorId: Long, txCtx: DSLContext?): DnsMonitorRecord? = (txCtx ?: dslContext)
         .selectFrom(DNS_MONITOR)
@@ -51,6 +57,12 @@ class DnsMonitorRepository(
         .selectFrom(DNS_MONITOR)
         .where(DNS_MONITOR.ENABLED.eq(enabled))
         .fetch()
+
+    override fun fetchDistinctCategories(): List<String> = dslContext
+        .selectDistinct(DNS_MONITOR.CATEGORY)
+        .from(DNS_MONITOR)
+        .where(DNS_MONITOR.CATEGORY.isNotNull)
+        .fetch(DNS_MONITOR.CATEGORY)
 
     override fun deleteById(monitorId: Long, txCtx: DSLContext?): Int = (txCtx ?: dslContext)
         .deleteFrom(DNS_MONITOR)
@@ -82,6 +94,8 @@ class DnsMonitorRepository(
         uptimeStatus: List<UptimeStatus> = emptyList(),
         sortedBy: SortField<*>? = null,
         monitorNames: List<String>? = null,
+        categories: List<String>? = null,
+        categoryFilter: CategoryFilter? = null,
     ): List<DnsMonitorDetailsDto> =
         monitorDetailsSelect()
             .apply {
@@ -89,7 +103,8 @@ class DnsMonitorRepository(
                 uptimeStatus.takeIf { it.isNotEmpty() }?.let {
                     and(latestUptimeEventSelect.field(DNS_UPTIME_EVENT.STATUS)!!.`in`(it))
                 }
-                monitorNames?.let { and(DNS_MONITOR.NAME.`in`(it)) }
+                selectionCondition(DNS_MONITOR.NAME, DNS_MONITOR.CATEGORY, monitorNames, categories)?.let { and(it) }
+                categoryFilterCondition(DNS_MONITOR.CATEGORY, categoryFilter)?.let { and(it) }
                 sortedBy?.let { orderBy(it, DNS_MONITOR.ID.asc()) }
             }
             .fetchInto(DnsMonitorDetailsDto::class.java)
@@ -122,6 +137,7 @@ class DnsMonitorRepository(
                 .set(DNS_MONITOR.ENABLED, updatedMonitor.enabled)
                 .set(DNS_MONITOR.INTEGRATIONS, updatedMonitor.integrations)
                 .set(DNS_MONITOR.METRICS_HISTORY_ENABLED, updatedMonitor.metricsHistoryEnabled)
+                .set(DNS_MONITOR.CATEGORY, updatedMonitor.normalizedCategory)
                 .set(DNS_MONITOR.UPDATED_AT, getCurrentTimestamp())
                 .where(DNS_MONITOR.ID.eq(updatedMonitor.id))
                 .returning(DNS_MONITOR.asterisk())
@@ -161,6 +177,7 @@ class DnsMonitorRepository(
         .select(
             DNS_MONITOR.ID.`as`(DnsMonitorDetailsDto::id.name),
             DNS_MONITOR.NAME.`as`(DnsMonitorDetailsDto::name.name),
+            DNS_MONITOR.CATEGORY.`as`(DnsMonitorDetailsDto::category.name),
             DNS_MONITOR.HOST.`as`(DnsMonitorDetailsDto::host.name),
             DNS_MONITOR.RESOLVER_HOST.`as`(DnsMonitorDetailsDto::resolverHost.name),
             DNS_MONITOR.RESOLVER_PORT.`as`(DnsMonitorDetailsDto::resolverPort.name),

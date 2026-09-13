@@ -13,7 +13,9 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorId
+import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorsWithCategory
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageHttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
@@ -70,7 +72,8 @@ class HttpMonitorActions(
     fun getMonitorDetails(monitorId: Long): HttpMonitorDetailsDto {
         val monitorFromRepo =
             monitorRepository.getMonitorWithDetails(monitorId) ?: throw MonitorNotFoundException(monitorId)
-        val windows = maintenanceWindowService.getWindowsForMonitor(monitorFromRepo.monitorId())
+        val windows =
+            maintenanceWindowService.getWindowsForMonitor(monitorFromRepo.monitorId(), monitorFromRepo.category)
 
         return monitorFromRepo.copy(
             nextUptimeCheck = checkScheduler.getNextCheck(monitorId),
@@ -88,10 +91,17 @@ class HttpMonitorActions(
         sslStatus: List<SslStatus> = emptyList(),
         sslCheckEnabled: Boolean? = null,
         sortedBy: SortField<*>? = null,
+        categoryFilter: CategoryFilter? = null,
     ): List<HttpMonitorDetailsDto> {
-        val monitors =
-            monitorRepository.getMonitorsWithDetails(enabled, uptimeStatus, sslStatus, sslCheckEnabled, sortedBy)
-        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(monitors.map { it.monitorId() })
+        val monitors = monitorRepository.getMonitorsWithDetails(
+            enabled = enabled,
+            uptimeStatus = uptimeStatus,
+            sslStatus = sslStatus,
+            sslCheckEnabled = sslCheckEnabled,
+            sortedBy = sortedBy,
+            categoryFilter = categoryFilter,
+        )
+        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(monitors.monitorsWithCategory())
 
         return monitors.map { detailsDto ->
             val windows = windowsByMonitor[detailsDto.monitorId()].orEmpty()
@@ -184,10 +194,12 @@ class HttpMonitorActions(
     override fun getStatusPageDataOfEnabledMonitors(
         period: Duration,
         monitorIds: List<MonitorID>?,
+        categories: List<String>?,
     ): List<StatusPageHttpMonitorDetailsDto> =
         buildStatusPageData(
             period = period,
             monitorIds = monitorIds,
+            categories = categories,
         ) { monitor, uptime ->
             val latencyMetrics = if (monitor.latencyHistoryEnabled) {
                 latencyLogRepository.getLatencyMetrics(monitor.id, period)
@@ -202,6 +214,7 @@ class HttpMonitorActions(
                 uptimeStatus = monitor.uptimeStatus,
                 uptimeStatusHistory = uptime.uptimeStatusHistory,
                 inMaintenance = uptime.inMaintenance,
+                category = monitor.category,
             )
         }
 }

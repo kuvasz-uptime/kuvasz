@@ -4,4 +4,5 @@ object StatusPageDefaults {
     const val DEFAULT_PAGE_PUBLIC = false
     const val CUSTOM_PAGE_PUBLIC = false
     const val TITLE = "System status"
+    const val DISPLAY_CATEGORIES = true
 }

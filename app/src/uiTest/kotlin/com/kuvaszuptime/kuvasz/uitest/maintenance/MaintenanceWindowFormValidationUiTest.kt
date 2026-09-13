@@ -38,17 +38,20 @@ class MaintenanceWindowFormValidationUiTest : UiTestSpec() {
             assertThat(modal.cronInput).isHidden()
         }
 
-        "enabling the global toggle hides the monitor multi-select" {
+        "enabling the global toggle hides the monitor and the category multi-selects" {
             val modal = openCreateModal()
 
-            // Monitor-scoped by default: the multi-select is shown.
+            // Monitor-scoped by default: both selectors are shown.
             assertThat(modal.monitorSelector).isVisible()
+            assertThat(modal.categorySelector).isVisible()
 
             modal.setGlobal(true)
             assertThat(modal.monitorSelector).isHidden()
+            assertThat(modal.categorySelector).isHidden()
 
             modal.setGlobal(false)
             assertThat(modal.monitorSelector).isVisible()
+            assertThat(modal.categorySelector).isVisible()
         }
 
         "saving a manual window without a name surfaces the required-name error" {

@@ -19,14 +19,25 @@ class TcpMonitorCrudUiTest : UiTestSpec() {
 
             // Create: name + host + port are required, the rest default to valid values.
             val originalName = "E2E TCP Monitor"
-            list.openCreateModal().setName(originalName).setHost("127.0.0.1").setPort("5432").save()
+            list.openCreateModal()
+                .setName(originalName)
+                .setHost("127.0.0.1")
+                .setPort("5432")
+                .setCategory("Payments")
+                .save()
             page.waitForURL("**/tcp-monitors/*")
             val details = TcpMonitorDetailsPage(page)
             assertThat(details.heading(originalName)).isVisible()
+            // The category is shown as a badge in the header
+            assertThat(details.categoryBadge).containsText("Payments")
 
             val updatedName = "E2E TCP Monitor Renamed"
-            details.openConfigureModal().setName(updatedName).save()
+            val configureModal = details.openConfigureModal()
+            // The category is pre-filled from the monitor and can be cleared
+            assertThat(configureModal.selectedCategory).hasText("Payments")
+            configureModal.setName(updatedName).setCategory("").save()
             assertThat(details.heading(updatedName)).isVisible()
+            assertThat(details.categoryBadge).hasCount(0)
 
             list.navigate()
             assertThat(list.rowByName(updatedName)).isVisible()

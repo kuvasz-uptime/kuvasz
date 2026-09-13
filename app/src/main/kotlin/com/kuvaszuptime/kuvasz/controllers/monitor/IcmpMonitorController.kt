@@ -12,6 +12,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorDocs.MONITORS_
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitoringStatsDto
+import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpMonitorActions
 import io.micronaut.http.HttpStatus
@@ -57,10 +58,12 @@ class IcmpMonitorController(
     override fun getMonitorsWithDetails(
         @QueryValue enabled: Boolean?,
         @QueryValue uptimeStatus: List<UptimeStatus>?,
+        @QueryValue category: String?,
     ): List<IcmpMonitorDetailsDto> =
         monitorActions.getMonitorsWithDetails(
             enabled = enabled,
             uptimeStatus = uptimeStatus.orEmpty(),
+            categoryFilter = CategoryFilter.fromQueryParam(category),
         )
 
     @ApiResponses(

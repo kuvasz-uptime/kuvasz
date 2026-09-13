@@ -30,6 +30,7 @@ data class HttpMonitorExportDto(
     val requestHeaders: Map<String, String>,
     val expectedHeaders: Map<String, String>,
     val requestBody: String?,
+    val category: String? = null,
 ) {
     companion object {
         fun fromMonitorRecord(record: HttpMonitorRecord): HttpMonitorExportDto {
@@ -55,6 +56,7 @@ data class HttpMonitorExportDto(
                 requestHeaders = record.requestHeadersAsMap(),
                 expectedHeaders = record.expectedHeadersAsMap(),
                 requestBody = record.requestBody,
+                category = record.category,
             )
         }
     }

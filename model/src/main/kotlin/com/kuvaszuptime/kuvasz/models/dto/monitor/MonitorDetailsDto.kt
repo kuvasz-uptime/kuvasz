@@ -15,6 +15,7 @@ sealed interface MonitorDetailsDto {
     val uptimeError: String?
     val inMaintenance: Boolean
     val statusPages: Set<String>
+    val category: String?
 }
 
 fun MonitorDetailsDto.monitorType(): MonitorType = when (this) {
@@ -26,3 +27,6 @@ fun MonitorDetailsDto.monitorType(): MonitorType = when (this) {
 }
 
 fun MonitorDetailsDto.monitorId(): MonitorID = MonitorID(monitorType(), name)
+
+fun Iterable<MonitorDetailsDto>.monitorsWithCategory(): Map<MonitorID, String?> =
+    associate { it.monitorId() to it.category }

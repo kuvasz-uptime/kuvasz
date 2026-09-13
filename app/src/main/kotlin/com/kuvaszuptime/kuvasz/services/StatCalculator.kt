@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorId
+import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorsWithCategory
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.ActualUptimeStats
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
@@ -100,7 +101,7 @@ class StatCalculator(
         val uptimeEventRepository = uptimeEventReposByType.getValue(monitorType)
         val uptimeEvents = uptimeEventRepository.fetchAllInPeriod(period)
         val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(
-            monitorIds = monitors.filter { it.enabled }.map { it.monitorId() }
+            monitorsWithCategory = monitors.filter { it.enabled }.monitorsWithCategory()
         )
         var downMonitors = 0
         var upMonitors = 0

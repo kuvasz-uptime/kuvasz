@@ -20,6 +20,7 @@ object Validation {
     const val MIN_LATENCY_THRESHOLD_MILLIS = 1L
     const val MIN_PUSHOVER_EMERGENCY_RETRY_SECONDS = 30L
     const val MAX_PUSHOVER_EMERGENCY_EXPIRE_SECONDS = 10800L
+    const val MAX_CATEGORY_LENGTH = 100
 
     // Matches only strings carrying at least one non-whitespace character. Null values are skipped by @Pattern, so
     // it enforces "not blank when it is set" on optional fields.
@@ -37,6 +38,8 @@ object ValidationMessages {
         "one or more letters, digits, or the following symbols: ! # $ % & ' * + - . ^ _ ` | ~"
     const val VALID_DNS_RECORD_MATCHERS = "Each DNS record matcher must have a non-blank value, and REGEX matchers " +
         "must use a valid regular expression"
+    const val REFERENCED_CATEGORY_MAX_SIZE =
+        "A referenced monitor category must be at most ${Validation.MAX_CATEGORY_LENGTH} characters long"
 }
 
 object IntegrationValidationMessages {
@@ -62,6 +65,7 @@ object IntegrationValidationMessages {
 
 object MonitorValidationMessages {
     const val NAME_NOT_BLANK = "Monitor name must not be blank"
+    const val CATEGORY_MAX_SIZE = "Monitor category must be at most {max} characters long"
     const val URL_NOT_NULL = "URL must not be null"
     const val URL_PATTERN = "URL must be a valid HTTP(S) URI"
     const val UPTIME_CHECK_INTERVAL_NOT_NULL = "Uptime check interval must not be null"

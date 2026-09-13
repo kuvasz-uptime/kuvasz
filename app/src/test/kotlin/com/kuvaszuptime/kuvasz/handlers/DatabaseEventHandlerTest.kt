@@ -183,7 +183,7 @@ class DatabaseEventHandlerTest(
                 dbEventHandler.handleUptimeMonitorEvent(secondEvent)
 
                 then("it should create a new UptimeEvent and end the previous one") {
-                    val uptimeRecords = httpUptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.startedAt }
+                    val uptimeRecords = httpUptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.id }
 
                     verifyOrder {
                         httpUptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any())
@@ -224,7 +224,7 @@ class DatabaseEventHandlerTest(
                 dbEventHandler.handleUptimeMonitorEvent(secondEvent)
 
                 then("it should create a new UptimeEvent record and end the previous one") {
-                    val uptimeRecords = httpUptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.startedAt }
+                    val uptimeRecords = httpUptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.id }
 
                     verifyOrder {
                         httpUptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any())
@@ -390,7 +390,7 @@ class DatabaseEventHandlerTest(
                 dbEventHandler.handleUptimeMonitorEvent(secondEvent)
 
                 then("it should create a new UptimeEvent and end the previous one") {
-                    val uptimeRecords = pushUptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.startedAt }
+                    val uptimeRecords = pushUptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.id }
 
                     verifyOrder {
                         pushUptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any())
@@ -428,7 +428,7 @@ class DatabaseEventHandlerTest(
                 dbEventHandler.handleUptimeMonitorEvent(secondEvent)
 
                 then("it should create a new UptimeEvent record and end the previous one") {
-                    val uptimeRecords = pushUptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.startedAt }
+                    val uptimeRecords = pushUptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.id }
 
                     verifyOrder {
                         pushUptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any())
@@ -619,7 +619,7 @@ class DatabaseEventHandlerTest(
                 dbEventHandler.handleUptimeMonitorEvent(secondEvent)
 
                 then("it should create a new UptimeEvent and end the previous one") {
-                    val uptimeRecords = icmpUptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.startedAt }
+                    val uptimeRecords = icmpUptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.id }
 
                     verifyOrder {
                         icmpUptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any())
@@ -660,7 +660,7 @@ class DatabaseEventHandlerTest(
                 dbEventHandler.handleUptimeMonitorEvent(secondEvent)
 
                 then("it should create a new UptimeEvent record and end the previous one") {
-                    val uptimeRecords = icmpUptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.startedAt }
+                    val uptimeRecords = icmpUptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.id }
 
                     verifyOrder {
                         icmpUptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any())
@@ -812,7 +812,7 @@ class DatabaseEventHandlerTest(
                 dbEventHandler.handleUptimeMonitorEvent(secondEvent)
 
                 then("it should create a new UptimeEvent and end the previous one") {
-                    val uptimeRecords = tcpUptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.startedAt }
+                    val uptimeRecords = tcpUptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.id }
 
                     verifyOrder {
                         tcpUptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any())
@@ -851,7 +851,7 @@ class DatabaseEventHandlerTest(
                 dbEventHandler.handleUptimeMonitorEvent(secondEvent)
 
                 then("it should create a new UptimeEvent record and end the previous one") {
-                    val uptimeRecords = tcpUptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.startedAt }
+                    val uptimeRecords = tcpUptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.id }
 
                     verifyOrder {
                         tcpUptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any())
@@ -1004,7 +1004,7 @@ class DatabaseEventHandlerTest(
                 dbEventHandler.handleSSLMonitorEvent(secondEvent)
 
                 then("it should create a new SSLEvent record, and end the previous one") {
-                    val sslRecords = sslEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.startedAt }
+                    val sslRecords = sslEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.id }
 
                     verifyOrder {
                         sslEventRepositorySpy.insertFromMonitorEvent(firstEvent, any())
@@ -1041,7 +1041,7 @@ class DatabaseEventHandlerTest(
                 dbEventHandler.handleSSLMonitorEvent(secondEvent)
 
                 then("it should create a new SSLEvent record and end the previous one") {
-                    val sslRecords = sslEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.startedAt }
+                    val sslRecords = sslEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.id }
 
                     verifyOrder {
                         sslEventRepositorySpy.insertFromMonitorEvent(firstEvent, any())
@@ -1131,7 +1131,7 @@ class DatabaseEventHandlerTest(
                 dbEventHandler.handleSSLMonitorEvent(secondEvent)
 
                 then("it should create a new SSLEvent record, and end the previous one") {
-                    val sslRecords = sslEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.startedAt }
+                    val sslRecords = sslEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.id }
 
                     verifyOrder {
                         sslEventRepositorySpy.insertFromMonitorEvent(firstEvent, any())

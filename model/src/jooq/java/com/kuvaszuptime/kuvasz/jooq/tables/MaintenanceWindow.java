@@ -126,6 +126,11 @@ public class MaintenanceWindow extends TableImpl<MaintenanceWindowRecord> {
      */
     public final TableField<MaintenanceWindowRecord, OffsetDateTime> UPDATED_AT = createField(DSL.name("updated_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false).defaultValue(DSL.field(DSL.raw("now()"), SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "");
 
+    /**
+     * The column <code>kuvasz.maintenance_window.categories</code>.
+     */
+    public final TableField<MaintenanceWindowRecord, String[]> CATEGORIES = createField(DSL.name("categories"), SQLDataType.CLOB.array().nullable(false).defaultValue(DSL.field(DSL.raw("ARRAY[]::text[]"), SQLDataType.CLOB.array())), this, "");
+
     private MaintenanceWindow(Name alias, Table<MaintenanceWindowRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }
@@ -162,7 +167,7 @@ public class MaintenanceWindow extends TableImpl<MaintenanceWindowRecord> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.asList(Indexes.MAINTENANCE_ENABLED_IDX, Indexes.MAINTENANCE_MONITORS_IDX);
+        return Arrays.asList(Indexes.MAINTENANCE_CATEGORIES_IDX, Indexes.MAINTENANCE_ENABLED_IDX, Indexes.MAINTENANCE_MONITORS_IDX);
     }
 
     @Override

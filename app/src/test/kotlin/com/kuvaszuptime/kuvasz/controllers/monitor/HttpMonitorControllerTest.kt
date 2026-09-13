@@ -10,6 +10,7 @@ import com.kuvaszuptime.kuvasz.mocks.createHttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
+import com.kuvaszuptime.kuvasz.mocks.randomClientSecret
 import com.kuvaszuptime.kuvasz.models.ApiErrorCode
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.ServiceError
@@ -142,6 +143,7 @@ class HttpMonitorControllerTest(
                     uptimeStatus = null,
                     sslStatus = null,
                     sslCheckEnabled = null,
+                    category = null,
                 )
                 then("it should return them") {
                     response shouldHaveSize 1
@@ -301,6 +303,7 @@ class HttpMonitorControllerTest(
                     uptimeStatus = null,
                     sslStatus = null,
                     sslCheckEnabled = null,
+                    category = null,
                 )
 
                 then("it should not return disabled monitor") {
@@ -335,6 +338,7 @@ class HttpMonitorControllerTest(
                     uptimeStatus = null,
                     sslStatus = null,
                     sslCheckEnabled = null,
+                    category = null,
                 )
 
                 then("it should return only the disabled monitors") {
@@ -382,12 +386,14 @@ class HttpMonitorControllerTest(
                     uptimeStatus = listOf(UptimeStatus.UP),
                     sslStatus = null,
                     sslCheckEnabled = null,
+                    category = null,
                 )
                 val downResponse = monitorClient.getMonitorsWithDetails(
                     enabled = null,
                     uptimeStatus = listOf(UptimeStatus.DOWN),
                     sslStatus = null,
                     sslCheckEnabled = null,
+                    category = null,
                 )
 
                 then("it should return only the monitors with the specified uptime status") {
@@ -435,24 +441,28 @@ class HttpMonitorControllerTest(
                     uptimeStatus = listOf(UptimeStatus.UP),
                     sslStatus = listOf(SslStatus.VALID),
                     sslCheckEnabled = null,
+                    category = null,
                 )
                 val downInvalidResponse = monitorClient.getMonitorsWithDetails(
                     enabled = null,
                     uptimeStatus = listOf(UptimeStatus.DOWN),
                     sslStatus = listOf(SslStatus.INVALID),
                     sslCheckEnabled = null,
+                    category = null,
                 )
                 val upInvalidResponse = monitorClient.getMonitorsWithDetails(
                     enabled = null,
                     uptimeStatus = listOf(UptimeStatus.UP),
                     sslStatus = listOf(SslStatus.INVALID),
                     sslCheckEnabled = null,
+                    category = null,
                 )
                 val downValidResponse = monitorClient.getMonitorsWithDetails(
                     enabled = null,
                     uptimeStatus = listOf(UptimeStatus.DOWN),
                     sslStatus = listOf(SslStatus.VALID),
                     sslCheckEnabled = null,
+                    category = null,
                 )
 
                 then("it should return only the monitors with the specified uptime and SSL status") {
@@ -518,24 +528,28 @@ class HttpMonitorControllerTest(
                     uptimeStatus = null,
                     sslStatus = listOf(SslStatus.VALID),
                     sslCheckEnabled = null,
+                    category = null,
                 )
                 val expiredResponse = monitorClient.getMonitorsWithDetails(
                     enabled = null,
                     uptimeStatus = null,
                     sslStatus = listOf(SslStatus.INVALID),
                     sslCheckEnabled = null,
+                    category = null,
                 )
                 val expiredSSLCheckEnabledResponse = monitorClient.getMonitorsWithDetails(
                     enabled = null,
                     uptimeStatus = null,
                     sslStatus = listOf(SslStatus.INVALID),
                     sslCheckEnabled = true,
+                    category = null,
                 )
                 val willExpireResponse = monitorClient.getMonitorsWithDetails(
                     enabled = null,
                     uptimeStatus = null,
                     sslStatus = listOf(SslStatus.WILL_EXPIRE),
                     sslCheckEnabled = null,
+                    category = null,
                 )
 
                 then("it should return only the monitors with the specified SSL status") {
@@ -551,12 +565,88 @@ class HttpMonitorControllerTest(
                 }
             }
 
+            `when`("the result is filtered by a category") {
+                val payments = createHttpMonitor(monitorRepository, monitorName = "pays", category = "Payments")
+                createHttpMonitor(monitorRepository, monitorName = "searches", category = "Search")
+                createHttpMonitor(monitorRepository, monitorName = "plain", category = null)
+
+                val response = monitorClient.getMonitorsWithDetails(
+                    enabled = null,
+                    uptimeStatus = null,
+                    sslStatus = null,
+                    sslCheckEnabled = null,
+                    category = "Payments",
+                )
+
+                then("only the monitors of that category are returned") {
+                    response.map { it.id } shouldContainExactly listOf(payments.id)
+                }
+            }
+
+            `when`("the category parameter is present but empty") {
+                createHttpMonitor(monitorRepository, monitorName = "pays", category = "Payments")
+                val plain = createHttpMonitor(monitorRepository, monitorName = "plain", category = null)
+
+                // An empty value is the uncategorized selector, in contrast to omitting the parameter entirely
+                val response = monitorClient.getMonitorsWithDetails(
+                    enabled = null,
+                    uptimeStatus = null,
+                    sslStatus = null,
+                    sslCheckEnabled = null,
+                    category = "",
+                )
+
+                then("only the monitors without a category are returned") {
+                    response.map { it.id } shouldContainExactly listOf(plain.id)
+                }
+            }
+
+            `when`("the category filter is combined with the other filtering options") {
+                val enabledPayments = createHttpMonitor(monitorRepository, monitorName = "pays", category = "Payments")
+                createHttpMonitor(
+                    monitorRepository,
+                    monitorName = "paused-pays",
+                    category = "Payments",
+                    enabled = false,
+                )
+                createHttpMonitor(monitorRepository, monitorName = "searches", category = "Search")
+
+                val response = monitorClient.getMonitorsWithDetails(
+                    enabled = true,
+                    uptimeStatus = null,
+                    sslStatus = null,
+                    sslCheckEnabled = null,
+                    category = "Payments",
+                )
+
+                then("they narrow the result together, instead of one replacing the other") {
+                    response.map { it.id } shouldContainExactly listOf(enabledPayments.id)
+                }
+            }
+
+            `when`("the category filter is given a category no monitor belongs to") {
+                createHttpMonitor(monitorRepository, monitorName = "pays", category = "Payments")
+
+                val response = monitorClient.getMonitorsWithDetails(
+                    enabled = null,
+                    uptimeStatus = null,
+                    sslStatus = null,
+                    sslCheckEnabled = null,
+                    category = "Nobody uses me",
+                )
+
+                then("an empty list is returned instead of an error") {
+                    response.shouldBeEmpty()
+                }
+            }
+
             `when`("there isn't any monitor in the database") {
                 val response = monitorClient.getMonitorsWithDetails(
                     enabled = null,
                     uptimeStatus = null,
                     sslStatus = null,
                     sslCheckEnabled = null,
+                    category = null,
                 )
                 then("it should return an empty list") {
                     response shouldHaveSize 0
@@ -1062,6 +1152,7 @@ class HttpMonitorControllerTest(
                     monitorInDb.requestHeadersAsMap().shouldBeEmpty()
                     monitorInDb.expectedHeadersAsMap().shouldBeEmpty()
                     monitorInDb.requestBody.shouldBeNull()
+                    monitorInDb.category.shouldBeNull()
 
                     checkScheduler.getScheduledUptimeChecks()[createdMonitor.id].shouldNotBeNull()
                     checkScheduler.getScheduledSSLChecks().shouldBeEmpty()
@@ -1098,6 +1189,7 @@ class HttpMonitorControllerTest(
                     requestBody = "{\"key\": \"value\"}",
                     failureCountThreshold = 4,
                     sensitiveUrl = true,
+                    category = "Backend services",
                 )
                 val createdMonitor = monitorClient.createMonitor(monitorToCreate)
 
@@ -1143,6 +1235,7 @@ class HttpMonitorControllerTest(
                         "X-Expected-Header" to "ExpectedValue"
                     )
                     monitorInDb.requestBody shouldBe "{\"key\": \"value\"}"
+                    monitorInDb.category shouldBe "Backend services"
 
                     checkScheduler.getScheduledUptimeChecks().shouldBeEmpty()
                     checkScheduler.getScheduledSSLChecks().shouldBeEmpty()
@@ -1191,6 +1284,24 @@ class HttpMonitorControllerTest(
                 then("it should return a 400") {
                     response.status shouldBe HttpStatus.BAD_REQUEST
                     response.message shouldContain MonitorValidationMessages.URL_PATTERN
+                }
+            }
+
+            `when`("it is called with a too long category") {
+                val monitorToCreate = HttpMonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000,
+                    category = "a".repeat(101),
+                )
+                val request = HttpRequest.POST("/api/v2/http-monitors", monitorToCreate)
+                val response = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request).awaitFirst()
+                }
+
+                then("it should return a 400") {
+                    response.status shouldBe HttpStatus.BAD_REQUEST
+                    response.message shouldContain "Monitor category must be at most 100 characters long"
                 }
             }
 
@@ -1648,6 +1759,7 @@ class HttpMonitorControllerTest(
                     )
                     .put(HttpMonitorUpdateDto::requestBody.name, "{\"newKey\": \"newValue\"}")
                     .put(HttpMonitorUpdateDto::sensitiveUrl.name, true)
+                    .put(HttpMonitorUpdateDto::category.name, "Updated category")
 
                 val subscriber = TestSubscriber<MonitorLifecycleEvent>()
                 eventDispatcher.subscribeToMonitorLifecycleEvents { it.forwardToSubscriber(subscriber) }
@@ -1683,6 +1795,7 @@ class HttpMonitorControllerTest(
                     monitorInDb.requestHeadersAsMap() shouldContainExactly mapOf("X-New-Header" to "UpdatedValue")
                     monitorInDb.expectedHeadersAsMap().shouldBeEmpty()
                     monitorInDb.requestBody shouldBe "{\"newKey\": \"newValue\"}"
+                    monitorInDb.category shouldBe "Updated category"
 
                     checkScheduler.getScheduledUptimeChecks().shouldBeEmpty()
                     checkScheduler.getScheduledSSLChecks().shouldBeEmpty()
@@ -1783,6 +1896,27 @@ class HttpMonitorControllerTest(
 
                 then("it should remove all the integrations") {
                     monitorInDb.integrations.shouldNotBeNull().shouldBeEmpty()
+                }
+            }
+
+            `when`("it is called to clear the previously set category") {
+                val createDto = HttpMonitorCreateDto(
+                    name = "test_monitor",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000,
+                    enabled = false,
+                    category = "Backend services",
+                )
+                val createdMonitor = monitorClient.createMonitor(createDto)
+                createdMonitor.category shouldBe "Backend services"
+
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .putNull(HttpMonitorUpdateDto::category.name)
+                monitorClient.updateMonitor(createdMonitor.id, updateDto)
+                val monitorInDb = monitorRepository.findById(createdMonitor.id, null).shouldNotBeNull()
+
+                then("it should remove the category") {
+                    monitorInDb.category.shouldBeNull()
                 }
             }
 
@@ -2556,7 +2690,90 @@ class HttpMonitorControllerTest(
                 }
             }
         }
-    }
+    
+        given("the category of a HTTP monitor") {
+            fun createWithCategory(category: String?, monitorName: String = randomClientSecret()) =
+                monitorClient.createMonitor(
+                    HttpMonitorCreateDto(
+                        name = monitorName,
+                        url = "https://valid-url.com",
+                        uptimeCheckInterval = 6000,
+                        category = category,
+                    )
+                )
+
+            `when`("it is too long on creation") {
+                val ex = shouldThrow<HttpClientResponseException> { createWithCategory("a".repeat(101)) }
+
+                then("it should return a 400 with the interpolated maximum in its message") {
+                    ex.status shouldBe HttpStatus.BAD_REQUEST
+                    ex.message shouldContain "Monitor category must be at most 100 characters long"
+                }
+            }
+
+            `when`("it is exactly as long as the maximum") {
+                val created = createWithCategory("a".repeat(100))
+
+                then("it should be accepted") {
+                    created.category shouldBe "a".repeat(100)
+                }
+            }
+
+            `when`("it is blank or padded on creation") {
+                val blank = createWithCategory("   ")
+                val padded = createWithCategory("  Core services  ")
+
+                then("a blank one should be persisted as null and a padded one trimmed") {
+                    monitorRepository.findById(blank.id, null).shouldNotBeNull().category.shouldBeNull()
+                    monitorRepository.findById(padded.id, null).shouldNotBeNull().category shouldBe "Core services"
+                }
+            }
+
+            `when`("it is too long on update") {
+                val monitor = createHttpMonitor(monitorRepository, category = "Old category")
+                val updateNode = mapper.createObjectNode().put("category", "a".repeat(101))
+                val ex = shouldThrow<HttpClientResponseException> {
+                    monitorClient.updateMonitor(monitor.id, updateNode)
+                }
+
+                then("it should return a 400 and leave the monitor untouched") {
+                    ex.status shouldBe HttpStatus.BAD_REQUEST
+                    ex.message shouldContain "Monitor category must be at most 100 characters long"
+                    monitorRepository.findById(monitor.id, null).shouldNotBeNull().category shouldBe "Old category"
+                }
+            }
+
+            `when`("it is blank or padded on update") {
+                val blanked = createHttpMonitor(monitorRepository, category = "Old category")
+                val padded = createHttpMonitor(monitorRepository, category = "Old category")
+                monitorClient.updateMonitor(blanked.id, mapper.createObjectNode().put("category", "   "))
+                monitorClient.updateMonitor(padded.id, mapper.createObjectNode().put("category", "  Payments  "))
+
+                then("a blank one should be cleared and a padded one trimmed") {
+                    monitorRepository.findById(blanked.id, null).shouldNotBeNull().category.shouldBeNull()
+                    monitorRepository.findById(padded.id, null).shouldNotBeNull().category shouldBe "Payments"
+                }
+            }
+
+            `when`("it is explicitly set to null on update") {
+                val monitor = createHttpMonitor(monitorRepository, category = "Old category")
+                monitorClient.updateMonitor(monitor.id, mapper.createObjectNode().putNull("category"))
+
+                then("it should be cleared") {
+                    monitorRepository.findById(monitor.id, null).shouldNotBeNull().category.shouldBeNull()
+                }
+            }
+
+            `when`("it is not part of the update at all") {
+                val monitor = createHttpMonitor(monitorRepository, category = "Old category")
+                monitorClient.updateMonitor(monitor.id, mapper.createObjectNode().put("enabled", false))
+
+                then("it should be left untouched") {
+                    monitorRepository.findById(monitor.id, null).shouldNotBeNull().category shouldBe "Old category"
+                }
+            }
+        }
+}
 
     override suspend fun afterTest(testCase: TestCase, result: TestResult) {
         checkScheduler.removeAllChecks()

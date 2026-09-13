@@ -29,6 +29,8 @@ class MaintenanceWindowListPage(private val page: Page) {
     // The "Monitors" column cell of a row: either the global-scope badge or the affected-monitor count.
     fun monitorsCell(name: String): Locator = rowByName(name).getByTestId("maintenance-window-monitors")
 
+    fun categoriesCell(name: String): Locator = rowByName(name).getByTestId("maintenance-window-categories")
+
     fun toggle(name: String) {
         rowByName(name).getByTestId("maintenance-window-toggle-button").click()
     }

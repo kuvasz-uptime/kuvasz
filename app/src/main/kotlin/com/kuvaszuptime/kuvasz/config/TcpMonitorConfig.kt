@@ -9,6 +9,7 @@ import io.micronaut.core.bind.annotation.Bindable
 
 @EachProperty(TcpMonitorConfig.CONFIG_PREFIX, list = true)
 @Introspected
+@Suppress("ComplexInterface")
 interface TcpMonitorConfig : TcpMonitorCreator, MonitorConfig {
 
     companion object {
@@ -36,4 +37,6 @@ interface TcpMonitorConfig : TcpMonitorCreator, MonitorConfig {
 
     @get:Bindable(defaultValue = TcpMonitorDefaults.METRICS_HISTORY_ENABLED.toString())
     override val metricsHistoryEnabled: Boolean
+
+    override val category: String?
 }

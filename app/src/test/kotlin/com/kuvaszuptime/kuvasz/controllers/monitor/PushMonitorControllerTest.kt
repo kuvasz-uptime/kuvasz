@@ -125,6 +125,7 @@ class PushMonitorControllerTest(
                 val response = monitorClient.getMonitorsWithDetails(
                     enabled = null,
                     uptimeStatus = null,
+                    category = null,
                 )
                 then("it should return them") {
                     response shouldHaveSize 1
@@ -266,6 +267,7 @@ class PushMonitorControllerTest(
                 val response = monitorClient.getMonitorsWithDetails(
                     enabled = true,
                     uptimeStatus = null,
+                    category = null,
                 )
 
                 then("it should not return disabled monitor") {
@@ -283,6 +285,7 @@ class PushMonitorControllerTest(
                 val response = monitorClient.getMonitorsWithDetails(
                     enabled = false,
                     uptimeStatus = null,
+                    category = null,
                 )
 
                 then("it should return only the disabled monitors") {
@@ -315,10 +318,12 @@ class PushMonitorControllerTest(
                 val upResponse = monitorClient.getMonitorsWithDetails(
                     enabled = null,
                     uptimeStatus = listOf(UptimeStatus.UP),
+                    category = null,
                 )
                 val downResponse = monitorClient.getMonitorsWithDetails(
                     enabled = null,
                     uptimeStatus = listOf(UptimeStatus.DOWN),
+                    category = null,
                 )
 
                 then("it should return only the monitors with the specified uptime status") {
@@ -330,10 +335,73 @@ class PushMonitorControllerTest(
                 }
             }
 
+            `when`("filtering by a category") {
+                val payments = createPushMonitor(monitorRepository, monitorName = "pays", category = "Payments")
+                createPushMonitor(monitorRepository, monitorName = "searches", category = "Search")
+                createPushMonitor(monitorRepository, monitorName = "plain", category = null)
+
+                val response = monitorClient.getMonitorsWithDetails(
+                    enabled = null,
+                    uptimeStatus = null,
+                    category = "Payments",
+                )
+
+                then("only the monitors of that category should be returned") {
+                    response.map { it.id } shouldContainExactly listOf(payments.id)
+                }
+            }
+
+            `when`("filtering by an empty category") {
+                createPushMonitor(monitorRepository, monitorName = "pays", category = "Payments")
+                val plain = createPushMonitor(monitorRepository, monitorName = "plain", category = null)
+
+                // An empty value is the uncategorized selector, in contrast to omitting the parameter entirely
+                val response = monitorClient.getMonitorsWithDetails(
+                    enabled = null,
+                    uptimeStatus = null,
+                    category = "",
+                )
+
+                then("only the monitors without a category should be returned") {
+                    response.map { it.id } shouldContainExactly listOf(plain.id)
+                }
+            }
+
+            `when`("combining the category filter with the other options") {
+                val enabledPayments = createPushMonitor(monitorRepository, monitorName = "pays", category = "Payments")
+                createPushMonitor(monitorRepository, monitorName = "paused", category = "Payments", enabled = false)
+                createPushMonitor(monitorRepository, monitorName = "searches", category = "Search")
+
+                val response = monitorClient.getMonitorsWithDetails(
+                    enabled = true,
+                    uptimeStatus = null,
+                    category = "Payments",
+                )
+
+                then("they should narrow the result together") {
+                    response.map { it.id } shouldContainExactly listOf(enabledPayments.id)
+                }
+            }
+
+            `when`("filtering by a category no monitor belongs to") {
+                createPushMonitor(monitorRepository, monitorName = "pays", category = "Payments")
+
+                val response = monitorClient.getMonitorsWithDetails(
+                    enabled = null,
+                    uptimeStatus = null,
+                    category = "Nobody uses me",
+                )
+
+                then("an empty list should be returned") {
+                    response.shouldBeEmpty()
+                }
+            }
+
             `when`("there isn't any monitor in the database") {
                 val response = monitorClient.getMonitorsWithDetails(
                     enabled = null,
                     uptimeStatus = null,
+                    category = null,
                 )
                 then("it should return an empty list") {
                     response shouldHaveSize 0
@@ -615,6 +683,7 @@ class PushMonitorControllerTest(
                     clientSecret = randomClientSecret(),
                     enabled = false,
                     integrations = setUpIntegrations.map { it.toString() },
+                    category = "Push category",
                 )
                 val createdMonitor = monitorClient.createMonitor(monitorToCreate)
 
@@ -634,6 +703,8 @@ class PushMonitorControllerTest(
                     monitorInDb.updatedAt shouldBe createdMonitor.createdAt
                     monitorInDb.integrations.shouldNotBeNull() shouldContainExactlyInAnyOrder
                         setUpIntegrations.toTypedArray()
+                    monitorInDb.category shouldBe "Push category"
+                    monitorInDb.category shouldBe createdMonitor.category
                 }
             }
 
@@ -1718,7 +1789,91 @@ class PushMonitorControllerTest(
                 }
             }
         }
-    }
+    
+        given("the category of a PUSH monitor") {
+            fun createWithCategory(category: String?, monitorName: String = randomClientSecret()) =
+                monitorClient.createMonitor(
+                    PushMonitorCreateDto(
+                        name = monitorName,
+                        heartbeatInterval = 12,
+                        gracePeriod = 10,
+                        clientSecret = randomClientSecret(),
+                        category = category,
+                    )
+                )
+
+            `when`("it is too long on creation") {
+                val ex = shouldThrow<HttpClientResponseException> { createWithCategory("a".repeat(101)) }
+
+                then("it should return a 400 with the interpolated maximum in its message") {
+                    ex.status shouldBe HttpStatus.BAD_REQUEST
+                    ex.message shouldContain "Monitor category must be at most 100 characters long"
+                }
+            }
+
+            `when`("it is exactly as long as the maximum") {
+                val created = createWithCategory("a".repeat(100))
+
+                then("it should be accepted") {
+                    created.category shouldBe "a".repeat(100)
+                }
+            }
+
+            `when`("it is blank or padded on creation") {
+                val blank = createWithCategory("   ")
+                val padded = createWithCategory("  Core services  ")
+
+                then("a blank one should be persisted as null and a padded one trimmed") {
+                    monitorRepository.findById(blank.id, null).shouldNotBeNull().category.shouldBeNull()
+                    monitorRepository.findById(padded.id, null).shouldNotBeNull().category shouldBe "Core services"
+                }
+            }
+
+            `when`("it is too long on update") {
+                val monitor = createPushMonitor(monitorRepository, category = "Old category")
+                val updateNode = mapper.createObjectNode().put("category", "a".repeat(101))
+                val ex = shouldThrow<HttpClientResponseException> {
+                    monitorClient.updateMonitor(monitor.id, updateNode)
+                }
+
+                then("it should return a 400 and leave the monitor untouched") {
+                    ex.status shouldBe HttpStatus.BAD_REQUEST
+                    ex.message shouldContain "Monitor category must be at most 100 characters long"
+                    monitorRepository.findById(monitor.id, null).shouldNotBeNull().category shouldBe "Old category"
+                }
+            }
+
+            `when`("it is blank or padded on update") {
+                val blanked = createPushMonitor(monitorRepository, category = "Old category")
+                val padded = createPushMonitor(monitorRepository, category = "Old category")
+                monitorClient.updateMonitor(blanked.id, mapper.createObjectNode().put("category", "   "))
+                monitorClient.updateMonitor(padded.id, mapper.createObjectNode().put("category", "  Payments  "))
+
+                then("a blank one should be cleared and a padded one trimmed") {
+                    monitorRepository.findById(blanked.id, null).shouldNotBeNull().category.shouldBeNull()
+                    monitorRepository.findById(padded.id, null).shouldNotBeNull().category shouldBe "Payments"
+                }
+            }
+
+            `when`("it is explicitly set to null on update") {
+                val monitor = createPushMonitor(monitorRepository, category = "Old category")
+                monitorClient.updateMonitor(monitor.id, mapper.createObjectNode().putNull("category"))
+
+                then("it should be cleared") {
+                    monitorRepository.findById(monitor.id, null).shouldNotBeNull().category.shouldBeNull()
+                }
+            }
+
+            `when`("it is not part of the update at all") {
+                val monitor = createPushMonitor(monitorRepository, category = "Old category")
+                monitorClient.updateMonitor(monitor.id, mapper.createObjectNode().put("enabled", false))
+
+                then("it should be left untouched") {
+                    monitorRepository.findById(monitor.id, null).shouldNotBeNull().category shouldBe "Old category"
+                }
+            }
+        }
+}
 
     @MockBean(StatCalculator::class)
     fun mockStatCalculator() = mockk<StatCalculator>()

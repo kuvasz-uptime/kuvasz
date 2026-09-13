@@ -12,6 +12,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorDocs
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitoringStatsDto
+import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.check.push.PushMonitorActions
 import io.micronaut.http.HttpStatus
@@ -57,10 +58,12 @@ class PushMonitorController(
     override fun getMonitorsWithDetails(
         @QueryValue enabled: Boolean?,
         @QueryValue uptimeStatus: List<UptimeStatus>?,
+        @QueryValue category: String?,
     ): List<PushMonitorDetailsDto> =
         monitorActions.getMonitorsWithDetails(
             enabled = enabled,
             uptimeStatus = uptimeStatus.orEmpty(),
+            categoryFilter = CategoryFilter.fromQueryParam(category),
         )
 
     @ApiResponses(

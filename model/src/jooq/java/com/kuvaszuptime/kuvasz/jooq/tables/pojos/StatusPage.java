@@ -28,6 +28,8 @@ public class StatusPage implements Serializable {
     private MonitorID[] monitors;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
+    private String[] categories;
+    private Boolean displayCategories;
 
     public StatusPage() {}
 
@@ -41,6 +43,8 @@ public class StatusPage implements Serializable {
         this.monitors = value.monitors;
         this.createdAt = value.createdAt;
         this.updatedAt = value.updatedAt;
+        this.categories = value.categories;
+        this.displayCategories = value.displayCategories;
     }
 
     public StatusPage(
@@ -52,7 +56,9 @@ public class StatusPage implements Serializable {
         Boolean public_,
         MonitorID[] monitors,
         OffsetDateTime createdAt,
-        OffsetDateTime updatedAt
+        OffsetDateTime updatedAt,
+        String[] categories,
+        Boolean displayCategories
     ) {
         this.id = id;
         this.title = title;
@@ -63,6 +69,8 @@ public class StatusPage implements Serializable {
         this.monitors = monitors;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.categories = categories;
+        this.displayCategories = displayCategories;
     }
 
     /**
@@ -200,6 +208,36 @@ public class StatusPage implements Serializable {
         return this;
     }
 
+    /**
+     * Getter for <code>kuvasz.status_page.categories</code>.
+     */
+    public String[] getCategories() {
+        return this.categories;
+    }
+
+    /**
+     * Setter for <code>kuvasz.status_page.categories</code>.
+     */
+    public StatusPage setCategories(String[] categories) {
+        this.categories = categories;
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.status_page.display_categories</code>.
+     */
+    public Boolean getDisplayCategories() {
+        return this.displayCategories;
+    }
+
+    /**
+     * Setter for <code>kuvasz.status_page.display_categories</code>.
+     */
+    public StatusPage setDisplayCategories(Boolean displayCategories) {
+        this.displayCategories = displayCategories;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -263,6 +301,18 @@ public class StatusPage implements Serializable {
         }
         else if (!this.updatedAt.equals(other.updatedAt))
             return false;
+        if (this.categories == null) {
+            if (other.categories != null)
+                return false;
+        }
+        else if (!Arrays.deepEquals(this.categories, other.categories))
+            return false;
+        if (this.displayCategories == null) {
+            if (other.displayCategories != null)
+                return false;
+        }
+        else if (!this.displayCategories.equals(other.displayCategories))
+            return false;
         return true;
     }
 
@@ -279,6 +329,8 @@ public class StatusPage implements Serializable {
         result = prime * result + ((this.monitors == null) ? 0 : Arrays.deepHashCode(this.monitors));
         result = prime * result + ((this.createdAt == null) ? 0 : this.createdAt.hashCode());
         result = prime * result + ((this.updatedAt == null) ? 0 : this.updatedAt.hashCode());
+        result = prime * result + ((this.categories == null) ? 0 : Arrays.deepHashCode(this.categories));
+        result = prime * result + ((this.displayCategories == null) ? 0 : this.displayCategories.hashCode());
         return result;
     }
 
@@ -295,6 +347,8 @@ public class StatusPage implements Serializable {
         sb.append(", ").append(Arrays.deepToString(monitors));
         sb.append(", ").append(createdAt);
         sb.append(", ").append(updatedAt);
+        sb.append(", ").append(Arrays.deepToString(categories));
+        sb.append(", ").append(displayCategories);
 
         sb.append(")");
         return sb.toString();

@@ -127,6 +127,8 @@ class StatusPageController(
                 systemStatus = dataDto.systemStatus,
                 generatedAt = dataDto.generatedAt,
                 monitors = dataDto.monitors,
+                categoryStatus = dataDto.categoryStatus,
+                displayCategories = dataDto.displayCategories,
                 activeMaintenanceWindows = dataDto.activeMaintenanceWindows,
                 upcomingMaintenanceWindows = dataDto.upcomingMaintenanceWindows,
             )
@@ -147,6 +149,8 @@ class StatusPageController(
                 systemStatus = dataDto.systemStatus,
                 generatedAt = dataDto.generatedAt,
                 monitors = dataDto.monitors,
+                categoryStatus = dataDto.categoryStatus,
+                displayCategories = dataDto.displayCategories,
                 activeMaintenanceWindows = dataDto.activeMaintenanceWindows,
                 upcomingMaintenanceWindows = dataDto.upcomingMaintenanceWindows,
             )

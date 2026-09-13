@@ -1,3 +1,16 @@
+## 4.4.0 <small>unreleased</small> { id="4.4.0" data-toc-label="4.4.0" }
+
+### Features
+
+**Monitor categories** arrived: an optional, free-form [**category**](management/http-monitors.md#category) on every monitor — a product, a service, a team, whatever you group by. It doesn't just label them, it **selects** them:
+
+- [**Status pages**](management/status-pages.md#categories) can be defined by category instead of listing their monitors, so a page follows your monitors as you tag and re-tag them. Categorized monitors are rendered in one section per category, each with a card showing its aggregated status and a breakdown of its monitors. [**Display categories**](management/status-pages.md#display-categories_1) turns that grouping off if you'd rather not reveal it publicly.
+- [**Maintenance windows**](management/maintenance-windows.md#categories) can cover a whole category, so you put an entire product into maintenance without enumerating what is in it.
+
+Both selectors are **additive** with the explicit monitor list, and a category no monitor belongs to yet is kept as you configured it.
+
+The monitor lists themselves can be **filtered by category** too, on the Web UI and through the REST API alike.
+
 ## 4.3.2 <small>2026-09-04</small> { id="4.3.2" data-toc-label="4.3.2" }
 
 ### Fixes

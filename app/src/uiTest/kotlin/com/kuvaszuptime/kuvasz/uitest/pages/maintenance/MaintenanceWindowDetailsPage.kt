@@ -25,6 +25,9 @@ class MaintenanceWindowDetailsPage(private val page: Page) {
     fun badgeTextsOf(label: String): List<String> =
         detailRow(label).locator(".badge").allInnerTexts().map { it.trim() }
 
+    // The categories the window covers, as the badges of the "Affected categories" row.
+    val affectedCategories: Locator get() = page.getByTestId("affected-category")
+
     fun navigate(maintenanceWindowId: Long) {
         page.navigate("/maintenance-windows/$maintenanceWindowId")
     }

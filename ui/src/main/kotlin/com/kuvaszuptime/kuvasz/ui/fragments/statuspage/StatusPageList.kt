@@ -45,6 +45,11 @@ fun renderStatusPageList(statusPages: List<StatusPageDto>, appGlobals: AppGlobal
                             classes(D_NONE, D_MD_TABLE_CELL, TEXT_CENTER)
                             +Messages.monitors()
                         }
+                        // Categories count
+                        th {
+                            classes(D_NONE, D_MD_TABLE_CELL, TEXT_CENTER)
+                            +Messages.categories()
+                        }
                         // Actions
                         if (!isReadOnlyMode) {
                             th {}
@@ -93,7 +98,11 @@ fun renderStatusPageList(statusPages: List<StatusPageDto>, appGlobals: AppGlobal
                             classes(TEXT_CENTER)
                             statusPageVisibilityStatus(appGlobals.defaultStatusPageSettings.public)
                         }
-                        // Monitors count
+                        // Monitors count: the default page always shows everything enabled, so it has no count
+                        td {
+                            classes(D_NONE, D_MD_TABLE_CELL, TEXT_CENTER)
+                        }
+                        // Categories count: it has no selectors at all either
                         td {
                             classes(D_NONE, D_MD_TABLE_CELL, TEXT_CENTER)
                         }
@@ -169,6 +178,12 @@ private fun TBODY.statusPageListItem(isReadOnlyMode: Boolean, page: StatusPageDt
         td {
             classes(D_NONE, D_MD_TABLE_CELL, TEXT_CENTER)
             +page.monitors.size.toString()
+        }
+        // Categories count
+        td {
+            classes(D_NONE, D_MD_TABLE_CELL, TEXT_CENTER)
+            testId("status-page-categories")
+            +page.categories.size.toString()
         }
         // Actions
         if (!isReadOnlyMode) {

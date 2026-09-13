@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.uitest.pages.http
 
 import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
+import com.microsoft.playwright.options.SelectOption
 
 // The HTTP & SSL monitor list page at `/http-monitors`; the table is swapped into `#http-monitors-list` via HTMX.
 class HttpMonitorListPage(private val page: Page) {
@@ -16,6 +17,31 @@ class HttpMonitorListPage(private val page: Page) {
 
     fun navigate() {
         page.navigate("/http-monitors")
+    }
+
+    /** Opens the list straight on a category, the way a shared permalink would. */
+    fun navigateToCategory(category: String) {
+        page.navigate("/http-monitors?category=$category")
+    }
+
+    // The category filter above the table. It lives outside the HTMX-swapped fragment, so a refresh never touches it.
+    private val categoryFilter: Locator get() = page.getByTestId("category-filter").locator("select")
+
+    val categoryOptions: List<String>
+        get() = categoryFilter.locator("option").allTextContents().map { it.trim() }
+
+    val selectedCategory: String
+        get() = categoryFilter.locator("option[selected]").first().innerText().trim()
+
+    /**
+     * Picks an option by its visible label. The select navigates the whole page, and the option's value is exactly
+     * the query suffix it navigates to, so the wait can key on that instead of racing the navigation.
+     */
+    fun filterByCategory(label: String) {
+        val option = categoryFilter.locator("option").filter(Locator.FilterOptions().setHasText(label)).first()
+        val expectedSuffix = "/http-monitors" + option.getAttribute("value").orEmpty()
+        categoryFilter.selectOption(SelectOption().setLabel(label))
+        page.waitForURL { url -> url.endsWith(expectedSuffix) }
     }
 
     fun rowByName(name: String): Locator = rows.filter(Locator.FilterOptions().setHasText(name))

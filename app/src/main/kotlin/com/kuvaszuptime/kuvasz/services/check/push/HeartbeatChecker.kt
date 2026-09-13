@@ -36,7 +36,7 @@ class HeartbeatChecker(
             val txCtx = config.dsl()
             pushMonitorRepository.fetchWithMissedHeartbeats(txCtx).forEach { monitor ->
                 // Skip monitors that are under maintenance
-                if (maintenanceWindowService.isUnderMaintenance(monitor.monitorId())) return@forEach
+                if (maintenanceWindowService.isUnderMaintenance(monitor.monitorId(), monitor.category)) return@forEach
                 PushMonitorDownEvent(
                     monitor,
                     error = Messages.missedHeartbeat(),

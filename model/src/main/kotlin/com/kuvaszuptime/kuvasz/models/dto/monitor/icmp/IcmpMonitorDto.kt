@@ -35,6 +35,8 @@ data class IcmpMonitorDto(
     val createdAt: OffsetDateTime,
     @param:Schema(description = MonitorDocs.UPDATED_AT, required = true)
     val updatedAt: OffsetDateTime,
+    @param:Schema(description = MonitorDocs.CATEGORY, required = true, nullable = true)
+    val category: String? = null,
 ) {
     companion object {
         fun fromMonitorRecord(record: IcmpMonitorRecord) = IcmpMonitorDto(
@@ -51,6 +53,7 @@ data class IcmpMonitorDto(
             integrations = record.integrations.toSet(),
             createdAt = record.createdAt,
             updatedAt = record.updatedAt,
+            category = record.category,
         )
     }
 }

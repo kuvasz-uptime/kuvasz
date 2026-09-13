@@ -20,6 +20,14 @@ class StatusPageFormModal(page: Page) : ModalView(page) {
         return this
     }
 
+    // Decides whether the public page groups its monitors into their categories; it does not change what is selected.
+    val displayCategoriesToggle: Locator
+        get() = modal.getByTestId("display-categories-toggle").locator("input[type=checkbox]")
+
+    fun setDisplayCategories(value: Boolean): StatusPageFormModal = apply {
+        if (value) displayCategoriesToggle.check() else displayCategoriesToggle.uncheck()
+    }
+
     fun save() {
         saveButton.click()
     }

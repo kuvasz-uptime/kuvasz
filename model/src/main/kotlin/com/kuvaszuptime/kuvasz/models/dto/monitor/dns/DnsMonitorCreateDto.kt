@@ -72,4 +72,6 @@ data class DnsMonitorCreateDto(
         defaultValue = DnsMonitorDefaults.METRICS_HISTORY_ENABLED.toString()
     )
     override val metricsHistoryEnabled: Boolean = DnsMonitorDefaults.METRICS_HISTORY_ENABLED,
+    @param:Schema(description = MonitorDocs.CATEGORY, required = false, nullable = true)
+    override val category: String? = null,
 ) : DnsMonitorCreator

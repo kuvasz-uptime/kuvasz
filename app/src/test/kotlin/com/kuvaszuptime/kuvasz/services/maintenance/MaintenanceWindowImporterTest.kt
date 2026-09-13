@@ -13,6 +13,7 @@ import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.MaintenanceWindowRepository
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -65,6 +66,23 @@ class MaintenanceWindowImporterTest(
                     result.deleted shouldContainExactly listOf("to-be-deleted")
                     maintenanceWindowRepository.findById(existing.id).shouldBeNull()
                     windowByName("imported").shouldNotBeNull()
+                }
+            }
+
+            `when`("a window references a category that is not in use by any monitor") {
+                val result = maintenanceWindowImporter.importMaintenanceWindowConfigs(
+                    listOf(
+                        MaintenanceWindowImportAdapter(
+                            exportDto(name = "with-categories", categories = setOf("Payments", "Nobody uses me"))
+                        )
+                    ),
+                    dryRun = false,
+                )
+
+                then("every category is imported as-is and none of them is reported as ignored") {
+                    val persisted = windowByName("with-categories").shouldNotBeNull()
+                    persisted.categories.toList() shouldContainExactlyInAnyOrder listOf("Payments", "Nobody uses me")
+                    result.ignoredMonitors.shouldBeEmpty()
                 }
             }
 
@@ -138,6 +156,7 @@ class MaintenanceWindowImporterTest(
         name: String,
         start: String? = OffsetDateTime.now().plusDays(1).toString(),
         monitors: Set<MonitorID> = emptySet(),
+        categories: Set<String> = emptySet(),
         integrations: Set<IntegrationID> = emptySet(),
     ) = MaintenanceWindowExportDto(
         name = name,
@@ -149,6 +168,7 @@ class MaintenanceWindowImporterTest(
         start = start,
         duration = "PT1H",
         monitors = monitors,
+        categories = categories,
         integrations = integrations,
     )
 }

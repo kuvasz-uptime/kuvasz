@@ -217,6 +217,21 @@ public class MaintenanceWindowRecord extends UpdatableRecordImpl<MaintenanceWind
         return (OffsetDateTime) get(12);
     }
 
+    /**
+     * Setter for <code>kuvasz.maintenance_window.categories</code>.
+     */
+    public MaintenanceWindowRecord setCategories(String[] value) {
+        set(13, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.maintenance_window.categories</code>.
+     */
+    public String[] getCategories() {
+        return (String[]) get(13);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -240,7 +255,7 @@ public class MaintenanceWindowRecord extends UpdatableRecordImpl<MaintenanceWind
     /**
      * Create a detached, initialised MaintenanceWindowRecord
      */
-    public MaintenanceWindowRecord(Long id, String name, String description, Boolean enabled, Boolean global, Boolean showOnStatusPages, String cron, OffsetDateTime start, String duration, MonitorID[] monitors, IntegrationID[] integrations, OffsetDateTime createdAt, OffsetDateTime updatedAt) {
+    public MaintenanceWindowRecord(Long id, String name, String description, Boolean enabled, Boolean global, Boolean showOnStatusPages, String cron, OffsetDateTime start, String duration, MonitorID[] monitors, IntegrationID[] integrations, OffsetDateTime createdAt, OffsetDateTime updatedAt, String[] categories) {
         super(MaintenanceWindow.MAINTENANCE_WINDOW);
 
         setId(id);
@@ -256,6 +271,7 @@ public class MaintenanceWindowRecord extends UpdatableRecordImpl<MaintenanceWind
         setIntegrations(integrations);
         setCreatedAt(createdAt);
         setUpdatedAt(updatedAt);
+        setCategories(categories);
         resetTouchedOnNotNull();
     }
 
@@ -279,6 +295,7 @@ public class MaintenanceWindowRecord extends UpdatableRecordImpl<MaintenanceWind
             setIntegrations(value.getIntegrations());
             setCreatedAt(value.getCreatedAt());
             setUpdatedAt(value.getUpdatedAt());
+            setCategories(value.getCategories());
             resetTouchedOnNotNull();
         }
     }

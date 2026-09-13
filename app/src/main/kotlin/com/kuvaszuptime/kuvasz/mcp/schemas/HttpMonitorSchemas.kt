@@ -49,6 +49,7 @@ data class HttpMonitorSchema(
     val requestBody: String?,
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime?,
+    val category: String?,
 ) {
     companion object {
         fun fromDto(dto: HttpMonitorDto) = HttpMonitorSchema(
@@ -76,6 +77,7 @@ data class HttpMonitorSchema(
             requestBody = dto.requestBody,
             createdAt = dto.createdAt,
             updatedAt = dto.updatedAt,
+            category = dto.category,
         )
     }
 }
@@ -120,6 +122,7 @@ data class HttpMonitorSummarySchema(
     val uptimeError: String?,
     val sslError: String?,
     val sslValidUntil: OffsetDateTime?,
+    val category: String?,
 ) {
     companion object {
         fun fromDto(dto: HttpMonitorDetailsDto) =
@@ -138,6 +141,7 @@ data class HttpMonitorSummarySchema(
                 uptimeError = dto.uptimeError,
                 sslError = dto.sslError,
                 sslValidUntil = dto.sslValidUntil,
+                category = dto.category,
             )
     }
 }
@@ -173,6 +177,7 @@ data class HttpMonitorCreatorSchema(
     val requestBody: String? = null,
     @get:Positive
     val failureCountThreshold: Long?,
+    val category: String? = null,
 ) {
 
     fun toDto() = HttpMonitorCreateDto(
@@ -198,5 +203,6 @@ data class HttpMonitorCreatorSchema(
         expectedHeaders = expectedHeaders.orEmpty(),
         requestBody = requestBody,
         failureCountThreshold = failureCountThreshold ?: HttpMonitorDefaults.FAILURE_COUNT_THRESHOLD,
+        category = category,
     )
 }

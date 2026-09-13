@@ -31,6 +31,7 @@ internal fun FlowContent.maintenanceWindowCreateUpdateModal(
     val serializedMonitors = configuredMonitors.asJsonString()
     val modalClosedEvent = "maintenance-window-upsert-modal-closed"
     val monitorsSelectId = "maintenance-window-monitors-select"
+    val categoriesSelectId = "maintenance-window-categories-select"
     val isReadOnlyMode = globals.editabilityState.areMaintenanceWindowsReadOnly()
 
     div {
@@ -41,7 +42,8 @@ internal fun FlowContent.maintenanceWindowCreateUpdateModal(
                 |$serializedWindow,
                 |$serializedErrorMessages,
                 |'$monitorsSelectId',
-                |$serializedMonitors)
+                |$serializedMonitors,
+                |'$categoriesSelectId')
             """.trimMargin()
         )
         attributes["@$modalClosedEvent.window"] = "resetState()"
@@ -171,6 +173,7 @@ internal fun FlowContent.maintenanceWindowCreateUpdateModal(
                     div {
                         classes(MB_3)
                         xShow("!global")
+                        testId("multi-select")
                         formLabel(
                             label = Messages.monitors(),
                             description = Messages.maintenanceWindowMonitorsDescription(),
@@ -180,6 +183,22 @@ internal fun FlowContent.maintenanceWindowCreateUpdateModal(
                         monitorSelector(
                             xModelName = "selectedMonitors",
                             monitorsSelectId = monitorsSelectId,
+                            isReadOnly = isReadOnlyMode,
+                        )
+                    }
+                    // Categories (hidden for global windows, just like the monitors above)
+                    div {
+                        classes(MB_3)
+                        xShow("!global")
+                        testId("categories-select")
+                        formLabel(
+                            label = Messages.categories(),
+                            description = Messages.maintenanceWindowCategoriesDescription(),
+                            inputName = categoriesSelectId,
+                            required = false,
+                        )
+                        categorySelector(
+                            categoriesSelectId = categoriesSelectId,
                             isReadOnly = isReadOnlyMode,
                         )
                     }

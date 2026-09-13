@@ -12,6 +12,8 @@ data class StatusPageExportDto(
     val customFaviconUrl: String?,
     val public: Boolean,
     val monitors: Set<MonitorID>,
+    val categories: Set<String> = emptySet(),
+    val displayCategories: Boolean = StatusPageDefaults.DISPLAY_CATEGORIES,
 ) {
     companion object {
         fun fromStatusPageRecord(record: StatusPageRecord) =
@@ -22,6 +24,8 @@ data class StatusPageExportDto(
                 customFaviconUrl = record.customFaviconUrl,
                 public = record.public,
                 monitors = record.monitors.toSet(),
+                categories = record.categories.toSet(),
+                displayCategories = record.displayCategories,
             )
     }
 }

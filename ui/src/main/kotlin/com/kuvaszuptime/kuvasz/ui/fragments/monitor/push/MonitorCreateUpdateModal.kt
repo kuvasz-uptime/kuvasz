@@ -23,6 +23,7 @@ internal fun FlowContent.pushMonitorCreateUpdateModal(
         createTitle = Messages.createNewPushMonitor(),
         errorMessages = mapOf(
             "nameRequired" to Messages.errorNameRequired(),
+            "categoryTooLong" to Messages.errorCategoryTooLong(),
             "nameOrClientSecretAlreadyExists" to Messages.errorNameOrClientSecretAlreadyExists(),
             "nameCannotBeChanged" to Messages.errorNameCannotBeChanged(),
             "heartbeatIntervalInvalid" to Messages.errorHeartbeatIntervalInvalid(),

@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.util.loggerFor
 import com.kuvaszuptime.kuvasz.validation.MonitorIdValidator
 import com.kuvaszuptime.kuvasz.validation.ResolvedMonitorIds
+import com.kuvaszuptime.kuvasz.validation.validateCategories
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 
@@ -36,8 +37,13 @@ class StatusPageImporter(
                 val resolvedMonitors = pageToImport.resolveMonitors()
                 ignoredMonitors.addAll(resolvedMonitors.ignored)
 
-                // Upserting the status page from the provided configs
-                statusPageRepository.upsert(pageToImport.toStatusPageRecord(resolvedMonitors.valid), txCtx)
+                // Upserting the status page from the provided configs. The categories need no resolution: an
+                // unused one is a valid selector that simply covers nothing right now.
+                val resolvedCategories = validateCategories(pageToImport.categories.orEmpty())
+                statusPageRepository.upsert(
+                    pageToImport.toStatusPageRecord(resolvedMonitors.valid, resolvedCategories),
+                    txCtx,
+                )
             }
             logger.info("Loaded ${statusPageConfigs.size} status pages from external config, dryrun: $dryRun")
 

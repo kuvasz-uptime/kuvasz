@@ -37,6 +37,8 @@ data class MaintenanceWindowCreateDto(
     override val duration: String? = null,
     @param:Schema(description = MaintenanceWindowDocs.MONITORS, required = false)
     override val monitors: List<String>? = emptyList(),
+    @param:Schema(description = MaintenanceWindowDocs.CATEGORIES, required = false)
+    override val categories: List<String>? = emptyList(),
     @param:Schema(description = MaintenanceWindowDocs.INTEGRATIONS, required = false)
     override val integrations: List<String>? = emptyList(),
 ) : MaintenanceWindowCreator

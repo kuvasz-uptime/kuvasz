@@ -18,6 +18,8 @@ import com.kuvaszuptime.kuvasz.testutils.shouldHaveError
 import com.kuvaszuptime.kuvasz.testutils.shouldHaveInputValidationError
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -86,6 +88,7 @@ class MaintenanceWindowToolsTest(
                     name = "details-window",
                     enabled = true,
                     monitors = listOf(MonitorID(MonitorType.HTTP_SSL, monitor.name)),
+                    categories = listOf("Payments"),
                 )
                 val response = callToolWithMcpClient(
                     GET_MAINTENANCE_WINDOW_DETAILS,
@@ -99,6 +102,7 @@ class MaintenanceWindowToolsTest(
                     details.id shouldBe window.id
                     details.name shouldBe "details-window"
                     details.monitors shouldContain "http:${monitor.name}"
+                    details.categories shouldContainExactly setOf("Payments")
                     details.active shouldBe true
 
                     response.contentAs<MaintenanceWindowSchema>() shouldBe details
@@ -152,6 +156,27 @@ class MaintenanceWindowToolsTest(
                         cron shouldBe "0 2 * * *"
                         duration shouldBe "PT1H"
                         nextStart.shouldNotBeNull()
+                    }
+                }
+            }
+
+            `when`("create-maintenance-window is called with monitors and categories at once") {
+                val monitor = createHttpMonitor(httpMonitorRepository)
+                val response = callToolWithMcpClient(
+                    CREATE_MAINTENANCE_WINDOW,
+                    mapOf(
+                        "name" to "mcp-category-window",
+                        "monitors" to listOf("http:${monitor.name}", "http:ghost"),
+                        "categories" to listOf("Payments", "Nobody uses me"),
+                    ),
+                )
+
+                then("the non-existing monitor is dropped while every category is kept") {
+                    response.isError shouldBe false
+
+                    with(response.structuredContentAs<MaintenanceWindowSchema>().shouldNotBeNull()) {
+                        monitors shouldContainExactly setOf("http:${monitor.name}")
+                        categories shouldContainExactlyInAnyOrder setOf("Payments", "Nobody uses me")
                     }
                 }
             }

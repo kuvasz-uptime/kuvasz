@@ -16,6 +16,11 @@ class IcmpMonitorFormModal(page: Page) : ModalView(page) {
         return this
     }
 
+    fun setCategory(value: String): IcmpMonitorFormModal {
+        fillCategory(value)
+        return this
+    }
+
     fun setHost(value: String): IcmpMonitorFormModal {
         hostInput.fill(value)
         return this

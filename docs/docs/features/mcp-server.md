@@ -132,7 +132,7 @@ The MCP server exposes the following tools to connected clients:
 
 | Tool                      | Description                                                                                                             |
 |---------------------------|-------------------------------------------------------------------------------------------------------------------------|
-| `list-status-pages`       | List all status pages with their basic configuration (title, slug, visibility, monitor count)                           |
+| `list-status-pages`       | List all status pages with their basic configuration (title, slug, visibility, monitor count, selected categories)      |
 | `get-status-page-details` | Get full details of a specific status page including per-monitor uptime status, uptime ratio, and 30-day uptime history |
 
 ### Maintenance windows
@@ -142,7 +142,7 @@ The MCP server exposes the following tools to connected clients:
 | Tool                             | Description                                                                                                                          |
 |----------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
 | `list-maintenance-windows`       | List all maintenance windows with their schedule (manual, recurring or one-off) and current active state                             |
-| `get-maintenance-window-details` | Get full details of a specific maintenance window, including affected monitors, notified integrations, and resolved next start / end |
+| `get-maintenance-window-details` | Get full details of a specific maintenance window, including affected monitors and categories, notified integrations, and resolved next start / end |
 | `create-maintenance-window`      | Create a new maintenance window (manual, `cron` + `duration` recurring, or `start` + `duration` one-off)                             |
 | `toggle-maintenance-window`      | Enable or disable a maintenance window via its master `enabled` switch                                                               |
 | `delete-maintenance-window`      | Permanently delete a maintenance window by ID                                                                                        |

@@ -71,6 +71,7 @@ class MaintenanceWindowCreateDtoDefaultsTest : BehaviorSpec({
             dto.start.shouldBeNull()
             dto.duration.shouldBeNull()
             dto.monitors.shouldBeEmpty()
+            dto.categories.shouldBeEmpty()
             dto.integrations.shouldBeEmpty()
         }
     }

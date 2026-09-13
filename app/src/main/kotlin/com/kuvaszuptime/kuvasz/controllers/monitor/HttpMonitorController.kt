@@ -14,6 +14,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDocs.MONITORS_
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitoringStatsDto
+import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorActions
 import io.micronaut.http.HttpStatus
@@ -61,12 +62,14 @@ class HttpMonitorController(
         @QueryValue uptimeStatus: List<UptimeStatus>?,
         @QueryValue sslStatus: List<SslStatus>?,
         @QueryValue sslCheckEnabled: Boolean?,
+        @QueryValue category: String?,
     ): List<HttpMonitorDetailsDto> =
         monitorActions.getMonitorsWithDetails(
             enabled = enabled,
             uptimeStatus = uptimeStatus.orEmpty(),
             sslStatus = sslStatus.orEmpty(),
             sslCheckEnabled = sslCheckEnabled,
+            categoryFilter = CategoryFilter.fromQueryParam(category),
         )
 
     @ApiResponses(
