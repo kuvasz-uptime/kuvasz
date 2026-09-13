@@ -143,6 +143,7 @@ class HttpMonitorControllerTest(
                     uptimeStatus = null,
                     sslStatus = null,
                     sslCheckEnabled = null,
+                    category = null,
                 )
                 then("it should return them") {
                     response shouldHaveSize 1
@@ -302,6 +303,7 @@ class HttpMonitorControllerTest(
                     uptimeStatus = null,
                     sslStatus = null,
                     sslCheckEnabled = null,
+                    category = null,
                 )
 
                 then("it should not return disabled monitor") {
@@ -336,6 +338,7 @@ class HttpMonitorControllerTest(
                     uptimeStatus = null,
                     sslStatus = null,
                     sslCheckEnabled = null,
+                    category = null,
                 )
 
                 then("it should return only the disabled monitors") {
@@ -383,12 +386,14 @@ class HttpMonitorControllerTest(
                     uptimeStatus = listOf(UptimeStatus.UP),
                     sslStatus = null,
                     sslCheckEnabled = null,
+                    category = null,
                 )
                 val downResponse = monitorClient.getMonitorsWithDetails(
                     enabled = null,
                     uptimeStatus = listOf(UptimeStatus.DOWN),
                     sslStatus = null,
                     sslCheckEnabled = null,
+                    category = null,
                 )
 
                 then("it should return only the monitors with the specified uptime status") {
@@ -436,24 +441,28 @@ class HttpMonitorControllerTest(
                     uptimeStatus = listOf(UptimeStatus.UP),
                     sslStatus = listOf(SslStatus.VALID),
                     sslCheckEnabled = null,
+                    category = null,
                 )
                 val downInvalidResponse = monitorClient.getMonitorsWithDetails(
                     enabled = null,
                     uptimeStatus = listOf(UptimeStatus.DOWN),
                     sslStatus = listOf(SslStatus.INVALID),
                     sslCheckEnabled = null,
+                    category = null,
                 )
                 val upInvalidResponse = monitorClient.getMonitorsWithDetails(
                     enabled = null,
                     uptimeStatus = listOf(UptimeStatus.UP),
                     sslStatus = listOf(SslStatus.INVALID),
                     sslCheckEnabled = null,
+                    category = null,
                 )
                 val downValidResponse = monitorClient.getMonitorsWithDetails(
                     enabled = null,
                     uptimeStatus = listOf(UptimeStatus.DOWN),
                     sslStatus = listOf(SslStatus.VALID),
                     sslCheckEnabled = null,
+                    category = null,
                 )
 
                 then("it should return only the monitors with the specified uptime and SSL status") {
@@ -519,24 +528,28 @@ class HttpMonitorControllerTest(
                     uptimeStatus = null,
                     sslStatus = listOf(SslStatus.VALID),
                     sslCheckEnabled = null,
+                    category = null,
                 )
                 val expiredResponse = monitorClient.getMonitorsWithDetails(
                     enabled = null,
                     uptimeStatus = null,
                     sslStatus = listOf(SslStatus.INVALID),
                     sslCheckEnabled = null,
+                    category = null,
                 )
                 val expiredSSLCheckEnabledResponse = monitorClient.getMonitorsWithDetails(
                     enabled = null,
                     uptimeStatus = null,
                     sslStatus = listOf(SslStatus.INVALID),
                     sslCheckEnabled = true,
+                    category = null,
                 )
                 val willExpireResponse = monitorClient.getMonitorsWithDetails(
                     enabled = null,
                     uptimeStatus = null,
                     sslStatus = listOf(SslStatus.WILL_EXPIRE),
                     sslCheckEnabled = null,
+                    category = null,
                 )
 
                 then("it should return only the monitors with the specified SSL status") {
@@ -552,12 +565,88 @@ class HttpMonitorControllerTest(
                 }
             }
 
+            `when`("the result is filtered by a category") {
+                val payments = createHttpMonitor(monitorRepository, monitorName = "pays", category = "Payments")
+                createHttpMonitor(monitorRepository, monitorName = "searches", category = "Search")
+                createHttpMonitor(monitorRepository, monitorName = "plain", category = null)
+
+                val response = monitorClient.getMonitorsWithDetails(
+                    enabled = null,
+                    uptimeStatus = null,
+                    sslStatus = null,
+                    sslCheckEnabled = null,
+                    category = "Payments",
+                )
+
+                then("only the monitors of that category are returned") {
+                    response.map { it.id } shouldContainExactly listOf(payments.id)
+                }
+            }
+
+            `when`("the category parameter is present but empty") {
+                createHttpMonitor(monitorRepository, monitorName = "pays", category = "Payments")
+                val plain = createHttpMonitor(monitorRepository, monitorName = "plain", category = null)
+
+                // An empty value is the uncategorized selector, in contrast to omitting the parameter entirely
+                val response = monitorClient.getMonitorsWithDetails(
+                    enabled = null,
+                    uptimeStatus = null,
+                    sslStatus = null,
+                    sslCheckEnabled = null,
+                    category = "",
+                )
+
+                then("only the monitors without a category are returned") {
+                    response.map { it.id } shouldContainExactly listOf(plain.id)
+                }
+            }
+
+            `when`("the category filter is combined with the other filtering options") {
+                val enabledPayments = createHttpMonitor(monitorRepository, monitorName = "pays", category = "Payments")
+                createHttpMonitor(
+                    monitorRepository,
+                    monitorName = "paused-pays",
+                    category = "Payments",
+                    enabled = false,
+                )
+                createHttpMonitor(monitorRepository, monitorName = "searches", category = "Search")
+
+                val response = monitorClient.getMonitorsWithDetails(
+                    enabled = true,
+                    uptimeStatus = null,
+                    sslStatus = null,
+                    sslCheckEnabled = null,
+                    category = "Payments",
+                )
+
+                then("they narrow the result together, instead of one replacing the other") {
+                    response.map { it.id } shouldContainExactly listOf(enabledPayments.id)
+                }
+            }
+
+            `when`("the category filter is given a category no monitor belongs to") {
+                createHttpMonitor(monitorRepository, monitorName = "pays", category = "Payments")
+
+                val response = monitorClient.getMonitorsWithDetails(
+                    enabled = null,
+                    uptimeStatus = null,
+                    sslStatus = null,
+                    sslCheckEnabled = null,
+                    category = "Nobody uses me",
+                )
+
+                then("an empty list is returned instead of an error") {
+                    response.shouldBeEmpty()
+                }
+            }
+
             `when`("there isn't any monitor in the database") {
                 val response = monitorClient.getMonitorsWithDetails(
                     enabled = null,
                     uptimeStatus = null,
                     sslStatus = null,
                     sslCheckEnabled = null,
+                    category = null,
                 )
                 then("it should return an empty list") {
                     response shouldHaveSize 0

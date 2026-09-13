@@ -26,4 +26,7 @@ object MonitorDocs {
     const val CATEGORY =
         "Optional, free-form category of the monitor (e.g. a product or service name), used to group monitors " +
             "on the status pages"
+    const val CATEGORY_FILTER =
+        "Narrows the result to one monitor category. An empty value selects the monitors that have no category at " +
+            "all, omitting the parameter selects every monitor."
 }

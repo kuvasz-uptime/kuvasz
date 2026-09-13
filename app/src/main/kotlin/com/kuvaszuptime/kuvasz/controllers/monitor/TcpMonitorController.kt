@@ -12,6 +12,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorDocs.MONITORS_40
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitoringStatsDto
+import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.check.tcp.TcpMonitorActions
 import io.micronaut.http.HttpStatus
@@ -57,10 +58,12 @@ class TcpMonitorController(
     override fun getMonitorsWithDetails(
         @QueryValue enabled: Boolean?,
         @QueryValue uptimeStatus: List<UptimeStatus>?,
+        @QueryValue category: String?,
     ): List<TcpMonitorDetailsDto> =
         monitorActions.getMonitorsWithDetails(
             enabled = enabled,
             uptimeStatus = uptimeStatus.orEmpty(),
+            categoryFilter = CategoryFilter.fromQueryParam(category),
         )
 
     @ApiResponses(

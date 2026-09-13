@@ -43,6 +43,15 @@ paths:
           nullable: true
           items:
             $ref: "#/components/schemas/UptimeStatus"
+      - name: category
+        in: query
+        description: "Narrows the result to one monitor category. An empty value selects\
+          \ the monitors that have no category at all, omitting the parameter selects\
+          \ every monitor."
+        explode: false
+        schema:
+          type: string
+          nullable: true
       responses:
         "200":
           description: Successful query
@@ -324,6 +333,15 @@ paths:
         explode: false
         schema:
           type: boolean
+          nullable: true
+      - name: category
+        in: query
+        description: "Narrows the result to one monitor category. An empty value selects\
+          \ the monitors that have no category at all, omitting the parameter selects\
+          \ every monitor."
+        explode: false
+        schema:
+          type: string
           nullable: true
       responses:
         "200":
@@ -618,6 +636,15 @@ paths:
           nullable: true
           items:
             $ref: "#/components/schemas/UptimeStatus"
+      - name: category
+        in: query
+        description: "Narrows the result to one monitor category. An empty value selects\
+          \ the monitors that have no category at all, omitting the parameter selects\
+          \ every monitor."
+        explode: false
+        schema:
+          type: string
+          nullable: true
       responses:
         "200":
           description: Successful query
@@ -1267,6 +1294,15 @@ paths:
           nullable: true
           items:
             $ref: "#/components/schemas/UptimeStatus"
+      - name: category
+        in: query
+        description: "Narrows the result to one monitor category. An empty value selects\
+          \ the monitors that have no category at all, omitting the parameter selects\
+          \ every monitor."
+        explode: false
+        schema:
+          type: string
+          nullable: true
       responses:
         "200":
           description: Successful query
@@ -1884,6 +1920,15 @@ paths:
           nullable: true
           items:
             $ref: "#/components/schemas/UptimeStatus"
+      - name: category
+        in: query
+        description: "Narrows the result to one monitor category. An empty value selects\
+          \ the monitors that have no category at all, omitting the parameter selects\
+          \ every monitor."
+        explode: false
+        schema:
+          type: string
+          nullable: true
       responses:
         "200":
           description: Successful query

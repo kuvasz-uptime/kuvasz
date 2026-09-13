@@ -125,6 +125,7 @@ class PushMonitorControllerTest(
                 val response = monitorClient.getMonitorsWithDetails(
                     enabled = null,
                     uptimeStatus = null,
+                    category = null,
                 )
                 then("it should return them") {
                     response shouldHaveSize 1
@@ -266,6 +267,7 @@ class PushMonitorControllerTest(
                 val response = monitorClient.getMonitorsWithDetails(
                     enabled = true,
                     uptimeStatus = null,
+                    category = null,
                 )
 
                 then("it should not return disabled monitor") {
@@ -283,6 +285,7 @@ class PushMonitorControllerTest(
                 val response = monitorClient.getMonitorsWithDetails(
                     enabled = false,
                     uptimeStatus = null,
+                    category = null,
                 )
 
                 then("it should return only the disabled monitors") {
@@ -315,10 +318,12 @@ class PushMonitorControllerTest(
                 val upResponse = monitorClient.getMonitorsWithDetails(
                     enabled = null,
                     uptimeStatus = listOf(UptimeStatus.UP),
+                    category = null,
                 )
                 val downResponse = monitorClient.getMonitorsWithDetails(
                     enabled = null,
                     uptimeStatus = listOf(UptimeStatus.DOWN),
+                    category = null,
                 )
 
                 then("it should return only the monitors with the specified uptime status") {
@@ -330,10 +335,73 @@ class PushMonitorControllerTest(
                 }
             }
 
+            `when`("filtering by a category") {
+                val payments = createPushMonitor(monitorRepository, monitorName = "pays", category = "Payments")
+                createPushMonitor(monitorRepository, monitorName = "searches", category = "Search")
+                createPushMonitor(monitorRepository, monitorName = "plain", category = null)
+
+                val response = monitorClient.getMonitorsWithDetails(
+                    enabled = null,
+                    uptimeStatus = null,
+                    category = "Payments",
+                )
+
+                then("only the monitors of that category should be returned") {
+                    response.map { it.id } shouldContainExactly listOf(payments.id)
+                }
+            }
+
+            `when`("filtering by an empty category") {
+                createPushMonitor(monitorRepository, monitorName = "pays", category = "Payments")
+                val plain = createPushMonitor(monitorRepository, monitorName = "plain", category = null)
+
+                // An empty value is the uncategorized selector, in contrast to omitting the parameter entirely
+                val response = monitorClient.getMonitorsWithDetails(
+                    enabled = null,
+                    uptimeStatus = null,
+                    category = "",
+                )
+
+                then("only the monitors without a category should be returned") {
+                    response.map { it.id } shouldContainExactly listOf(plain.id)
+                }
+            }
+
+            `when`("combining the category filter with the other options") {
+                val enabledPayments = createPushMonitor(monitorRepository, monitorName = "pays", category = "Payments")
+                createPushMonitor(monitorRepository, monitorName = "paused", category = "Payments", enabled = false)
+                createPushMonitor(monitorRepository, monitorName = "searches", category = "Search")
+
+                val response = monitorClient.getMonitorsWithDetails(
+                    enabled = true,
+                    uptimeStatus = null,
+                    category = "Payments",
+                )
+
+                then("they should narrow the result together") {
+                    response.map { it.id } shouldContainExactly listOf(enabledPayments.id)
+                }
+            }
+
+            `when`("filtering by a category no monitor belongs to") {
+                createPushMonitor(monitorRepository, monitorName = "pays", category = "Payments")
+
+                val response = monitorClient.getMonitorsWithDetails(
+                    enabled = null,
+                    uptimeStatus = null,
+                    category = "Nobody uses me",
+                )
+
+                then("an empty list should be returned") {
+                    response.shouldBeEmpty()
+                }
+            }
+
             `when`("there isn't any monitor in the database") {
                 val response = monitorClient.getMonitorsWithDetails(
                     enabled = null,
                     uptimeStatus = null,
+                    category = null,
                 )
                 then("it should return an empty list") {
                     response shouldHaveSize 0

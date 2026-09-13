@@ -105,7 +105,11 @@ class DnsMonitorControllerTest(
                     endedAt = null,
                 )
 
-                val response = monitorClient.getMonitorsWithDetails(enabled = null, uptimeStatus = null)
+                val response = monitorClient.getMonitorsWithDetails(
+                    enabled = null,
+                    uptimeStatus = null,
+                    category = null,
+                )
 
                 then("it should return them with details") {
                     response shouldHaveSize 1
@@ -127,7 +131,11 @@ class DnsMonitorControllerTest(
                 createDnsMonitor(monitorRepository, enabled = true)
                 createDnsMonitor(monitorRepository, enabled = false)
 
-                val response = monitorClient.getMonitorsWithDetails(enabled = false, uptimeStatus = null)
+                val response = monitorClient.getMonitorsWithDetails(
+                    enabled = false,
+                    uptimeStatus = null,
+                    category = null,
+                )
 
                 then("only disabled monitors should be returned") {
                     response shouldHaveSize 1
@@ -155,11 +163,76 @@ class DnsMonitorControllerTest(
                 )
 
                 val response =
-                    monitorClient.getMonitorsWithDetails(enabled = null, uptimeStatus = listOf(UptimeStatus.UP))
+                    monitorClient.getMonitorsWithDetails(
+                        enabled = null,
+                        uptimeStatus = listOf(UptimeStatus.UP),
+                        category = null,
+                    )
 
                 then("only UP monitors should be returned") {
                     response shouldHaveSize 1
                     response.first().id shouldBe upMonitor.id
+                }
+            }
+            `when`("filtering by a category") {
+                val payments = createDnsMonitor(monitorRepository, monitorName = "pays", category = "Payments")
+                createDnsMonitor(monitorRepository, monitorName = "searches", category = "Search")
+                createDnsMonitor(monitorRepository, monitorName = "plain", category = null)
+
+                val response = monitorClient.getMonitorsWithDetails(
+                    enabled = null,
+                    uptimeStatus = null,
+                    category = "Payments",
+                )
+
+                then("only the monitors of that category should be returned") {
+                    response.map { it.id } shouldContainExactly listOf(payments.id)
+                }
+            }
+
+            `when`("filtering by an empty category") {
+                createDnsMonitor(monitorRepository, monitorName = "pays", category = "Payments")
+                val plain = createDnsMonitor(monitorRepository, monitorName = "plain", category = null)
+
+                // An empty value is the uncategorized selector, in contrast to omitting the parameter entirely
+                val response = monitorClient.getMonitorsWithDetails(
+                    enabled = null,
+                    uptimeStatus = null,
+                    category = "",
+                )
+
+                then("only the monitors without a category should be returned") {
+                    response.map { it.id } shouldContainExactly listOf(plain.id)
+                }
+            }
+
+            `when`("combining the category filter with the other options") {
+                val enabledPayments = createDnsMonitor(monitorRepository, monitorName = "pays", category = "Payments")
+                createDnsMonitor(monitorRepository, monitorName = "paused", category = "Payments", enabled = false)
+                createDnsMonitor(monitorRepository, monitorName = "searches", category = "Search")
+
+                val response = monitorClient.getMonitorsWithDetails(
+                    enabled = true,
+                    uptimeStatus = null,
+                    category = "Payments",
+                )
+
+                then("they should narrow the result together") {
+                    response.map { it.id } shouldContainExactly listOf(enabledPayments.id)
+                }
+            }
+
+            `when`("filtering by a category no monitor belongs to") {
+                createDnsMonitor(monitorRepository, monitorName = "pays", category = "Payments")
+
+                val response = monitorClient.getMonitorsWithDetails(
+                    enabled = null,
+                    uptimeStatus = null,
+                    category = "Nobody uses me",
+                )
+
+                then("an empty list should be returned") {
+                    response.shouldBeEmpty()
                 }
             }
         }

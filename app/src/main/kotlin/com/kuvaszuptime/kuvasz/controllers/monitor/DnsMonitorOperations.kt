@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.controllers.monitor
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.dto.event.DnsUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.DnsMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDocs
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorStatsDto
@@ -33,6 +34,9 @@ interface DnsMonitorOperations {
         @QueryValue
         @Parameter(required = false)
         uptimeStatus: List<UptimeStatus>?,
+        @QueryValue
+        @Parameter(required = false, description = MonitorDocs.CATEGORY_FILTER)
+        category: String?,
     ): List<DnsMonitorDetailsDto>
 
     @Operation(summary = "Get a monitor's details")

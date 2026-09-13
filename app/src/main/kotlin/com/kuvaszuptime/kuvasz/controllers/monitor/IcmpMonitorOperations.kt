@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.controllers.monitor
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.dto.event.IcmpUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.IcmpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDocs
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorStatsDto
@@ -33,6 +34,9 @@ interface IcmpMonitorOperations {
         @QueryValue
         @Parameter(required = false)
         uptimeStatus: List<UptimeStatus>?,
+        @QueryValue
+        @Parameter(required = false, description = MonitorDocs.CATEGORY_FILTER)
+        category: String?,
     ): List<IcmpMonitorDetailsDto>
 
     @Operation(summary = "Get a monitor's details")
