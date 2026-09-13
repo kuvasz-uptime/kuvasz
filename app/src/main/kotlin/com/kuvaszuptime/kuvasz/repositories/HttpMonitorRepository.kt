@@ -223,7 +223,8 @@ class HttpMonitorRepository(
             HTTP_MONITOR.EXPECTED_HEADERS.`as`(HttpMonitorDetailsDto::expectedHeaders.name).convert(jsonToMapConverter),
             HTTP_MONITOR.REQUEST_BODY.`as`(HttpMonitorDetailsDto::requestBody.name),
             HTTP_MONITOR.CATEGORY.`as`(HttpMonitorDetailsDto::category.name),
-            statusPagesField.`as`(HttpMonitorDetailsDto::statusPages.name),
+            DSL.coalesce(statusPagesSubselect.field("slugs"), DSL.array(arrayOf<String>()))
+                .`as`(HttpMonitorDetailsDto::statusPages.name),
             // Placeholders for fields populated by the actions layer, not by SQL
             DSL.array(arrayOf<String>()).`as`(HttpMonitorDetailsDto::maintenanceWindows.name),
             DSL.inline(false).`as`(HttpMonitorDetailsDto::inMaintenance.name),
@@ -241,7 +242,5 @@ class HttpMonitorRepository(
                         .concat(HTTP_MONITOR.NAME)
                 )
         )
-        .leftJoin(categoryStatusPagesSubselect)
-        .on(pageCategoryField.eq(HTTP_MONITOR.CATEGORY))
         .where(DSL.trueCondition())
 }

@@ -197,7 +197,8 @@ class PushMonitorRepository(
             latestUptimeEventSelect.field(PUSH_UPTIME_EVENT.ERROR)!!.`as`(PushMonitorDetailsDto::uptimeError.name),
             DSL.array(arrayOf<String>()).`as`(PushMonitorDetailsDto::effectiveIntegrations.name),
             PUSH_MONITOR.INTEGRATIONS.`as`(PushMonitorDetailsDto::integrations.name),
-            statusPagesField.`as`(PushMonitorDetailsDto::statusPages.name),
+            DSL.coalesce(statusPagesSubselect.field("slugs"), DSL.array(arrayOf<String>()))
+                .`as`(PushMonitorDetailsDto::statusPages.name),
             nextExpectedHeartbeatField.`as`(PushMonitorDetailsDto::nextExpectedHeartbeat.name),
             // Placeholders for fields populated by the actions layer, not by SQL
             DSL.array(arrayOf<String>()).`as`(PushMonitorDetailsDto::maintenanceWindows.name),
@@ -214,8 +215,6 @@ class PushMonitorRepository(
                         .concat(PUSH_MONITOR.NAME)
                 )
         )
-        .leftJoin(categoryStatusPagesSubselect)
-        .on(pageCategoryField.eq(PUSH_MONITOR.CATEGORY))
         .where(DSL.trueCondition())
 
     /**

@@ -187,7 +187,8 @@ class TcpMonitorRepository(
             latestUptimeEventSelect.field(TCP_UPTIME_EVENT.ERROR)!!.`as`(TcpMonitorDetailsDto::uptimeError.name),
             DSL.array(arrayOf<String>()).`as`(TcpMonitorDetailsDto::effectiveIntegrations.name),
             TCP_MONITOR.INTEGRATIONS.`as`(TcpMonitorDetailsDto::integrations.name),
-            statusPagesField.`as`(TcpMonitorDetailsDto::statusPages.name),
+            DSL.coalesce(statusPagesSubselect.field("slugs"), DSL.array(arrayOf<String>()))
+                .`as`(TcpMonitorDetailsDto::statusPages.name),
             // Placeholders for fields populated by the actions layer, not by SQL
             DSL.array(arrayOf<String>()).`as`(TcpMonitorDetailsDto::maintenanceWindows.name),
             DSL.inline(false).`as`(TcpMonitorDetailsDto::inMaintenance.name),
@@ -203,7 +204,5 @@ class TcpMonitorRepository(
                         .concat(TCP_MONITOR.NAME)
                 )
         )
-        .leftJoin(categoryStatusPagesSubselect)
-        .on(pageCategoryField.eq(TCP_MONITOR.CATEGORY))
         .where(DSL.trueCondition())
 }

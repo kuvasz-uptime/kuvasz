@@ -187,7 +187,8 @@ class IcmpMonitorRepository(
             latestUptimeEventSelect.field(ICMP_UPTIME_EVENT.ERROR)!!.`as`(IcmpMonitorDetailsDto::uptimeError.name),
             DSL.array(arrayOf<String>()).`as`(IcmpMonitorDetailsDto::effectiveIntegrations.name),
             ICMP_MONITOR.INTEGRATIONS.`as`(IcmpMonitorDetailsDto::integrations.name),
-            statusPagesField.`as`(IcmpMonitorDetailsDto::statusPages.name),
+            DSL.coalesce(statusPagesSubselect.field("slugs"), DSL.array(arrayOf<String>()))
+                .`as`(IcmpMonitorDetailsDto::statusPages.name),
             // Placeholders for fields populated by the actions layer, not by SQL
             DSL.array(arrayOf<String>()).`as`(IcmpMonitorDetailsDto::maintenanceWindows.name),
             DSL.inline(false).`as`(IcmpMonitorDetailsDto::inMaintenance.name),
@@ -203,7 +204,5 @@ class IcmpMonitorRepository(
                         .concat(ICMP_MONITOR.NAME)
                 )
         )
-        .leftJoin(categoryStatusPagesSubselect)
-        .on(pageCategoryField.eq(ICMP_MONITOR.CATEGORY))
         .where(DSL.trueCondition())
 }

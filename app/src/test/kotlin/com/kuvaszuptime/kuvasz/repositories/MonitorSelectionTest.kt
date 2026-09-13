@@ -259,9 +259,8 @@ class MonitorSelectionTest(
                     type.seed("payments", "Payments", true)
                     createStatusPage(dslContext, slug = "by-category", categories = listOf("Payments"))
 
-                    then("the page is listed on the monitor") {
-                        type.repository.fetchAllWithDetails()
-                            .single().statusPages shouldContainExactly setOf("by-category")
+                    then("the page is not listed, because it holds no reference to the monitor") {
+                        type.repository.fetchAllWithDetails().single().statusPages.shouldBeEmpty()
                     }
                 }
 
@@ -289,18 +288,9 @@ class MonitorSelectionTest(
                     )
                     createStatusPage(dslContext, slug = "by-category", categories = listOf("Payments"))
 
-                    then("both slugs are listed") {
+                    then("only the page referencing it by name is listed") {
                         type.repository.fetchAllWithDetails()
-                            .single().statusPages shouldContainExactlyInAnyOrder setOf("by-name", "by-category")
-                    }
-                }
-
-                `when`("only the category of another monitor is referenced by a page") {
-                    type.seed("payments", "Payments", true)
-                    createStatusPage(dslContext, slug = "another-category", categories = listOf("Search"))
-
-                    then("no slug is listed") {
-                        type.repository.fetchAllWithDetails().single().statusPages.shouldBeEmpty()
+                            .single().statusPages shouldContainExactly setOf("by-name")
                     }
                 }
             }

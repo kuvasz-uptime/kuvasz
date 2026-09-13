@@ -42,9 +42,6 @@ sealed interface MonitorRepository<R : MonitorRecord, D : MonitorDetailsDto> {
         const val MONITOR_NAME_FIELD_NAME = "monitor_name"
 
         // Deliberately not "category": the outer query already has the monitor's own category column in scope
-        const val PAGE_CATEGORY_FIELD_NAME = "page_category"
-        private const val SLUGS_BY_NAME_FIELD_NAME = "slugs"
-        private const val SLUGS_BY_CATEGORY_FIELD_NAME = "category_slugs"
     }
 
     fun fetchAllWithDetails(
@@ -64,53 +61,17 @@ sealed interface MonitorRepository<R : MonitorRecord, D : MonitorDetailsDto> {
     val monitorNameField: Field<String?>
         get() = DSL.field("t.monitor_name", SQLDataType.VARCHAR).`as`(MONITOR_NAME_FIELD_NAME)
 
-    val pageCategoryField: Field<String?>
-        get() = DSL.field("tc.page_category", SQLDataType.VARCHAR).`as`(PAGE_CATEGORY_FIELD_NAME)
-
-    private val slugsByNameField: Field<Array<String>>
-        get() = DSL.arrayAgg(STATUS_PAGE.SLUG).`as`(SLUGS_BY_NAME_FIELD_NAME)
-
-    private val slugsByCategoryField: Field<Array<String>>
-        get() = DSL.arrayAgg(STATUS_PAGE.SLUG).`as`(SLUGS_BY_CATEGORY_FIELD_NAME)
-
     val statusPagesSubselect: SelectHavingStep<out Record>
         get() = DSL
             .select(
                 monitorNameField,
-                slugsByNameField,
+                DSL.arrayAgg(STATUS_PAGE.SLUG).`as`("slugs"),
             )
             .from(STATUS_PAGE)
             .crossJoin(
                 DSL.unnest(STATUS_PAGE.MONITORS).`as`("t", MONITOR_NAME_FIELD_NAME)
             )
             .groupBy(monitorNameField)
-
-    /**
-     * The counterpart of [statusPagesSubselect] for the pages that reference a monitor by one of its categories
-     * instead of by its name. It is joined on the monitor's own category, and the two results are merged by
-     * [statusPagesField].
-     */
-    val categoryStatusPagesSubselect: SelectHavingStep<out Record>
-        get() = DSL
-            .select(
-                pageCategoryField,
-                slugsByCategoryField,
-            )
-            .from(STATUS_PAGE)
-            .crossJoin(
-                DSL.unnest(STATUS_PAGE.CATEGORIES).`as`("tc", PAGE_CATEGORY_FIELD_NAME)
-            )
-            .groupBy(pageCategoryField)
-
-    /**
-     * The slugs of the status pages a monitor appears on, no matter whether it got there by its name or by its
-     * category.
-     */
-    val statusPagesField: Field<Array<String>>
-        get() = DSL.arrayConcat(
-            DSL.coalesce(statusPagesSubselect.field(slugsByNameField), DSL.array(arrayOf<String>())),
-            DSL.coalesce(categoryStatusPagesSubselect.field(slugsByCategoryField), DSL.array(arrayOf<String>())),
-        )
 
     /**
      * The WHERE condition selecting the monitors of a status page: the ones referenced explicitly by their name,

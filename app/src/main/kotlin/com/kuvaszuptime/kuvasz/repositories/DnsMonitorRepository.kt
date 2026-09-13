@@ -202,7 +202,8 @@ class DnsMonitorRepository(
             latestUptimeEventSelect.field(DNS_UPTIME_EVENT.ERROR)!!.`as`(DnsMonitorDetailsDto::uptimeError.name),
             DSL.array(arrayOf<String>()).`as`(DnsMonitorDetailsDto::effectiveIntegrations.name),
             DNS_MONITOR.INTEGRATIONS.`as`(DnsMonitorDetailsDto::integrations.name),
-            statusPagesField.`as`(DnsMonitorDetailsDto::statusPages.name),
+            DSL.coalesce(statusPagesSubselect.field("slugs"), DSL.array(arrayOf<String>()))
+                .`as`(DnsMonitorDetailsDto::statusPages.name),
             // Placeholders for fields populated by the actions layer, not by SQL
             DSL.array(arrayOf<String>()).`as`(DnsMonitorDetailsDto::maintenanceWindows.name),
             DSL.inline(false).`as`(DnsMonitorDetailsDto::inMaintenance.name),
@@ -218,7 +219,5 @@ class DnsMonitorRepository(
                         .concat(DNS_MONITOR.NAME)
                 )
         )
-        .leftJoin(categoryStatusPagesSubselect)
-        .on(pageCategoryField.eq(DNS_MONITOR.CATEGORY))
         .where(DSL.trueCondition())
 }
