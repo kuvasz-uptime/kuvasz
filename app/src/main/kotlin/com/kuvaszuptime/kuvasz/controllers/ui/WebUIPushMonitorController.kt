@@ -55,6 +55,7 @@ class WebUIPushMonitorController(
 
     @Get("/push-monitors")
     @WebSecured
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
     fun pushMonitors(@QueryValue category: String?) = renderPushMonitorsPage(
         globals = appGlobals,

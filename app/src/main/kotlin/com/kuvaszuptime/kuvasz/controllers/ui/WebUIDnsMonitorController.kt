@@ -57,6 +57,7 @@ class WebUIDnsMonitorController(
 
     @Get("/dns-monitors")
     @WebSecured
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
     fun dnsMonitors(@QueryValue category: String?) = renderDnsMonitorsPage(
         globals = appGlobals,

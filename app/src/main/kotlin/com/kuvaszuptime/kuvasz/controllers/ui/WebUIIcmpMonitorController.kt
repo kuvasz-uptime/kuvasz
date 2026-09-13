@@ -55,6 +55,7 @@ class WebUIIcmpMonitorController(
 
     @Get("/icmp-monitors")
     @WebSecured
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
     fun icmpMonitors(@QueryValue category: String?) = renderIcmpMonitorsPage(
         globals = appGlobals,

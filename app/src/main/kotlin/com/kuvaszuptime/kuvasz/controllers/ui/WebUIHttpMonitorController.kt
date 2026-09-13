@@ -61,6 +61,7 @@ class WebUIHttpMonitorController(
 
     @Get("/http-monitors")
     @WebSecured
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
     fun httpMonitors(@QueryValue category: String?) = renderHttpMonitorsPage(
         globals = appGlobals,

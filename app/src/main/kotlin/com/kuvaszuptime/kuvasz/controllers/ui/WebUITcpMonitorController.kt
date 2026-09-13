@@ -55,6 +55,7 @@ class WebUITcpMonitorController(
 
     @Get("/tcp-monitors")
     @WebSecured
+    @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
     fun tcpMonitors(@QueryValue category: String?) = renderTcpMonitorsPage(
         globals = appGlobals,

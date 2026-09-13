@@ -32,7 +32,7 @@
 - `./gradlew app:validateJsonSchemas` - validates the JSON schemas used in the project
 - `./gradlew app:uiTest` - Runs the UI test suite
 
-# Code style guidelines
+# Code style guidelines & gotchas
 
 - Use `/** ... **/` ONLY over methods and classes, for inline comments use `// ...`
 - Be sparse with comments in general, only make one when it's really necessary to explain something that is not obvious from the code itself
@@ -41,3 +41,4 @@
 - Tests should not depend on each other (except the existing cases and where it is really necessary)
 - Manual clearing/resetting of mocks should be avoided (unless it's really necessary), instead use
   `@MockkBean` and let the framework handle it
+- Controller endpoints that are eventually touching the database have to use the `@ExecuteOn(TaskExecutors.BLOCKING)` annotation
