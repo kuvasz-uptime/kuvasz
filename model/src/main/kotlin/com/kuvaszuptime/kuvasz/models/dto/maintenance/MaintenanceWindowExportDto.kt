@@ -16,7 +16,7 @@ data class MaintenanceWindowExportDto(
     val start: String?,
     val duration: String?,
     val monitors: Set<MonitorID>,
-    val categories: Set<String>,
+    val categories: Set<String> = emptySet(),
     val integrations: Set<IntegrationID>,
 ) {
     companion object {

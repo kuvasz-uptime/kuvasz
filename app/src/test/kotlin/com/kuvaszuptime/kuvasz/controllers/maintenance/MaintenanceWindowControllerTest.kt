@@ -113,6 +113,35 @@ class MaintenanceWindowControllerTest(
                 }
             }
 
+            `when`("a backup exported before the categories existed is imported") {
+                val yaml = """
+                    maintenance-windows:
+                      - name: legacy-window
+                        description: null
+                        enabled: true
+                        global: true
+                        show-on-status-pages: true
+                        cron: null
+                        start: "${OffsetDateTime.now().plusDays(1)}"
+                        duration: PT1H
+                        monitors: []
+                        integrations: []
+                """.trimIndent().toByteArray()
+
+                val response = rawClient.exchange(
+                    HttpRequest.POST("/api/v2/maintenance-windows/import/yaml?dryRun=false", multipartOf(yaml))
+                        .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                        .accept(MediaType.APPLICATION_JSON_TYPE),
+                    MaintenanceWindowImportResultDto::class.java,
+                ).awaitFirst()
+
+                then("the window is imported without any categories") {
+                    response.status shouldBe HttpStatus.OK
+                    val persisted = maintenanceWindowRepository.fetchAll().single { it.name == "legacy-window" }
+                    persisted.categories.toList().shouldBeEmpty()
+                }
+            }
+
             `when`("the uploaded file is not valid YAML") {
                 then("it returns a 400 with a ServiceError") {
                     val ex = shouldThrow<HttpClientResponseException> {

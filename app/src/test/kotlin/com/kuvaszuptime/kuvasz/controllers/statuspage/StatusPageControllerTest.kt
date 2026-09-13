@@ -13,6 +13,7 @@ import com.kuvaszuptime.kuvasz.models.dto.importing.StatusPageImportResultDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.CategoryStatusDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDataDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDefaults
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageExportDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageHttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageMaintenanceWindowDto
@@ -122,6 +123,32 @@ class StatusPageControllerTest(
                     response.body().shouldNotBeNull().dryRun shouldBe false
                     statusPageRepository.findById(existing.id).shouldBeNull()
                     statusPageRepository.findBySlug("imported").shouldNotBeNull()
+                }
+            }
+
+            `when`("a backup exported before the categories existed is imported") {
+                val yaml = """
+                    status-pages:
+                      - title: Legacy
+                        slug: legacy
+                        custom-logo-url: null
+                        custom-favicon-url: null
+                        public: true
+                        monitors: []
+                """.trimIndent().toByteArray()
+
+                val response = client.exchange(
+                    HttpRequest.POST("/api/v2/status-pages/import/yaml?dryRun=false", multipartOf(yaml))
+                        .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                        .accept(MediaType.APPLICATION_JSON_TYPE),
+                    StatusPageImportResultDto::class.java,
+                ).awaitFirst()
+
+                then("the missing fields fall back to their defaults") {
+                    response.status shouldBe HttpStatus.OK
+                    val persisted = statusPageRepository.findBySlug("legacy").shouldNotBeNull()
+                    persisted.categories.toList().shouldBeEmpty()
+                    persisted.displayCategories shouldBe StatusPageDefaults.DISPLAY_CATEGORIES
                 }
             }
 
