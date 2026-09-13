@@ -9,6 +9,8 @@
 
 Both selectors are **additive** with the explicit monitor list, and a category no monitor belongs to yet is kept as you configured it.
 
+The monitor lists themselves can be **filtered by category** too, on the Web UI and through the REST API alike.
+
 ## 4.3.2 <small>2026-09-04</small> { id="4.3.2" data-toc-label="4.3.2" }
 
 ### Fixes
