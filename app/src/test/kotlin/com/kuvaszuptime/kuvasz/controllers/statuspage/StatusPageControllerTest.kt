@@ -167,6 +167,7 @@ class StatusPageControllerTest(
                         MonitorID(MonitorType.HTTP_SSL, monitor.name),
                         MonitorID(MonitorType.HTTP_SSL, monitor2.name),
                     ),
+                    categories = listOf("Payments", "Search"),
                 )
                 val statusPage2 = createStatusPage(
                     dslContext,
@@ -215,6 +216,7 @@ class StatusPageControllerTest(
                                 MonitorID(MonitorType.HTTP_SSL, monitor2.name),
                             )
                         )
+                        page1.categories shouldContainExactlyInAnyOrder listOf("Payments", "Search")
                     }
                     parsedPages.forOne { page2 ->
                         page2.title shouldBe statusPage2.title
@@ -223,6 +225,7 @@ class StatusPageControllerTest(
                         page2.customFaviconUrl shouldBe statusPage2.customFaviconUrl
                         page2.public shouldBe statusPage2.public
                         page2.monitors.shouldBeEmpty()
+                        page2.categories.shouldBeEmpty()
                     }
                     parsedPages.forOne { page3 ->
                         page3.title shouldBe statusPage3.title

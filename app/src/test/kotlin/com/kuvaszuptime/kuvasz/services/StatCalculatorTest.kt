@@ -554,6 +554,24 @@ class StatCalculatorTest(
                     stats.actual.uptimeStats.inMaintenance shouldBe 1
                 }
             }
+
+            `when`("a monitor is covered by a window through its category") {
+
+                createHttpMonitor(httpMonitorRepository, enabled = true, category = "Payments")
+                createHttpMonitor(httpMonitorRepository, enabled = true, category = "Search")
+                createMaintenanceWindow(
+                    dslContext = dslContext,
+                    name = "active-category-window",
+                    enabled = true,
+                    categories = listOf("Payments"),
+                )
+
+                then("only that one is counted as under maintenance on the dashboard") {
+                    val stats = statCalculator.calculateOverallHttpStats(Duration.ofDays(6))
+                    stats.actual.uptimeStats.total shouldBe 2
+                    stats.actual.uptimeStats.inMaintenance shouldBe 1
+                }
+            }
         }
 
         given("the calculateOverallPushStats method") {

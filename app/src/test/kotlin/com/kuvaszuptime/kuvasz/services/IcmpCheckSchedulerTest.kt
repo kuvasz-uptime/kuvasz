@@ -113,13 +113,15 @@ class IcmpCheckSchedulerTest(
             }
 
             `when`("a monitor is under maintenance") {
-                val monitor = createIcmpMonitor(monitorRepository, uptimeCheckInterval = 3)
+                // Categorized on purpose: a window may cover the monitor through its category, so the scheduler has
+                // to hand the monitor's own category to the lookup. Stubbing it exactly pins that wiring down.
+                val monitor = createIcmpMonitor(monitorRepository, uptimeCheckInterval = 3, category = "Payments")
                 val uptimeCheckerMock = getMock(uptimeChecker)
                 val lockRegistryMock = getMock(uptimeCheckLockRegistry)
                 coEvery { lockRegistryMock.tryAcquire(monitor.id) } returns true
                 coEvery { lockRegistryMock.release(monitor.id) } just Runs
                 val maintenanceServiceMock = getMock(maintenanceWindowService)
-                every { maintenanceServiceMock.isUnderMaintenance(monitor.monitorId(), any()) } returns true
+                every { maintenanceServiceMock.isUnderMaintenance(monitor.monitorId(), "Payments") } returns true
 
                 checkScheduler.initialize()
                 delay(4000.milliseconds) // Wait for the check to be executed

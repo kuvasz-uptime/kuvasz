@@ -612,6 +612,7 @@ class MaintenanceWindowControllerTest(
                     duration = "PT1H",
                     showOnStatusPages = true,
                     monitors = listOf(MonitorID(MonitorType.HTTP_SSL, monitor.name)),
+                    categories = listOf("Payments", "Search"),
                 )
                 createMaintenanceWindow(dslContext, name = "Manual window", global = true)
 
@@ -640,11 +641,13 @@ class MaintenanceWindowControllerTest(
                         cronWindow.duration shouldBe "PT1H"
                         cronWindow.showOnStatusPages shouldBe true
                         cronWindow.monitors shouldContainExactly setOf(MonitorID(MonitorType.HTTP_SSL, monitor.name))
+                        cronWindow.categories shouldContainExactlyInAnyOrder setOf("Payments", "Search")
                     }
                     parsed.forOne { manualWindow ->
                         manualWindow.name shouldBe "Manual window"
                         manualWindow.global shouldBe true
                         manualWindow.cron.shouldBeNull()
+                        manualWindow.categories.shouldBeEmpty()
                     }
                 }
             }
