@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.DnsMonitor.DNS_MONITOR
 import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.DnsResolutionSnapshotRepository
 import com.kuvaszuptime.kuvasz.repositories.IncidentRepository
@@ -21,6 +22,7 @@ import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.PathVariable
 import io.micronaut.http.annotation.Produces
+import io.micronaut.http.annotation.QueryValue
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.annotation.ExecuteOn
 import io.swagger.v3.oas.annotations.Hidden
@@ -56,7 +58,11 @@ class WebUIDnsMonitorController(
     @Get("/dns-monitors")
     @WebSecured
     @Produces(MediaType.TEXT_HTML)
-    fun dnsMonitors() = renderDnsMonitorsPage(appGlobals)
+    fun dnsMonitors(@QueryValue category: String?) = renderDnsMonitorsPage(
+        globals = appGlobals,
+        categoryFilter = CategoryFilter.fromQueryParam(category),
+        availableCategories = monitorRepository.fetchDistinctCategories().sortedBy { it.lowercase() },
+    )
 
     @Get("/dns-monitors/{monitorId}")
     @WebSecured
@@ -80,8 +86,11 @@ class WebUIDnsMonitorController(
     @WebSecured
     @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
-    fun dnsMonitorList(): String {
-        val monitors = monitorActions.getMonitorsWithDetails(sortedBy = DNS_MONITOR.NAME.ascIgnoreCase())
+    fun dnsMonitorList(@QueryValue category: String?): String {
+        val monitors = monitorActions.getMonitorsWithDetails(
+            sortedBy = DNS_MONITOR.NAME.ascIgnoreCase(),
+            categoryFilter = CategoryFilter.fromQueryParam(category),
+        )
 
         return renderDnsMonitorList(monitors, appGlobals.editabilityState)
     }

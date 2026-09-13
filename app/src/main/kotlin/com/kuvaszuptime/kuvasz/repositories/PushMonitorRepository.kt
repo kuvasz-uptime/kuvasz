@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.PushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.push.idWithName
@@ -87,6 +88,7 @@ class PushMonitorRepository(
         sortedBy: SortField<*>? = null,
         monitorNames: List<String>? = null,
         categories: List<String>? = null,
+        categoryFilter: CategoryFilter? = null,
     ): List<PushMonitorDetailsDto> =
         monitorDetailsSelect()
             .apply {
@@ -95,6 +97,7 @@ class PushMonitorRepository(
                     and(latestUptimeEventSelect.field(PUSH_UPTIME_EVENT.STATUS)!!.`in`(it))
                 }
                 selectionCondition(PUSH_MONITOR.NAME, PUSH_MONITOR.CATEGORY, monitorNames, categories)?.let { and(it) }
+                categoryFilterCondition(PUSH_MONITOR.CATEGORY, categoryFilter)?.let { and(it) }
                 sortedBy?.let { orderBy(it, PUSH_MONITOR.ID.asc()) }
             }
             .fetchInto(PushMonitorDetailsDto::class.java)

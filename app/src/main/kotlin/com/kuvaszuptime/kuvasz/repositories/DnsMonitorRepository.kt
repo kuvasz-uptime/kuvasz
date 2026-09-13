@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.DnsMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.dns.idWithName
@@ -94,6 +95,7 @@ class DnsMonitorRepository(
         sortedBy: SortField<*>? = null,
         monitorNames: List<String>? = null,
         categories: List<String>? = null,
+        categoryFilter: CategoryFilter? = null,
     ): List<DnsMonitorDetailsDto> =
         monitorDetailsSelect()
             .apply {
@@ -102,6 +104,7 @@ class DnsMonitorRepository(
                     and(latestUptimeEventSelect.field(DNS_UPTIME_EVENT.STATUS)!!.`in`(it))
                 }
                 selectionCondition(DNS_MONITOR.NAME, DNS_MONITOR.CATEGORY, monitorNames, categories)?.let { and(it) }
+                categoryFilterCondition(DNS_MONITOR.CATEGORY, categoryFilter)?.let { and(it) }
                 sortedBy?.let { orderBy(it, DNS_MONITOR.ID.asc()) }
             }
             .fetchInto(DnsMonitorDetailsDto::class.java)

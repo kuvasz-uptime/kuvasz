@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor.PUSH_MONITOR
 import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.repositories.IncidentRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.security.ui.WebSecured
@@ -20,6 +21,7 @@ import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.PathVariable
 import io.micronaut.http.annotation.Produces
+import io.micronaut.http.annotation.QueryValue
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.annotation.ExecuteOn
 import io.swagger.v3.oas.annotations.Hidden
@@ -54,7 +56,11 @@ class WebUIPushMonitorController(
     @Get("/push-monitors")
     @WebSecured
     @Produces(MediaType.TEXT_HTML)
-    fun pushMonitors() = renderPushMonitorsPage(appGlobals)
+    fun pushMonitors(@QueryValue category: String?) = renderPushMonitorsPage(
+        globals = appGlobals,
+        categoryFilter = CategoryFilter.fromQueryParam(category),
+        availableCategories = monitorRepository.fetchDistinctCategories().sortedBy { it.lowercase() },
+    )
 
     @Get("/push-monitors/{monitorId}")
     @WebSecured
@@ -78,8 +84,11 @@ class WebUIPushMonitorController(
     @WebSecured
     @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
-    fun pushMonitorList(): String {
-        val monitors = monitorActions.getMonitorsWithDetails(sortedBy = PUSH_MONITOR.NAME.ascIgnoreCase())
+    fun pushMonitorList(@QueryValue category: String?): String {
+        val monitors = monitorActions.getMonitorsWithDetails(
+            sortedBy = PUSH_MONITOR.NAME.ascIgnoreCase(),
+            categoryFilter = CategoryFilter.fromQueryParam(category),
+        )
 
         return renderPushMonitorList(monitors, appGlobals.editabilityState)
     }

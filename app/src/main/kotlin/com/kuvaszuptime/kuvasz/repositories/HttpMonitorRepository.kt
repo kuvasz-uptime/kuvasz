@@ -11,6 +11,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.http.idWithName
@@ -79,6 +80,7 @@ class HttpMonitorRepository(
         sortedBy: SortField<*>? = null,
         monitorNames: List<String>? = null,
         categories: List<String>? = null,
+        categoryFilter: CategoryFilter? = null,
     ): List<HttpMonitorDetailsDto> =
         monitorDetailsSelect()
             .apply {
@@ -89,6 +91,7 @@ class HttpMonitorRepository(
                 sslStatus.takeIf { it.isNotEmpty() }?.let { and(SSL_EVENT.STATUS.`in`(it)) }
                 sslCheckEnabled?.let { and(HTTP_MONITOR.SSL_CHECK_ENABLED.eq(it)) }
                 selectionCondition(HTTP_MONITOR.NAME, HTTP_MONITOR.CATEGORY, monitorNames, categories)?.let { and(it) }
+                categoryFilterCondition(HTTP_MONITOR.CATEGORY, categoryFilter)?.let { and(it) }
                 sortedBy?.let { orderBy(it, HTTP_MONITOR.ID.asc()) }
             }
             .fetchInto(HttpMonitorDetailsDto::class.java)

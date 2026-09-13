@@ -17,6 +17,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPagePushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
@@ -109,8 +110,14 @@ class PushMonitorActions(
         enabled: Boolean? = null,
         uptimeStatus: List<UptimeStatus> = emptyList(),
         sortedBy: SortField<*>? = null,
+        categoryFilter: CategoryFilter? = null,
     ): List<PushMonitorDetailsDto> {
-        val monitors = monitorRepository.getMonitorsWithDetails(enabled, uptimeStatus, sortedBy)
+        val monitors = monitorRepository.getMonitorsWithDetails(
+            enabled = enabled,
+            uptimeStatus = uptimeStatus,
+            sortedBy = sortedBy,
+            categoryFilter = categoryFilter,
+        )
         val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(monitors.monitorsWithCategory())
         return monitors.map { detailsDto ->
             val windows = windowsByMonitor[detailsDto.monitorId()].orEmpty()

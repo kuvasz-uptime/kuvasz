@@ -8,6 +8,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.IcmpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.icmp.idWithName
@@ -72,6 +73,7 @@ class IcmpMonitorRepository(
         sortedBy: SortField<*>? = null,
         monitorNames: List<String>? = null,
         categories: List<String>? = null,
+        categoryFilter: CategoryFilter? = null,
     ): List<IcmpMonitorDetailsDto> =
         monitorDetailsSelect()
             .apply {
@@ -80,6 +82,7 @@ class IcmpMonitorRepository(
                     and(latestUptimeEventSelect.field(ICMP_UPTIME_EVENT.STATUS)!!.`in`(it))
                 }
                 selectionCondition(ICMP_MONITOR.NAME, ICMP_MONITOR.CATEGORY, monitorNames, categories)?.let { and(it) }
+                categoryFilterCondition(ICMP_MONITOR.CATEGORY, categoryFilter)?.let { and(it) }
                 sortedBy?.let { orderBy(it, ICMP_MONITOR.ID.asc()) }
             }
             .fetchInto(IcmpMonitorDetailsDto::class.java)

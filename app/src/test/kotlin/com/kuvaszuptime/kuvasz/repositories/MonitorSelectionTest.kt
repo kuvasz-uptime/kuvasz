@@ -8,6 +8,7 @@ import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
@@ -40,24 +41,61 @@ class MonitorSelectionTest(
             val monitorType: MonitorType,
             val repository: MonitorRepository<*, *>,
             val seed: (name: String, category: String?, enabled: Boolean) -> Unit,
+            /** The names the list page of this type would show under the given filter. */
+            val listNames: (filter: CategoryFilter?) -> List<String>,
         )
 
         val typesUnderTest = listOf(
-            TypeUnderTest(MonitorType.HTTP_SSL, httpMonitorRepository) { name, category, enabled ->
-                createHttpMonitor(httpMonitorRepository, monitorName = name, category = category, enabled = enabled)
-            },
-            TypeUnderTest(MonitorType.PUSH, pushMonitorRepository) { name, category, enabled ->
-                createPushMonitor(pushMonitorRepository, monitorName = name, category = category, enabled = enabled)
-            },
-            TypeUnderTest(MonitorType.ICMP, icmpMonitorRepository) { name, category, enabled ->
-                createIcmpMonitor(icmpMonitorRepository, monitorName = name, category = category, enabled = enabled)
-            },
-            TypeUnderTest(MonitorType.TCP, tcpMonitorRepository) { name, category, enabled ->
-                createTcpMonitor(tcpMonitorRepository, monitorName = name, category = category, enabled = enabled)
-            },
-            TypeUnderTest(MonitorType.DNS, dnsMonitorRepository) { name, category, enabled ->
-                createDnsMonitor(dnsMonitorRepository, monitorName = name, category = category, enabled = enabled)
-            },
+            TypeUnderTest(
+                MonitorType.HTTP_SSL,
+                httpMonitorRepository,
+                seed = { name, category, enabled ->
+                    createHttpMonitor(httpMonitorRepository, monitorName = name, category = category, enabled = enabled)
+                },
+                listNames = { filter ->
+                    httpMonitorRepository.getMonitorsWithDetails(categoryFilter = filter).map { it.name }
+                },
+            ),
+            TypeUnderTest(
+                MonitorType.PUSH,
+                pushMonitorRepository,
+                seed = { name, category, enabled ->
+                    createPushMonitor(pushMonitorRepository, monitorName = name, category = category, enabled = enabled)
+                },
+                listNames = { filter ->
+                    pushMonitorRepository.getMonitorsWithDetails(categoryFilter = filter).map { it.name }
+                },
+            ),
+            TypeUnderTest(
+                MonitorType.ICMP,
+                icmpMonitorRepository,
+                seed = { name, category, enabled ->
+                    createIcmpMonitor(icmpMonitorRepository, monitorName = name, category = category, enabled = enabled)
+                },
+                listNames = { filter ->
+                    icmpMonitorRepository.getMonitorsWithDetails(categoryFilter = filter).map { it.name }
+                },
+            ),
+            TypeUnderTest(
+                MonitorType.TCP,
+                tcpMonitorRepository,
+                seed = { name, category, enabled ->
+                    createTcpMonitor(tcpMonitorRepository, monitorName = name, category = category, enabled = enabled)
+                },
+                listNames = { filter ->
+                    tcpMonitorRepository.getMonitorsWithDetails(categoryFilter = filter).map { it.name }
+                },
+            ),
+            TypeUnderTest(
+                MonitorType.DNS,
+                dnsMonitorRepository,
+                seed = { name, category, enabled ->
+                    createDnsMonitor(dnsMonitorRepository, monitorName = name, category = category, enabled = enabled)
+                },
+                listNames = { filter ->
+                    dnsMonitorRepository.getMonitorsWithDetails(categoryFilter = filter).map { it.name }
+                },
+            ),
         )
 
         typesUnderTest.forEach { type ->
@@ -160,6 +198,57 @@ class MonitorSelectionTest(
                             monitorNames = emptyList(),
                             categories = listOf("Payments"),
                         ).map { it.name } shouldContainExactly listOf("enabled-one")
+                    }
+                }
+            }
+
+            given("the category filter of the $identifier monitor list") {
+
+                `when`("there is no filter") {
+                    type.seed("payments", "Payments", true)
+                    type.seed("uncategorized", null, true)
+
+                    then("every monitor is listed") {
+                        type.listNames(null) shouldContainExactlyInAnyOrder listOf("payments", "uncategorized")
+                    }
+                }
+
+                `when`("a single category is filtered for") {
+                    type.seed("payments", "Payments", true)
+                    type.seed("search", "Search", true)
+                    type.seed("uncategorized", null, true)
+
+                    then("only the monitors of that category are listed") {
+                        type.listNames(CategoryFilter.InCategory("Payments")) shouldContainExactly listOf("payments")
+                    }
+
+                    then("a category no monitor belongs to lists nothing") {
+                        type.listNames(CategoryFilter.InCategory("Nobody uses me")).shouldBeEmpty()
+                    }
+
+                    then("the match is case-sensitive, like the category of the monitors") {
+                        type.listNames(CategoryFilter.InCategory("payments")).shouldBeEmpty()
+                    }
+                }
+
+                `when`("the uncategorized monitors are filtered for") {
+                    type.seed("payments", "Payments", true)
+                    type.seed("uncategorized", null, true)
+                    type.seed("also-uncategorized", null, true)
+
+                    then("only the ones without a category are listed") {
+                        type.listNames(CategoryFilter.Uncategorized) shouldContainExactlyInAnyOrder
+                            listOf("uncategorized", "also-uncategorized")
+                    }
+                }
+
+                `when`("a disabled monitor belongs to the filtered category") {
+                    type.seed("enabled-one", "Payments", true)
+                    type.seed("disabled-one", "Payments", false)
+
+                    then("it is listed too, because the list shows the disabled monitors as well") {
+                        type.listNames(CategoryFilter.InCategory("Payments")) shouldContainExactlyInAnyOrder
+                            listOf("enabled-one", "disabled-one")
                     }
                 }
             }

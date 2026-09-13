@@ -99,3 +99,28 @@ div.ts-wrapper.form-select.plugin-clear_button > div.ts-control > div.clear-butt
 .category-section {
     scroll-margin-top: 1rem;
 }
+
+/* Small selects. Tabler declares the height, padding and font size of `.form-select` after both `-sm` modifiers, so
+   a small select never actually shrinks: `form-select-sm` only reaches the padding, and `form-control-sm` loses its
+   height to it as well. Matching on both classes outranks the base rule. The horizontal padding is left alone, it
+   keeps the room the dropdown arrow needs. */
+.form-select.form-select-sm {
+    height: auto;
+    min-height: calc(1rem + 0.625rem + calc(var(--tblr-border-width) * 2));
+    padding-top: 0.3125rem;
+    padding-bottom: 0.3125rem;
+    font-size: 0.75rem;
+}
+
+/* The icon addon of an `input-icon` is sized for a default-height control: next to a small one it reserves more room
+   than the icon needs and, having its own fixed height, ends up below the middle of the control. Letting it stretch
+   between the edges of the wrapper centers it again. */
+.input-icon:has(.form-select-sm) {
+    --tblr-input-icon-padding-start: 2rem;
+}
+
+.input-icon:has(.form-select-sm) > .input-icon-addon {
+    --tblr-input-icon-addon-width: 2rem;
+    height: auto;
+    font-size: 1em;
+}

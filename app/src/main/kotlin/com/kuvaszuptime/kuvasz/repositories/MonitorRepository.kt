@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.models.DuplicationException
 import com.kuvaszuptime.kuvasz.models.MonitorDuplicatedException
 import com.kuvaszuptime.kuvasz.models.PersistenceException
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.util.toPersistenceException
 import org.jooq.Condition
@@ -26,6 +27,14 @@ import org.jooq.impl.SQLDataType
  *   they are mocked in the tests. A mocked member would return nothing and break every consumer that collects these
  *   repositories as a bean list, like [com.kuvaszuptime.kuvasz.services.StatCalculator].
  */
+
+internal fun categoryFilterCondition(categoryField: Field<String>, filter: CategoryFilter?): Condition? =
+    when (filter) {
+        null -> null
+        CategoryFilter.Uncategorized -> categoryField.isNull
+        is CategoryFilter.InCategory -> categoryField.eq(filter.category)
+    }
+
 @Suppress("ComplexInterface")
 sealed interface MonitorRepository<R : MonitorRecord, D : MonitorDetailsDto> {
 

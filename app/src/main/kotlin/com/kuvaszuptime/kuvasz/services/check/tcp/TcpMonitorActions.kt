@@ -13,6 +13,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageTcpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpUptimeEventRepository
@@ -84,8 +85,14 @@ class TcpMonitorActions(
         enabled: Boolean? = null,
         uptimeStatus: List<UptimeStatus> = emptyList(),
         sortedBy: SortField<*>? = null,
+        categoryFilter: CategoryFilter? = null,
     ): List<TcpMonitorDetailsDto> {
-        val monitors = monitorRepository.getMonitorsWithDetails(enabled, uptimeStatus, sortedBy)
+        val monitors = monitorRepository.getMonitorsWithDetails(
+            enabled = enabled,
+            uptimeStatus = uptimeStatus,
+            sortedBy = sortedBy,
+            categoryFilter = categoryFilter,
+        )
         val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(monitors.monitorsWithCategory())
 
         return monitors.map { detailsDto ->

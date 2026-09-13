@@ -4,6 +4,7 @@ import com.iodesystems.htmx.Htmx.Companion.hx
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
@@ -15,11 +16,18 @@ import kotlin.time.Duration.Companion.seconds
 
 /**
  * The page listing every monitor of a type. The list itself is loaded and refreshed by htmx, so all this renders is
- * the header with the create modal of the type and the placeholder the list is swapped into.
+ * the header with the create modal of the type, the category filter, and the placeholder the list is swapped into.
+ *
+ * The filter is rendered here rather than inside the swapped fragment on purpose: the list refreshes itself every
+ * few seconds, and a filter living inside it would be torn out from under the cursor. Its current value travels in
+ * the `category` query parameter, so a filtered list can be linked to, and it is baked into the htmx URL below, so
+ * every refresh keeps it.
  */
 internal fun renderMonitorsPage(
     globals: AppGlobals,
     typeUiConfig: MonitorTypeUiConfig,
+    categoryFilter: CategoryFilter?,
+    availableCategories: List<String>,
     upsertModal: FlowContent.(modalId: String) -> Unit,
 ) = withLayout(
     globals,
@@ -32,9 +40,10 @@ internal fun renderMonitorsPage(
             classes(COL_12)
             div {
                 classes(CARD)
+                categoryFilterToolbar(typeUiConfig, categoryFilter, availableCategories)
                 div {
                     hx {
-                        get(typeUiConfig.fragmentPath("list"))
+                        get(typeUiConfig.listFragmentPath(categoryFilter))
                         trigger {
                             load()
                             event("refresh-monitor-list")
@@ -44,6 +53,54 @@ internal fun renderMonitorsPage(
                     }
                     id = typeUiConfig.listElementId
                     htmxLoadingIndicator()
+                }
+            }
+        }
+    }
+}
+
+private fun FlowContent.categoryFilterToolbar(
+    typeUiConfig: MonitorTypeUiConfig,
+    selected: CategoryFilter?,
+    availableCategories: List<String>,
+) {
+    div {
+        classes(CARD_HEADER, PY_2)
+        testId("category-filter")
+        div {
+            classes(ROW, G_2, ALIGN_ITEMS_CENTER, W_100)
+            div {
+                classes(COL_12, COL_SM_AUTO, MS_SM_AUTO)
+                div {
+                    classes(INPUT_ICON)
+                    span {
+                        classes(INPUT_ICON_ADDON)
+                        icon(Icon.TAG)
+                    }
+                    select {
+                        classes(FORM_SELECT, FORM_SELECT_SM)
+                        ariaLabel(Messages.filterByCategory())
+                        onChange = "{window.location = '${typeUiConfig.listPath}' + this.value;}"
+                        // An absent parameter means every monitor, so the unfiltered page keeps its plain URL
+                        option {
+                            value = ""
+                            this.selected = selected == null
+                            +Messages.allCategories()
+                        }
+                        availableCategories.forEach { category ->
+                            option {
+                                value = "?category=${category.urlEncode()}"
+                                this.selected = selected == CategoryFilter.InCategory(category)
+                                +category
+                            }
+                        }
+                        // ...and an empty one the monitors that have no category at all
+                        option {
+                            value = "?category="
+                            this.selected = selected == CategoryFilter.Uncategorized
+                            +Messages.uncategorizedMonitors()
+                        }
+                    }
                 }
             }
         }
