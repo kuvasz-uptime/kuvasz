@@ -35,6 +35,17 @@ class IcmpMonitorListPage(private val page: Page) {
         return IcmpMonitorFormModal(page)
     }
 
+    // Opens the given monitor's configuration from its row, returning the pre-filled update modal.
+    fun configureMonitor(name: String): IcmpMonitorFormModal {
+        configureButtonIn(name).click()
+        return IcmpMonitorFormModal(page)
+    }
+
+    fun configureButtonIn(name: String): Locator = rowByName(name).getByTestId("icmp-monitor-configure-button")
+
+    // Only rendered when the monitors are read-only, in place of every other action of the row.
+    fun configurationButtonIn(name: String): Locator = rowByName(name).getByTestId("icmp-monitor-configuration-button")
+
     fun toggleMonitor(name: String) {
         rowByName(name).getByTestId("icmp-monitor-toggle-button").click()
     }

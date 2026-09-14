@@ -72,7 +72,7 @@ internal fun HtmlBlockTag.statusPageDetailsHeader(
                         deleteStatusPageModal(modalId = deleteModalId, statusPageTitle = statusPage.title)
                     } else {
                         // View
-                        buttonWithIcon(Icon.EYE, Messages.configuration()) {
+                        buttonWithIcon(Icon.SETTINGS, Messages.configuration()) {
                             modalOpener(updateModalId)
                             testId("configuration-button")
                         }

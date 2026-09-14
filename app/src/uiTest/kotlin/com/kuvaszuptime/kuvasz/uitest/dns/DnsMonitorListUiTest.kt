@@ -35,7 +35,7 @@ class DnsMonitorListUiTest(private val dnsMonitorRepository: DnsMonitorRepositor
                 .isVisible(LocatorAssertions.IsVisibleOptions().setTimeout(AUTO_REFRESH_TIMEOUT_MS))
         }
 
-        "each row exposes clone, pause and delete action buttons" {
+        "each row exposes configure, clone, pause and delete action buttons" {
             createDnsMonitor(dnsMonitorRepository, monitorName = "Actions Monitor")
 
             val page = newPage()
@@ -43,6 +43,9 @@ class DnsMonitorListUiTest(private val dnsMonitorRepository: DnsMonitorRepositor
             list.navigate()
 
             val row = list.rowByName("Actions Monitor")
+            assertThat(list.configureButtonIn("Actions Monitor")).isVisible()
+            // The view-only configuration button is reserved for the read-only monitors
+            assertThat(list.configurationButtonIn("Actions Monitor")).hasCount(0)
             assertThat(row.getByTestId("dns-monitor-clone-button")).isVisible()
             assertThat(row.getByTestId("dns-monitor-toggle-button")).isVisible()
             assertThat(row.getByTestId("dns-monitor-delete-button")).isVisible()

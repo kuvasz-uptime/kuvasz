@@ -1,21 +1,50 @@
 ## 4.4.0 <small>unreleased</small> { id="4.4.0" data-toc-label="4.4.0" }
 
+!!! question "Make your voice heard!"
+
+    There is a **short questionnaire about Kuvasz** in general, which you can fill out anonymously. It takes only a few minutes, and your feedback is highly appreciated as it helps me to focus on the most important features and improvements in the future. You can find it [**here**](https://forms.gle/Lb1q6CmW8eUgVbNr9).
+
+    _Thanks, Adam_
+
 ### Features
 
-**Monitor categories** arrived: an optional, free-form [**category**](management/http-monitors.md#category) on every monitor — a product, a service, a team, whatever you group by. It doesn't just label them, it **selects** them:
+**🗂️ Monitor categories**
 
-- [**Status pages**](management/status-pages.md#categories) can be defined by category instead of listing their monitors, so a page follows your monitors as you tag and re-tag them. Categorized monitors are rendered in one section per category, each with a card showing its aggregated status and a breakdown of its monitors. [**Display categories**](management/status-pages.md#display-categories_1) turns that grouping off if you'd rather not reveal it publicly.
+![Categorized status pages](images/features/statuspage_categories.webp)
+
+Every monitor can have an optional, free-form [**category**](management/http-monitors.md#category) now — a product, a service, a team, whatever you group by. It doesn't just label them, it **selects** them:
+
+- [**Status pages**](management/status-pages.md#categories) can be defined by category instead of listing their monitors, so a page follows your monitors as you tag and re-tag them. Categorized monitors are rendered in one section per category, each with a card showing its aggregated status and a breakdown of its monitors. [**"Display categories"**](management/status-pages.md#display-categories_1) turns that grouping off if you'd rather not reveal it publicly.
 - [**Maintenance windows**](management/maintenance-windows.md#categories) can cover a whole category, so you put an entire product into maintenance without enumerating what is in it.
 
 Both selectors are **additive** with the explicit monitor list, and a category no monitor belongs to yet is kept as you configured it.
 
 The monitor lists themselves can be **filtered by category** too, on the Web UI and through the REST API alike.
 
+---
+
+**📈 Metrics charts**
+
 The **metrics** on the monitor details pages got some love as well:
 
 - The **incidents** that started or got resolved in the displayed time range are **marked on the charts**, and hovering a marker reveals the details of the incident.
+
+![Incidents on the charts](images/features/new_charts.webp)
+
 - The metrics can be displayed for a **selectable period**, from the last hour up to the last 30 days (the last day by default). Changing it refreshes the metrics in place, without reloading the page, and shows a loader until the metrics of the new period arrive.
 - The latency and the packet loss of **ICMP monitors** are drawn on a **single chart**, each of them with an axis of its own.
+
+![Merged charts of ICMP monitors](images/features/new_icmp_charts.webp)
+
+---
+
+**✏️ Editing monitors from their lists**
+
+Every row of the monitor lists got a :material-cog-outline: **configure** button, which opens the settings of the monitor without leaving the list, and saving them brings you back to the very same list, keeping its category filter. Going through a bunch of monitors one after the other doesn't take a detour to their details pages anymore.
+
+### Improvements
+
+Tabler UI has been bumped to 1.5.x which brings a lot of small visual improvements.
 
 ### Security
 
@@ -63,12 +92,6 @@ All three behave like every other integration: they can be **global** or assigne
 - **Redirect chains are capped**: the new [`app-config.http-check-max-redirects`](setup/configuration.md#http-check-max-redirects) property (**10** by default) limits how many redirects a single HTTP check follows. Redirect loop detection only recognizes a repeated URL, so a chain where every hop is different was previously followed without an upper bound. Exceeding the limit now marks the monitor DOWN with a dedicated error.
 
 ## 4.2.0 <small>2026-08-10</small> { id="4.2.0" data-toc-label="4.2.0" }
-
-!!! question "Make your voice heard!"
-
-    There is a **short questionnaire about Kuvasz** in general, which you can fill out anonymously. It takes only a few minutes, and your feedback is highly appreciated as it helps me to focus on the most important features and improvements in the future. You can find it [**here**](https://forms.gle/Lb1q6CmW8eUgVbNr9).
-
-    _Thanks, Adam_
 
 ### Features
 

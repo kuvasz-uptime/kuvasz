@@ -12,8 +12,9 @@ import kotlinx.html.*
  * The modal that creates or updates a monitor. Every type opens with the same name field and closes with the same
  * integration settings and footer, so a type only has to render [fields], the part describing what it checks.
  *
- * [extraFormArgs] are appended to the arguments of the Alpine.js form component, after the monitor and the error
- * messages and before the number of global integrations, for the types whose form needs more context.
+ * [extraFormArgs] are appended to the arguments of the Alpine.js form component, after the monitor, the error messages,
+ * the id of the category select and whether the name of the monitor is locked, and before the number of global
+ * integrations, for the types whose form needs more context.
  */
 internal fun FlowContent.monitorUpsertModal(
     modalId: String,
@@ -34,7 +35,12 @@ internal fun FlowContent.monitorUpsertModal(
         globals.editabilityState.areStatusPagesReadOnly()
     // Every type has its own id, because the dashboard renders the create modal of all of them at once
     val categorySelectId = "${typeUiConfig.slug}-monitor-category-select"
-    val formArgs = listOf(serializedMonitor.toString(), errorMessages.asJsonString(), "'$categorySelectId'") +
+    val formArgs = listOf(
+        serializedMonitor.toString(),
+        errorMessages.asJsonString(),
+        "'$categorySelectId'",
+        isMonitorNameReadOnly.toString(),
+    ) +
         extraFormArgs +
         globals.enabledIntegrations.count { it.value.global }.toString()
 
@@ -50,6 +56,8 @@ internal fun FlowContent.monitorUpsertModal(
         )
         attributes["@$modalClosedEvent.window"] = "resetState()"
         attributes["@clone-monitor.window"] = "cloneFrom(\$event.detail.id, \$event.detail.name)"
+        attributes["@edit-monitor.window"] =
+            "editFrom(\$event.detail.id, \$event.detail.title, \$event.detail.nameLocked)"
         tabIndex = "-1"
         role = "dialog"
 
@@ -64,10 +72,18 @@ internal fun FlowContent.monitorUpsertModal(
                     classes(MODAL_HEADER)
                     h5 {
                         classes(MODAL_TITLE)
-                        when {
-                            monitor == null -> +createTitle
-                            isReadOnlyMode -> +Messages.configurationOf(monitor.name)
-                            else -> +Messages.updateMonitor(monitor.name)
+                        span {
+                            xShow("!editTitle")
+                            when {
+                                monitor == null -> +createTitle
+                                isReadOnlyMode -> +Messages.configurationOf(monitor.name)
+                                else -> +Messages.updateMonitor(monitor.name)
+                            }
+                        }
+                        // The title of a monitor opened from a list row, which is only known once it's opened
+                        span {
+                            xShow("editTitle")
+                            xText("editTitle")
                         }
                     }
                     button(type = ButtonType.button) {
@@ -81,20 +97,17 @@ internal fun FlowContent.monitorUpsertModal(
                     // Name
                     div {
                         classes(MB_3)
-                        // Showing the tooltip only if the name is read-only but the rest of the form is editable
-                        val tooltip = if (isMonitorNameReadOnly && !isReadOnlyMode) {
-                            Messages.monitorNameReadOnlyTooltip()
-                        } else {
-                            null
-                        }
                         validatedInput(
                             propName = "name",
                             label = Messages.monitorNameLabel(),
                             placeholder = Messages.monitorNamePlaceholder(),
-                            description = tooltip,
+                            // Showing the tooltip only if the name is read-only but the rest of the form is editable
+                            description = if (isReadOnlyMode) null else Messages.monitorNameReadOnlyTooltip(),
+                            // The form tracks the lock, since a list opens monitors in the modal client-side
+                            descriptionShownIf = "isNameLocked",
                             required = true,
                             onInput = "validateName()",
-                            disabledIf = "$isReadOnlyMode || $isMonitorNameReadOnly",
+                            disabledIf = "$isReadOnlyMode || isNameLocked",
                         )
                     }
                     // Category

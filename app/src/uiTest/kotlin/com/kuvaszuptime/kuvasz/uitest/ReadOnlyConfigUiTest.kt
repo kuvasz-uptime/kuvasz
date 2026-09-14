@@ -1,11 +1,13 @@
 package com.kuvaszuptime.kuvasz.uitest
 
+import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.uitest.pages.common.DetailsReadOnlyView
 import com.kuvaszuptime.kuvasz.uitest.pages.common.ListReadOnlyView
 import com.kuvaszuptime.kuvasz.uitest.pages.common.UpsertModalReadOnlyView
 import com.kuvaszuptime.kuvasz.uitest.pages.settings.SettingsBackupPage
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
+import io.kotest.matchers.string.shouldEndWith
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import java.util.regex.Pattern
 
@@ -23,62 +25,78 @@ class ReadOnlyConfigUiTest : UiTestSpec() {
             val page = newPage()
             val list = ListReadOnlyView(page, "/http-monitors")
             list.navigate()
-            assertListIsReadOnly(list, "yaml-http-monitor")
+            assertMonitorListIsReadOnly(list, "yaml-http-monitor")
 
-            val modal = openConfigModalFrom(page, list, "yaml-http-monitor")
-            assertReadOnlyField(modal, "name", "yaml-http-monitor")
-            assertReadOnlyField(modal, "url", "https://example.com")
-            assertCannotBeSaved(modal)
+            // The monitor is on a read-only status page as well, which must not make any difference in read-only mode
+            assertMonitorConfigIsReadOnly(
+                page,
+                list,
+                "yaml-http-monitor",
+                "name" to "yaml-http-monitor",
+                "url" to "https://example.com",
+            )
         }
 
         "YAML-configured push monitors are read-only on the list, detail page and config modal" {
             val page = newPage()
             val list = ListReadOnlyView(page, "/push-monitors")
             list.navigate()
-            assertListIsReadOnly(list, "yaml-push-monitor")
+            assertMonitorListIsReadOnly(list, "yaml-push-monitor")
 
-            val modal = openConfigModalFrom(page, list, "yaml-push-monitor")
-            assertReadOnlyField(modal, "name", "yaml-push-monitor")
-            assertReadOnlyField(modal, "heartbeatInterval", "300")
-            assertCannotBeSaved(modal)
+            assertMonitorConfigIsReadOnly(
+                page,
+                list,
+                "yaml-push-monitor",
+                "name" to "yaml-push-monitor",
+                "heartbeatInterval" to "300",
+            )
         }
 
         "YAML-configured ICMP monitors are read-only on the list, detail page and config modal" {
             val page = newPage()
             val list = ListReadOnlyView(page, "/icmp-monitors")
             list.navigate()
-            assertListIsReadOnly(list, "yaml-icmp-monitor")
+            assertMonitorListIsReadOnly(list, "yaml-icmp-monitor")
 
-            val modal = openConfigModalFrom(page, list, "yaml-icmp-monitor")
-            assertReadOnlyField(modal, "name", "yaml-icmp-monitor")
-            assertReadOnlyField(modal, "host", "127.0.0.1")
-            assertCannotBeSaved(modal)
+            assertMonitorConfigIsReadOnly(
+                page,
+                list,
+                "yaml-icmp-monitor",
+                "name" to "yaml-icmp-monitor",
+                "host" to "127.0.0.1",
+            )
         }
 
         "YAML-configured TCP monitors are read-only on the list, detail page and config modal" {
             val page = newPage()
             val list = ListReadOnlyView(page, "/tcp-monitors")
             list.navigate()
-            assertListIsReadOnly(list, "yaml-tcp-monitor")
+            assertMonitorListIsReadOnly(list, "yaml-tcp-monitor")
 
-            val modal = openConfigModalFrom(page, list, "yaml-tcp-monitor")
-            assertReadOnlyField(modal, "name", "yaml-tcp-monitor")
-            assertReadOnlyField(modal, "host", "127.0.0.1")
-            assertReadOnlyField(modal, "port", "8080")
-            assertCannotBeSaved(modal)
+            assertMonitorConfigIsReadOnly(
+                page,
+                list,
+                "yaml-tcp-monitor",
+                "name" to "yaml-tcp-monitor",
+                "host" to "127.0.0.1",
+                "port" to "8080",
+            )
         }
 
         "YAML-configured DNS monitors are read-only on the list, detail page and config modal" {
             val page = newPage()
             val list = ListReadOnlyView(page, "/dns-monitors")
             list.navigate()
-            assertListIsReadOnly(list, "yaml-dns-monitor")
+            assertMonitorListIsReadOnly(list, "yaml-dns-monitor")
 
-            val modal = openConfigModalFrom(page, list, "yaml-dns-monitor")
-            assertReadOnlyField(modal, "name", "yaml-dns-monitor")
-            assertReadOnlyField(modal, "host", "example.com")
-            assertReadOnlyField(modal, "resolverPort", "53")
-            assertCannotBeSaved(modal)
+            assertMonitorConfigIsReadOnly(
+                page,
+                list,
+                "yaml-dns-monitor",
+                "name" to "yaml-dns-monitor",
+                "host" to "example.com",
+                "resolverPort" to "53",
+            )
         }
 
         "YAML-configured status pages are read-only on the list, detail page and config modal" {
@@ -86,6 +104,7 @@ class ReadOnlyConfigUiTest : UiTestSpec() {
             val list = ListReadOnlyView(page, "/status-pages")
             list.navigate()
             assertListIsReadOnly(list, "YAML Status Page")
+            assertThat(list.actionButtonsIn("YAML Status Page")).hasCount(0)
 
             val modal = openConfigModalFrom(page, list, "YAML Status Page")
             assertReadOnlyField(modal, "title", "YAML Status Page")
@@ -98,6 +117,7 @@ class ReadOnlyConfigUiTest : UiTestSpec() {
             val list = ListReadOnlyView(page, "/maintenance-windows")
             list.navigate()
             assertListIsReadOnly(list, "yaml-maintenance-window")
+            assertThat(list.actionButtonsIn("yaml-maintenance-window")).hasCount(0)
 
             val modal = openConfigModalFrom(page, list, "yaml-maintenance-window")
             assertReadOnlyField(modal, "name", "yaml-maintenance-window")
@@ -131,12 +151,47 @@ class ReadOnlyConfigUiTest : UiTestSpec() {
         return details.openConfigurationModal()
     }
 
-    // Read-only badge present, no "add" button, and the row carries no toggle/delete actions.
+    /**
+     * The configuration of a monitor is shown read-only both from its row on the list, without leaving it, and from its
+     * details page, and the two show exactly the same [fields].
+     */
+    private fun assertMonitorConfigIsReadOnly(
+        page: Page,
+        list: ListReadOnlyView,
+        name: String,
+        vararg fields: Pair<String, String>,
+    ) {
+        val fromList = list.openConfigurationModal(name)
+        assertMonitorModalIsReadOnly(fromList, name, fields)
+        fromList.dismiss()
+        page.url() shouldEndWith list.listPath
+        assertThat(list.row(name)).isVisible()
+
+        assertMonitorModalIsReadOnly(openConfigModalFrom(page, list, name), name, fields)
+    }
+
+    private fun assertMonitorModalIsReadOnly(
+        modal: UpsertModalReadOnlyView,
+        name: String,
+        fields: Array<out Pair<String, String>>,
+    ) {
+        assertThat(modal.title).hasText(Messages.configurationOf(name))
+        fields.forEach { (propName, expectedValue) -> assertReadOnlyField(modal, propName, expectedValue) }
+        assertCannotBeSaved(modal)
+    }
+
+    // Read-only badge present, no "add" button, and the row is listed.
     private fun assertListIsReadOnly(list: ListReadOnlyView, name: String) {
         assertThat(list.readOnlyBadge).isVisible()
         assertThat(list.addButton).hasCount(0)
         assertThat(list.row(name)).isVisible()
-        assertThat(list.actionButtonsIn(name)).hasCount(0)
+    }
+
+    // A read-only monitor's row carries no toggle/clone/delete actions, only the view-only configuration button.
+    private fun assertMonitorListIsReadOnly(list: ListReadOnlyView, name: String) {
+        assertListIsReadOnly(list, name)
+        assertThat(list.actionButtonsIn(name)).hasCount(1)
+        assertThat(list.configurationButtonIn(name)).isVisible()
     }
 
     private fun assertReadOnlyField(modal: UpsertModalReadOnlyView, propName: String, expectedValue: String) {

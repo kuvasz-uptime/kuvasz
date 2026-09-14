@@ -13,7 +13,8 @@ internal fun FlowContent.formLabel(
     label: String,
     required: Boolean = false,
     inputName: String? = null,
-    description: String? = null
+    description: String? = null,
+    descriptionShownIf: String? = null,
 ) {
     label {
         val labelClasses = mutableSetOf(FORM_LABEL).addIf(required, REQUIRED)
@@ -24,6 +25,7 @@ internal fun FlowContent.formLabel(
         if (!description.isNullOrEmpty()) {
             span {
                 classes(MS_2)
+                descriptionShownIf?.let { xShow(it) }
                 tooltip(
                     title = description,
                     location = TooltipLocation.RIGHT
@@ -46,6 +48,7 @@ internal fun FlowContent.validatedInput(
     isNumber: Boolean = false,
     dataListItems: Set<String> = emptySet(),
     smallControl: Boolean = false,
+    descriptionShownIf: String? = null,
 ) {
     val inputName = "$propName-input"
     val dataListId = "$propName-datalist"
@@ -54,7 +57,8 @@ internal fun FlowContent.validatedInput(
             label = label,
             required = required,
             inputName = inputName,
-            description = description
+            description = description,
+            descriptionShownIf = descriptionShownIf,
         )
     }
     input(type = InputType.text) {

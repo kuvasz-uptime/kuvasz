@@ -29,6 +29,8 @@ The UI relies on modern CSS features (`light-dark()`, `color-mix()`, `@property`
 ![Monitor edit](../images/ui/create_monitor.webp)
 ![Monitor details](../images/ui/monitor_details.webp)
 ![Monitor details - Latency history](../images/ui/latency_ssl_details.webp)
+![Incidents on the charts](../images/features/new_charts.webp)
+![Merged charts of ICMP monitors](../images/features/new_icmp_charts.webp)
 
 ## Settings & Integrations
 
@@ -44,6 +46,7 @@ The UI relies on modern CSS features (`light-dark()`, `color-mix()`, `@property`
 ![Status page list](../images/ui/status_page_list.webp)
 ![Status page](../images/ui/status_page.webp)
 ![Edit status page](../images/ui/create_status_page.webp)
+![Categorized status pages](../images/features/statuspage_categories.webp)
 
 ## Maintenance windows
 

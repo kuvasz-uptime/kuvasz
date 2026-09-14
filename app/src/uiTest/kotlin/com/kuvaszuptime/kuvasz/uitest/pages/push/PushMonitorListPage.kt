@@ -35,6 +35,17 @@ class PushMonitorListPage(private val page: Page) {
         return PushMonitorFormModal(page)
     }
 
+    // Opens the given monitor's configuration from its row, returning the pre-filled update modal.
+    fun configureMonitor(name: String): PushMonitorFormModal {
+        configureButtonIn(name).click()
+        return PushMonitorFormModal(page)
+    }
+
+    fun configureButtonIn(name: String): Locator = rowByName(name).getByTestId("push-monitor-configure-button")
+
+    // Only rendered when the monitors are read-only, in place of every other action of the row.
+    fun configurationButtonIn(name: String): Locator = rowByName(name).getByTestId("push-monitor-configuration-button")
+
     fun toggleMonitor(name: String) {
         rowByName(name).getByTestId("push-monitor-toggle-button").click()
     }
