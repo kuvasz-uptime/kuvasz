@@ -231,7 +231,7 @@ private fun HtmlBlockTag.monitorDetailsHeader(
                             globals.editabilityState.areStatusPagesReadOnly()
                         deleteMonitorModal(deleteModalId, monitor.name, isDeleteDisabled)
                     } else {
-                        buttonWithIcon(Icon.EYE, Messages.configuration()) {
+                        buttonWithIcon(Icon.SETTINGS, Messages.configuration()) {
                             modalOpener(updateModalId)
                             testId("configuration-button")
                         }

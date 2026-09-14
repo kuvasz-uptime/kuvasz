@@ -139,7 +139,7 @@ private fun TR.monitorListRowActions(
         classes(TEXT_END)
         div {
             classes(FLEX_NOWRAP, BTN_GROUP, BTN_GROUP_SM)
-            compactIconButton(if (isReadOnlyMode) Icon.EYE else Icon.SETTINGS) {
+            compactIconButton(Icon.SETTINGS) {
                 testId(typeUiConfig.testId(if (isReadOnlyMode) "configuration-button" else "configure-button"))
                 modalOpener(typeUiConfig.createModalId)
                 xOnClick("editMonitor()")

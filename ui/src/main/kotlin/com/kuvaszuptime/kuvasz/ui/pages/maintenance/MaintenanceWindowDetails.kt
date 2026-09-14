@@ -71,7 +71,7 @@ internal fun HtmlBlockTag.maintenanceWindowDetailsHeader(
                             maintenanceWindowName = maintenanceWindow.name,
                         )
                     } else {
-                        buttonWithIcon(Icon.EYE, Messages.configuration()) {
+                        buttonWithIcon(Icon.SETTINGS, Messages.configuration()) {
                             modalOpener(updateModalId)
                             testId("configuration-button")
                         }
