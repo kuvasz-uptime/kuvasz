@@ -30,6 +30,7 @@ class DnsMonitorDetailsUiTest(
             assertThat(details.uptimeSection).isVisible()
             // ApexCharts renders an <svg> into the container even with no data (its no-data state).
             assertThat(details.latencyChartSvg).isVisible()
+            assertThat(details.metricsPeriodSelector).hasValue("PT24H")
         }
 
         "a recorded resolution snapshot is rendered (and auto-loaded) on the detail page" {

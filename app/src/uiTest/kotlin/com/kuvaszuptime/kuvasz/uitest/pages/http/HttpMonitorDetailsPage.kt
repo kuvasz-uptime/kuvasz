@@ -21,7 +21,7 @@ class HttpMonitorDetailsPage(private val page: Page) {
     val resumeControl: Locator get() = toggleButton.locator(".icon-tabler-player-play")
 
     val uptimeSection: Locator get() = page.getByTestId("uptime-block-title")
-    val latencySection: Locator get() = page.getByTestId("latency-block-title")
+    val metricsSection: Locator get() = page.getByTestId("metrics-block-title")
     val sslSection: Locator get() = page.getByTestId("ssl-block-title")
 
     // The maintenance indicator (a tool icon) rendered in the header while the monitor is under maintenance.
@@ -29,6 +29,14 @@ class HttpMonitorDetailsPage(private val page: Page) {
 
     // The ApexCharts container; once rendered it holds an `<svg>`.
     val latencyChartSvg: Locator get() = page.locator("#monitor-details-latency-chart svg")
+
+    // The markers of the incidents' starts and ends on the chart, and the tooltip shown when one of them is hovered
+    val incidentMarkers: Locator get() =
+        page.locator("#monitor-details-latency-chart .apexcharts-point-annotation-marker")
+    val incidentMarkerTooltip: Locator get() = page.locator(".apexcharts-annotation-tooltip")
+
+    // The period selector of the metrics block, changing it refreshes the metrics without reloading the page
+    val metricsPeriodSelector: Locator get() = page.getByTestId("metrics-period-selector")
 
     fun navigate(monitorId: Long) {
         page.navigate("/http-monitors/$monitorId")

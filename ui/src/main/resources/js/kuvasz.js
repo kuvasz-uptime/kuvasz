@@ -334,7 +334,7 @@ const statusPageDetails = (statusPageId, isStatusPagePublic) => ({
     }
 });
 
-// Shared ApexCharts config for the latency/packet-loss area charts on the monitor detail pages
+// Shared ApexCharts config for the metrics charts on the monitor detail pages
 const baseAreaChartOptions = (noDataLabel, tooltipFormatter) => ({
     chart: {
         type: "area",
@@ -401,11 +401,17 @@ const baseAreaChartOptions = (noDataLabel, tooltipFormatter) => ({
         type: "datetime",
     },
     yaxis: {
+        // The incident markers sit on the zero line, so it always has to be the bottom of the chart
+        min: 0,
         labels: {
             padding: 4,
         },
     },
     labels: [],
+    annotations: {
+        xaxis: [],
+        points: [],
+    },
     // ApexCharts can't resolve CSS color functions, so Tabler's own helper resolves the theme color for it
     colors: [tabler.tabler.getColor("primary")],
     legend: {
@@ -413,17 +419,128 @@ const baseAreaChartOptions = (noDataLabel, tooltipFormatter) => ({
     },
 });
 
-const httpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, noDataLabel, statPeriodInHours) => {
+// Gaps (null values) are rendered as a dash instead of "null ms" in the tooltips
+const formatWithUnit = (unit) => (val) => val === null || val === undefined ? "-" : val + unit;
+
+const padToTwoDigits = (number) => String(number).padStart(2, '0');
+
+// Formats a date in the same way as the tooltips of the charts do (yyyy/MM/dd HH:mm:ss, in the local time zone)
+const formatChartTimestamp = (date) =>
+    `${date.getFullYear()}/${padToTwoDigits(date.getMonth() + 1)}/${padToTwoDigits(date.getDate())} ` +
+    `${padToTwoDigits(date.getHours())}:${padToTwoDigits(date.getMinutes())}:${padToTwoDigits(date.getSeconds())}`;
+
+// SSL incidents are returned for the HTTP monitors too, but they have nothing to do with the metrics of a monitor
+const NON_METRICS_INCIDENT_TYPES = ['SSL'];
+
+// Builds the chart annotations marking the start and the end of the incidents that fall into the displayed range.
+// Every marker is a vertical line and a point on the zero line, the latter carrying the details of the incident in a
+// tooltip. The details can be anything (e.g. the error message of a check), so they have to be escaped.
+const buildIncidentAnnotations = (incidents, rangeStart, rangeEnd, labels, colors) => {
+    const annotations = {xaxis: [], points: []};
+    const isInRange = (timestamp) => timestamp >= rangeStart && timestamp <= rangeEnd;
+    const addMarker = (timestamp, color, title, details) => {
+        annotations.xaxis.push({
+            x: timestamp,
+            borderColor: color,
+            strokeDashArray: 4,
+        });
+        annotations.points.push({
+            x: timestamp,
+            y: 0,
+            yAxisIndex: 0,
+            marker: {
+                size: 5,
+                fillColor: color,
+                strokeColor: '#fff',
+                strokeWidth: 2,
+            },
+            tooltip: {
+                enabled: true,
+                theme: 'dark',
+                text: `<strong>${escapeHtml(title)}</strong>` +
+                    `<div>${formatChartTimestamp(new Date(timestamp))}</div>` +
+                    (details ? `<div>${escapeHtml(details)}</div>` : ''),
+            },
+        });
+    };
+
+    incidents
+        .filter(incident => !NON_METRICS_INCIDENT_TYPES.includes(incident.incidentType))
+        .forEach(incident => {
+            const startedAt = new Date(incident.startedAt).getTime();
+            if (isInRange(startedAt)) {
+                addMarker(startedAt, colors.started, labels.incidentStarted, incident.details);
+            }
+            if (incident.endedAt) {
+                const endedAt = new Date(incident.endedAt).getTime();
+                if (isInRange(endedAt)) {
+                    addMarker(endedAt, colors.resolved, labels.incidentResolved, incident.details);
+                }
+            }
+        });
+    return annotations;
+};
+
+// The time range displayed by a metrics chart: the selected period up to now. Not the range of the metrics logs, as an
+// incident is always a bit newer than the log of the check causing it, and HTTP monitors don't log failed checks at all.
+// Newer data extends the range, in case the local clock lags behind the server's. A loop instead of spreading the
+// timestamps into Math.max, because the logs of a long period can exceed the maximum number of arguments.
+const metricsChartRange = (period, now, logs, incidents) => {
+    let end = now;
+    const extendTo = (dateTime) => {
+        if (dateTime) {
+            end = Math.max(end, new Date(dateTime).getTime());
+        }
+    };
+    logs.forEach(item => extendTo(item.createdAt));
+    incidents.forEach(incident => {
+        extendTo(incident.startedAt);
+        extendTo(incident.endedAt);
+    });
+    return {start: now - isoDurationToMillis(period), end};
+};
+
+const nullableLatencyOf = (item) => item.latencyInMs !== null ? parseInt(item.latencyInMs) : null;
+
+const toLatencyChartData = (logs, labels, latencyOf) => ({
+    labels: logs.map(item => new Date(item.createdAt).toString()),
+    series: [{name: labels.latency, data: logs.map(latencyOf)}],
+});
+
+const latencyChartOptions = (chartLabels) => baseAreaChartOptions(chartLabels.noData, formatWithUnit(" ms"));
+
+// The shared lifecycle of the metrics blocks on the monitor detail pages: polls the stats and the incidents of the
+// monitor in the selected period, and renders them with the type specific chart options and data transformation
+const metricsBlock = ({
+    monitorId,
+    isMonitorEnabled,
+    uptimeCheckInterval,
+    chartLabels,
+    period,
+    statsPath,
+    chartElementId,
+    buildChartOptions,
+    logsOf,
+    toChartData,
+}) => {
     return {
         isMonitorEnabled,
         chart: null,
         previousData: null,
-        endpointUrl: `/api/v2/http-monitors/${monitorId}/stats?period=PT${statPeriodInHours}H`,
         pollInterval: uptimeCheckInterval * 1000,
         isAutoRefreshEnabled: false,
         intervalId: null,
         lastResponse: null,
-        noDataLabel,
+        chartLabels,
+        markerColors: {},
+        // Only an explicit change of the period shows the loader, the auto-refresh keeps showing the stale data instead
+        isPeriodLoading: false,
+        // An ISO-8601 duration, bound to the period selector of the block
+        period,
+
+        now() {
+            return Date.now();
+        },
 
         init() {
             this.initializeChart();
@@ -438,6 +555,21 @@ const httpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, noDa
                     this.stopPolling();
                 }
             });
+            this.$watch('period', () => this.refreshPeriod());
+        },
+
+        refreshPeriod() {
+            this.previousData = null;
+            this.isPeriodLoading = true;
+            return this.pollEndpoint();
+        },
+
+        statsUrl() {
+            return `/api/v2/${statsPath}/${monitorId}/stats?period=${this.period}`;
+        },
+
+        incidentsUrl() {
+            return `/api/v2/incidents?monitorId=${monitorId}&period=${this.period}&includeResolved=true`;
         },
 
         startPolling() {
@@ -453,350 +585,183 @@ const httpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, noDa
         },
 
         initializeChart() {
-            const options = baseAreaChartOptions(this.noDataLabel, (val) => val + " ms");
-            this.chart = new ApexCharts(document.getElementById("monitor-details-latency-chart"), options);
+            this.markerColors = {
+                started: tabler.tabler.getColor("red"),
+                resolved: tabler.tabler.getColor("green"),
+            };
+            this.chart = new ApexCharts(document.getElementById(chartElementId), buildChartOptions(this.chartLabels));
             this.chart.render();
         },
 
-        async pollEndpoint() {
+        // The incidents are only decoration on the chart, so failing to fetch them must not block the metrics
+        async fetchIncidents() {
             try {
-                const response = await fetch(this.endpointUrl);
+                const response = await fetch(this.incidentsUrl());
+                if (!response.ok) {
+                    console.error('Error fetching incidents:', response.status);
+                    return [];
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching incidents:', error);
+                return [];
+            }
+        },
+
+        async pollEndpoint() {
+            const requestedPeriod = this.period;
+            try {
+                const [response, incidents] = await Promise.all([fetch(this.statsUrl()), this.fetchIncidents()]);
                 if (!response.ok) {
                     console.error('Error fetching data:', response.status);
                     return;
                 }
                 const rawData = await response.json();
+                // The period has been changed in the meantime, so this response is outdated
+                if (requestedPeriod !== this.period) {
+                    return;
+                }
                 this.lastResponse = rawData;
-                const transformedData = this.transformData(rawData);
+                const transformedData = this.transformData(rawData, incidents);
+                // The range follows the clock, so comparing it too would re-render the same data on every poll
+                const {range, ...displayedData} = transformedData;
 
-                if (!this.previousData || JSON.stringify(transformedData) !== JSON.stringify(this.previousData)) {
+                if (!this.previousData || JSON.stringify(displayedData) !== JSON.stringify(this.previousData)) {
                     this.updateChart(transformedData);
-                    this.previousData = transformedData;
+                    this.previousData = displayedData;
                 }
             } catch (error) {
                 console.error('Error during polling:', error);
+            } finally {
+                // Only the response of the currently selected period can end the loading of a period change
+                if (requestedPeriod === this.period) {
+                    this.isPeriodLoading = false;
+                }
             }
         },
 
-        transformData(rawData) {
-            const newLabels = [];
-            const newData = [];
-
-            rawData.latencyLogs.forEach(item => {
-                newLabels.push(new Date(item.createdAt).toString());
-                newData.push(parseInt(item.latencyInMs));
-            });
-
+        transformData(rawData, incidents) {
+            const logs = logsOf(rawData);
+            const range = metricsChartRange(this.period, this.now(), logs, incidents);
             return {
-                labels: newLabels,
-                series: [{
-                    name: 'Latency',
-                    data: newData,
-                }],
+                ...toChartData(logs, this.chartLabels),
+                annotations: buildIncidentAnnotations(
+                    incidents, range.start, range.end, this.chartLabels, this.markerColors,
+                ),
+                range,
             };
         },
 
         updateChart(newData) {
+            // ApexCharts replaces (instead of merging) the arrays of the options, so the outdated markers are dropped
             this.chart.updateOptions({
                 labels: newData.labels,
                 series: newData.series,
+                annotations: newData.annotations,
+                // The axis spans the whole range, otherwise it would only fit the logs and cut off the newest markers
+                xaxis: {min: newData.range.start, max: newData.range.end},
             });
         },
     };
 };
 
-const icmpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, noDataLabel, statPeriodInHours) => {
+const httpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, chartLabels, period) => metricsBlock({
+    monitorId,
+    isMonitorEnabled,
+    uptimeCheckInterval,
+    chartLabels,
+    period,
+    statsPath: 'http-monitors',
+    chartElementId: 'monitor-details-latency-chart',
+    buildChartOptions: latencyChartOptions,
+    logsOf: (rawData) => rawData.latencyLogs,
+    toChartData: (logs, labels) => toLatencyChartData(logs, labels, (item) => parseInt(item.latencyInMs)),
+});
+
+// Latency and packet loss share a single chart, each of them with an axis of its own
+const icmpChartOptions = (chartLabels) => {
+    const options = baseAreaChartOptions(chartLabels.noData, null);
     return {
-        isMonitorEnabled,
-        latencyChart: null,
-        packetLossChart: null,
-        previousData: null,
-        endpointUrl: `/api/v2/icmp-monitors/${monitorId}/stats?period=PT${statPeriodInHours}H`,
-        pollInterval: uptimeCheckInterval * 1000,
-        isAutoRefreshEnabled: false,
-        intervalId: null,
-        lastResponse: null,
-        noDataLabel,
-
-        init() {
-            this.initializeCharts();
-            this.startPolling();
-            if (!this.isAutoRefreshEnabled) {
-                this.stopPolling();
-            }
-            this.$watch('isAutoRefreshEnabled', (value) => {
-                if (value) {
-                    this.startPolling();
-                } else {
-                    this.stopPolling();
-                }
-            });
+        ...options,
+        chart: {...options.chart, type: "line"},
+        colors: [tabler.tabler.getColor("primary"), tabler.tabler.getColor("orange")],
+        fill: {
+            type: "solid",
+            opacity: [0.16, 1],
         },
-
-        startPolling() {
-            this.pollEndpoint();
-            this.intervalId = setInterval(() => this.pollEndpoint(), this.pollInterval);
+        tooltip: {
+            ...options.tooltip,
+            shared: true,
+            y: [{formatter: formatWithUnit(" ms")}, {formatter: formatWithUnit("%")}],
         },
-
-        stopPolling() {
-            if (this.intervalId) {
-                clearInterval(this.intervalId);
-                this.intervalId = null;
-            }
-        },
-
-        initializeCharts() {
-            const latencyOptions = baseAreaChartOptions(this.noDataLabel, (val) => val + " ms");
-            this.latencyChart = new ApexCharts(document.getElementById("icmp-monitor-details-latency-chart"), latencyOptions);
-            this.latencyChart.render();
-
-            const packetLossOptions = baseAreaChartOptions(this.noDataLabel, (val) => val + "%");
-            this.packetLossChart = new ApexCharts(document.getElementById("icmp-monitor-details-packet-loss-chart"), packetLossOptions);
-            this.packetLossChart.render();
-        },
-
-        async pollEndpoint() {
-            try {
-                const response = await fetch(this.endpointUrl);
-                if (!response.ok) {
-                    console.error('Error fetching data:', response.status);
-                    return;
-                }
-                const rawData = await response.json();
-                this.lastResponse = rawData;
-                const transformedData = this.transformData(rawData);
-
-                if (!this.previousData || JSON.stringify(transformedData) !== JSON.stringify(this.previousData)) {
-                    this.updateCharts(transformedData);
-                    this.previousData = transformedData;
-                }
-            } catch (error) {
-                console.error('Error during polling:', error);
-            }
-        },
-
-        transformData(rawData) {
-            const latencyLabels = [];
-            const latencyData = [];
-            const packetLossLabels = [];
-            const packetLossData = [];
-
-            rawData.metricsLogs.forEach(item => {
-                const timestamp = new Date(item.createdAt).toString();
-                latencyLabels.push(timestamp);
-                latencyData.push(item.latencyInMs !== null ? parseInt(item.latencyInMs) : null);
-                packetLossLabels.push(timestamp);
-                packetLossData.push(parseInt(item.packetLossPercentage));
-            });
-
-            return {
-                latency: {
-                    labels: latencyLabels,
-                    series: [{name: 'Latency', data: latencyData}],
-                },
-                packetLoss: {
-                    labels: packetLossLabels,
-                    series: [{name: 'Packet loss', data: packetLossData}],
-                },
-            };
-        },
-
-        updateCharts(newData) {
-            this.latencyChart.updateOptions({
-                labels: newData.latency.labels,
-                series: newData.latency.series,
-            });
-            this.packetLossChart.updateOptions({
-                labels: newData.packetLoss.labels,
-                series: newData.packetLoss.series,
-            });
+        yaxis: [
+            {
+                seriesName: chartLabels.latency,
+                min: 0,
+                labels: {padding: 4, formatter: (val) => Math.round(val) + " ms"},
+            },
+            {
+                seriesName: chartLabels.packetLoss,
+                opposite: true,
+                min: 0,
+                max: 100,
+                labels: {padding: 4, formatter: (val) => Math.round(val) + "%"},
+            },
+        ],
+        legend: {
+            show: true,
         },
     };
 };
 
-const tcpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, noDataLabel, statPeriodInHours) => {
-    return {
-        isMonitorEnabled,
-        latencyChart: null,
-        previousData: null,
-        endpointUrl: `/api/v2/tcp-monitors/${monitorId}/stats?period=PT${statPeriodInHours}H`,
-        pollInterval: uptimeCheckInterval * 1000,
-        isAutoRefreshEnabled: false,
-        intervalId: null,
-        lastResponse: null,
-        noDataLabel,
+const icmpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, chartLabels, period) => metricsBlock({
+    monitorId,
+    isMonitorEnabled,
+    uptimeCheckInterval,
+    chartLabels,
+    period,
+    statsPath: 'icmp-monitors',
+    chartElementId: 'icmp-monitor-details-metrics-chart',
+    buildChartOptions: icmpChartOptions,
+    logsOf: (rawData) => rawData.metricsLogs,
+    toChartData: (logs, labels) => ({
+        labels: logs.map(item => new Date(item.createdAt).toString()),
+        series: [
+            {name: labels.latency, type: 'area', data: logs.map(nullableLatencyOf)},
+            {
+                name: labels.packetLoss,
+                type: 'line',
+                data: logs.map(item => parseInt(item.packetLossPercentage)),
+            },
+        ],
+    }),
+});
 
-        init() {
-            this.initializeCharts();
-            this.startPolling();
-            if (!this.isAutoRefreshEnabled) {
-                this.stopPolling();
-            }
-            this.$watch('isAutoRefreshEnabled', (value) => {
-                if (value) {
-                    this.startPolling();
-                } else {
-                    this.stopPolling();
-                }
-            });
-        },
+const tcpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, chartLabels, period) => metricsBlock({
+    monitorId,
+    isMonitorEnabled,
+    uptimeCheckInterval,
+    chartLabels,
+    period,
+    statsPath: 'tcp-monitors',
+    chartElementId: 'tcp-monitor-details-latency-chart',
+    buildChartOptions: latencyChartOptions,
+    logsOf: (rawData) => rawData.metricsLogs,
+    toChartData: (logs, labels) => toLatencyChartData(logs, labels, nullableLatencyOf),
+});
 
-        startPolling() {
-            this.pollEndpoint();
-            this.intervalId = setInterval(() => this.pollEndpoint(), this.pollInterval);
-        },
-
-        stopPolling() {
-            if (this.intervalId) {
-                clearInterval(this.intervalId);
-                this.intervalId = null;
-            }
-        },
-
-        initializeCharts() {
-            const latencyOptions = baseAreaChartOptions(this.noDataLabel, (val) => val + " ms");
-            this.latencyChart = new ApexCharts(document.getElementById("tcp-monitor-details-latency-chart"), latencyOptions);
-            this.latencyChart.render();
-        },
-
-        async pollEndpoint() {
-            try {
-                const response = await fetch(this.endpointUrl);
-                if (!response.ok) {
-                    console.error('Error fetching data:', response.status);
-                    return;
-                }
-                const rawData = await response.json();
-                this.lastResponse = rawData;
-                const transformedData = this.transformData(rawData);
-
-                if (!this.previousData || JSON.stringify(transformedData) !== JSON.stringify(this.previousData)) {
-                    this.updateCharts(transformedData);
-                    this.previousData = transformedData;
-                }
-            } catch (error) {
-                console.error('Error during polling:', error);
-            }
-        },
-
-        transformData(rawData) {
-            const latencyLabels = [];
-            const latencyData = [];
-
-            rawData.metricsLogs.forEach(item => {
-                const timestamp = new Date(item.createdAt).toString();
-                latencyLabels.push(timestamp);
-                latencyData.push(item.latencyInMs !== null ? parseInt(item.latencyInMs) : null);
-            });
-
-            return {
-                latency: {
-                    labels: latencyLabels,
-                    series: [{name: 'Latency', data: latencyData}],
-                },
-            };
-        },
-
-        updateCharts(newData) {
-            this.latencyChart.updateOptions({
-                labels: newData.latency.labels,
-                series: newData.latency.series,
-            });
-        },
-    };
-};
-
-const dnsMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, noDataLabel, statPeriodInHours) => {
-    return {
-        isMonitorEnabled,
-        latencyChart: null,
-        previousData: null,
-        endpointUrl: `/api/v2/dns-monitors/${monitorId}/stats?period=PT${statPeriodInHours}H`,
-        pollInterval: uptimeCheckInterval * 1000,
-        isAutoRefreshEnabled: false,
-        intervalId: null,
-        lastResponse: null,
-        noDataLabel,
-
-        init() {
-            this.initializeCharts();
-            this.startPolling();
-            if (!this.isAutoRefreshEnabled) {
-                this.stopPolling();
-            }
-            this.$watch('isAutoRefreshEnabled', (value) => {
-                if (value) {
-                    this.startPolling();
-                } else {
-                    this.stopPolling();
-                }
-            });
-        },
-
-        startPolling() {
-            this.pollEndpoint();
-            this.intervalId = setInterval(() => this.pollEndpoint(), this.pollInterval);
-        },
-
-        stopPolling() {
-            if (this.intervalId) {
-                clearInterval(this.intervalId);
-                this.intervalId = null;
-            }
-        },
-
-        initializeCharts() {
-            const latencyOptions = baseAreaChartOptions(this.noDataLabel, (val) => val + " ms");
-            this.latencyChart = new ApexCharts(document.getElementById("dns-monitor-details-latency-chart"), latencyOptions);
-            this.latencyChart.render();
-        },
-
-        async pollEndpoint() {
-            try {
-                const response = await fetch(this.endpointUrl);
-                if (!response.ok) {
-                    console.error('Error fetching data:', response.status);
-                    return;
-                }
-                const rawData = await response.json();
-                this.lastResponse = rawData;
-                const transformedData = this.transformData(rawData);
-
-                if (!this.previousData || JSON.stringify(transformedData) !== JSON.stringify(this.previousData)) {
-                    this.updateCharts(transformedData);
-                    this.previousData = transformedData;
-                }
-            } catch (error) {
-                console.error('Error during polling:', error);
-            }
-        },
-
-        transformData(rawData) {
-            const latencyLabels = [];
-            const latencyData = [];
-
-            rawData.metricsLogs.forEach(item => {
-                const timestamp = new Date(item.createdAt).toString();
-                latencyLabels.push(timestamp);
-                latencyData.push(item.latencyInMs !== null ? parseInt(item.latencyInMs) : null);
-            });
-
-            return {
-                latency: {
-                    labels: latencyLabels,
-                    series: [{name: 'Latency', data: latencyData}],
-                },
-            };
-        },
-
-        updateCharts(newData) {
-            this.latencyChart.updateOptions({
-                labels: newData.latency.labels,
-                series: newData.latency.series,
-            });
-        },
-    };
-};
+const dnsMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, chartLabels, period) => metricsBlock({
+    monitorId,
+    isMonitorEnabled,
+    uptimeCheckInterval,
+    chartLabels,
+    period,
+    statsPath: 'dns-monitors',
+    chartElementId: 'dns-monitor-details-latency-chart',
+    buildChartOptions: latencyChartOptions,
+    logsOf: (rawData) => rawData.metricsLogs,
+    toChartData: (logs, labels) => toLatencyChartData(logs, labels, nullableLatencyOf),
+});
 
 const hasNonNullValue = (obj) => Object.values(obj).some(value => value !== null);
 
@@ -810,6 +775,152 @@ const isValidSlug = (slug) => {
     return slugPattern.test(slug);
 }
 
+const blankError = (value, message) => !value || value.trim() === '' ? message : null;
+
+const rangeError = (value, min, max, message) =>
+    !value || isNaN(value) || value < min || value > max ? message : null;
+
+const isBlankNumber = (value) => value === '' || value == null;
+
+// Shared by the create/update forms of every entity, the forms provide resetState, validate and buildRequestBody
+const upsertForm = ({entity, errorMessages, pagePath, entityLabel}) => ({
+    errorMessages: errorMessages || {},
+    isRequestLoading: false,
+    formError: null,
+    isUpdate: !!entity,
+
+    init() {
+        this.resetState();
+    },
+
+    submitForm() {
+        this.validate();
+        if (!hasNonNullValue(this.errors)) {
+            this.upsert();
+        }
+    },
+
+    handleConflict() {
+        this.errors.name = this.errorMessages.nameAlreadyExists;
+    },
+
+    handleBadRequest(errorData) {
+        this.formError = errorData.message;
+    },
+
+    async upsert() {
+        const apiPath = '/api/v2' + pagePath;
+        try {
+            this.isRequestLoading = true;
+            const response = await fetch(this.isUpdate ? `${apiPath}/${entity.id}` : apiPath, {
+                method: this.isUpdate ? 'PATCH' : 'POST',
+                headers: jsonContentHeaders,
+                body: JSON.stringify(this.buildRequestBody()),
+            });
+            if (response.ok) {
+                const responseData = await response.json();
+                if (this.isUpdate) {
+                    window.location.reload();
+                } else {
+                    window.location.href = `${pagePath}/${responseData.id}`;
+                }
+            } else if (response.status === 409) {
+                this.handleConflict();
+            } else if (response.status === 400) {
+                this.handleBadRequest(await response.json());
+            } else {
+                console.error(`Error creating/updating the ${entityLabel}:`, response.statusText);
+                alert(`An error occurred while creating/updating the ${entityLabel}, refer to the console for more details`);
+            }
+        } catch (error) {
+            console.error(`Error creating/updating the ${entityLabel}:`, error);
+            alert(`An error occurred while creating/updating the ${entityLabel}. Please try again.`);
+        } finally {
+            this.isRequestLoading = false;
+        }
+    },
+});
+
+// Shared by every monitor type, the forms provide populateTypeFields, validateTypeFields and typeRequestBody
+const monitorForm = ({api, pagePath, monitor, errorMessages, categorySelectId, globalIntegrationCount}) => ({
+    ...upsertForm({entity: monitor, errorMessages, pagePath, entityLabel: 'monitor'}),
+    isCloning: false,
+    globalIntegrationCount: globalIntegrationCount || 0,
+
+    resetState() {
+        this.populateFrom(monitor || null);
+    },
+
+    populateFrom(source) {
+        this.name = source?.name || '';
+        this.failureCountThreshold = source?.failureCountThreshold || 1;
+        this.integrations = source?.integrations || [];
+        this.category = source?.category || null;
+        resetCategorySelect(categorySelectId, this.category);
+        this.populateTypeFields(source);
+        this.errors = {};
+        this.formError = null;
+    },
+
+    cloneFrom(monitorId, clonedName) {
+        api.get(
+            monitorId,
+            () => this.isCloning = true,
+            async (response) => {
+                this.populateFrom(await response.json());
+                this.name = clonedName;
+                this.regenerateUniqueFields();
+                this.isCloning = false;
+            },
+            () => this.isCloning = false
+        );
+    },
+
+    regenerateUniqueFields() {
+    },
+
+    validate() {
+        this.errors = {};
+        this.formError = null;
+        this.validateName();
+        this.validateCategory();
+        this.validateFailureCountThreshold();
+        this.validateTypeFields();
+    },
+
+    validateName() {
+        this.errors.name = blankError(this.name, this.errorMessages.nameRequired);
+    },
+
+    validateCategory() {
+        this.errors.category = this.category?.length > 100 ? this.errorMessages.categoryTooLong : null;
+    },
+
+    validateFailureCountThreshold() {
+        this.errors.failureCountThreshold =
+            rangeError(this.failureCountThreshold, 1, Infinity, this.errorMessages.failureCountThresholdInvalid);
+    },
+
+    handleBadRequest(errorData) {
+        if (errorData.errorCode === 'MONITOR_NAME_CANNOT_BE_CHANGED') {
+            this.errors.name = this.errorMessages.nameCannotBeChanged;
+        } else {
+            this.formError = errorData.message;
+        }
+    },
+
+    buildRequestBody() {
+        return {
+            name: this.name,
+            failureCountThreshold: this.failureCountThreshold,
+            integrations: this.integrations,
+            category: sanitizeTextInput(this.category),
+            ...this.typeRequestBody(),
+            ...(this.isUpdate ? {} : {enabled: true}),
+        };
+    },
+});
+
 const upsertHttpMonitorForm = (
     monitor,
     errorMessages,
@@ -817,1179 +928,480 @@ const upsertHttpMonitorForm = (
     acceptedStatusCodeSelectId,
     supportedHttpStatusCodes,
     globalIntegrationCount
-) => {
-    const originalMonitor = monitor || null;
-    return {
-        errorMessages: errorMessages || {},
-        isRequestLoading: false,
-        formError: null,
-        isCloning: false,
-        isUpdate: !!monitor,
-        supportedHttpStatusCodes: supportedHttpStatusCodes || [],
-        globalIntegrationCount: globalIntegrationCount || 0,
+) => ({
+    ...monitorForm({
+        api: httpMonitorApi,
+        pagePath: '/http-monitors',
+        monitor,
+        errorMessages,
+        categorySelectId,
+        globalIntegrationCount,
+    }),
+    supportedHttpStatusCodes: supportedHttpStatusCodes || [],
 
-        init() {
-            this.resetState();
-        },
+    populateTypeFields(source) {
+        this.url = source?.url || '';
+        this.sensitiveUrl = source?.sensitiveUrl ?? false;
+        this.sslExpiryThreshold = source?.sslExpiryThreshold || 30;
+        this.uptimeCheckInterval = source?.uptimeCheckInterval || 60;
+        this.sslCheckEnabled = source?.sslCheckEnabled ?? false;
+        this.latencyHistoryEnabled = source?.latencyHistoryEnabled ?? true;
+        this.forceNoCache = source?.forceNoCache ?? true;
+        this.followRedirects = source?.followRedirects ?? true;
+        this.crossOriginHeaderPropagation = source?.crossOriginHeaderPropagation ?? false;
+        this.requestMethod = source?.requestMethod || 'GET';
+        this.selectedHttpStatusCodes = source?.expectedStatusCodes?.map(code => code.toString()) || [];
+        this.expectedKeyword = source?.expectedKeyword || null;
+        this.expectedKeywordCaseSensitive = source?.expectedKeywordCaseSensitive || false;
+        this.expectedKeywordNegated = source?.expectedKeywordNegated || false;
+        this.responseTimeThresholdMillis = source?.responseTimeThresholdMillis || null;
+        this.requestHeaders = source?.requestHeaders || {};
+        this.expectedHeaders = source?.expectedHeaders || {};
+        this.requestBody = source?.requestBody || null;
+        this.newRequestHeaderKey = '';
+        this.newRequestHeaderValue = '';
+        this.isRequestHeaderAddable = false;
+        this.newExpectedHeaderKey = '';
+        this.newExpectedHeaderValue = '';
+        this.isExpectedHeaderAddable = false;
 
-        resetState() {
-            this.populateFrom(originalMonitor);
-        },
+        resetTomSelectState(acceptedStatusCodeSelectId, (ts) => {
+            this.selectedHttpStatusCodes.forEach(code => ts.addItem(code, true));
+        });
+    },
 
-        populateFrom(source) {
-            this.name = source?.name || '';
-            this.url = source?.url || '';
-            this.sensitiveUrl = (source?.sensitiveUrl != null ? source?.sensitiveUrl : false);
-            this.sslExpiryThreshold = source?.sslExpiryThreshold || 30;
-            this.failureCountThreshold = source?.failureCountThreshold || 1;
-            this.uptimeCheckInterval = source?.uptimeCheckInterval || 60;
-            this.sslCheckEnabled = (source?.sslCheckEnabled != null ? source?.sslCheckEnabled : false);
-            this.latencyHistoryEnabled = (source?.latencyHistoryEnabled != null ? source?.latencyHistoryEnabled : true);
-            this.forceNoCache = (source?.forceNoCache != null ? source?.forceNoCache : true);
-            this.followRedirects = (source?.followRedirects != null ? source?.followRedirects : true);
-            this.crossOriginHeaderPropagation = (source?.crossOriginHeaderPropagation != null ? source?.crossOriginHeaderPropagation : false);
-            this.requestMethod = source?.requestMethod || 'GET';
-            this.integrations = source?.integrations || [];
-            this.category = source?.category || null;
-            resetCategorySelect(categorySelectId, this.category);
-            this.selectedHttpStatusCodes = source?.expectedStatusCodes?.map(code => code.toString()) || [];
-            this.expectedKeyword = source?.expectedKeyword || null;
-            this.expectedKeywordCaseSensitive = source?.expectedKeywordCaseSensitive || false;
-            this.expectedKeywordNegated = source?.expectedKeywordNegated || false;
-            this.responseTimeThresholdMillis = source?.responseTimeThresholdMillis || null;
-            this.requestHeaders = source?.requestHeaders || {};
-            this.expectedHeaders = source?.expectedHeaders || {};
-            this.requestBody = source?.requestBody || null;
-            this.newRequestHeaderKey = '';
-            this.newRequestHeaderValue = '';
-            this.isRequestHeaderAddable = false;
-            this.newExpectedHeaderKey = '';
-            this.newExpectedHeaderValue = '';
-            this.isExpectedHeaderAddable = false;
-            this.errors = {};
-            this.formError = null;
+    isValidHttpHeaderName(headerName) {
+        if (headerName === null || headerName === undefined || headerName === '') return true;
+        const headerPattern = /^[a-zA-Z0-9!#$'*+-.^`|~_&%]+$/;
+        return headerPattern.test(headerName);
+    },
 
-            resetTomSelectState(acceptedStatusCodeSelectId, (ts) => {
-                this.selectedHttpStatusCodes.forEach(code => {
-                    ts.addItem(code, true);
-                });
-            });
-        },
+    validateNewHeader(headerKey, errorKey) {
+        const isValidHeaderName = this.isValidHttpHeaderName(headerKey);
+        this.errors[errorKey] = isValidHeaderName ? null : this.errorMessages.requestHeaderInvalid;
+        return isValidHeaderName;
+    },
 
-        cloneFrom(monitorId, clonedName) {
-            httpMonitorApi.get(
-                monitorId,
-                () => this.isCloning = true,
-                async (response) => {
-                    const source = await response.json();
-                    this.populateFrom(source);
-                    this.name = clonedName;
-                    this.isCloning = false;
-                },
-                () => this.isCloning = false
-            );
-        },
+    validateNewRequestHeader() {
+        const isValidHeader = this.validateNewHeader(this.newRequestHeaderKey, 'newRequestHeader');
+        this.isRequestHeaderAddable = isValidHeader && this.newRequestHeaderKey.trim() !== '' && this.newRequestHeaderValue.trim() !== '';
+    },
 
-        isValidHttpHeaderName(headerName) {
-            if (headerName === null || headerName === undefined || headerName === '') return true;
-            const headerPattern = /^[a-zA-Z0-9!#$'*+-.^`|~_&%]+$/;
-            return headerPattern.test(headerName);
-        },
+    validateNewExpectedHeader() {
+        const isValidHeader = this.validateNewHeader(this.newExpectedHeaderKey, 'newExpectedHeader');
+        this.isExpectedHeaderAddable = isValidHeader && this.newExpectedHeaderKey.trim() !== '' && this.newExpectedHeaderValue.trim() !== '';
+    },
 
-        validateNewHeader(headerKey, headerValue, errorKey) {
-            const isValidHeaderName = this.isValidHttpHeaderName(headerKey)
-            if (!isValidHeaderName) {
-                this.errors[errorKey] = this.errorMessages.requestHeaderInvalid;
-            } else {
-                this.errors[errorKey] = null;
-            }
-            return isValidHeaderName;
-        },
+    addRequestHeader() {
+        this.validateNewRequestHeader();
+        if (this.errors.newRequestHeader) return;
+        this.requestHeaders[this.newRequestHeaderKey] = this.newRequestHeaderValue;
+        this.newRequestHeaderKey = '';
+        this.newRequestHeaderValue = '';
+    },
 
-        validateNewRequestHeader() {
-            const isValidHeader = this.validateNewHeader(this.newRequestHeaderKey, this.newRequestHeaderValue, 'newRequestHeader');
-            this.isRequestHeaderAddable = isValidHeader && this.newRequestHeaderKey.trim() !== '' && this.newRequestHeaderValue.trim() !== '';
-        },
+    addExpectedHeader() {
+        this.validateNewExpectedHeader();
+        if (this.errors.newExpectedHeader) return;
+        this.expectedHeaders[this.newExpectedHeaderKey] = this.newExpectedHeaderValue;
+        this.newExpectedHeaderKey = '';
+        this.newExpectedHeaderValue = '';
+    },
 
-        validateNewExpectedHeader() {
-            const isValidHeader = this.validateNewHeader(this.newExpectedHeaderKey, this.newExpectedHeaderValue, 'newExpectedHeader');
-            this.isExpectedHeaderAddable = isValidHeader && this.newExpectedHeaderKey.trim() !== '' && this.newExpectedHeaderValue.trim() !== '';
-        },
+    removeRequestHeader(key) {
+        delete this.requestHeaders[key];
+    },
 
-        addRequestHeader() {
-            this.validateNewRequestHeader();
-            if (this.errors.newRequestHeader) return
-            this.requestHeaders[this.newRequestHeaderKey] = this.newRequestHeaderValue;
-            this.newRequestHeaderKey = '';
-            this.newRequestHeaderValue = '';
-        },
+    removeExpectedHeader(key) {
+        delete this.expectedHeaders[key];
+    },
 
-        addExpectedHeader() {
-            this.validateNewExpectedHeader();
-            if (this.errors.newExpectedHeader) return
-            this.expectedHeaders[this.newExpectedHeaderKey] = this.newExpectedHeaderValue;
-            this.newExpectedHeaderKey = '';
-            this.newExpectedHeaderValue = '';
-        },
+    validateTypeFields() {
+        this.validateUrl();
+        this.validateSslExpiryThreshold();
+        this.validateUptimeCheckInterval();
+        this.validateResponseTimeThreshold();
+        this.validateRequestBody();
+    },
 
-        removeRequestHeader(key) {
-            delete this.requestHeaders[key];
-        },
-
-        removeExpectedHeader(key) {
-            delete this.expectedHeaders[key];
-        },
-
-        validate() {
-            this.errors = {};
-            this.formError = null;
-            this.validateName();
-            this.validateCategory();
-            this.validateUrl();
-            this.validateSslExpiryThreshold();
-            this.validateFailureCountThreshold();
-            this.validateUptimeCheckInterval();
-            this.validateResponseTimeThreshold();
-        },
-
-        validateName() {
-            if (!this.name || this.name.trim() === '') {
-                this.errors.name = errorMessages.nameRequired;
-            } else {
-                this.errors.name = null;
-            }
-        },
-
-        validateCategory() {
-            if (this.category && this.category.length > 100) {
-                this.errors.category = this.errorMessages.categoryTooLong;
-            } else {
-                this.errors.category = null;
-            }
-        },
-
-        validateUrl() {
-            if (!this.url) {
-                this.errors.url = errorMessages.urlRequired;
-            } else if (!isValidUrl(this.url)) {
-                this.errors.url = errorMessages.urlInvalid;
-            } else {
-                this.errors.url = null;
-            }
-        },
-
-        validateSslExpiryThreshold() {
-            if (!this.sslExpiryThreshold || isNaN(this.sslExpiryThreshold) || this.sslExpiryThreshold < 0) {
-                this.errors.sslExpiryThreshold = this.errorMessages.sslExpiryThresholdInvalid;
-            } else {
-                this.errors.sslExpiryThreshold = null;
-            }
-        },
-
-        validateFailureCountThreshold() {
-            if (!this.failureCountThreshold || isNaN(this.failureCountThreshold) || this.failureCountThreshold < 1) {
-                this.errors.failureCountThreshold = this.errorMessages.failureCountThresholdInvalid;
-            } else {
-                this.errors.failureCountThreshold = null;
-            }
-        },
-
-        validateUptimeCheckInterval() {
-            if (!this.uptimeCheckInterval || isNaN(this.uptimeCheckInterval) || this.uptimeCheckInterval < 5) {
-                this.errors.uptimeCheckInterval = this.errorMessages.uptimeCheckIntervalInvalid;
-            } else {
-                this.errors.uptimeCheckInterval = null;
-            }
-        },
-
-        validateResponseTimeThreshold() {
-            if (this.responseTimeThresholdMillis !== null && (isNaN(this.responseTimeThresholdMillis) || this.responseTimeThresholdMillis < 1 || this.responseTimeThresholdMillis > 30000)) {
-                this.errors.responseTimeThresholdMillis = this.errorMessages.responseTimeThresholdInvalid;
-            } else {
-                this.errors.responseTimeThresholdMillis = null;
-            }
-        },
-
-        validateRequestBody() {
-            if (!this.requestBody || this.requestBody.trim() === '') {
-                this.requestBody = null;
-                this.errors.requestBody = null;
-                return;
-            }
-            try {
-                JSON.parse(this.requestBody);
-                this.errors.requestBody = null;
-            } catch (e) {
-                this.errors.requestBody = this.errorMessages.requestBodyInvalid;
-            }
-        },
-
-        submitForm() {
-            this.formError = null;
-            this.validate();
-            if (hasNonNullValue(this.errors)) {
-                return;
-            }
-
-            this.upsertMonitor();
-        },
-
-        async upsertMonitor() {
-            try {
-                this.isRequestLoading = true;
-                const body = {
-                    name: this.name,
-                    url: this.url,
-                    sensitiveUrl: this.sensitiveUrl,
-                    sslCheckEnabled: this.sslCheckEnabled,
-                    latencyHistoryEnabled: this.latencyHistoryEnabled,
-                    sslExpiryThreshold: this.sslExpiryThreshold,
-                    failureCountThreshold: this.failureCountThreshold,
-                    forceNoCache: this.forceNoCache,
-                    followRedirects: this.followRedirects,
-                    crossOriginHeaderPropagation: this.crossOriginHeaderPropagation,
-                    uptimeCheckInterval: this.uptimeCheckInterval,
-                    requestMethod: this.requestMethod,
-                    integrations: this.integrations,
-                    category: sanitizeTextInput(this.category),
-                    expectedStatusCodes: this.selectedHttpStatusCodes,
-                    expectedKeyword: sanitizeTextInput(this.expectedKeyword),
-                    expectedKeywordCaseSensitive: this.expectedKeywordCaseSensitive,
-                    expectedKeywordNegated: this.expectedKeywordNegated,
-                    responseTimeThresholdMillis: this.responseTimeThresholdMillis,
-                    requestHeaders: this.requestHeaders,
-                    expectedHeaders: this.expectedHeaders,
-                    requestBody: sanitizeTextInput(this.requestBody)
-                };
-                if (!this.isUpdate) {
-                    body.enabled = true; // Default enabled, can be paused later
-                }
-
-                const url = this.isUpdate ? '/api/v2/http-monitors/' + monitor.id : '/api/v2/http-monitors';
-                const method = this.isUpdate ? 'PATCH' : 'POST';
-
-                const response = await fetch(url, {
-                    method: method,
-                    headers: jsonContentHeaders,
-                    body: JSON.stringify(body)
-                });
-
-                if (response.ok) {
-                    this.isRequestLoading = false;
-                    const responseData = await response.json();
-
-                    if (this.isUpdate) {
-                        window.location.reload();
-                    } else {
-                        window.location.href = '/http-monitors/' + responseData.id;
-                    }
-                } else {
-                    if (response.status === 409) {
-                        this.isRequestLoading = false;
-                        this.errors.name = this.errorMessages.nameAlreadyExists;
-                    } else if (response.status === 400) {
-                        const errorData = await response.json();
-                        this.isRequestLoading = false;
-                        if (errorData.errorCode === 'MONITOR_NAME_CANNOT_BE_CHANGED') {
-                            this.errors.name = this.errorMessages.nameCannotBeChanged;
-                        } else {
-                            this.formError = errorData.message;
-                        }
-                    } else {
-                        console.error('Error creating/updating monitor:', response.statusText);
-                        alert('An error occurred while creating/updating the monitor, refer to the console for more details');
-                        this.isRequestLoading = false;
-                    }
-                }
-            } catch (error) {
-                this.isRequestLoading = false;
-                console.error('Error creating monitor:', error);
-                alert('An error occurred while creating/updating the monitor. Please try again.');
-            }
+    validateUrl() {
+        if (!this.url) {
+            this.errors.url = this.errorMessages.urlRequired;
+        } else {
+            this.errors.url = isValidUrl(this.url) ? null : this.errorMessages.urlInvalid;
         }
-    }
-};
+    },
 
-const upsertPushMonitorForm = (
-    monitor,
-    errorMessages,
-    categorySelectId,
-    globalIntegrationCount
-) => {
-    const originalMonitor = monitor || null;
-    return {
-        errorMessages: errorMessages || {},
-        isRequestLoading: false,
-        formError: null,
-        isCloning: false,
-        isUpdate: !!monitor,
-        globalIntegrationCount: globalIntegrationCount || 0,
+    validateSslExpiryThreshold() {
+        this.errors.sslExpiryThreshold =
+            rangeError(this.sslExpiryThreshold, 0, Infinity, this.errorMessages.sslExpiryThresholdInvalid);
+    },
 
-        init() {
-            this.resetState();
-        },
+    validateUptimeCheckInterval() {
+        this.errors.uptimeCheckInterval =
+            rangeError(this.uptimeCheckInterval, 5, Infinity, this.errorMessages.uptimeCheckIntervalInvalid);
+    },
 
-        resetState() {
-            this.populateFrom(originalMonitor);
-        },
+    validateResponseTimeThreshold() {
+        this.errors.responseTimeThresholdMillis = this.responseTimeThresholdMillis === null
+            ? null
+            : rangeError(this.responseTimeThresholdMillis, 1, 30000, this.errorMessages.responseTimeThresholdInvalid);
+    },
 
-        populateFrom(source) {
-            this.name = source?.name || '';
-            this.heartbeatInterval = source?.heartbeatInterval || 10;
-            this.gracePeriod = source?.gracePeriod || 0;
-            this.failureCountThreshold = source?.failureCountThreshold || 1;
-            this.clientSecret = source?.clientSecret || createRandomSecret();
-            this.integrations = source?.integrations || [];
-            this.category = source?.category || null;
-            resetCategorySelect(categorySelectId, this.category);
-            this.errors = {};
-            this.formError = null;
-        },
-
-        cloneFrom(monitorId, clonedName) {
-            pushMonitorApi.get(
-                monitorId,
-                () => this.isCloning = true,
-                async (response) => {
-                    const source = await response.json();
-                    this.populateFrom(source);
-                    this.name = clonedName;
-                    // A client secret is unique per monitor, so the clone must get a fresh one
-                    this.clientSecret = createRandomSecret();
-                    this.isCloning = false;
-                },
-                () => this.isCloning = false
-            );
-        },
-
-        generateNewClientSecret() {
-            this.clientSecret = createRandomSecret();
-            this.validateClientSecret()
-        },
-
-        copyClientSecretToClipboard() {
-            const baseUrl = window.location.protocol + '//' + window.location.host
-            const absoluteUrl = baseUrl + '/api/v2/push-monitors/heartbeats/' + this.clientSecret;
-            navigator.clipboard.writeText(absoluteUrl);
-        },
-
-        validate() {
-            this.errors = {};
-            this.formError = null;
-            this.validateName();
-            this.validateCategory();
-            this.validateHeartbeatInterval();
-            this.validateGracePeriod();
-            this.validateClientSecret();
-            this.validateFailureCountThreshold();
-        },
-
-        validateName() {
-            if (!this.name || this.name.trim() === '') {
-                this.errors.name = errorMessages.nameRequired;
-            } else {
-                this.errors.name = null;
-            }
-        },
-
-        validateCategory() {
-            if (this.category && this.category.length > 100) {
-                this.errors.category = this.errorMessages.categoryTooLong;
-            } else {
-                this.errors.category = null;
-            }
-        },
-
-        validateHeartbeatInterval() {
-            if (!this.heartbeatInterval || isNaN(this.heartbeatInterval) || this.heartbeatInterval < 10) {
-                this.errors.heartbeatInterval = this.errorMessages.heartbeatIntervalInvalid;
-            } else {
-                this.errors.heartbeatInterval = null;
-            }
-        },
-
-        validateGracePeriod() {
-            if (this.gracePeriod === undefined || this.gracePeriod === '' || isNaN(this.gracePeriod) || this.gracePeriod < 0) {
-                this.errors.gracePeriod = this.errorMessages.gracePeriodInvalid;
-            } else {
-                this.errors.gracePeriod = null;
-            }
-        },
-
-        validateClientSecret() {
-            this.clientSecret = sanitizeTextInput(this.clientSecret);
-            if (!this.clientSecret || this.clientSecret.length < 36) {
-                this.errors.clientSecret = this.errorMessages.clientSecretInvalid;
-            } else {
-                this.errors.clientSecret = null;
-            }
-        },
-
-        validateFailureCountThreshold() {
-            if (!this.failureCountThreshold || isNaN(this.failureCountThreshold) || this.failureCountThreshold < 1) {
-                this.errors.failureCountThreshold = this.errorMessages.failureCountThresholdInvalid;
-            } else {
-                this.errors.failureCountThreshold = null;
-            }
-        },
-
-        submitForm() {
-            this.formError = null;
-            this.validate();
-            if (hasNonNullValue(this.errors)) {
-                return;
-            }
-
-            this.upsertMonitor();
-        },
-
-        async upsertMonitor() {
-            try {
-                this.isRequestLoading = true;
-                const body = {
-                    name: this.name,
-                    heartbeatInterval: this.heartbeatInterval,
-                    gracePeriod: this.gracePeriod,
-                    clientSecret: this.clientSecret,
-                    integrations: this.integrations,
-                    category: sanitizeTextInput(this.category),
-                    failureCountThreshold: this.failureCountThreshold
-                };
-                if (!this.isUpdate) {
-                    body.enabled = true; // Default enabled, can be paused later
-                }
-
-                const url = this.isUpdate ? '/api/v2/push-monitors/' + monitor.id : '/api/v2/push-monitors';
-                const method = this.isUpdate ? 'PATCH' : 'POST';
-
-                const response = await fetch(url, {
-                    method: method,
-                    headers: jsonContentHeaders,
-                    body: JSON.stringify(body)
-                });
-
-                if (response.ok) {
-                    this.isRequestLoading = false;
-                    const responseData = await response.json();
-
-                    if (this.isUpdate) {
-                        window.location.reload();
-                    } else {
-                        window.location.href = '/push-monitors/' + responseData.id;
-                    }
-                } else {
-                    if (response.status === 409) {
-                        this.isRequestLoading = false;
-                        this.errors.name = this.errorMessages.nameOrClientSecretAlreadyExists;
-                        this.errors.clientSecret = this.errorMessages.nameOrClientSecretAlreadyExists;
-                    } else if (response.status === 400) {
-                        const errorData = await response.json();
-                        this.isRequestLoading = false;
-                        if (errorData.errorCode === 'MONITOR_NAME_CANNOT_BE_CHANGED') {
-                            this.errors.name = this.errorMessages.nameCannotBeChanged;
-                        } else {
-                            this.formError = errorData.message;
-                        }
-                    } else {
-                        console.error('Error creating/updating monitor:', response.statusText);
-                        alert('An error occurred while creating/updating the monitor, refer to the console for more details');
-                        this.isRequestLoading = false;
-                    }
-                }
-            } catch (error) {
-                this.isRequestLoading = false;
-                console.error('Error creating monitor:', error);
-                alert('An error occurred while creating/updating the monitor. Please try again.');
-            }
+    validateRequestBody() {
+        if (!this.requestBody || this.requestBody.trim() === '') {
+            this.requestBody = null;
+            this.errors.requestBody = null;
+            return;
         }
-    }
-};
-
-const upsertIcmpMonitorForm = (
-    monitor,
-    errorMessages,
-    categorySelectId,
-    globalIntegrationCount
-) => {
-    const originalMonitor = monitor || null;
-    return {
-        errorMessages: errorMessages || {},
-        isRequestLoading: false,
-        formError: null,
-        isCloning: false,
-        isUpdate: !!monitor,
-        globalIntegrationCount: globalIntegrationCount || 0,
-
-        init() {
-            this.resetState();
-        },
-
-        resetState() {
-            this.populateFrom(originalMonitor);
-        },
-
-        populateFrom(source) {
-            this.name = source?.name || '';
-            this.host = source?.host || '';
-            this.uptimeCheckInterval = source?.uptimeCheckInterval || 60;
-            this.packetCount = source?.packetCount || 3;
-            this.timeoutSeconds = source?.timeoutSeconds || 5;
-            this.packetLossThreshold = source?.packetLossThreshold || 100;
-            this.failureCountThreshold = source?.failureCountThreshold || 1;
-            this.integrations = source?.integrations || [];
-            this.category = source?.category || null;
-            resetCategorySelect(categorySelectId, this.category);
-            this.metricsHistoryEnabled = (source?.metricsHistoryEnabled != null ? source?.metricsHistoryEnabled : true);
-            this.errors = {};
-            this.formError = null;
-        },
-
-        cloneFrom(monitorId, clonedName) {
-            icmpMonitorApi.get(
-                monitorId,
-                () => this.isCloning = true,
-                async (response) => {
-                    const source = await response.json();
-                    this.populateFrom(source);
-                    this.name = clonedName;
-                    this.isCloning = false;
-                },
-                () => this.isCloning = false
-            );
-        },
-
-        validate() {
-            this.errors = {};
-            this.formError = null;
-            this.validateName();
-            this.validateCategory();
-            this.validateHost();
-            this.validateUptimeCheckInterval();
-            this.validatePacketCount();
-            this.validateTimeoutSeconds();
-            this.validatePacketLossThreshold();
-            this.validateFailureCountThreshold();
-        },
-
-        validateName() {
-            if (!this.name || this.name.trim() === '') {
-                this.errors.name = this.errorMessages.nameRequired;
-            } else {
-                this.errors.name = null;
-            }
-        },
-
-        validateCategory() {
-            if (this.category && this.category.length > 100) {
-                this.errors.category = this.errorMessages.categoryTooLong;
-            } else {
-                this.errors.category = null;
-            }
-        },
-
-        validateHost() {
-            if (!this.host || this.host.trim() === '') {
-                this.errors.host = this.errorMessages.hostRequired;
-            } else {
-                this.errors.host = null;
-            }
-        },
-
-        validateUptimeCheckInterval() {
-            if (!this.uptimeCheckInterval || isNaN(this.uptimeCheckInterval) || this.uptimeCheckInterval < 5) {
-                this.errors.uptimeCheckInterval = this.errorMessages.uptimeCheckIntervalInvalid;
-            } else {
-                this.errors.uptimeCheckInterval = null;
-            }
-        },
-
-        validatePacketCount() {
-            if (!this.packetCount || isNaN(this.packetCount) || this.packetCount < 1 || this.packetCount > 10) {
-                this.errors.packetCount = this.errorMessages.packetCountInvalid;
-            } else {
-                this.errors.packetCount = null;
-            }
-        },
-
-        validateTimeoutSeconds() {
-            if (!this.timeoutSeconds || isNaN(this.timeoutSeconds) || this.timeoutSeconds < 1 || this.timeoutSeconds > 30) {
-                this.errors.timeoutSeconds = this.errorMessages.timeoutSecondsInvalid;
-            } else {
-                this.errors.timeoutSeconds = null;
-            }
-        },
-
-        validatePacketLossThreshold() {
-            if (!this.packetLossThreshold || isNaN(this.packetLossThreshold) || this.packetLossThreshold < 1 || this.packetLossThreshold > 100) {
-                this.errors.packetLossThreshold = this.errorMessages.packetLossThresholdInvalid;
-            } else {
-                this.errors.packetLossThreshold = null;
-            }
-        },
-
-        validateFailureCountThreshold() {
-            if (!this.failureCountThreshold || isNaN(this.failureCountThreshold) || this.failureCountThreshold < 1) {
-                this.errors.failureCountThreshold = this.errorMessages.failureCountThresholdInvalid;
-            } else {
-                this.errors.failureCountThreshold = null;
-            }
-        },
-
-        submitForm() {
-            this.formError = null;
-            this.validate();
-            if (hasNonNullValue(this.errors)) {
-                return;
-            }
-            this.upsertMonitor();
-        },
-
-        async upsertMonitor() {
-            try {
-                this.isRequestLoading = true;
-                const body = {
-                    name: this.name,
-                    host: this.host,
-                    uptimeCheckInterval: this.uptimeCheckInterval,
-                    packetCount: this.packetCount,
-                    timeoutSeconds: this.timeoutSeconds,
-                    packetLossThreshold: this.packetLossThreshold,
-                    failureCountThreshold: this.failureCountThreshold,
-                    integrations: this.integrations,
-                    category: sanitizeTextInput(this.category),
-                    metricsHistoryEnabled: this.metricsHistoryEnabled,
-                };
-                if (!this.isUpdate) {
-                    body.enabled = true;
-                }
-
-                const url = this.isUpdate ? '/api/v2/icmp-monitors/' + monitor.id : '/api/v2/icmp-monitors';
-                const method = this.isUpdate ? 'PATCH' : 'POST';
-
-                const response = await fetch(url, {
-                    method: method,
-                    headers: jsonContentHeaders,
-                    body: JSON.stringify(body)
-                });
-
-                if (response.ok) {
-                    this.isRequestLoading = false;
-                    const responseData = await response.json();
-
-                    if (this.isUpdate) {
-                        window.location.reload();
-                    } else {
-                        window.location.href = '/icmp-monitors/' + responseData.id;
-                    }
-                } else {
-                    if (response.status === 409) {
-                        this.isRequestLoading = false;
-                        this.errors.name = this.errorMessages.nameAlreadyExists;
-                    } else if (response.status === 400) {
-                        const errorData = await response.json();
-                        this.isRequestLoading = false;
-                        if (errorData.errorCode === 'MONITOR_NAME_CANNOT_BE_CHANGED') {
-                            this.errors.name = this.errorMessages.nameCannotBeChanged;
-                        } else {
-                            this.formError = errorData.message;
-                        }
-                    } else {
-                        console.error('Error creating/updating ICMP monitor:', response.statusText);
-                        alert('An error occurred while creating/updating the monitor, refer to the console for more details');
-                        this.isRequestLoading = false;
-                    }
-                }
-            } catch (error) {
-                this.isRequestLoading = false;
-                console.error('Error creating ICMP monitor:', error);
-                alert('An error occurred while creating/updating the monitor. Please try again.');
-            }
+        try {
+            JSON.parse(this.requestBody);
+            this.errors.requestBody = null;
+        } catch (e) {
+            this.errors.requestBody = this.errorMessages.requestBodyInvalid;
         }
-    }
-};
+    },
 
-const upsertTcpMonitorForm = (
-    monitor,
-    errorMessages,
-    categorySelectId,
-    globalIntegrationCount
-) => {
-    const originalMonitor = monitor || null;
-    return {
-        errorMessages: errorMessages || {},
-        isRequestLoading: false,
-        formError: null,
-        isCloning: false,
-        isUpdate: !!monitor,
-        globalIntegrationCount: globalIntegrationCount || 0,
+    typeRequestBody() {
+        return {
+            url: this.url,
+            sensitiveUrl: this.sensitiveUrl,
+            sslCheckEnabled: this.sslCheckEnabled,
+            latencyHistoryEnabled: this.latencyHistoryEnabled,
+            sslExpiryThreshold: this.sslExpiryThreshold,
+            forceNoCache: this.forceNoCache,
+            followRedirects: this.followRedirects,
+            crossOriginHeaderPropagation: this.crossOriginHeaderPropagation,
+            uptimeCheckInterval: this.uptimeCheckInterval,
+            requestMethod: this.requestMethod,
+            expectedStatusCodes: this.selectedHttpStatusCodes,
+            expectedKeyword: sanitizeTextInput(this.expectedKeyword),
+            expectedKeywordCaseSensitive: this.expectedKeywordCaseSensitive,
+            expectedKeywordNegated: this.expectedKeywordNegated,
+            responseTimeThresholdMillis: this.responseTimeThresholdMillis,
+            requestHeaders: this.requestHeaders,
+            expectedHeaders: this.expectedHeaders,
+            requestBody: sanitizeTextInput(this.requestBody),
+        };
+    },
+});
 
-        init() {
-            this.resetState();
-        },
+const upsertPushMonitorForm = (monitor, errorMessages, categorySelectId, globalIntegrationCount) => ({
+    ...monitorForm({
+        api: pushMonitorApi,
+        pagePath: '/push-monitors',
+        monitor,
+        errorMessages,
+        categorySelectId,
+        globalIntegrationCount,
+    }),
 
-        resetState() {
-            this.populateFrom(originalMonitor);
-        },
+    populateTypeFields(source) {
+        this.heartbeatInterval = source?.heartbeatInterval || 10;
+        this.gracePeriod = source?.gracePeriod || 0;
+        this.clientSecret = source?.clientSecret || createRandomSecret();
+    },
 
-        populateFrom(source) {
-            this.name = source?.name || '';
-            this.host = source?.host || '';
-            this.port = source?.port || '';
-            this.uptimeCheckInterval = source?.uptimeCheckInterval || 60;
-            this.timeoutMs = source?.timeoutMs || 5000;
-            this.latencyThresholdMs = source?.latencyThresholdMs != null ? source.latencyThresholdMs : '';
-            this.failureCountThreshold = source?.failureCountThreshold || 1;
-            this.integrations = source?.integrations || [];
-            this.category = source?.category || null;
-            resetCategorySelect(categorySelectId, this.category);
-            this.metricsHistoryEnabled = (source?.metricsHistoryEnabled != null ? source?.metricsHistoryEnabled : true);
-            this.errors = {};
-            this.formError = null;
-        },
+    regenerateUniqueFields() {
+        this.clientSecret = createRandomSecret();
+    },
 
-        cloneFrom(monitorId, clonedName) {
-            tcpMonitorApi.get(
-                monitorId,
-                () => this.isCloning = true,
-                async (response) => {
-                    const source = await response.json();
-                    this.populateFrom(source);
-                    this.name = clonedName;
-                    this.isCloning = false;
-                },
-                () => this.isCloning = false
-            );
-        },
+    generateNewClientSecret() {
+        this.clientSecret = createRandomSecret();
+        this.validateClientSecret();
+    },
 
-        validate() {
-            this.errors = {};
-            this.formError = null;
-            this.validateName();
-            this.validateCategory();
-            this.validateHost();
-            this.validatePort();
-            this.validateUptimeCheckInterval();
-            this.validateTimeoutMs();
-            this.validateLatencyThreshold();
-            this.validateFailureCountThreshold();
-        },
+    copyClientSecretToClipboard() {
+        const baseUrl = window.location.protocol + '//' + window.location.host;
+        navigator.clipboard.writeText(baseUrl + '/api/v2/push-monitors/heartbeats/' + this.clientSecret);
+    },
 
-        validateName() {
-            if (!this.name || this.name.trim() === '') {
-                this.errors.name = this.errorMessages.nameRequired;
-            } else {
-                this.errors.name = null;
-            }
-        },
+    validateTypeFields() {
+        this.validateHeartbeatInterval();
+        this.validateGracePeriod();
+        this.validateClientSecret();
+    },
 
-        validateCategory() {
-            if (this.category && this.category.length > 100) {
-                this.errors.category = this.errorMessages.categoryTooLong;
-            } else {
-                this.errors.category = null;
-            }
-        },
+    validateHeartbeatInterval() {
+        this.errors.heartbeatInterval =
+            rangeError(this.heartbeatInterval, 10, Infinity, this.errorMessages.heartbeatIntervalInvalid);
+    },
 
-        validateHost() {
-            if (!this.host || this.host.trim() === '') {
-                this.errors.host = this.errorMessages.hostRequired;
-            } else {
-                this.errors.host = null;
-            }
-        },
+    validateGracePeriod() {
+        const isInvalid = this.gracePeriod === undefined || this.gracePeriod === '' || isNaN(this.gracePeriod) || this.gracePeriod < 0;
+        this.errors.gracePeriod = isInvalid ? this.errorMessages.gracePeriodInvalid : null;
+    },
 
-        validatePort() {
-            if (!this.port || isNaN(this.port) || this.port < 1 || this.port > 65535) {
-                this.errors.port = this.errorMessages.portInvalid;
-            } else {
-                this.errors.port = null;
-            }
-        },
+    validateClientSecret() {
+        this.clientSecret = sanitizeTextInput(this.clientSecret);
+        const isInvalid = !this.clientSecret || this.clientSecret.length < 36;
+        this.errors.clientSecret = isInvalid ? this.errorMessages.clientSecretInvalid : null;
+    },
 
-        validateUptimeCheckInterval() {
-            if (!this.uptimeCheckInterval || isNaN(this.uptimeCheckInterval) || this.uptimeCheckInterval < 5) {
-                this.errors.uptimeCheckInterval = this.errorMessages.uptimeCheckIntervalInvalid;
-            } else {
-                this.errors.uptimeCheckInterval = null;
-            }
-        },
+    handleConflict() {
+        this.errors.name = this.errorMessages.nameOrClientSecretAlreadyExists;
+        this.errors.clientSecret = this.errorMessages.nameOrClientSecretAlreadyExists;
+    },
 
-        validateTimeoutMs() {
-            if (!this.timeoutMs || isNaN(this.timeoutMs) || this.timeoutMs < 1 || this.timeoutMs > 30000) {
-                this.errors.timeoutMs = this.errorMessages.timeoutMsInvalid;
-            } else {
-                this.errors.timeoutMs = null;
-            }
-        },
+    typeRequestBody() {
+        return {
+            heartbeatInterval: this.heartbeatInterval,
+            gracePeriod: this.gracePeriod,
+            clientSecret: this.clientSecret,
+        };
+    },
+});
 
-        validateLatencyThreshold() {
-            if (this.latencyThresholdMs === '' || this.latencyThresholdMs == null) {
-                this.errors.latencyThresholdMs = null;
-            } else if (isNaN(this.latencyThresholdMs) || this.latencyThresholdMs < 1) {
-                this.errors.latencyThresholdMs = this.errorMessages.latencyThresholdInvalid;
-            } else {
-                this.errors.latencyThresholdMs = null;
-            }
-        },
+const upsertIcmpMonitorForm = (monitor, errorMessages, categorySelectId, globalIntegrationCount) => ({
+    ...monitorForm({
+        api: icmpMonitorApi,
+        pagePath: '/icmp-monitors',
+        monitor,
+        errorMessages,
+        categorySelectId,
+        globalIntegrationCount,
+    }),
 
-        validateFailureCountThreshold() {
-            if (!this.failureCountThreshold || isNaN(this.failureCountThreshold) || this.failureCountThreshold < 1) {
-                this.errors.failureCountThreshold = this.errorMessages.failureCountThresholdInvalid;
-            } else {
-                this.errors.failureCountThreshold = null;
-            }
-        },
+    populateTypeFields(source) {
+        this.host = source?.host || '';
+        this.uptimeCheckInterval = source?.uptimeCheckInterval || 60;
+        this.packetCount = source?.packetCount || 3;
+        this.timeoutSeconds = source?.timeoutSeconds || 5;
+        this.packetLossThreshold = source?.packetLossThreshold || 100;
+        this.metricsHistoryEnabled = source?.metricsHistoryEnabled ?? true;
+    },
 
-        submitForm() {
-            this.formError = null;
-            this.validate();
-            if (hasNonNullValue(this.errors)) {
-                return;
-            }
-            this.upsertMonitor();
-        },
+    validateTypeFields() {
+        this.validateHost();
+        this.validateUptimeCheckInterval();
+        this.validatePacketCount();
+        this.validateTimeoutSeconds();
+        this.validatePacketLossThreshold();
+    },
 
-        async upsertMonitor() {
-            try {
-                this.isRequestLoading = true;
-                const body = {
-                    name: this.name,
-                    host: this.host,
-                    port: parseInt(this.port),
-                    uptimeCheckInterval: this.uptimeCheckInterval,
-                    timeoutMs: this.timeoutMs,
-                    latencyThresholdMs: (this.latencyThresholdMs === '' || this.latencyThresholdMs == null) ? null : parseInt(this.latencyThresholdMs),
-                    failureCountThreshold: this.failureCountThreshold,
-                    integrations: this.integrations,
-                    category: sanitizeTextInput(this.category),
-                    metricsHistoryEnabled: this.metricsHistoryEnabled,
-                };
-                if (!this.isUpdate) {
-                    body.enabled = true;
-                }
+    validateHost() {
+        this.errors.host = blankError(this.host, this.errorMessages.hostRequired);
+    },
 
-                const url = this.isUpdate ? '/api/v2/tcp-monitors/' + monitor.id : '/api/v2/tcp-monitors';
-                const method = this.isUpdate ? 'PATCH' : 'POST';
+    validateUptimeCheckInterval() {
+        this.errors.uptimeCheckInterval =
+            rangeError(this.uptimeCheckInterval, 5, Infinity, this.errorMessages.uptimeCheckIntervalInvalid);
+    },
 
-                const response = await fetch(url, {
-                    method: method,
-                    headers: jsonContentHeaders,
-                    body: JSON.stringify(body)
-                });
+    validatePacketCount() {
+        this.errors.packetCount = rangeError(this.packetCount, 1, 10, this.errorMessages.packetCountInvalid);
+    },
 
-                if (response.ok) {
-                    this.isRequestLoading = false;
-                    const responseData = await response.json();
+    validateTimeoutSeconds() {
+        this.errors.timeoutSeconds = rangeError(this.timeoutSeconds, 1, 30, this.errorMessages.timeoutSecondsInvalid);
+    },
 
-                    if (this.isUpdate) {
-                        window.location.reload();
-                    } else {
-                        window.location.href = '/tcp-monitors/' + responseData.id;
-                    }
-                } else {
-                    if (response.status === 409) {
-                        this.isRequestLoading = false;
-                        this.errors.name = this.errorMessages.nameAlreadyExists;
-                    } else if (response.status === 400) {
-                        const errorData = await response.json();
-                        this.isRequestLoading = false;
-                        if (errorData.errorCode === 'MONITOR_NAME_CANNOT_BE_CHANGED') {
-                            this.errors.name = this.errorMessages.nameCannotBeChanged;
-                        } else {
-                            this.formError = errorData.message;
-                        }
-                    } else {
-                        console.error('Error creating/updating TCP monitor:', response.statusText);
-                        alert('An error occurred while creating/updating the monitor, refer to the console for more details');
-                        this.isRequestLoading = false;
-                    }
-                }
-            } catch (error) {
-                this.isRequestLoading = false;
-                console.error('Error creating TCP monitor:', error);
-                alert('An error occurred while creating/updating the monitor. Please try again.');
-            }
+    validatePacketLossThreshold() {
+        this.errors.packetLossThreshold =
+            rangeError(this.packetLossThreshold, 1, 100, this.errorMessages.packetLossThresholdInvalid);
+    },
+
+    typeRequestBody() {
+        return {
+            host: this.host,
+            uptimeCheckInterval: this.uptimeCheckInterval,
+            packetCount: this.packetCount,
+            timeoutSeconds: this.timeoutSeconds,
+            packetLossThreshold: this.packetLossThreshold,
+            metricsHistoryEnabled: this.metricsHistoryEnabled,
+        };
+    },
+});
+
+const upsertTcpMonitorForm = (monitor, errorMessages, categorySelectId, globalIntegrationCount) => ({
+    ...monitorForm({
+        api: tcpMonitorApi,
+        pagePath: '/tcp-monitors',
+        monitor,
+        errorMessages,
+        categorySelectId,
+        globalIntegrationCount,
+    }),
+
+    populateTypeFields(source) {
+        this.host = source?.host || '';
+        this.port = source?.port || '';
+        this.uptimeCheckInterval = source?.uptimeCheckInterval || 60;
+        this.timeoutMs = source?.timeoutMs || 5000;
+        this.latencyThresholdMs = source?.latencyThresholdMs ?? '';
+        this.metricsHistoryEnabled = source?.metricsHistoryEnabled ?? true;
+    },
+
+    validateTypeFields() {
+        this.validateHost();
+        this.validatePort();
+        this.validateUptimeCheckInterval();
+        this.validateTimeoutMs();
+        this.validateLatencyThreshold();
+    },
+
+    validateHost() {
+        this.errors.host = blankError(this.host, this.errorMessages.hostRequired);
+    },
+
+    validatePort() {
+        this.errors.port = rangeError(this.port, 1, 65535, this.errorMessages.portInvalid);
+    },
+
+    validateUptimeCheckInterval() {
+        this.errors.uptimeCheckInterval =
+            rangeError(this.uptimeCheckInterval, 5, Infinity, this.errorMessages.uptimeCheckIntervalInvalid);
+    },
+
+    validateTimeoutMs() {
+        this.errors.timeoutMs = rangeError(this.timeoutMs, 1, 30000, this.errorMessages.timeoutMsInvalid);
+    },
+
+    validateLatencyThreshold() {
+        this.errors.latencyThresholdMs = isBlankNumber(this.latencyThresholdMs)
+            ? null
+            : rangeError(this.latencyThresholdMs, 1, Infinity, this.errorMessages.latencyThresholdInvalid);
+    },
+
+    typeRequestBody() {
+        return {
+            host: this.host,
+            port: parseInt(this.port),
+            uptimeCheckInterval: this.uptimeCheckInterval,
+            timeoutMs: this.timeoutMs,
+            latencyThresholdMs: isBlankNumber(this.latencyThresholdMs) ? null : parseInt(this.latencyThresholdMs),
+            metricsHistoryEnabled: this.metricsHistoryEnabled,
+        };
+    },
+});
+
+const upsertDnsMonitorForm = (monitor, errorMessages, categorySelectId, globalIntegrationCount) => ({
+    ...monitorForm({
+        api: dnsMonitorApi,
+        pagePath: '/dns-monitors',
+        monitor,
+        errorMessages,
+        categorySelectId,
+        globalIntegrationCount,
+    }),
+
+    populateTypeFields(source) {
+        this.host = source?.host || '';
+        this.resolverHost = source?.resolverHost ?? '';
+        this.resolverPort = source?.resolverPort || 53;
+        this.transport = source?.transport || 'UDP';
+        this.recordMatchers = source?.recordMatchers ? JSON.parse(JSON.stringify(source.recordMatchers)) : [];
+        this.expectedResponseCode = source?.expectedResponseCode || 'NOERROR';
+        this.driftDetectionEnabled = source?.driftDetectionEnabled ?? false;
+        this.driftRecordTypes = source?.driftRecordTypes ? [...source.driftRecordTypes] : [];
+        this.uptimeCheckInterval = source?.uptimeCheckInterval || 60;
+        this.timeoutMs = source?.timeoutMs || 5000;
+        this.latencyThresholdMs = source?.latencyThresholdMs ?? '';
+        this.metricsHistoryEnabled = source?.metricsHistoryEnabled ?? true;
+        this.newMatcherRecordType = 'A';
+        this.newMatcherMatchType = 'CONTAINS';
+        this.newMatcherValue = '';
+        this.isMatcherAddable = false;
+    },
+
+    validateTypeFields() {
+        this.validateHost();
+        this.validateResolverPort();
+        this.validateUptimeCheckInterval();
+        this.validateTimeoutMs();
+        this.validateLatencyThreshold();
+        this.validateResponseCodeMatchers();
+    },
+
+    validateHost() {
+        this.errors.host = blankError(this.host, this.errorMessages.hostRequired);
+    },
+
+    validateResolverPort() {
+        this.errors.resolverPort = rangeError(this.resolverPort, 1, 65535, this.errorMessages.resolverPortInvalid);
+    },
+
+    validateUptimeCheckInterval() {
+        this.errors.uptimeCheckInterval =
+            rangeError(this.uptimeCheckInterval, 5, Infinity, this.errorMessages.uptimeCheckIntervalInvalid);
+    },
+
+    validateTimeoutMs() {
+        this.errors.timeoutMs = rangeError(this.timeoutMs, 1, 30000, this.errorMessages.timeoutMsInvalid);
+    },
+
+    validateLatencyThreshold() {
+        this.errors.latencyThresholdMs = isBlankNumber(this.latencyThresholdMs)
+            ? null
+            : rangeError(this.latencyThresholdMs, 1, Infinity, this.errorMessages.latencyThresholdInvalid);
+    },
+
+    isValidRegex(value) {
+        try {
+            new RegExp(value);
+            return true;
+        } catch (e) {
+            return false;
         }
-    }
-};
+    },
 
-const upsertDnsMonitorForm = (
-    monitor,
-    errorMessages,
-    categorySelectId,
-    globalIntegrationCount
-) => {
-    const originalMonitor = monitor || null;
-    return {
-        errorMessages: errorMessages || {},
-        isRequestLoading: false,
-        formError: null,
-        isCloning: false,
-        isUpdate: !!monitor,
-        globalIntegrationCount: globalIntegrationCount || 0,
+    validateNewMatcher() {
+        const value = (this.newMatcherValue || '').trim();
+        const isRegexValid = this.newMatcherMatchType !== 'REGEX' || this.isValidRegex(value);
+        this.errors.newMatcher = value !== '' && !isRegexValid ? this.errorMessages.recordMatcherInvalid : null;
+        this.isMatcherAddable = value !== '' && isRegexValid;
+    },
 
-        init() {
-            this.resetState();
-        },
+    validateResponseCodeMatchers() {
+        const isConflicting = this.expectedResponseCode !== 'NOERROR' && this.recordMatchers.length > 0;
+        this.errors.recordMatchers = isConflicting ? this.errorMessages.responseCodeMatchersConflict : null;
+    },
 
-        resetState() {
-            this.populateFrom(originalMonitor);
-        },
-
-        populateFrom(source) {
-            this.name = source?.name || '';
-            this.host = source?.host || '';
-            this.resolverHost = source?.resolverHost != null ? source.resolverHost : '';
-            this.resolverPort = source?.resolverPort || 53;
-            this.transport = source?.transport || 'UDP';
-            this.recordMatchers = source?.recordMatchers ? JSON.parse(JSON.stringify(source.recordMatchers)) : [];
-            this.expectedResponseCode = source?.expectedResponseCode || 'NOERROR';
-            this.driftDetectionEnabled = (source?.driftDetectionEnabled != null ? source.driftDetectionEnabled : false);
-            this.driftRecordTypes = source?.driftRecordTypes ? [...source.driftRecordTypes] : [];
-            this.uptimeCheckInterval = source?.uptimeCheckInterval || 60;
-            this.timeoutMs = source?.timeoutMs || 5000;
-            this.latencyThresholdMs = source?.latencyThresholdMs != null ? source.latencyThresholdMs : '';
-            this.failureCountThreshold = source?.failureCountThreshold || 1;
-            this.integrations = source?.integrations || [];
-            this.category = source?.category || null;
-            resetCategorySelect(categorySelectId, this.category);
-            this.metricsHistoryEnabled = (source?.metricsHistoryEnabled != null ? source?.metricsHistoryEnabled : true);
-            this.newMatcherRecordType = 'A';
-            this.newMatcherMatchType = 'CONTAINS';
-            this.newMatcherValue = '';
-            this.isMatcherAddable = false;
-            this.errors = {};
-            this.formError = null;
-        },
-
-        cloneFrom(monitorId, clonedName) {
-            dnsMonitorApi.get(
-                monitorId,
-                () => this.isCloning = true,
-                async (response) => {
-                    const source = await response.json();
-                    this.populateFrom(source);
-                    this.name = clonedName;
-                    this.isCloning = false;
-                },
-                () => this.isCloning = false
-            );
-        },
-
-        validate() {
-            this.errors = {};
-            this.formError = null;
-            this.validateName();
-            this.validateCategory();
-            this.validateHost();
-            this.validateResolverPort();
-            this.validateUptimeCheckInterval();
-            this.validateTimeoutMs();
-            this.validateLatencyThreshold();
-            this.validateFailureCountThreshold();
-            this.validateResponseCodeMatchers();
-        },
-
-        validateName() {
-            if (!this.name || this.name.trim() === '') {
-                this.errors.name = this.errorMessages.nameRequired;
-            } else {
-                this.errors.name = null;
-            }
-        },
-
-        validateCategory() {
-            if (this.category && this.category.length > 100) {
-                this.errors.category = this.errorMessages.categoryTooLong;
-            } else {
-                this.errors.category = null;
-            }
-        },
-
-        validateHost() {
-            if (!this.host || this.host.trim() === '') {
-                this.errors.host = this.errorMessages.hostRequired;
-            } else {
-                this.errors.host = null;
-            }
-        },
-
-        validateResolverPort() {
-            if (!this.resolverPort || isNaN(this.resolverPort) || this.resolverPort < 1 || this.resolverPort > 65535) {
-                this.errors.resolverPort = this.errorMessages.resolverPortInvalid;
-            } else {
-                this.errors.resolverPort = null;
-            }
-        },
-
-        validateUptimeCheckInterval() {
-            if (!this.uptimeCheckInterval || isNaN(this.uptimeCheckInterval) || this.uptimeCheckInterval < 5) {
-                this.errors.uptimeCheckInterval = this.errorMessages.uptimeCheckIntervalInvalid;
-            } else {
-                this.errors.uptimeCheckInterval = null;
-            }
-        },
-
-        validateTimeoutMs() {
-            if (!this.timeoutMs || isNaN(this.timeoutMs) || this.timeoutMs < 1 || this.timeoutMs > 30000) {
-                this.errors.timeoutMs = this.errorMessages.timeoutMsInvalid;
-            } else {
-                this.errors.timeoutMs = null;
-            }
-        },
-
-        validateLatencyThreshold() {
-            if (this.latencyThresholdMs === '' || this.latencyThresholdMs == null) {
-                this.errors.latencyThresholdMs = null;
-            } else if (isNaN(this.latencyThresholdMs) || this.latencyThresholdMs < 1) {
-                this.errors.latencyThresholdMs = this.errorMessages.latencyThresholdInvalid;
-            } else {
-                this.errors.latencyThresholdMs = null;
-            }
-        },
-
-        validateFailureCountThreshold() {
-            if (!this.failureCountThreshold || isNaN(this.failureCountThreshold) || this.failureCountThreshold < 1) {
-                this.errors.failureCountThreshold = this.errorMessages.failureCountThresholdInvalid;
-            } else {
-                this.errors.failureCountThreshold = null;
-            }
-        },
-
-        isValidRegex(value) {
-            try {
-                new RegExp(value);
-                return true;
-            } catch (e) {
-                return false;
-            }
-        },
-
-        validateNewMatcher() {
-            const value = (this.newMatcherValue || '').trim();
-            const isRegexValid = this.newMatcherMatchType !== 'REGEX' || this.isValidRegex(value);
-            if (value !== '' && !isRegexValid) {
-                this.errors.newMatcher = this.errorMessages.recordMatcherInvalid;
-            } else {
-                this.errors.newMatcher = null;
-            }
-            this.isMatcherAddable = value !== '' && isRegexValid;
-        },
-
-        validateResponseCodeMatchers() {
-            if (this.expectedResponseCode !== 'NOERROR' && this.recordMatchers.length > 0) {
-                this.errors.recordMatchers = this.errorMessages.responseCodeMatchersConflict;
-            } else {
-                this.errors.recordMatchers = null;
-            }
-        },
-
-        addMatcher() {
-            this.validateNewMatcher();
-            if (!this.isMatcherAddable) return;
-            const candidate = {
-                recordType: this.newMatcherRecordType,
-                matchType: this.newMatcherMatchType,
-                value: this.newMatcherValue.trim(),
-            };
-            // An identical matcher would only be evaluated twice, so adding it again is a no-op (the server dedupes
-            // the list as well, which would otherwise make the saved monitor differ from what the form shows)
-            const isDuplicate = this.recordMatchers.some(matcher =>
-                matcher.recordType === candidate.recordType &&
-                matcher.matchType === candidate.matchType &&
-                matcher.value === candidate.value
-            );
-            if (!isDuplicate) {
-                this.recordMatchers.push(candidate);
-            }
-            this.newMatcherValue = '';
-            this.isMatcherAddable = false;
-            this.validateResponseCodeMatchers();
-        },
-
-        removeMatcher(index) {
-            this.recordMatchers.splice(index, 1);
-            this.validateResponseCodeMatchers();
-        },
-
-        submitForm() {
-            this.formError = null;
-            this.validate();
-            if (hasNonNullValue(this.errors)) {
-                return;
-            }
-            this.upsertMonitor();
-        },
-
-        async upsertMonitor() {
-            try {
-                this.isRequestLoading = true;
-                const body = {
-                    name: this.name,
-                    host: this.host,
-                    resolverHost: (this.resolverHost === '' || this.resolverHost == null) ? null : this.resolverHost,
-                    resolverPort: parseInt(this.resolverPort),
-                    transport: this.transport,
-                    recordMatchers: this.recordMatchers,
-                    expectedResponseCode: this.expectedResponseCode,
-                    driftDetectionEnabled: this.driftDetectionEnabled,
-                    driftRecordTypes: this.driftRecordTypes,
-                    uptimeCheckInterval: this.uptimeCheckInterval,
-                    timeoutMs: this.timeoutMs,
-                    latencyThresholdMs: (this.latencyThresholdMs === '' || this.latencyThresholdMs == null) ? null : parseInt(this.latencyThresholdMs),
-                    failureCountThreshold: this.failureCountThreshold,
-                    integrations: this.integrations,
-                    category: sanitizeTextInput(this.category),
-                    metricsHistoryEnabled: this.metricsHistoryEnabled,
-                };
-                if (!this.isUpdate) {
-                    body.enabled = true;
-                }
-
-                const url = this.isUpdate ? '/api/v2/dns-monitors/' + monitor.id : '/api/v2/dns-monitors';
-                const method = this.isUpdate ? 'PATCH' : 'POST';
-
-                const response = await fetch(url, {
-                    method: method,
-                    headers: jsonContentHeaders,
-                    body: JSON.stringify(body)
-                });
-
-                if (response.ok) {
-                    this.isRequestLoading = false;
-                    const responseData = await response.json();
-
-                    if (this.isUpdate) {
-                        window.location.reload();
-                    } else {
-                        window.location.href = '/dns-monitors/' + responseData.id;
-                    }
-                } else {
-                    if (response.status === 409) {
-                        this.isRequestLoading = false;
-                        this.errors.name = this.errorMessages.nameAlreadyExists;
-                    } else if (response.status === 400) {
-                        const errorData = await response.json();
-                        this.isRequestLoading = false;
-                        if (errorData.errorCode === 'MONITOR_NAME_CANNOT_BE_CHANGED') {
-                            this.errors.name = this.errorMessages.nameCannotBeChanged;
-                        } else {
-                            this.formError = errorData.message;
-                        }
-                    } else {
-                        console.error('Error creating/updating DNS monitor:', response.statusText);
-                        alert('An error occurred while creating/updating the monitor, refer to the console for more details');
-                        this.isRequestLoading = false;
-                    }
-                }
-            } catch (error) {
-                this.isRequestLoading = false;
-                console.error('Error creating DNS monitor:', error);
-                alert('An error occurred while creating/updating the monitor. Please try again.');
-            }
+    addMatcher() {
+        this.validateNewMatcher();
+        if (!this.isMatcherAddable) return;
+        const candidate = {
+            recordType: this.newMatcherRecordType,
+            matchType: this.newMatcherMatchType,
+            value: this.newMatcherValue.trim(),
+        };
+        // An identical matcher would only be evaluated twice, so adding it again is a no-op (the server dedupes
+        // the list as well, which would otherwise make the saved monitor differ from what the form shows)
+        const isDuplicate = this.recordMatchers.some(matcher =>
+            matcher.recordType === candidate.recordType &&
+            matcher.matchType === candidate.matchType &&
+            matcher.value === candidate.value
+        );
+        if (!isDuplicate) {
+            this.recordMatchers.push(candidate);
         }
-    }
-};
+        this.newMatcherValue = '';
+        this.isMatcherAddable = false;
+        this.validateResponseCodeMatchers();
+    },
+
+    removeMatcher(index) {
+        this.recordMatchers.splice(index, 1);
+        this.validateResponseCodeMatchers();
+    },
+
+    typeRequestBody() {
+        return {
+            host: this.host,
+            resolverHost: this.resolverHost === '' || this.resolverHost == null ? null : this.resolverHost,
+            resolverPort: parseInt(this.resolverPort),
+            transport: this.transport,
+            recordMatchers: this.recordMatchers,
+            expectedResponseCode: this.expectedResponseCode,
+            driftDetectionEnabled: this.driftDetectionEnabled,
+            driftRecordTypes: this.driftRecordTypes,
+            uptimeCheckInterval: this.uptimeCheckInterval,
+            timeoutMs: this.timeoutMs,
+            latencyThresholdMs: isBlankNumber(this.latencyThresholdMs) ? null : parseInt(this.latencyThresholdMs),
+            metricsHistoryEnabled: this.metricsHistoryEnabled,
+        };
+    },
+});
 
 const upsertStatusPageForm = (
     statusPage,
@@ -1997,135 +1409,70 @@ const upsertStatusPageForm = (
     monitorSelectId,
     selectableMonitors,
     categorySelectId,
-) => {
-    const originalStatusPage = statusPage || null;
-    return {
-        errorMessages: errorMessages || {},
-        isRequestLoading: false,
-        formError: null,
-        isUpdate: !!statusPage,
-        selectableMonitors: selectableMonitors || [],
-        /*
-         The persisted categories have to be in the DOM as options before TomSelect takes the select over, because
-         the rest of them only arrives when the fetch resolves. Never reassigned, so it cannot loop with x-model.
-        */
-        initialCategories: originalStatusPage?.categories || [],
-        imagePreviewState: {},
+) => ({
+    ...upsertForm({entity: statusPage, errorMessages, pagePath: '/status-pages', entityLabel: 'status page'}),
+    selectableMonitors: selectableMonitors || [],
+    /*
+     The persisted categories have to be in the DOM as options before TomSelect takes the select over, because
+     the rest of them only arrives when the fetch resolves. Never reassigned, so it cannot loop with x-model.
+    */
+    initialCategories: statusPage?.categories || [],
+    imagePreviewState: {},
 
-        init() {
-            this.resetState();
-        },
+    resetState() {
+        this.title = statusPage?.title || '';
+        this.slug = statusPage?.slug || '';
+        this.customLogoUrl = statusPage?.customLogoUrl || null;
+        this.customFaviconUrl = statusPage?.customFaviconUrl || null;
+        this.selectedMonitors = statusPage?.monitors || [];
+        this.selectedCategories = statusPage?.categories || [];
+        this.displayCategories = statusPage?.displayCategories ?? true;
+        this.public = statusPage?.public ?? false;
+        this.errors = {};
+        this.formError = null;
 
-        resetState() {
-            this.title = originalStatusPage?.title || '';
-            this.slug = originalStatusPage?.slug || '';
-            this.customLogoUrl = originalStatusPage?.customLogoUrl || null;
-            this.customFaviconUrl = originalStatusPage?.customFaviconUrl || null;
-            this.selectedMonitors = originalStatusPage?.monitors || [];
-            this.selectedCategories = originalStatusPage?.categories || [];
-            this.displayCategories =
-                (originalStatusPage?.displayCategories != null ? originalStatusPage.displayCategories : true);
-            this.public = (originalStatusPage?.public != null ? originalStatusPage?.public : false);
-            this.errors = {};
-            this.formError = null;
+        resetTomSelectState(monitorSelectId, (ts) => {
+            this.selectedMonitors.forEach(monitor => ts.addItem(monitor, true));
+        });
+        resetCategoryMultiSelect(categorySelectId, this.selectedCategories);
+    },
 
-            resetTomSelectState(monitorSelectId, (ts) => {
-                this.selectedMonitors.forEach(monitor => {
-                    ts.addItem(monitor, true);
-                });
-            });
-            resetCategoryMultiSelect(categorySelectId, this.selectedCategories);
-        },
+    validate() {
+        this.errors = {};
+        this.formError = null;
+        this.validateTitle();
+        this.validateSlug();
+    },
 
-        validate() {
-            this.errors = {};
-            this.formError = null;
-            this.validateTitle();
-            this.validateSlug();
-        },
+    validateTitle() {
+        this.errors.title = this.title ? null : this.errorMessages.titleRequired;
+    },
 
-        validateTitle() {
-            if (!this.title) {
-                this.errors.title = errorMessages.titleRequired;
-            } else {
-                this.errors.title = null;
-            }
-        },
-
-        validateSlug() {
-            if (!this.slug) {
-                this.errors.slug = errorMessages.slugRequired;
-            } else if (!isValidSlug(this.slug)) {
-                this.errors.slug = errorMessages.slugInvalid;
-            } else {
-                this.errors.slug = null;
-            }
-        },
-
-        submitForm() {
-            this.formError = null;
-            this.validate();
-            if (hasNonNullValue(this.errors)) {
-                return;
-            }
-
-            this.upsertStatusPage();
-        },
-
-        async upsertStatusPage() {
-            try {
-                this.isRequestLoading = true;
-                const body = {
-                    title: this.title,
-                    slug: this.slug,
-                    customLogoUrl: this.customLogoUrl,
-                    customFaviconUrl: this.customFaviconUrl,
-                    monitors: this.selectedMonitors,
-                    categories: this.selectedCategories,
-                    displayCategories: this.displayCategories,
-                    public: this.public
-                };
-
-                const url = this.isUpdate ? '/api/v2/status-pages/' + statusPage.id : '/api/v2/status-pages';
-                const method = this.isUpdate ? 'PATCH' : 'POST';
-
-                const response = await fetch(url, {
-                    method: method,
-                    headers: jsonContentHeaders,
-                    body: JSON.stringify(body)
-                });
-
-                if (response.ok) {
-                    this.isRequestLoading = false;
-                    const responseData = await response.json();
-
-                    if (this.isUpdate) {
-                        window.location.reload();
-                    } else {
-                        window.location.href = '/status-pages/' + responseData.id;
-                    }
-                } else {
-                    if (response.status === 409) {
-                        this.isRequestLoading = false;
-                        this.errors.slug = this.errorMessages.slugAlreadyExists;
-                    } else if (response.status === 400) {
-                        const errorData = await response.json();
-                        this.isRequestLoading = false;
-                        this.formError = errorData.message;
-                    } else {
-                        this.isRequestLoading = false;
-                        console.error('Error creating/updating status page:', response.statusText);
-                        alert('An error occurred while creating/updating the status page, refer to the console for more details');
-                    }
-                }
-            } catch (error) {
-                this.isRequestLoading = false;
-                console.error('Error creating status page:', error);
-                alert('An error occurred while creating/updating the status page. Please try again.');
-            }
+    validateSlug() {
+        if (!this.slug) {
+            this.errors.slug = this.errorMessages.slugRequired;
+        } else {
+            this.errors.slug = isValidSlug(this.slug) ? null : this.errorMessages.slugInvalid;
         }
-    }
-};
+    },
+
+    handleConflict() {
+        this.errors.slug = this.errorMessages.slugAlreadyExists;
+    },
+
+    buildRequestBody() {
+        return {
+            title: this.title,
+            slug: this.slug,
+            customLogoUrl: this.customLogoUrl,
+            customFaviconUrl: this.customFaviconUrl,
+            monitors: this.selectedMonitors,
+            categories: this.selectedCategories,
+            displayCategories: this.displayCategories,
+            public: this.public,
+        };
+    },
+});
 
 const integrationListItem = (integrationId) => {
     return {
@@ -2432,13 +1779,20 @@ const maintenanceWindowImportForm = (labels) => importForm({
 const MAINTENANCE_WINDOW_TYPES = {MANUAL: 'MANUAL', CRON: 'CRON', SINGLE: 'SINGLE'};
 
 // Matches a positive ISO-8601 duration (weeks/days/time components), e.g. PT1H30M, P1DT2H, PT45S
-const isoDurationRegex = /^P(?:\d+W)?(?:\d+D)?(?:T(?:\d+H)?(?:\d+M)?(?:\d+(?:\.\d+)?S)?)?$/;
+const isoDurationRegex = /^P(?:(\d+)W)?(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?)?$/;
 
 const isValidIsoDuration = (value) => {
     if (!value || !isoDurationRegex.test(value)) return false;
     const numbers = value.match(/\d+(?:\.\d+)?/g);
     return !!numbers && numbers.some(n => parseFloat(n) > 0);
 };
+
+// The milliseconds of the week, day, hour, minute and second components, in the order of isoDurationRegex's groups
+const ISO_DURATION_COMPONENT_MILLIS = [7 * 24 * 60 * 60 * 1000, 24 * 60 * 60 * 1000, 60 * 60 * 1000, 60 * 1000, 1000];
+
+const isoDurationToMillis = (value) => value.match(isoDurationRegex)
+    .slice(1)
+    .reduce((millis, amount, index) => millis + parseFloat(amount ?? 0) * ISO_DURATION_COMPONENT_MILLIS[index], 0);
 
 // Validates a cron expression server-side against Micronaut's CronExpression parser (the single source of truth).
 // Returns true when valid and false on a 400; network/other errors fail open so the authoritative submit can decide.
@@ -2533,198 +1887,135 @@ const upsertMaintenanceWindowForm = (
     monitorSelectId,
     selectableMonitors,
     categorySelectId,
-) => {
-    const originalWindow = maintenanceWindow || null;
-    return {
-        errorMessages: errorMessages || {},
-        isRequestLoading: false,
-        formError: null,
-        isUpdate: !!maintenanceWindow,
-        selectableMonitors: selectableMonitors || [],
-        // See the same field on upsertStatusPageForm
-        initialCategories: originalWindow?.categories || [],
-        // The integrations accordion expects this; maintenance windows never auto-apply global integrations
-        globalIntegrationCount: 0,
+) => ({
+    ...upsertForm({
+        entity: maintenanceWindow,
+        errorMessages,
+        pagePath: '/maintenance-windows',
+        entityLabel: 'maintenance window',
+    }),
+    selectableMonitors: selectableMonitors || [],
+    // See the same field on upsertStatusPageForm
+    initialCategories: maintenanceWindow?.categories || [],
+    // The integrations accordion expects this; maintenance windows never auto-apply global integrations
+    globalIntegrationCount: 0,
 
-        init() {
-            this.resetState();
-        },
+    resetState() {
+        this.name = maintenanceWindow?.name || '';
+        this.description = maintenanceWindow?.description || null;
+        this.type = resolveMaintenanceWindowType(maintenanceWindow);
+        this.cron = maintenanceWindow?.cron || '';
+        this.start = toDateTimeLocalValue(maintenanceWindow?.start);
+        this.duration = maintenanceWindow?.duration || '';
+        this.enabled = maintenanceWindow?.enabled ?? true;
+        this.global = maintenanceWindow?.global ?? false;
+        this.showOnStatusPages = maintenanceWindow?.showOnStatusPages ?? false;
+        this.selectedMonitors = maintenanceWindow?.monitors || [];
+        this.selectedCategories = maintenanceWindow?.categories || [];
+        this.integrations = maintenanceWindow?.integrations || [];
+        this.errors = {};
+        this.formError = null;
 
-        resetState() {
-            this.name = originalWindow?.name || '';
-            this.description = originalWindow?.description || null;
-            this.type = resolveMaintenanceWindowType(originalWindow);
-            this.cron = originalWindow?.cron || '';
-            this.start = toDateTimeLocalValue(originalWindow?.start);
-            this.duration = originalWindow?.duration || '';
-            this.enabled = (originalWindow?.enabled != null ? originalWindow.enabled : true);
-            this.global = (originalWindow?.global != null ? originalWindow.global : false);
-            this.showOnStatusPages =
-                (originalWindow?.showOnStatusPages != null ? originalWindow.showOnStatusPages : false);
-            this.selectedMonitors = originalWindow?.monitors || [];
-            this.selectedCategories = originalWindow?.categories || [];
-            this.integrations = originalWindow?.integrations || [];
-            this.errors = {};
-            this.formError = null;
+        resetTomSelectState(monitorSelectId, (ts) => {
+            this.selectedMonitors.forEach(monitor => ts.addItem(monitor, true));
+        });
+        resetCategoryMultiSelect(categorySelectId, this.selectedCategories);
+    },
 
-            resetTomSelectState(monitorSelectId, (ts) => {
-                this.selectedMonitors.forEach(monitor => {
-                    ts.addItem(monitor, true);
-                });
-            });
-            resetCategoryMultiSelect(categorySelectId, this.selectedCategories);
-        },
+    validate() {
+        this.errors = {};
+        this.formError = null;
+        this.validateName();
+        this.validateCronPresence();
+        this.validateStart();
+        this.validateDuration();
+    },
 
-        validate() {
-            this.errors = {};
-            this.formError = null;
-            this.validateName();
-            this.validateCronPresence();
-            this.validateStart();
-            this.validateDuration();
-        },
-
-        // Clears the values of fields that don't belong to the freshly selected type, so we never send
-        // non-sense values to the backend and never keep a hidden validation error on an invisible field
-        onTypeChange() {
-            if (this.type !== MAINTENANCE_WINDOW_TYPES.CRON) {
-                this.cron = '';
-            }
-            if (this.type !== MAINTENANCE_WINDOW_TYPES.SINGLE) {
-                this.start = '';
-            }
-            if (this.type === MAINTENANCE_WINDOW_TYPES.MANUAL) {
-                this.duration = '';
-            }
-            this.validate();
-        },
-
-        validateName() {
-            this.errors.name = this.name ? null : this.errorMessages.nameRequired;
-        },
-
-        // Synchronous part of the cron validation: clears the error for non-cron windows and flags a blank value
-        validateCronPresence() {
-            if (this.type !== MAINTENANCE_WINDOW_TYPES.CRON || this.cron) {
-                this.errors.cron = null;
-            } else {
-                this.errors.cron = this.errorMessages.cronRequired;
-            }
-        },
-
-        // Full cron validation including the server-side format check; runs when the field is left or on submit
-        async validateCron() {
-            this.validateCronPresence();
-            if (this.errors.cron || this.type !== MAINTENANCE_WINDOW_TYPES.CRON) {
-                return;
-            }
-            const valid = await isValidCronExpression(this.cron);
-            this.errors.cron = valid ? null : this.errorMessages.cronInvalid;
-        },
-
-        validateStart() {
-            if (this.type === MAINTENANCE_WINDOW_TYPES.SINGLE && !this.start) {
-                this.errors.start = this.errorMessages.startRequired;
-            } else {
-                this.errors.start = null;
-            }
-        },
-
-        // Fills the duration input with a predefined ISO-8601 value coming from a quick-select button
-        setDuration(value) {
-            this.duration = value;
-            this.validateDuration();
-        },
-
-        validateDuration() {
-            if (this.type === MAINTENANCE_WINDOW_TYPES.MANUAL) {
-                this.errors.duration = null;
-            } else if (!this.duration) {
-                this.errors.duration = this.errorMessages.durationRequired;
-            } else if (!isValidIsoDuration(this.duration)) {
-                this.errors.duration = this.errorMessages.durationInvalid;
-            } else {
-                this.errors.duration = null;
-            }
-        },
-
-        async submitForm() {
-            this.errors = {};
-            this.formError = null;
-            this.validateName();
-            this.validateStart();
-            this.validateDuration();
-            // The cron format check hits the server, so await it before deciding whether the form is valid
-            await this.validateCron();
-            if (hasNonNullValue(this.errors)) {
-                return;
-            }
-            this.upsertMaintenanceWindow();
-        },
-
-        buildRequestBody() {
-            const isManual = this.type === MAINTENANCE_WINDOW_TYPES.MANUAL;
-            const isCron = this.type === MAINTENANCE_WINDOW_TYPES.CRON;
-            const isSingle = this.type === MAINTENANCE_WINDOW_TYPES.SINGLE;
-            return {
-                name: this.name,
-                description: this.description || null,
-                enabled: this.enabled,
-                global: this.global,
-                showOnStatusPages: this.showOnStatusPages,
-                cron: isCron ? this.cron : null,
-                start: isSingle && this.start ? new Date(this.start).toISOString() : null,
-                duration: isManual ? null : this.duration,
-                monitors: this.selectedMonitors,
-                categories: this.selectedCategories,
-                integrations: this.integrations
-            };
-        },
-
-        async upsertMaintenanceWindow() {
-            try {
-                this.isRequestLoading = true;
-                const body = this.buildRequestBody();
-                const url = this.isUpdate
-                    ? '/api/v2/maintenance-windows/' + maintenanceWindow.id
-                    : '/api/v2/maintenance-windows';
-                const method = this.isUpdate ? 'PATCH' : 'POST';
-
-                const response = await fetch(url, {
-                    method: method,
-                    headers: jsonContentHeaders,
-                    body: JSON.stringify(body)
-                });
-
-                if (response.ok) {
-                    this.isRequestLoading = false;
-                    const responseData = await response.json();
-
-                    if (this.isUpdate) {
-                        window.location.reload();
-                    } else {
-                        window.location.href = '/maintenance-windows/' + responseData.id;
-                    }
-                } else if (response.status === 409) {
-                    this.isRequestLoading = false;
-                    this.errors.name = this.errorMessages.nameAlreadyExists;
-                } else if (response.status === 400) {
-                    const errorData = await response.json();
-                    this.isRequestLoading = false;
-                    this.formError = errorData.message;
-                } else {
-                    this.isRequestLoading = false;
-                    console.error('Error creating/updating maintenance window:', response.statusText);
-                    alert('An error occurred while creating/updating the maintenance window, refer to the console for more details');
-                }
-            } catch (error) {
-                this.isRequestLoading = false;
-                console.error('Error creating/updating maintenance window:', error);
-                alert('An error occurred while creating/updating the maintenance window. Please try again.');
-            }
+    // Clears the values of fields that don't belong to the freshly selected type, so we never send
+    // non-sense values to the backend and never keep a hidden validation error on an invisible field
+    onTypeChange() {
+        if (this.type !== MAINTENANCE_WINDOW_TYPES.CRON) {
+            this.cron = '';
         }
-    }
-};
+        if (this.type !== MAINTENANCE_WINDOW_TYPES.SINGLE) {
+            this.start = '';
+        }
+        if (this.type === MAINTENANCE_WINDOW_TYPES.MANUAL) {
+            this.duration = '';
+        }
+        this.validate();
+    },
+
+    validateName() {
+        this.errors.name = this.name ? null : this.errorMessages.nameRequired;
+    },
+
+    // Synchronous part of the cron validation: clears the error for non-cron windows and flags a blank value
+    validateCronPresence() {
+        const isMissing = this.type === MAINTENANCE_WINDOW_TYPES.CRON && !this.cron;
+        this.errors.cron = isMissing ? this.errorMessages.cronRequired : null;
+    },
+
+    // Full cron validation including the server-side format check; runs when the field is left or on submit
+    async validateCron() {
+        this.validateCronPresence();
+        if (this.errors.cron || this.type !== MAINTENANCE_WINDOW_TYPES.CRON) {
+            return;
+        }
+        const valid = await isValidCronExpression(this.cron);
+        this.errors.cron = valid ? null : this.errorMessages.cronInvalid;
+    },
+
+    validateStart() {
+        const isMissing = this.type === MAINTENANCE_WINDOW_TYPES.SINGLE && !this.start;
+        this.errors.start = isMissing ? this.errorMessages.startRequired : null;
+    },
+
+    // Fills the duration input with a predefined ISO-8601 value coming from a quick-select button
+    setDuration(value) {
+        this.duration = value;
+        this.validateDuration();
+    },
+
+    validateDuration() {
+        if (this.type === MAINTENANCE_WINDOW_TYPES.MANUAL) {
+            this.errors.duration = null;
+        } else if (!this.duration) {
+            this.errors.duration = this.errorMessages.durationRequired;
+        } else if (!isValidIsoDuration(this.duration)) {
+            this.errors.duration = this.errorMessages.durationInvalid;
+        } else {
+            this.errors.duration = null;
+        }
+    },
+
+    async submitForm() {
+        this.validate();
+        await this.validateCron();
+        if (!hasNonNullValue(this.errors)) {
+            this.upsert();
+        }
+    },
+
+    buildRequestBody() {
+        const isManual = this.type === MAINTENANCE_WINDOW_TYPES.MANUAL;
+        const isCron = this.type === MAINTENANCE_WINDOW_TYPES.CRON;
+        const isSingle = this.type === MAINTENANCE_WINDOW_TYPES.SINGLE;
+        return {
+            name: this.name,
+            description: this.description || null,
+            enabled: this.enabled,
+            global: this.global,
+            showOnStatusPages: this.showOnStatusPages,
+            cron: isCron ? this.cron : null,
+            start: isSingle && this.start ? new Date(this.start).toISOString() : null,
+            duration: isManual ? null : this.duration,
+            monitors: this.selectedMonitors,
+            categories: this.selectedCategories,
+            integrations: this.integrations,
+        };
+    },
+});
 
 // Exposes helpers and Alpine x-data factories for the Node-based unit tests (see ui/src/jsTest and the :ui:jsTest task)
 if (typeof module !== 'undefined' && module.exports) {
@@ -2737,9 +2028,12 @@ if (typeof module !== 'undefined' && module.exports) {
         escapeHtml,
         buildToastMarkup,
         hasNonNullValue,
+        formatChartTimestamp,
+        buildIncidentAnnotations,
         isValidUrl,
         isValidSlug,
         isValidIsoDuration,
+        isoDurationToMillis,
         toDateTimeLocalValue,
         resolveMaintenanceWindowType,
         createRandomSecret,
@@ -2753,6 +2047,7 @@ if (typeof module !== 'undefined' && module.exports) {
         upsertIcmpMonitorForm,
         upsertTcpMonitorForm,
         upsertDnsMonitorForm,
+        upsertStatusPageForm,
         upsertMaintenanceWindowForm,
         httpMetricsBlock,
         icmpMetricsBlock,

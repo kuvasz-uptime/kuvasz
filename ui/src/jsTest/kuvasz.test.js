@@ -13,6 +13,7 @@ const {
     isValidUrl,
     isValidSlug,
     isValidIsoDuration,
+    isoDurationToMillis,
     toDateTimeLocalValue,
     resolveMaintenanceWindowType,
     createRandomSecret,
@@ -82,6 +83,15 @@ test('isValidIsoDuration', () => {
     assert.equal(isValidIsoDuration(''), false);
     assert.equal(isValidIsoDuration('garbage'), false);
     assert.equal(isValidIsoDuration('1H'), false);
+});
+
+test('isoDurationToMillis', () => {
+    const hour = 60 * 60 * 1000;
+    // The periods of the metrics charts, as serialized by java.time.Duration
+    assert.equal(isoDurationToMillis('PT1H'), hour);
+    assert.equal(isoDurationToMillis('PT720H'), 720 * hour);
+    // Every component, including a fractional second
+    assert.equal(isoDurationToMillis('P1W2DT3H4M5.5S'), (7 * 24 + 2 * 24 + 3) * hour + 4 * 60 * 1000 + 5500);
 });
 
 test('toDateTimeLocalValue', () => {

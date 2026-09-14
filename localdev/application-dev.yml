@@ -227,3 +227,6 @@ status-pages:
 #  - name: yaml-maintenance-window
 #    cron: "0 2 * * *"
 #    duration: PT1H
+---
+app-config:
+  latency-data-retention-days: 30

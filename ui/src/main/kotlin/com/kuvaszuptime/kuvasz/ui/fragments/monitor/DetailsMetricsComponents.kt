@@ -2,11 +2,16 @@ package com.kuvaszuptime.kuvasz.ui.fragments.monitor
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
+import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
+import com.kuvaszuptime.kuvasz.util.UIDefaults
 import kotlinx.html.*
+import java.time.Duration
 
 private const val CHART_MIN_HEIGHT_STYLE = "min-height: 240px;"
+
+private val DEFAULT_METRICS_PERIOD: Duration = Duration.ofDays(UIDefaults.MONITOR_METRICS_PERIOD_DAYS)
 
 /**
  * A single card of a metrics row, rendered only when the Alpine.js property behind [propertyName] has a value.
@@ -86,30 +91,32 @@ internal fun FlowContent.metricsAutoRefreshToggle() {
     }
 }
 
-/** The metrics heading with the auto-refresh toggle next to it, for the types that have more than one metrics row. */
-internal fun FlowContent.metricsSectionHeading(statPeriodInHours: Long) {
+/**
+ * The heading of a metrics block with the period selector and the auto-refresh toggle next to it
+ */
+private fun FlowContent.metricsSectionHeading() {
     div {
         classes(D_FLEX, ALIGN_ITEMS_CENTER, MB_3)
         h2 {
             classes(MB_0)
+            testId("metrics-block-title")
             +Messages.metrics()
-            span {
-                classes(BADGE)
-                +Messages.lastXHours(statPeriodInHours)
-            }
         }
         div {
-            classes(MS_AUTO)
+            classes(MS_AUTO, D_FLEX, ALIGN_ITEMS_CENTER)
+            div {
+                classes(ME_2)
+                periodSelector(selected = DEFAULT_METRICS_PERIOD) {
+                    testId("metrics-period-selector")
+                    xModel("period")
+                }
+            }
             metricsAutoRefreshToggle()
         }
     }
 }
 
-/**
- * The card holding a metrics chart. [withAutoRefreshToggle] puts the toggle into the card's header, which is where the
- * types without a [metricsSectionHeading] of their own carry it.
- */
-internal fun FlowContent.metricsChartCard(chartElementId: String, withAutoRefreshToggle: Boolean = false) {
+internal fun FlowContent.metricsChartCard(chartElementId: String) {
     div {
         classes(ROW, ROW_CARDS, MB_3)
         div {
@@ -121,12 +128,6 @@ internal fun FlowContent.metricsChartCard(chartElementId: String, withAutoRefres
                     h3 {
                         classes(CARD_TITLE)
                         +Messages.recentMeasurements()
-                    }
-                    if (withAutoRefreshToggle) {
-                        div {
-                            classes(CARD_ACTIONS, BTN_ACTIONS)
-                            metricsAutoRefreshToggle()
-                        }
                     }
                 }
                 div {
@@ -142,15 +143,14 @@ internal fun FlowContent.metricsChartCard(chartElementId: String, withAutoRefres
 }
 
 /**
- * The root of a metrics block: the Alpine.js component that polls the metrics of the monitor and feeds every card and
- * chart rendered by [content].
+ * The root of a metrics block: the Alpine.js component that polls the metrics (and the incidents) of the monitor in the
+ * selected period, rendering the heading of the block and feeding every card and chart rendered by [content].
  */
 internal fun FlowContent.monitorMetricsBlock(
     typeUiConfig: MonitorTypeUiConfig,
     monitorId: Long,
     isMonitorEnabled: Boolean,
     uptimeCheckInterval: Int,
-    statPeriodInHours: Long,
     content: FlowContent.() -> Unit,
 ) {
     div {
@@ -159,12 +159,23 @@ internal fun FlowContent.monitorMetricsBlock(
             |$monitorId,
             |$isMonitorEnabled,
             |$uptimeCheckInterval,
-            |"${Messages.latencyChartNoData()}",
-            |$statPeriodInHours
+            |{
+            |noData: "${Messages.latencyChartNoData()}",
+            |incidentStarted: "${Messages.chartIncidentStarted()}",
+            |incidentResolved: "${Messages.chartIncidentResolved()}",
+            |latency: "${Messages.latencyBlockTitle()}",
+            |packetLoss: "${Messages.packetLossBlockTitle()}",
+            |},
+            |"$DEFAULT_METRICS_PERIOD"
             |)
             """.trimMargin()
         )
         xOn("monitor-disabled.window", "isAutoRefreshEnabled = false")
-        content()
+        metricsSectionHeading()
+        div {
+            classes(POSITION_RELATIVE)
+            content()
+            loadingOverlay(xShowIf = "isPeriodLoading", overlayTestId = "metrics-loading-overlay")
+        }
     }
 }

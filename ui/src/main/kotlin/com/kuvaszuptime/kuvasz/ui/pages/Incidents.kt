@@ -216,34 +216,10 @@ private fun HtmlBlockTag.incidentsPageHeader(formattedPeriod: String, selectedPe
             div {
                 classes(COL_SM_AUTO, MS_AUTO)
                 div {
-                    @Suppress("MagicNumber")
-                    periodSelector(
-                        selected = selectedPeriod,
-                        options = listOf(
-                            Duration.ofHours(1),
-                            Duration.ofHours(6),
-                            Duration.ofHours(12),
-                            Duration.ofDays(1),
-                            Duration.ofDays(7),
-                            Duration.ofDays(30),
-                        )
-                    )
+                    periodSelector(selected = selectedPeriod) {
+                        onChange = "{window.location = '/incidents?period=' + this.value;}"
+                    }
                 }
-            }
-        }
-    }
-}
-
-private fun FlowContent.periodSelector(options: List<Duration>, selected: Duration) {
-    select {
-        classes(FORM_SELECT)
-        onChange = "{window.location = '/incidents?period=' + this.value;}"
-        options.forEach { duration ->
-            val formattedPeriod = duration.formatAsSimpleInterval()
-            option {
-                value = duration.toString()
-                this.selected = selected == duration
-                +formattedPeriod
             }
         }
     }
