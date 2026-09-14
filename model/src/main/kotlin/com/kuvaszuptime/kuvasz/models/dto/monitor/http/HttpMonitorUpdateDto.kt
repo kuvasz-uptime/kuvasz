@@ -67,6 +67,10 @@ data class HttpMonitorUpdateDto(
     val followRedirects: Boolean?,
 
     @get:NotNull
+    @param:Schema(description = HttpMonitorDocs.CROSS_ORIGIN_HEADER_PROPAGATION, required = false, nullable = false)
+    val crossOriginHeaderPropagation: Boolean?,
+
+    @get:NotNull
     @get:PositiveOrZero(message = MonitorValidationMessages.SSL_EXPIRY_THRESHOLD_POSITIVE_OR_ZERO)
     @param:Schema(description = HttpMonitorDocs.SSL_EXPIRY_THRESHOLD, required = false, nullable = false)
     val sslExpiryThreshold: Int?,

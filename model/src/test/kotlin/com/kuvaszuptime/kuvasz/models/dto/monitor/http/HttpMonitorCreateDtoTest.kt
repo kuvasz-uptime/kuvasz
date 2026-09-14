@@ -362,6 +362,7 @@ class HttpMonitorCreateDtoDefaultsTest : BehaviorSpec({
             dto.latencyHistoryEnabled shouldBe HttpMonitorDefaults.LATENCY_HISTORY_ENABLED
             dto.forceNoCache shouldBe HttpMonitorDefaults.FORCE_NO_CACHE
             dto.followRedirects shouldBe HttpMonitorDefaults.FOLLOW_REDIRECTS
+            dto.crossOriginHeaderPropagation shouldBe HttpMonitorDefaults.CROSS_ORIGIN_HEADER_PROPAGATION
             dto.sslExpiryThreshold shouldBe HttpMonitorDefaults.SSL_EXPIRY_THRESHOLD_DAYS
             dto.integrations shouldBe emptyList()
             dto.expectedStatusCodes shouldBe emptyList()

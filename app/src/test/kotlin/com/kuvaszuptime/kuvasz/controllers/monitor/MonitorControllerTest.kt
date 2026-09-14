@@ -13,6 +13,7 @@ import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.ServiceError
 import com.kuvaszuptime.kuvasz.models.dto.importing.MonitorImportResultDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorExportDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDefaults
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorExportDto
@@ -54,6 +55,7 @@ import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.http.client.multipart.MultipartBody
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import kotlinx.coroutines.reactive.awaitFirst
+import tools.jackson.databind.node.ObjectNode
 import tools.jackson.dataformat.yaml.YAMLMapper
 import tools.jackson.module.kotlin.convertValue
 
@@ -100,6 +102,7 @@ class MonitorControllerTest(
                     sensitiveUrl = true,
                     uptimeCheckInterval = 23234,
                     monitorName = "irrelevant2",
+                    crossOriginHeaderPropagation = true,
                     sslExpiryThreshold = 15,
                     failureCountThreshold = 5,
                     expectedStatusCodes = setOf(200, 404),
@@ -249,6 +252,7 @@ class MonitorControllerTest(
                         firstMonitor.latencyHistoryEnabled shouldBe httpMonitor.metricsHistoryEnabled
                         firstMonitor.forceNoCache shouldBe httpMonitor.forceNoCache
                         firstMonitor.followRedirects shouldBe httpMonitor.followRedirects
+                        firstMonitor.crossOriginHeaderPropagation shouldBe httpMonitor.crossOriginHeaderPropagation
                         firstMonitor.sslExpiryThreshold shouldBe httpMonitor.sslExpiryThreshold
                         firstMonitor.failureCountThreshold shouldBe httpMonitor.failureCountThreshold
                     }
@@ -263,6 +267,7 @@ class MonitorControllerTest(
                         secondMonitor.latencyHistoryEnabled shouldBe httpMonitor2.metricsHistoryEnabled
                         secondMonitor.forceNoCache shouldBe httpMonitor2.forceNoCache
                         secondMonitor.followRedirects shouldBe httpMonitor2.followRedirects
+                        secondMonitor.crossOriginHeaderPropagation shouldBe true
                         secondMonitor.sslExpiryThreshold shouldBe httpMonitor2.sslExpiryThreshold
                         secondMonitor.failureCountThreshold shouldBe httpMonitor2.failureCountThreshold
                         secondMonitor.expectedStatusCodes shouldBe httpMonitor2.expectedStatusCodes.toSet()
@@ -489,6 +494,59 @@ class MonitorControllerTest(
                     val importedMonitor = httpMonitorRepository.findByName("imported-http").shouldNotBeNull()
                     // The imported monitor must be scheduled for checks immediately, not only after the next restart
                     httpCheckScheduler.getScheduledUptimeChecks()[importedMonitor.id].shouldNotBeNull()
+                }
+            }
+
+            `when`("an HTTP monitor in the uploaded YAML has no cross-origin header propagation setting") {
+                val exportedContent = buildYamlImportContent(
+                    httpMonitors = listOf(
+                        HttpMonitorExportDto(
+                            name = "legacy-http",
+                            url = "https://example.com",
+                            sensitiveUrl = false,
+                            uptimeCheckInterval = 60,
+                            enabled = true,
+                            sslCheckEnabled = false,
+                            latencyHistoryEnabled = true,
+                            requestMethod = HttpMethod.GET,
+                            followRedirects = true,
+                            crossOriginHeaderPropagation = true,
+                            forceNoCache = true,
+                            sslExpiryThreshold = 30,
+                            failureCountThreshold = 1,
+                            integrations = emptySet(),
+                            expectedStatusCodes = emptySet(),
+                            responseTimeThresholdMillis = null,
+                            expectedKeyword = null,
+                            expectedKeywordCaseSensitive = false,
+                            expectedKeywordNegated = false,
+                            requestHeaders = emptyMap(),
+                            expectedHeaders = emptyMap(),
+                            requestBody = null,
+                        )
+                    )
+                )
+                // Simulating a backup that was exported before the setting was introduced
+                val legacyContent = yamlMapper.readTree(exportedContent).also { root ->
+                    root["http-monitors"].forEach { monitor ->
+                        (monitor as ObjectNode).remove("cross-origin-header-propagation").shouldNotBeNull()
+                    }
+                }.let { yamlMapper.writeValueAsBytes(it) }
+
+                val multipartBody = MultipartBody.builder()
+                    .addPart("file", "monitors.yml", MediaType.APPLICATION_YAML_TYPE, legacyContent)
+                    .build()
+
+                val request = HttpRequest.POST("/api/v2/monitors/import/yaml?dryRun=false", multipartBody)
+                    .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                    .accept(MediaType.APPLICATION_JSON_TYPE)
+
+                then("it should import the monitor with the default value of the setting") {
+                    val response = client.exchange(request, MonitorImportResultDto::class.java).awaitFirst()
+
+                    response.status shouldBe HttpStatus.OK
+                    httpMonitorRepository.findByName("legacy-http").shouldNotBeNull()
+                        .crossOriginHeaderPropagation shouldBe HttpMonitorDefaults.CROSS_ORIGIN_HEADER_PROPAGATION
                 }
             }
 

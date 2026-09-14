@@ -36,6 +36,7 @@ data class HttpMonitorSchema(
     val latencyHistoryEnabled: Boolean,
     val forceNoCache: Boolean,
     val followRedirects: Boolean,
+    val crossOriginHeaderPropagation: Boolean,
     val sslExpiryThreshold: Int,
     val failureCountThreshold: Long,
     val integrations: Set<String>,
@@ -64,6 +65,7 @@ data class HttpMonitorSchema(
             latencyHistoryEnabled = dto.latencyHistoryEnabled,
             forceNoCache = dto.forceNoCache,
             followRedirects = dto.followRedirects,
+            crossOriginHeaderPropagation = dto.crossOriginHeaderPropagation,
             sslExpiryThreshold = dto.sslExpiryThreshold,
             failureCountThreshold = dto.failureCountThreshold,
             integrations = dto.integrations.map { it.toString() }.toSet(),
@@ -79,6 +81,98 @@ data class HttpMonitorSchema(
             updatedAt = dto.updatedAt,
             category = dto.category,
         )
+    }
+}
+
+@JsonSchema
+@Introspected
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class HttpMonitorDetailsSchema(
+    val id: Long,
+    val name: String,
+    val url: String,
+    val sensitiveUrl: Boolean,
+    val uptimeCheckInterval: Int,
+    val enabled: Boolean,
+    val sslCheckEnabled: Boolean,
+    val createdAt: OffsetDateTime,
+    val updatedAt: OffsetDateTime?,
+    val category: String?,
+    val uptimeStatus: UptimeStatus?,
+    val uptimeStatusStartedAt: OffsetDateTime?,
+    val lastUptimeCheck: OffsetDateTime?,
+    val nextUptimeCheck: OffsetDateTime?,
+    val sslStatus: SslStatus?,
+    val sslStatusStartedAt: OffsetDateTime?,
+    val lastSSLCheck: OffsetDateTime?,
+    val nextSSLCheck: OffsetDateTime?,
+    val uptimeError: String?,
+    val sslError: String?,
+    val requestMethod: HttpMethod,
+    val latencyHistoryEnabled: Boolean,
+    val forceNoCache: Boolean,
+    val followRedirects: Boolean,
+    val crossOriginHeaderPropagation: Boolean,
+    val sslExpiryThreshold: Int,
+    val failureCountThreshold: Long,
+    val sslValidUntil: OffsetDateTime?,
+    val integrations: Set<String>,
+    val expectedStatusCodes: Set<Int>,
+    val responseTimeThresholdMillis: Int?,
+    val expectedKeyword: String?,
+    val expectedKeywordCaseSensitive: Boolean,
+    val expectedKeywordNegated: Boolean,
+    val requestHeaders: Map<String, String>,
+    val expectedHeaders: Map<String, String>,
+    val requestBody: String?,
+    val statusPages: Set<String>,
+    val inMaintenance: Boolean,
+    val maintenanceWindows: List<MaintenanceWindowSummarySchema>,
+) {
+    companion object {
+        fun fromDto(dto: HttpMonitorDetailsDto) =
+            HttpMonitorDetailsSchema(
+                id = dto.id,
+                name = dto.name,
+                url = dto.url.toString(),
+                sensitiveUrl = dto.sensitiveUrl,
+                uptimeCheckInterval = dto.uptimeCheckInterval,
+                enabled = dto.enabled,
+                sslCheckEnabled = dto.sslCheckEnabled,
+                createdAt = dto.createdAt,
+                updatedAt = dto.updatedAt,
+                category = dto.category,
+                uptimeStatus = dto.uptimeStatus,
+                uptimeStatusStartedAt = dto.uptimeStatusStartedAt,
+                lastUptimeCheck = dto.lastUptimeCheck,
+                nextUptimeCheck = dto.nextUptimeCheck,
+                sslStatus = dto.sslStatus,
+                sslStatusStartedAt = dto.sslStatusStartedAt,
+                lastSSLCheck = dto.lastSSLCheck,
+                nextSSLCheck = dto.nextSSLCheck,
+                uptimeError = dto.uptimeError,
+                sslError = dto.sslError,
+                requestMethod = dto.requestMethod,
+                latencyHistoryEnabled = dto.latencyHistoryEnabled,
+                forceNoCache = dto.forceNoCache,
+                followRedirects = dto.followRedirects,
+                crossOriginHeaderPropagation = dto.crossOriginHeaderPropagation,
+                sslExpiryThreshold = dto.sslExpiryThreshold,
+                failureCountThreshold = dto.failureCountThreshold,
+                sslValidUntil = dto.sslValidUntil,
+                integrations = dto.integrations.map { it.toString() }.toSet(),
+                expectedStatusCodes = dto.expectedStatusCodes,
+                responseTimeThresholdMillis = dto.responseTimeThresholdMillis,
+                expectedKeyword = dto.expectedKeyword,
+                expectedKeywordCaseSensitive = dto.expectedKeywordCaseSensitive,
+                expectedKeywordNegated = dto.expectedKeywordNegated,
+                requestHeaders = dto.requestHeaders,
+                expectedHeaders = dto.expectedHeaders,
+                requestBody = dto.requestBody,
+                statusPages = dto.statusPages,
+                inMaintenance = dto.inMaintenance,
+                maintenanceWindows = dto.maintenanceWindows.map { MaintenanceWindowSummarySchema.fromDto(it) },
+            )
     }
 }
 
@@ -146,6 +240,12 @@ data class HttpMonitorSummarySchema(
     }
 }
 
+@JsonSchema
+@Introspected
+data class HttpMonitorListSchema(
+    val monitors: List<HttpMonitorSummarySchema>,
+)
+
 @Introspected
 @JsonSchema
 data class HttpMonitorCreatorSchema(
@@ -162,6 +262,7 @@ data class HttpMonitorCreatorSchema(
     val latencyHistoryEnabled: Boolean?,
     val forceNoCache: Boolean?,
     val followRedirects: Boolean?,
+    val crossOriginHeaderPropagation: Boolean?,
     @get:PositiveOrZero
     val sslExpiryThreshold: Int?,
     val integrations: List<String>?,
@@ -191,6 +292,8 @@ data class HttpMonitorCreatorSchema(
         latencyHistoryEnabled = latencyHistoryEnabled ?: HttpMonitorDefaults.LATENCY_HISTORY_ENABLED,
         forceNoCache = forceNoCache ?: HttpMonitorDefaults.FORCE_NO_CACHE,
         followRedirects = followRedirects ?: HttpMonitorDefaults.FOLLOW_REDIRECTS,
+        crossOriginHeaderPropagation = crossOriginHeaderPropagation
+            ?: HttpMonitorDefaults.CROSS_ORIGIN_HEADER_PROPAGATION,
         sslExpiryThreshold = sslExpiryThreshold ?: HttpMonitorDefaults.SSL_EXPIRY_THRESHOLD_DAYS,
         integrations = integrations,
         expectedStatusCodes = expectedStatusCodes.orEmpty(),

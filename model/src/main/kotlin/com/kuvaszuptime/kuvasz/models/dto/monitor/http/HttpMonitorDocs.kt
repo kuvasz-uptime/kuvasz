@@ -16,6 +16,10 @@ object HttpMonitorDocs {
     const val LATENCY_HISTORY_ENABLED = "Whether latency history is enabled for the monitor"
     const val FORCE_NO_CACHE = "Whether to send a force no-cache headers in the request"
     const val FOLLOW_REDIRECTS = "Whether to follow redirects during the uptime check"
+    const val CROSS_ORIGIN_HEADER_PROPAGATION =
+        "Whether to send the custom request headers to a redirect target whose origin (scheme, host and port) " +
+            "differs from the origin of the monitored URL. If false, the custom request headers are withheld from " +
+            "such redirect targets."
     const val EXPECTED_STATUS_CODES =
         "List of expected HTTP status codes for the monitor. If the response code is not in this list, the monitor " +
             "will be marked as DOWN. By default, every 2xx status will be considered as UP. 1xx, 2xx, 3xx and 4xx " +

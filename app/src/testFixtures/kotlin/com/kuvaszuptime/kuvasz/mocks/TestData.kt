@@ -64,6 +64,7 @@ fun createHttpMonitor(
     latencyHistoryEnabled: Boolean = true,
     forceNoCache: Boolean = true,
     followRedirects: Boolean = true,
+    crossOriginHeaderPropagation: Boolean = false,
     sslExpiryThreshold: Int = 30,
     integrations: List<IntegrationID> = emptyList(),
     expectedStatusCodes: Set<Int> = emptySet(),
@@ -90,6 +91,7 @@ fun createHttpMonitor(
         .setMetricsHistoryEnabled(latencyHistoryEnabled)
         .setForceNoCache(forceNoCache)
         .setFollowRedirects(followRedirects)
+        .setCrossOriginHeaderPropagation(crossOriginHeaderPropagation)
         .setSslExpiryThreshold(sslExpiryThreshold)
         .setIntegrations(integrations.toTypedArray())
         .setExpectedStatusCodes(expectedStatusCodes.toTypedArray())

@@ -137,6 +137,7 @@ class MonitorImporterTest(
                 val httpMonitor = HttpMonitorImportAdapter(
                     HttpMonitorExportDto(
                         name = "persisted-http",
+                        crossOriginHeaderPropagation = true,
                         url = "https://example.com",
                         sensitiveUrl = false,
                         uptimeCheckInterval = 60,
@@ -166,6 +167,7 @@ class MonitorImporterTest(
                     result.monitorType shouldBe MonitorType.HTTP_SSL
                     result.receivedCnt shouldBe 1
                     httpMonitorRepository.findByName("persisted-http").shouldNotBeNull()
+                        .crossOriginHeaderPropagation shouldBe true
                 }
             }
 

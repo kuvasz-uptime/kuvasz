@@ -8,6 +8,7 @@ http-monitors:
     latency-history-enabled: false
     force-no-cache: false
     follow-redirects: false
+    cross-origin-header-propagation: true
     ssl-expiry-threshold: 0
     failure-count-threshold: 3
   - name: test2

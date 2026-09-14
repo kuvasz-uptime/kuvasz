@@ -55,6 +55,7 @@ class MonitorRoundTripE2ETest(
                     sensitiveUrl = true,
                     uptimeCheckInterval = 23234,
                     monitorName = "roundtrip-http",
+                    crossOriginHeaderPropagation = true,
                     sslExpiryThreshold = 15,
                     failureCountThreshold = 5,
                     expectedStatusCodes = setOf(200, 404),
@@ -182,6 +183,7 @@ class MonitorRoundTripE2ETest(
                     restoredHttp.metricsHistoryEnabled shouldBe httpMonitor.metricsHistoryEnabled
                     restoredHttp.forceNoCache shouldBe httpMonitor.forceNoCache
                     restoredHttp.followRedirects shouldBe httpMonitor.followRedirects
+                    restoredHttp.crossOriginHeaderPropagation shouldBe httpMonitor.crossOriginHeaderPropagation
                     restoredHttp.sslExpiryThreshold shouldBe httpMonitor.sslExpiryThreshold
                     restoredHttp.failureCountThreshold shouldBe httpMonitor.failureCountThreshold
                     restoredHttp.expectedStatusCodes.toSet() shouldBe httpMonitor.expectedStatusCodes.toSet()

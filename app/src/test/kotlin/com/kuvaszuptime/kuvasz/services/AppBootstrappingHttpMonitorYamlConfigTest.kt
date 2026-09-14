@@ -99,6 +99,7 @@ class AppBootstrappingHttpMonitorYamlConfigTest : StringSpec({
             firstMonitor.metricsHistoryEnabled shouldBe false
             firstMonitor.forceNoCache shouldBe false
             firstMonitor.followRedirects shouldBe false
+            firstMonitor.crossOriginHeaderPropagation shouldBe true
             firstMonitor.sslExpiryThreshold shouldBe 0
             firstMonitor.failureCountThreshold shouldBe 3
 
@@ -117,10 +118,9 @@ class AppBootstrappingHttpMonitorYamlConfigTest : StringSpec({
             secondMonitor.metricsHistoryEnabled shouldBe HttpMonitorDefaults.LATENCY_HISTORY_ENABLED
             secondMonitor.forceNoCache shouldBe HttpMonitorDefaults.FORCE_NO_CACHE
             secondMonitor.followRedirects shouldBe HttpMonitorDefaults.FOLLOW_REDIRECTS
+            secondMonitor.crossOriginHeaderPropagation shouldBe HttpMonitorDefaults.CROSS_ORIGIN_HEADER_PROPAGATION
             secondMonitor.sslExpiryThreshold shouldBe 10
-            secondMonitor.integrations shouldBe arrayOf(
-                IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled")
-            )
+            secondMonitor.integrations shouldBe arrayOf(IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled"))
             scheduledUptimeChecks[secondMonitor.id].shouldNotBeNull()
             scheduledSSLChecks[secondMonitor.id].shouldBeNull()
         }
@@ -188,6 +188,8 @@ class AppBootstrappingHttpMonitorYamlConfigTest : StringSpec({
             firstMonitor.metricsHistoryEnabled shouldBe false
             firstMonitor.forceNoCache shouldBe false
             firstMonitor.followRedirects shouldBe false
+            // Not set in the changed config anymore, so it falls back to the default
+            firstMonitor.crossOriginHeaderPropagation shouldBe HttpMonitorDefaults.CROSS_ORIGIN_HEADER_PROPAGATION
             firstMonitor.sslExpiryThreshold shouldBe 15
             firstMonitor.failureCountThreshold shouldBe 2
             firstMonitor.expectedStatusCodes shouldContainExactlyInAnyOrder arrayOf(200, 201)
@@ -223,6 +225,7 @@ class AppBootstrappingHttpMonitorYamlConfigTest : StringSpec({
             secondMonitor.metricsHistoryEnabled shouldBe HttpMonitorDefaults.LATENCY_HISTORY_ENABLED
             secondMonitor.forceNoCache shouldBe HttpMonitorDefaults.FORCE_NO_CACHE
             secondMonitor.followRedirects shouldBe HttpMonitorDefaults.FOLLOW_REDIRECTS
+            secondMonitor.crossOriginHeaderPropagation shouldBe HttpMonitorDefaults.CROSS_ORIGIN_HEADER_PROPAGATION
             secondMonitor.updatedAt.shouldNotBeNull() shouldBeAfter secondMonitor.createdAt
 
             scheduledUptimeChecks[secondMonitor.id].shouldNotBeNull()

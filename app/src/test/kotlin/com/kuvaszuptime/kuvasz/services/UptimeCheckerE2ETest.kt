@@ -48,6 +48,8 @@ class UptimeCheckerE2ETest(
     init {
         lateinit var mockServer: ClientAndServer
         val mockServerUrl = "http://localhost:1080"
+        // The same mock server, reached through a host that differs from the one of the monitored URLs
+        val otherHostMockServerUrl = "http://127.0.0.1:1080"
 
         beforeSpec {
             mockServer = ClientAndServer.startClientAndServer(1080)
@@ -550,6 +552,89 @@ class UptimeCheckerE2ETest(
                     redirectSubscriber.awaitCount(maxRedirects).values().size shouldBe maxRedirects
                     // The hop right after the limit must never be requested
                     mockServer.verifyRequest(getRequest("/hop-${maxRedirects + 1}"), exactly = 0)
+                }
+            }
+
+            `when`("it checks a monitor that is redirected to a different origin - header propagation is disabled") {
+                val monitor = createHttpMonitor(
+                    repository = monitorRepository,
+                    url = "$mockServerUrl/some-path",
+                    requestMethod = HttpMethod.GET,
+                    followRedirects = true,
+                    crossOriginHeaderPropagation = false,
+                    requestHeaders = mapOf(SECRET_HEADER to SECRET_HEADER_VALUE),
+                )
+                val upSubscriber = TestSubscriber<HttpMonitorUpEvent>()
+                eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
+
+                val originalRequest = getRequest("/some-path").withHeader(SECRET_HEADER, SECRET_HEADER_VALUE)
+                val sameHostRequest = getRequest("/same-host-path").withHeader(SECRET_HEADER, SECRET_HEADER_VALUE)
+                val otherHostRequest = getRequest("/other-host-path").withHeader(not(SECRET_HEADER), string(".*"))
+
+                mockServer.`when`(originalRequest).respond(
+                    response()
+                        .withStatusCode(HttpStatus.FOUND.code)
+                        .withHeader(HttpHeaders.LOCATION, "$mockServerUrl/same-host-path")
+                )
+                mockServer.`when`(sameHostRequest).respond(
+                    response()
+                        .withStatusCode(HttpStatus.FOUND.code)
+                        .withHeader(HttpHeaders.LOCATION, "$otherHostMockServerUrl/other-host-path")
+                )
+                mockServer.`when`(otherHostRequest).respond(
+                    response()
+                        .withStatusCode(HttpStatus.OK.code)
+                )
+
+                uptimeChecker.check(monitor)
+
+                then("it should send the custom headers only to the origin of the monitored URL") {
+                    val expectedUpEvent = upSubscriber.awaitCount(1).values().first()
+
+                    expectedUpEvent.status shouldBe HttpStatus.OK
+                    expectedUpEvent.monitor.id shouldBe monitor.id
+
+                    mockServer.verifyRequest(originalRequest)
+                    mockServer.verifyRequest(sameHostRequest)
+                    mockServer.verifyRequest(otherHostRequest)
+                }
+            }
+
+            `when`("it checks a monitor that is redirected to a different origin - header propagation is enabled") {
+                val monitor = createHttpMonitor(
+                    repository = monitorRepository,
+                    url = "$mockServerUrl/some-path",
+                    requestMethod = HttpMethod.GET,
+                    followRedirects = true,
+                    crossOriginHeaderPropagation = true,
+                    requestHeaders = mapOf(SECRET_HEADER to SECRET_HEADER_VALUE),
+                )
+                val upSubscriber = TestSubscriber<HttpMonitorUpEvent>()
+                eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
+
+                val originalRequest = getRequest("/some-path").withHeader(SECRET_HEADER, SECRET_HEADER_VALUE)
+                val otherHostRequest = getRequest("/other-host-path").withHeader(SECRET_HEADER, SECRET_HEADER_VALUE)
+
+                mockServer.`when`(originalRequest).respond(
+                    response()
+                        .withStatusCode(HttpStatus.FOUND.code)
+                        .withHeader(HttpHeaders.LOCATION, "$otherHostMockServerUrl/other-host-path")
+                )
+                mockServer.`when`(otherHostRequest).respond(
+                    response()
+                        .withStatusCode(HttpStatus.OK.code)
+                )
+
+                uptimeChecker.check(monitor)
+
+                then("it should send the custom headers to the other origin as well") {
+                    val expectedUpEvent = upSubscriber.awaitCount(1).values().first()
+
+                    expectedUpEvent.status shouldBe HttpStatus.OK
+                    expectedUpEvent.monitor.id shouldBe monitor.id
+
+                    mockServer.verifyRequest(originalRequest)
+                    mockServer.verifyRequest(otherHostRequest)
                 }
             }
 
@@ -1566,6 +1651,9 @@ class UptimeCheckerE2ETest(
         }
     }
 }
+
+private const val SECRET_HEADER = "X-Secret-Token"
+private const val SECRET_HEADER_VALUE = "super-secret-value"
 
 private fun getRequest(path: String) =
     request()

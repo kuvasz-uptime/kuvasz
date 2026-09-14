@@ -59,6 +59,8 @@ data class HttpMonitorDetailsDto(
     val forceNoCache: Boolean,
     @param:Schema(description = HttpMonitorDocs.FOLLOW_REDIRECTS, required = true)
     val followRedirects: Boolean,
+    @param:Schema(description = HttpMonitorDocs.CROSS_ORIGIN_HEADER_PROPAGATION, required = true)
+    val crossOriginHeaderPropagation: Boolean,
     @param:Schema(description = HttpMonitorDocs.SSL_EXPIRY_THRESHOLD, required = true)
     val sslExpiryThreshold: Int,
     @param:Schema(description = MonitorDocs.FAILURE_COUNT_THRESHOLD, required = true)

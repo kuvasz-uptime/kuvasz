@@ -167,6 +167,7 @@ class HttpMonitorControllerTest(
                     responseItem.latencyHistoryEnabled shouldBe true
                     responseItem.forceNoCache shouldBe true
                     responseItem.followRedirects shouldBe true
+                    responseItem.crossOriginHeaderPropagation shouldBe false
                     responseItem.sslExpiryThreshold shouldBe monitor.sslExpiryThreshold
                     responseItem.failureCountThreshold shouldBe monitor.failureCountThreshold
                     responseItem.sslValidUntil shouldBe null
@@ -322,6 +323,7 @@ class HttpMonitorControllerTest(
                     responseItem.latencyHistoryEnabled shouldBe true
                     responseItem.forceNoCache shouldBe true
                     responseItem.followRedirects shouldBe true
+                    responseItem.crossOriginHeaderPropagation shouldBe false
                     responseItem.sslExpiryThreshold shouldBe enabledMonitor.sslExpiryThreshold
                     responseItem.failureCountThreshold shouldBe enabledMonitor.failureCountThreshold
                     responseItem.sslValidUntil shouldBe null
@@ -357,6 +359,7 @@ class HttpMonitorControllerTest(
                     responseItem.latencyHistoryEnabled shouldBe true
                     responseItem.forceNoCache shouldBe true
                     responseItem.followRedirects shouldBe true
+                    responseItem.crossOriginHeaderPropagation shouldBe false
                     responseItem.sslExpiryThreshold shouldBe disabledMonitor.sslExpiryThreshold
                     responseItem.failureCountThreshold shouldBe disabledMonitor.failureCountThreshold
                     responseItem.sslValidUntil shouldBe null
@@ -670,6 +673,7 @@ class HttpMonitorControllerTest(
                     latencyHistoryEnabled = true,
                     forceNoCache = false,
                     followRedirects = false,
+                    crossOriginHeaderPropagation = true,
                     sslExpiryThreshold = 15,
                     failureCountThreshold = 2,
                     integrations = setUpIntegrations,
@@ -735,6 +739,7 @@ class HttpMonitorControllerTest(
                     response.latencyHistoryEnabled shouldBe true
                     response.forceNoCache shouldBe false
                     response.followRedirects shouldBe false
+                    response.crossOriginHeaderPropagation shouldBe true
                     response.sslExpiryThreshold shouldBe 15
                     response.failureCountThreshold shouldBe 2
                     response.sslValidUntil shouldBe sslExpiryDate
@@ -1139,6 +1144,8 @@ class HttpMonitorControllerTest(
                     monitorInDb.forceNoCache shouldBe createdMonitor.forceNoCache
                     monitorInDb.followRedirects shouldBe true
                     monitorInDb.followRedirects shouldBe createdMonitor.followRedirects
+                    monitorInDb.crossOriginHeaderPropagation shouldBe false
+                    monitorInDb.crossOriginHeaderPropagation shouldBe createdMonitor.crossOriginHeaderPropagation
                     monitorInDb.sslExpiryThreshold shouldBe 30
                     monitorInDb.sslExpiryThreshold shouldBe createdMonitor.sslExpiryThreshold
                     monitorInDb.failureCountThreshold shouldBe 1
@@ -1177,6 +1184,7 @@ class HttpMonitorControllerTest(
                     latencyHistoryEnabled = false,
                     forceNoCache = false,
                     followRedirects = false,
+                    crossOriginHeaderPropagation = true,
                     sslExpiryThreshold = 20,
                     integrations = setUpIntegrations.map { it.toString() },
                     expectedStatusCodes = listOf(200, 201, 200),
@@ -1216,6 +1224,8 @@ class HttpMonitorControllerTest(
                     monitorInDb.forceNoCache shouldBe createdMonitor.forceNoCache
                     monitorInDb.followRedirects shouldBe false
                     monitorInDb.followRedirects shouldBe createdMonitor.followRedirects
+                    monitorInDb.crossOriginHeaderPropagation shouldBe true
+                    monitorInDb.crossOriginHeaderPropagation shouldBe createdMonitor.crossOriginHeaderPropagation
                     monitorInDb.sslExpiryThreshold shouldBe 20
                     monitorInDb.sslExpiryThreshold shouldBe createdMonitor.sslExpiryThreshold
                     monitorInDb.failureCountThreshold shouldBe 4
@@ -1729,6 +1739,7 @@ class HttpMonitorControllerTest(
                     .put(HttpMonitorUpdateDto::latencyHistoryEnabled.name, false)
                     .put(HttpMonitorUpdateDto::forceNoCache.name, false)
                     .put(HttpMonitorUpdateDto::followRedirects.name, false)
+                    .put(HttpMonitorUpdateDto::crossOriginHeaderPropagation.name, true)
                     .put(HttpMonitorUpdateDto::name.name, "updated_test_monitor")
                     .put(HttpMonitorUpdateDto::url.name, "https://updated-url.com")
                     .put(HttpMonitorUpdateDto::uptimeCheckInterval.name, "5000")
@@ -1780,6 +1791,7 @@ class HttpMonitorControllerTest(
                     monitorInDb.metricsHistoryEnabled shouldBe false
                     monitorInDb.forceNoCache shouldBe false
                     monitorInDb.followRedirects shouldBe false
+                    monitorInDb.crossOriginHeaderPropagation shouldBe true
                     monitorInDb.sslExpiryThreshold shouldBe 20
                     monitorInDb.failureCountThreshold shouldBe 2
                     monitorInDb.integrations.shouldNotBeNull() shouldContainExactlyInAnyOrder
@@ -1812,6 +1824,7 @@ class HttpMonitorControllerTest(
                     url = "https://valid-url.com",
                     uptimeCheckInterval = 6000,
                     enabled = false,
+                    crossOriginHeaderPropagation = true,
                 )
                 val createdMonitor = monitorClient.createMonitor(createDto)
                 checkScheduler.getScheduledUptimeChecks().shouldBeEmpty()
@@ -1838,6 +1851,7 @@ class HttpMonitorControllerTest(
                     monitorInDb.metricsHistoryEnabled shouldBe false
                     monitorInDb.forceNoCache shouldBe createdMonitor.forceNoCache
                     monitorInDb.followRedirects shouldBe createdMonitor.followRedirects
+                    monitorInDb.crossOriginHeaderPropagation shouldBe true
                     monitorInDb.sslExpiryThreshold shouldBe createdMonitor.sslExpiryThreshold
 
                     checkScheduler.getScheduledUptimeChecks()[createdMonitor.id].shouldNotBeNull()

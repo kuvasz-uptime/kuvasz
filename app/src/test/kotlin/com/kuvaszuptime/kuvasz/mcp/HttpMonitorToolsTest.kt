@@ -65,6 +65,7 @@ class HttpMonitorToolsTest(
                 val monitor = createHttpMonitor(
                     httpMonitorRepository,
                     integrations = listOf(IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled")),
+                    crossOriginHeaderPropagation = true,
                 )
                 val response = callToolWithMcpClient(GET_HTTP_MONITOR_DETAILS, mapOf("monitorId" to monitor.id))
 
@@ -75,6 +76,7 @@ class HttpMonitorToolsTest(
                     details.id shouldBe monitor.id
                     details.name shouldBe monitor.name
                     details.integrations shouldHaveSingleElement "slack:test_implicitly_enabled"
+                    details.crossOriginHeaderPropagation shouldBe true
 
                     response.contentAs<HttpMonitorDetailsSchema>() shouldBe details
                 }
@@ -132,9 +134,31 @@ class HttpMonitorToolsTest(
                         url shouldBe "https://example.com"
                         uptimeCheckInterval shouldBe 60
                         enabled shouldBe true
+                        crossOriginHeaderPropagation shouldBe false
 
                         response.contentAs<HttpMonitorSchema>() shouldBe this
                     }
+                }
+            }
+
+            `when`("create-http-monitor is called with cross-origin header propagation enabled") {
+                val response = callToolWithMcpClient(
+                    CREATE_HTTP_MONITOR,
+                    mapOf(
+                        "name" to "mcp-created-propagating-monitor",
+                        "url" to "https://example.com",
+                        "uptimeCheckInterval" to 60,
+                        "crossOriginHeaderPropagation" to true,
+                    )
+                )
+
+                then("it should create the monitor with the given value") {
+                    response.isError shouldBe false
+
+                    response.structuredContentAs<HttpMonitorSchema>().shouldNotBeNull()
+                        .crossOriginHeaderPropagation shouldBe true
+                    httpMonitorRepository.findByName("mcp-created-propagating-monitor").shouldNotBeNull()
+                        .crossOriginHeaderPropagation shouldBe true
                 }
             }
 

@@ -53,6 +53,12 @@ data class HttpMonitorCreateDto(
     )
     override val followRedirects: Boolean = HttpMonitorDefaults.FOLLOW_REDIRECTS,
     @param:Schema(
+        description = HttpMonitorDocs.CROSS_ORIGIN_HEADER_PROPAGATION,
+        required = false,
+        defaultValue = HttpMonitorDefaults.CROSS_ORIGIN_HEADER_PROPAGATION.toString()
+    )
+    override val crossOriginHeaderPropagation: Boolean = HttpMonitorDefaults.CROSS_ORIGIN_HEADER_PROPAGATION,
+    @param:Schema(
         description = HttpMonitorDocs.SSL_EXPIRY_THRESHOLD,
         required = false,
         defaultValue = HttpMonitorDefaults.SSL_EXPIRY_THRESHOLD_DAYS.toString()

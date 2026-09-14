@@ -847,6 +847,7 @@ const upsertHttpMonitorForm = (
             this.latencyHistoryEnabled = (source?.latencyHistoryEnabled != null ? source?.latencyHistoryEnabled : true);
             this.forceNoCache = (source?.forceNoCache != null ? source?.forceNoCache : true);
             this.followRedirects = (source?.followRedirects != null ? source?.followRedirects : true);
+            this.crossOriginHeaderPropagation = (source?.crossOriginHeaderPropagation != null ? source?.crossOriginHeaderPropagation : false);
             this.requestMethod = source?.requestMethod || 'GET';
             this.integrations = source?.integrations || [];
             this.category = source?.category || null;
@@ -1046,6 +1047,7 @@ const upsertHttpMonitorForm = (
                     failureCountThreshold: this.failureCountThreshold,
                     forceNoCache: this.forceNoCache,
                     followRedirects: this.followRedirects,
+                    crossOriginHeaderPropagation: this.crossOriginHeaderPropagation,
                     uptimeCheckInterval: this.uptimeCheckInterval,
                     requestMethod: this.requestMethod,
                     integrations: this.integrations,

@@ -37,6 +37,7 @@ interface HttpMonitorCreator : MonitorCreator<HttpMonitorRecord> {
     val latencyHistoryEnabled: Boolean
     val forceNoCache: Boolean
     val followRedirects: Boolean
+    val crossOriginHeaderPropagation: Boolean
 
     @get:NotNull(message = MonitorValidationMessages.SSL_EXPIRY_THRESHOLD_NOT_NULL)
     @get:PositiveOrZero(message = MonitorValidationMessages.SSL_EXPIRY_THRESHOLD_POSITIVE_OR_ZERO)
@@ -82,6 +83,7 @@ interface HttpMonitorCreator : MonitorCreator<HttpMonitorRecord> {
             .setMetricsHistoryEnabled(latencyHistoryEnabled)
             .setForceNoCache(forceNoCache)
             .setFollowRedirects(followRedirects)
+            .setCrossOriginHeaderPropagation(crossOriginHeaderPropagation)
             .setSslExpiryThreshold(sslExpiryThreshold)
             .setIntegrations(validatedIntegrations.toTypedArray())
             .setExpectedStatusCodes(expectedStatusCodes?.toSet()?.toTypedArray().orEmpty())

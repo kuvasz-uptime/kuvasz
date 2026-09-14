@@ -11,6 +11,14 @@ Both selectors are **additive** with the explicit monitor list, and a category n
 
 The monitor lists themselves can be **filtered by category** too, on the Web UI and through the REST API alike.
 
+### Security
+
+- **Custom request headers were sent to every origin a redirect pointed to**: an HTTP monitor that follows redirects attached its [**request headers**](management/http-monitors.md#request-headers) to **every hop** of the redirect chain, so a secret in them - an `Authorization` header or an API key, for example - reached whatever origin the monitored URL (or any later hop) redirected to, even over plain HTTP. From now on, the custom request headers are **only sent to the origin (scheme, host and port) of the monitored URL**, and they're withheld from every hop on a different origin. The default headers added by _Kuvasz_ and the request body are not affected. If a monitor really needs its headers on another origin, the new [**cross-origin header propagation**](management/http-monitors.md#cross-origin-header-propagation) option restores the previous behavior. It's available on the Web UI, through the REST API, over MCP and in the YAML config (`cross-origin-header-propagation`) as well.
+
+!!! warning "Check your monitors that are redirected to another origin"
+
+    The option is **disabled for every monitor**, including the already existing ones, the ones defined in the YAML config and the ones restored from an older backup. If a monitor relies on sending its custom headers to a different origin (e.g. it's redirected from `http` to `https`, or to another domain), it may **go DOWN after the upgrade**. Enable the option on it explicitly to restore the previous behavior.
+
 ## 4.3.2 <small>2026-09-04</small> { id="4.3.2" data-toc-label="4.3.2" }
 
 ### Fixes
