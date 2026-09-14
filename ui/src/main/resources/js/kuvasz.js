@@ -149,7 +149,7 @@ const apiRequest = (
     }
     return fetch(url, init).then(response => {
         if (response.ok) {
-            onSuccess(response);
+            return onSuccess(response);
         } else {
             onError();
             console.error(errorMessage, response.statusText);
@@ -217,14 +217,26 @@ const refreshDashboard = () => {
 // --------- Alpine.js x-data ---------
 
 // Shared list-row component for every monitor type; only the API binding and list refresh differ
-const monitorListItem = (api, refreshList) => (monitorId, isMonitorEnabled, assignedToStatusPage, clonedName) => ({
+const monitorListItem = (api, refreshList) => (
     monitorId,
     isMonitorEnabled,
     assignedToStatusPage,
     clonedName,
+    editTitle,
+    isNameLocked
+) => ({
+    monitorId,
+    isMonitorEnabled,
+    assignedToStatusPage,
+    clonedName,
+    editTitle,
+    isNameLocked,
     isRequestLoading: false,
     cloneMonitor() {
         this.$dispatch('clone-monitor', {id: this.monitorId, name: this.clonedName});
+    },
+    editMonitor() {
+        this.$dispatch('edit-monitor', {id: this.monitorId, title: this.editTitle, nameLocked: this.isNameLocked});
     },
     toggleMonitor() {
         api.patch(
@@ -788,6 +800,7 @@ const upsertForm = ({entity, errorMessages, pagePath, entityLabel}) => ({
     isRequestLoading: false,
     formError: null,
     isUpdate: !!entity,
+    entityId: entity?.id ?? null,
 
     init() {
         this.resetState();
@@ -812,7 +825,7 @@ const upsertForm = ({entity, errorMessages, pagePath, entityLabel}) => ({
         const apiPath = '/api/v2' + pagePath;
         try {
             this.isRequestLoading = true;
-            const response = await fetch(this.isUpdate ? `${apiPath}/${entity.id}` : apiPath, {
+            const response = await fetch(this.isUpdate ? `${apiPath}/${this.entityId}` : apiPath, {
                 method: this.isUpdate ? 'PATCH' : 'POST',
                 headers: jsonContentHeaders,
                 body: JSON.stringify(this.buildRequestBody()),
@@ -842,13 +855,24 @@ const upsertForm = ({entity, errorMessages, pagePath, entityLabel}) => ({
 });
 
 // Shared by every monitor type, the forms provide populateTypeFields, validateTypeFields and typeRequestBody
-const monitorForm = ({api, pagePath, monitor, errorMessages, categorySelectId, globalIntegrationCount}) => ({
+const monitorForm = ({api, pagePath, monitor, errorMessages, categorySelectId, isNameLocked, globalIntegrationCount}) => ({
     ...upsertForm({entity: monitor, errorMessages, pagePath, entityLabel: 'monitor'}),
     isCloning: false,
     globalIntegrationCount: globalIntegrationCount || 0,
+    // The title of the modal, only known for a monitor opened from a list row
+    editTitle: null,
+    // The name of a monitor can't be changed while it's on a status page that is read-only
+    isNameLocked: !!isNameLocked,
 
     resetState() {
+        this.setEditTarget(monitor || null, null, !!isNameLocked);
         this.populateFrom(monitor || null);
+    },
+
+    // Points the form to the monitor it saves: the one it was rendered for (none for a create form), or the one opened
+    // from a list row by editFrom
+    setEditTarget(target, editTitle, isNameLocked) {
+        Object.assign(this, {isUpdate: !!target, entityId: target?.id ?? null, editTitle, isNameLocked});
     },
 
     populateFrom(source) {
@@ -862,18 +886,31 @@ const monitorForm = ({api, pagePath, monitor, errorMessages, categorySelectId, g
         this.formError = null;
     },
 
-    cloneFrom(monitorId, clonedName) {
-        api.get(
+    // Loads a monitor into the form, keeping the loading overlay up meanwhile
+    loadMonitor(monitorId, onLoaded) {
+        return api.get(
             monitorId,
             () => this.isCloning = true,
             async (response) => {
-                this.populateFrom(await response.json());
-                this.name = clonedName;
-                this.regenerateUniqueFields();
+                const source = await response.json();
+                this.populateFrom(source);
+                onLoaded(source);
                 this.isCloning = false;
             },
             () => this.isCloning = false
         );
+    },
+
+    cloneFrom(monitorId, clonedName) {
+        return this.loadMonitor(monitorId, () => {
+            this.name = clonedName;
+            this.regenerateUniqueFields();
+        });
+    },
+
+    // Loads the monitor of a list row, so the modal of the list updates it instead of creating a new one
+    editFrom(monitorId, title, isNameLocked) {
+        return this.loadMonitor(monitorId, (source) => this.setEditTarget(source, title, isNameLocked));
     },
 
     regenerateUniqueFields() {
@@ -925,6 +962,7 @@ const upsertHttpMonitorForm = (
     monitor,
     errorMessages,
     categorySelectId,
+    isNameLocked,
     acceptedStatusCodeSelectId,
     supportedHttpStatusCodes,
     globalIntegrationCount
@@ -935,6 +973,7 @@ const upsertHttpMonitorForm = (
         monitor,
         errorMessages,
         categorySelectId,
+        isNameLocked,
         globalIntegrationCount,
     }),
     supportedHttpStatusCodes: supportedHttpStatusCodes || [],
@@ -1086,13 +1125,14 @@ const upsertHttpMonitorForm = (
     },
 });
 
-const upsertPushMonitorForm = (monitor, errorMessages, categorySelectId, globalIntegrationCount) => ({
+const upsertPushMonitorForm = (monitor, errorMessages, categorySelectId, isNameLocked, globalIntegrationCount) => ({
     ...monitorForm({
         api: pushMonitorApi,
         pagePath: '/push-monitors',
         monitor,
         errorMessages,
         categorySelectId,
+        isNameLocked,
         globalIntegrationCount,
     }),
 
@@ -1152,13 +1192,14 @@ const upsertPushMonitorForm = (monitor, errorMessages, categorySelectId, globalI
     },
 });
 
-const upsertIcmpMonitorForm = (monitor, errorMessages, categorySelectId, globalIntegrationCount) => ({
+const upsertIcmpMonitorForm = (monitor, errorMessages, categorySelectId, isNameLocked, globalIntegrationCount) => ({
     ...monitorForm({
         api: icmpMonitorApi,
         pagePath: '/icmp-monitors',
         monitor,
         errorMessages,
         categorySelectId,
+        isNameLocked,
         globalIntegrationCount,
     }),
 
@@ -1213,13 +1254,14 @@ const upsertIcmpMonitorForm = (monitor, errorMessages, categorySelectId, globalI
     },
 });
 
-const upsertTcpMonitorForm = (monitor, errorMessages, categorySelectId, globalIntegrationCount) => ({
+const upsertTcpMonitorForm = (monitor, errorMessages, categorySelectId, isNameLocked, globalIntegrationCount) => ({
     ...monitorForm({
         api: tcpMonitorApi,
         pagePath: '/tcp-monitors',
         monitor,
         errorMessages,
         categorySelectId,
+        isNameLocked,
         globalIntegrationCount,
     }),
 
@@ -1275,13 +1317,14 @@ const upsertTcpMonitorForm = (monitor, errorMessages, categorySelectId, globalIn
     },
 });
 
-const upsertDnsMonitorForm = (monitor, errorMessages, categorySelectId, globalIntegrationCount) => ({
+const upsertDnsMonitorForm = (monitor, errorMessages, categorySelectId, isNameLocked, globalIntegrationCount) => ({
     ...monitorForm({
         api: dnsMonitorApi,
         pagePath: '/dns-monitors',
         monitor,
         errorMessages,
         categorySelectId,
+        isNameLocked,
         globalIntegrationCount,
     }),
 
@@ -2042,6 +2085,7 @@ if (typeof module !== 'undefined' && module.exports) {
         resetCategorySelect,
         resetCategoryMultiSelect,
         // Alpine x-data component factories
+        monitorListItem,
         upsertHttpMonitorForm,
         upsertPushMonitorForm,
         upsertIcmpMonitorForm,

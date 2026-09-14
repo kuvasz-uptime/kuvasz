@@ -160,9 +160,7 @@ private fun HtmlBlockTag.monitorsHeader(
                 }
             }
         }
-        if (!isReadOnlyMode) {
-            upsertModal(createModalId)
-        }
+        upsertModal(createModalId)
     }
 }
 

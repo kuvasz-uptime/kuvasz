@@ -2,7 +2,9 @@
 
 ### Features
 
-**Monitor categories** arrived: an optional, free-form [**category**](management/http-monitors.md#category) on every monitor — a product, a service, a team, whatever you group by. It doesn't just label them, it **selects** them:
+**Monitor categories**
+
+Every monitor can have an optional, free-form [**category**](management/http-monitors.md#category) now — a product, a service, a team, whatever you group by. It doesn't just label them, it **selects** them:
 
 - [**Status pages**](management/status-pages.md#categories) can be defined by category instead of listing their monitors, so a page follows your monitors as you tag and re-tag them. Categorized monitors are rendered in one section per category, each with a card showing its aggregated status and a breakdown of its monitors. [**Display categories**](management/status-pages.md#display-categories_1) turns that grouping off if you'd rather not reveal it publicly.
 - [**Maintenance windows**](management/maintenance-windows.md#categories) can cover a whole category, so you put an entire product into maintenance without enumerating what is in it.
@@ -11,11 +13,21 @@ Both selectors are **additive** with the explicit monitor list, and a category n
 
 The monitor lists themselves can be **filtered by category** too, on the Web UI and through the REST API alike.
 
+---
+
+**Metrics charts**
+
 The **metrics** on the monitor details pages got some love as well:
 
 - The **incidents** that started or got resolved in the displayed time range are **marked on the charts**, and hovering a marker reveals the details of the incident.
 - The metrics can be displayed for a **selectable period**, from the last hour up to the last 30 days (the last day by default). Changing it refreshes the metrics in place, without reloading the page, and shows a loader until the metrics of the new period arrive.
 - The latency and the packet loss of **ICMP monitors** are drawn on a **single chart**, each of them with an axis of its own.
+
+---
+
+**Editing monitors from their lists**
+
+Every row of the monitor lists got a :material-cog-outline: **configure** button, which opens the settings of the monitor without leaving the list, and saving them brings you back to the very same list, keeping its category filter. Going through a bunch of monitors one after the other doesn't take a detour to their details pages anymore. The rows of the monitors configured via YAML - which are read-only on the UI - got a :material-eye-outline: button instead, showing their configuration.
 
 ### Security
 

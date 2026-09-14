@@ -14,6 +14,7 @@ const {
     fetchCategories,
     resetCategorySelect,
     resetCategoryMultiSelect,
+    monitorListItem,
     upsertHttpMonitorForm,
     upsertPushMonitorForm,
     upsertIcmpMonitorForm,
@@ -32,7 +33,7 @@ const {
 // --------- #1: isValidHttpHeaderName (regex) ---------
 
 test('isValidHttpHeaderName', () => {
-    const form = upsertHttpMonitorForm(null, {}, 'category-select', 'select', [], 0);
+    const form = upsertHttpMonitorForm(null, {}, 'category-select', false, 'select', [], 0);
     // Empty / nullish is treated as "no error"
     assert.equal(form.isValidHttpHeaderName(''), true);
     assert.equal(form.isValidHttpHeaderName(null), true);
@@ -524,7 +525,7 @@ test('ICMP validators enforce their numeric ranges', () => {
     const msgs = {
         packetCountInvalid: 'PC', timeoutSecondsInvalid: 'TS', packetLossThresholdInvalid: 'PL',
     };
-    const buildForm = () => upsertIcmpMonitorForm(null, msgs, 'category-select', 0);
+    const buildForm = () => upsertIcmpMonitorForm(null, msgs, 'category-select', false, 0);
 
     // packetCount: valid 1..10
     assertValidatorBoundaries(buildForm, 'packetCount', 'validatePacketCount', 'PC', [
@@ -544,7 +545,7 @@ test('TCP validators enforce port, timeout and the optional latency threshold', 
     const msgs = {
         portInvalid: 'PORT', timeoutMsInvalid: 'TS', latencyThresholdInvalid: 'LT',
     };
-    const buildForm = () => upsertTcpMonitorForm(null, msgs, 'category-select', 0);
+    const buildForm = () => upsertTcpMonitorForm(null, msgs, 'category-select', false, 0);
 
     // port: valid 1..65535
     assertValidatorBoundaries(buildForm, 'port', 'validatePort', 'PORT', [
@@ -564,7 +565,7 @@ test('Push validators enforce interval, grace period and client secret rules', (
     const msgs = {
         heartbeatIntervalInvalid: 'HB', gracePeriodInvalid: 'GP', clientSecretInvalid: 'CS',
     };
-    const buildForm = () => upsertPushMonitorForm(null, msgs, 'category-select', 0);
+    const buildForm = () => upsertPushMonitorForm(null, msgs, 'category-select', false, 0);
 
     // heartbeatInterval: minimum 10
     assertValidatorBoundaries(buildForm, 'heartbeatInterval', 'validateHeartbeatInterval', 'HB', [
@@ -583,7 +584,7 @@ test('Push validators enforce interval, grace period and client secret rules', (
 // --------- #5: populateFrom field mapping (shared by reset & clone) ---------
 
 test('HTTP populateFrom copies a source and falls back to defaults', () => {
-    const form = upsertHttpMonitorForm(null, {}, 'category-select', 'select', [], 0);
+    const form = upsertHttpMonitorForm(null, {}, 'category-select', false, 'select', [], 0);
 
     form.populateFrom({
         name: 'Src', url: 'https://example.com', sensitiveUrl: true, sslExpiryThreshold: 14,
@@ -643,7 +644,7 @@ test('HTTP populateFrom copies a source and falls back to defaults', () => {
 });
 
 test('Push populateFrom copies a source and falls back to defaults', () => {
-    const form = upsertPushMonitorForm(null, {}, 'category-select', 0);
+    const form = upsertPushMonitorForm(null, {}, 'category-select', false, 0);
 
     form.populateFrom({
         name: 'Src', heartbeatInterval: 30, gracePeriod: 5,
@@ -668,7 +669,7 @@ test('Push populateFrom copies a source and falls back to defaults', () => {
 });
 
 test('ICMP populateFrom copies a source and falls back to defaults', () => {
-    const form = upsertIcmpMonitorForm(null, {}, 'category-select', 0);
+    const form = upsertIcmpMonitorForm(null, {}, 'category-select', false, 0);
 
     form.populateFrom({
         name: 'Src', host: 'example.com', uptimeCheckInterval: 120, packetCount: 5,
@@ -698,7 +699,7 @@ test('ICMP populateFrom copies a source and falls back to defaults', () => {
 });
 
 test('TCP populateFrom copies a source and falls back to defaults', () => {
-    const form = upsertTcpMonitorForm(null, {}, 'category-select', 0);
+    const form = upsertTcpMonitorForm(null, {}, 'category-select', false, 0);
 
     form.populateFrom({
         name: 'Src', host: 'example.com', port: 5432, uptimeCheckInterval: 120,
@@ -751,7 +752,7 @@ test('DNS validators enforce resolver port, timeout and the optional latency thr
     const msgs = {
         resolverPortInvalid: 'PORT', timeoutMsInvalid: 'TS', latencyThresholdInvalid: 'LT',
     };
-    const buildForm = () => upsertDnsMonitorForm(null, msgs, 'category-select', 0);
+    const buildForm = () => upsertDnsMonitorForm(null, msgs, 'category-select', false, 0);
 
     // resolverPort: valid 1..65535
     assertValidatorBoundaries(buildForm, 'resolverPort', 'validateResolverPort', 'PORT', [
@@ -770,7 +771,7 @@ test('DNS validators enforce resolver port, timeout and the optional latency thr
 // --------- DNS: record matcher add/remove + regex validation ---------
 
 test('DNS validateNewMatcher rejects blank values and invalid regex, gates isMatcherAddable', () => {
-    const form = upsertDnsMonitorForm(null, {recordMatcherInvalid: 'RM'}, 'category-select', 0);
+    const form = upsertDnsMonitorForm(null, {recordMatcherInvalid: 'RM'}, 'category-select', false, 0);
     form.init();
 
     // Blank value is not addable, but not an error either
@@ -801,7 +802,7 @@ test('DNS validateNewMatcher rejects blank values and invalid regex, gates isMat
 });
 
 test('DNS addMatcher/removeMatcher mutate the recordMatchers list', () => {
-    const form = upsertDnsMonitorForm(null, {}, 'category-select', 0);
+    const form = upsertDnsMonitorForm(null, {}, 'category-select', false, 0);
     form.init();
 
     form.newMatcherRecordType = 'A';
@@ -825,7 +826,7 @@ test('DNS addMatcher/removeMatcher mutate the recordMatchers list', () => {
 });
 
 test('DNS addMatcher ignores a matcher that is already in the list', () => {
-    const form = upsertDnsMonitorForm(null, {}, 'category-select', 0);
+    const form = upsertDnsMonitorForm(null, {}, 'category-select', false, 0);
     form.init();
 
     const add = (recordType, matchType, value) => {
@@ -850,7 +851,7 @@ test('DNS addMatcher ignores a matcher that is already in the list', () => {
 });
 
 test('DNS validateResponseCodeMatchers conflicts when a non-NOERROR code has matchers', () => {
-    const form = upsertDnsMonitorForm(null, {responseCodeMatchersConflict: 'CONFLICT'}, 'category-select', 0);
+    const form = upsertDnsMonitorForm(null, {responseCodeMatchersConflict: 'CONFLICT'}, 'category-select', false, 0);
     form.init();
 
     // NOERROR + matchers is fine
@@ -873,7 +874,7 @@ test('DNS validateResponseCodeMatchers conflicts when a non-NOERROR code has mat
 // --------- DNS: populateFrom field mapping ---------
 
 test('DNS populateFrom copies a source and falls back to defaults', () => {
-    const form = upsertDnsMonitorForm(null, {}, 'category-select', 0);
+    const form = upsertDnsMonitorForm(null, {}, 'category-select', false, 0);
 
     form.populateFrom({
         name: 'Src', host: 'example.com', resolverHost: '8.8.8.8', resolverPort: 5353,
@@ -977,11 +978,11 @@ test('escapeHtml escapes every HTML special character and handles missing values
 
 test('monitor forms populate and reset the category', () => {
     const forms = [
-        upsertHttpMonitorForm(null, {}, 'category-select', 'select', [], 0),
-        upsertPushMonitorForm(null, {}, 'category-select', 0),
-        upsertIcmpMonitorForm(null, {}, 'category-select', 0),
-        upsertTcpMonitorForm(null, {}, 'category-select', 0),
-        upsertDnsMonitorForm(null, {}, 'category-select', 0),
+        upsertHttpMonitorForm(null, {}, 'category-select', false, 'select', [], 0),
+        upsertPushMonitorForm(null, {}, 'category-select', false, 0),
+        upsertIcmpMonitorForm(null, {}, 'category-select', false, 0),
+        upsertTcpMonitorForm(null, {}, 'category-select', false, 0),
+        upsertDnsMonitorForm(null, {}, 'category-select', false, 0),
     ];
     forms.forEach((form) => {
         form.populateFrom({category: 'Drive storage'});
@@ -992,7 +993,7 @@ test('monitor forms populate and reset the category', () => {
 });
 
 test('validateCategory flags categories longer than 100 characters', () => {
-    const form = upsertHttpMonitorForm(null, {categoryTooLong: 'too long'}, 'category-select', 'select', [], 0);
+    const form = upsertHttpMonitorForm(null, {categoryTooLong: 'too long'}, 'category-select', false, 'select', [], 0);
     form.populateFrom(null);
     form.category = 'a'.repeat(101);
     form.validateCategory();
@@ -1161,7 +1162,7 @@ const errorResponse = (status, body) => ({ok: false, status, statusText: 'Error'
 test('upsert creates a monitor and redirects to its page', async (t) => {
     const browser = stubBrowser(t);
     const requests = stubRequests(t, jsonResponse({id: 42}));
-    const form = upsertIcmpMonitorForm(null, {}, 'category-select', 0);
+    const form = upsertIcmpMonitorForm(null, {}, 'category-select', false, 0);
     form.populateFrom({name: 'ping', host: 'example.com', category: ' '});
 
     await form.upsert();
@@ -1182,7 +1183,7 @@ test('upsert updates an existing monitor without touching its enabled state and 
     const browser = stubBrowser(t);
     let isBodyRead = false;
     const requests = stubRequests(t, {ok: true, json: async () => { isBodyRead = true; return {id: 7}; }});
-    const form = upsertTcpMonitorForm({id: 7, name: 'db', host: 'db.local', port: '5432'}, {}, 'category-select', 0);
+    const form = upsertTcpMonitorForm({id: 7, name: 'db', host: 'db.local', port: '5432'}, {}, 'category-select', false, 0);
     form.resetState();
 
     await form.upsert();
@@ -1203,8 +1204,8 @@ test('upsert flags the conflicting fields of each entity', async (t) => {
     const messages = {
         nameAlreadyExists: 'NAME', nameOrClientSecretAlreadyExists: 'NAME_OR_SECRET', slugAlreadyExists: 'SLUG',
     };
-    const dnsForm = upsertDnsMonitorForm(null, messages, 'category-select', 0);
-    const pushForm = upsertPushMonitorForm(null, messages, 'category-select', 0);
+    const dnsForm = upsertDnsMonitorForm(null, messages, 'category-select', false, 0);
+    const pushForm = upsertPushMonitorForm(null, messages, 'category-select', false, 0);
     const statusPageForm = upsertStatusPageForm(null, messages, 'monitor-select', [], 'categories-select');
 
     for (const form of [dnsForm, pushForm, statusPageForm]) {
@@ -1227,7 +1228,7 @@ test('upsert shows the rejected name change of a monitor on its field, every oth
         errorResponse(400, {message: 'invalid window'}),
     );
     const messages = {nameCannotBeChanged: 'IMMUTABLE'};
-    const monitorForm = upsertHttpMonitorForm({id: 1, name: 'site'}, messages, 'category-select', 'select', [], 0);
+    const monitorForm = upsertHttpMonitorForm({id: 1, name: 'site'}, messages, 'category-select', false, 'select', [], 0);
     const maintenanceWindowForm = upsertMaintenanceWindowForm(null, messages, 'select', []);
 
     monitorForm.resetState();
@@ -1265,7 +1266,7 @@ test('upsert alerts on an unexpected response and on a failed request', async (t
 test('submitForm only sends a valid form', async (t) => {
     stubBrowser(t);
     const requests = stubRequests(t, jsonResponse({id: 3}), jsonResponse({id: 4}));
-    const monitorForm = upsertIcmpMonitorForm(null, {nameRequired: 'NAME', hostRequired: 'HOST'}, 'category-select', 0);
+    const monitorForm = upsertIcmpMonitorForm(null, {nameRequired: 'NAME', hostRequired: 'HOST'}, 'category-select', false, 0);
     const maintenanceWindowForm = upsertMaintenanceWindowForm(null, {nameRequired: 'NAME'}, 'select', []);
 
     monitorForm.resetState();
@@ -1295,8 +1296,8 @@ test('cloneFrom copies the source monitor under the new name, with a fresh clien
     const pushSource = {name: 'job', heartbeatInterval: 30, clientSecret: 'x'.repeat(36), category: 'Jobs'};
     const icmpSource = {name: 'ping', host: 'example.com', packetCount: 5};
     const requests = stubRequests(t, jsonResponse(pushSource), jsonResponse(icmpSource));
-    const pushForm = upsertPushMonitorForm(null, {}, 'category-select', 0);
-    const icmpForm = upsertIcmpMonitorForm(null, {}, 'category-select', 0);
+    const pushForm = upsertPushMonitorForm(null, {}, 'category-select', false, 0);
+    const icmpForm = upsertIcmpMonitorForm(null, {}, 'category-select', false, 0);
 
     pushForm.cloneFrom(5, 'job (copy)');
     assert.equal(pushForm.isCloning, true);
@@ -1320,7 +1321,7 @@ test('HTTP validators enforce the name, SSL expiry, interval, failure count and 
         nameRequired: 'N', sslExpiryThresholdInvalid: 'SSL', uptimeCheckIntervalInvalid: 'UI',
         failureCountThresholdInvalid: 'FC', responseTimeThresholdInvalid: 'RT',
     };
-    const buildForm = () => upsertHttpMonitorForm(null, msgs, 'category-select', 'select', [], 0);
+    const buildForm = () => upsertHttpMonitorForm(null, msgs, 'category-select', false, 'select', [], 0);
 
     assertValidatorBoundaries(buildForm, 'name', 'validateName', 'N', [
         ['', true], ['   ', true], [null, true], ['site', false],
@@ -1343,7 +1344,7 @@ test('HTTP validators enforce the name, SSL expiry, interval, failure count and 
 test('HTTP submitForm keeps an invalid request body on its field instead of sending it', async (t) => {
     stubBrowser(t);
     const requests = stubRequests(t, jsonResponse({id: 8}));
-    const form = upsertHttpMonitorForm(null, {requestBodyInvalid: 'JSON'}, 'category-select', 'select', [], 0);
+    const form = upsertHttpMonitorForm(null, {requestBodyInvalid: 'JSON'}, 'category-select', false, 'select', [], 0);
     form.resetState();
     Object.assign(form, {name: 'api', url: 'https://example.com', requestBody: '{"key": '});
 
@@ -1356,4 +1357,155 @@ test('HTTP submitForm keeps an invalid request body on its field instead of send
     await new Promise(setImmediate);
     assert.equal(requests.length, 1);
     assert.equal(requests[0].body.requestBody, '{"key": "value"}');
+});
+
+// --------- Editing a monitor through the shared upsert modal of a list ---------
+
+const monitorFormFactories = {
+    http: (monitor = null, isNameLocked = false) =>
+        upsertHttpMonitorForm(monitor, {}, 'category-select', isNameLocked, 'select', [], 0),
+    push: (monitor = null, isNameLocked = false) => upsertPushMonitorForm(monitor, {}, 'category-select', isNameLocked, 0),
+    icmp: (monitor = null, isNameLocked = false) => upsertIcmpMonitorForm(monitor, {}, 'category-select', isNameLocked, 0),
+    tcp: (monitor = null, isNameLocked = false) => upsertTcpMonitorForm(monitor, {}, 'category-select', isNameLocked, 0),
+    dns: (monitor = null, isNameLocked = false) => upsertDnsMonitorForm(monitor, {}, 'category-select', isNameLocked, 0),
+};
+
+const sourceMonitor = {id: 7, name: 'Source', category: 'Payments', clientSecret: 'x'.repeat(36)};
+
+const methodsAndUrlsOf = (requests) => requests.map(({method, url}) => [method, url]);
+
+Object.entries(monitorFormFactories).forEach(([type, createForm]) => {
+    test(`${type} editFrom loads the monitor into update mode and saves it with a PATCH, reloading the page`, async (t) => {
+        const browser = stubBrowser(t);
+        const requests = stubRequests(t, jsonResponse(sourceMonitor), jsonResponse({id: 7}));
+        const form = createForm();
+        form.init();
+
+        await form.editFrom(7, 'Update Source', true);
+        assert.equal(form.name, 'Source');
+        assert.equal(form.category, 'Payments');
+        assert.equal(form.isUpdate, true);
+        assert.equal(form.entityId, 7);
+        assert.equal(form.editTitle, 'Update Source');
+        assert.equal(form.isNameLocked, true);
+        assert.equal(form.isCloning, false);
+
+        await form.upsert();
+
+        assert.deepEqual(methodsAndUrlsOf(requests), [
+            ['GET', `/api/v2/${type}-monitors/7`],
+            ['PATCH', `/api/v2/${type}-monitors/7`],
+        ]);
+        // An update leaves the enabled state of the monitor alone, and stays on the page it was opened from
+        assert.equal('enabled' in requests[1].body, false);
+        assert.equal(requests[1].body.name, 'Source');
+        assert.equal(browser.location.reloaded, true);
+        assert.equal(browser.location.href, null);
+    });
+
+    test(`${type} resetState after editFrom turns the form back into a create form, which cloning keeps`, async (t) => {
+        const browser = stubBrowser(t);
+        const requests = stubRequests(
+            t,
+            jsonResponse(sourceMonitor),
+            jsonResponse(sourceMonitor),
+            jsonResponse({id: 42}),
+        );
+        const form = createForm();
+        form.init();
+
+        await form.editFrom(7, 'Update Source', true);
+        form.resetState();
+        assert.equal(form.name, '');
+        assert.equal(form.category, null);
+        assert.equal(form.isUpdate, false);
+        assert.equal(form.entityId, null);
+        assert.equal(form.editTitle, null);
+        assert.equal(form.isNameLocked, false);
+
+        await form.cloneFrom(7, 'Source (copy)');
+        assert.equal(form.name, 'Source (copy)');
+        assert.equal(form.isUpdate, false);
+        assert.equal(form.entityId, null);
+
+        await form.upsert();
+
+        assert.deepEqual(methodsAndUrlsOf(requests), [
+            ['GET', `/api/v2/${type}-monitors/7`],
+            ['GET', `/api/v2/${type}-monitors/7`],
+            ['POST', `/api/v2/${type}-monitors`],
+        ]);
+        assert.equal(requests[2].body.enabled, true);
+        assert.equal(browser.location.reloaded, false);
+        assert.equal(browser.location.href, `/${type}-monitors/42`);
+    });
+
+    test(`${type} a form rendered for a monitor gets that monitor and its name lock back after loading another one`, async (t) => {
+        const browser = stubBrowser(t);
+        const requests = stubRequests(t, jsonResponse(sourceMonitor), jsonResponse({id: 3}));
+        const form = createForm({id: 3, name: 'Rendered'}, true);
+        form.init();
+        assert.equal(form.isUpdate, true);
+        assert.equal(form.entityId, 3);
+        assert.equal(form.isNameLocked, true);
+
+        await form.editFrom(7, 'Update Source', false);
+        assert.equal(form.entityId, 7);
+        assert.equal(form.isNameLocked, false);
+
+        form.resetState();
+        assert.equal(form.name, 'Rendered');
+        assert.equal(form.isUpdate, true);
+        assert.equal(form.entityId, 3);
+        assert.equal(form.editTitle, null);
+        assert.equal(form.isNameLocked, true);
+
+        await form.upsert();
+        assert.deepEqual(methodsAndUrlsOf(requests)[1], ['PATCH', `/api/v2/${type}-monitors/3`]);
+        assert.equal(browser.location.reloaded, true);
+    });
+
+    test(`${type} editFrom hides the overlay without switching to update mode when the monitor can't be loaded`, async (t) => {
+        const browser = stubBrowser(t);
+        stubRequests(t, errorResponse(500));
+        const form = createForm();
+        form.init();
+
+        await form.editFrom(7, 'Update Source', true);
+
+        assert.equal(form.isCloning, false);
+        assert.equal(form.isUpdate, false);
+        assert.equal(form.entityId, null);
+        assert.equal(form.editTitle, null);
+        assert.equal(form.isNameLocked, false);
+        assert.equal(browser.alerts.length, 1);
+    });
+});
+
+test('Push editFrom keeps the client secret of the monitor, while cloneFrom generates a fresh one', async (t) => {
+    stubRequests(t, jsonResponse(sourceMonitor), jsonResponse(sourceMonitor));
+    const edited = monitorFormFactories.push();
+    const cloned = monitorFormFactories.push();
+    edited.init();
+    cloned.init();
+
+    await edited.editFrom(7, 'Update Source', false);
+    await cloned.cloneFrom(7, 'Source (copy)');
+
+    assert.equal(edited.clientSecret, sourceMonitor.clientSecret);
+    assert.notEqual(cloned.clientSecret, sourceMonitor.clientSecret);
+});
+
+test('monitorListItem dispatches the events the shared upsert modal of the list listens to', () => {
+    const item = monitorListItem({}, () => {})(7, true, false, 'Source (clone)', 'Update Source', true);
+    const dispatched = [];
+    item.$dispatch = (name, detail) => dispatched.push([name, detail]);
+
+    item.editMonitor();
+    item.cloneMonitor();
+
+    assert.deepEqual(dispatched, [
+        ['edit-monitor', {id: 7, title: 'Update Source', nameLocked: true}],
+        ['clone-monitor', {id: 7, name: 'Source (clone)'}],
+    ]);
 });

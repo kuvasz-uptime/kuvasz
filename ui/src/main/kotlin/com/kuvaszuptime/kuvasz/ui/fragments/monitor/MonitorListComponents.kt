@@ -73,22 +73,13 @@ internal fun <T : MonitorDetailsDto> renderMonitorList(
                                     +column.header
                                 }
                             }
-                            if (!isReadOnlyMode) {
-                                // Actions
-                                th {}
-                            }
+                            // Actions
+                            th {}
                         }
                     }
                     tbody {
                         monitors.forEach { monitor ->
-                            monitorListRow(
-                                monitor,
-                                typeUiConfig,
-                                editabilityState,
-                                columns,
-                                nameTooltip,
-                                isReadOnlyMode
-                            )
+                            monitorListRow(monitor, typeUiConfig, editabilityState, columns, nameTooltip)
                         }
                     }
                 }
@@ -102,16 +93,23 @@ private fun <T : MonitorDetailsDto> TBODY.monitorListRow(
     editabilityState: AppGlobals.EditabilityState,
     columns: List<MonitorListColumn<T>>,
     nameTooltip: (T) -> String?,
-    isReadOnlyMode: Boolean,
 ) {
     tr {
         testId(typeUiConfig.testId("row"))
+        val editTitle = if (editabilityState.areMonitorsReadOnly(typeUiConfig.type)) {
+            Messages.configurationOf(monitor.name)
+        } else {
+            Messages.updateMonitor(monitor.name)
+        }
+        val isNameLocked = monitor.statusPages.isNotEmpty() && editabilityState.areStatusPagesReadOnly()
         xData(
             """${typeUiConfig.alpineComponent("MonitorListItem")}(
             |${monitor.id},
             |${monitor.enabled},
             |${monitor.statusPages.isNotEmpty()},
-            |${Messages.clonedMonitorName(monitor.name).asJsonString()}
+            |${Messages.clonedMonitorName(monitor.name).asJsonString()},
+            |${editTitle.asJsonString()},
+            |$isNameLocked
             |)
             """.trimMargin()
         )
@@ -126,9 +124,7 @@ private fun <T : MonitorDetailsDto> TBODY.monitorListRow(
                 column.cell(this, monitor)
             }
         }
-        if (!isReadOnlyMode) {
-            monitorListRowActions(monitor, typeUiConfig, editabilityState)
-        }
+        monitorListRowActions(monitor, typeUiConfig, editabilityState)
     }
 }
 
@@ -137,34 +133,43 @@ private fun TR.monitorListRowActions(
     typeUiConfig: MonitorTypeUiConfig,
     editabilityState: AppGlobals.EditabilityState,
 ) {
+    val isReadOnlyMode = editabilityState.areMonitorsReadOnly(typeUiConfig.type)
     val deleteModalId = "delete-monitor-modal-${monitor.id}"
     td {
         classes(TEXT_END)
         div {
             classes(FLEX_NOWRAP, BTN_GROUP, BTN_GROUP_SM)
-            compactIconButton(Icon.COPY) {
-                testId(typeUiConfig.testId("clone-button"))
+            compactIconButton(if (isReadOnlyMode) Icon.EYE else Icon.SETTINGS) {
+                testId(typeUiConfig.testId(if (isReadOnlyMode) "configuration-button" else "configure-button"))
                 modalOpener(typeUiConfig.createModalId)
-                xOnClick("cloneMonitor()")
+                xOnClick("editMonitor()")
             }
-            val toggleIcon = if (monitor.enabled) Icon.PAUSE else Icon.PLAY
-            compactIconButton(toggleIcon) {
-                testId(typeUiConfig.testId("toggle-button"))
-                xBindDisabled("isRequestLoading")
-                xOnClick("toggleMonitor()")
-            }
-            compactIconButton(Icon.TRASH, classes = setOf(TEXT_RED)) {
-                testId(typeUiConfig.testId("delete-button"))
-                xBindDisabled("isRequestLoading")
-                modalOpener(deleteModalId)
+            if (!isReadOnlyMode) {
+                compactIconButton(Icon.COPY) {
+                    testId(typeUiConfig.testId("clone-button"))
+                    modalOpener(typeUiConfig.createModalId)
+                    xOnClick("cloneMonitor()")
+                }
+                val toggleIcon = if (monitor.enabled) Icon.PAUSE else Icon.PLAY
+                compactIconButton(toggleIcon) {
+                    testId(typeUiConfig.testId("toggle-button"))
+                    xBindDisabled("isRequestLoading")
+                    xOnClick("toggleMonitor()")
+                }
+                compactIconButton(Icon.TRASH, classes = setOf(TEXT_RED)) {
+                    testId(typeUiConfig.testId("delete-button"))
+                    xBindDisabled("isRequestLoading")
+                    modalOpener(deleteModalId)
+                }
             }
         }
-        // Delete modal
-        val isDeleteDisabled = monitor.statusPages.isNotEmpty() && editabilityState.areStatusPagesReadOnly()
-        deleteMonitorModal(
-            modalId = deleteModalId,
-            monitorName = monitor.name,
-            isDeleteDisabled = isDeleteDisabled,
-        )
+        if (!isReadOnlyMode) {
+            val isDeleteDisabled = monitor.statusPages.isNotEmpty() && editabilityState.areStatusPagesReadOnly()
+            deleteMonitorModal(
+                modalId = deleteModalId,
+                monitorName = monitor.name,
+                isDeleteDisabled = isDeleteDisabled,
+            )
+        }
     }
 }
