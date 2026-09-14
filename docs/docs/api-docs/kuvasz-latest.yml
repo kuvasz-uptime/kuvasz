@@ -3289,6 +3289,13 @@ components:
           type: boolean
           description: Whether to follow redirects during the uptime check
           default: true
+        crossOriginHeaderPropagation:
+          type: boolean
+          description: "Whether to send the custom request headers to a redirect target\
+            \ whose origin (scheme, host and port) differs from the origin of the\
+            \ monitored URL. If false, the custom request headers are withheld from\
+            \ such redirect targets."
+          default: false
         sslExpiryThreshold:
           minimum: 0
           type: integer
@@ -3383,6 +3390,7 @@ components:
       required:
       - category
       - createdAt
+      - crossOriginHeaderPropagation
       - effectiveIntegrations
       - enabled
       - expectedHeaders
@@ -3524,6 +3532,12 @@ components:
         followRedirects:
           type: boolean
           description: Whether to follow redirects during the uptime check
+        crossOriginHeaderPropagation:
+          type: boolean
+          description: "Whether to send the custom request headers to a redirect target\
+            \ whose origin (scheme, host and port) differs from the origin of the\
+            \ monitored URL. If false, the custom request headers are withheld from\
+            \ such redirect targets."
         sslExpiryThreshold:
           type: integer
           description: The threshold in days for SSL certificate expiry checks
@@ -3625,6 +3639,7 @@ components:
       required:
       - category
       - createdAt
+      - crossOriginHeaderPropagation
       - enabled
       - expectedHeaders
       - expectedKeyword
@@ -3691,6 +3706,12 @@ components:
         followRedirects:
           type: boolean
           description: Whether to follow redirects during the uptime check
+        crossOriginHeaderPropagation:
+          type: boolean
+          description: "Whether to send the custom request headers to a redirect target\
+            \ whose origin (scheme, host and port) differs from the origin of the\
+            \ monitored URL. If false, the custom request headers are withheld from\
+            \ such redirect targets."
         sslExpiryThreshold:
           type: integer
           description: The threshold in days for SSL certificate expiry checks
@@ -3857,6 +3878,13 @@ components:
         followRedirects:
           type: boolean
           description: Whether to follow redirects during the uptime check
+          nullable: false
+        crossOriginHeaderPropagation:
+          type: boolean
+          description: "Whether to send the custom request headers to a redirect target\
+            \ whose origin (scheme, host and port) differs from the origin of the\
+            \ monitored URL. If false, the custom request headers are withheld from\
+            \ such redirect targets."
           nullable: false
         sslExpiryThreshold:
           minimum: 0

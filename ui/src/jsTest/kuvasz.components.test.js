@@ -234,6 +234,7 @@ test('HTTP populateFrom copies a source and falls back to defaults', () => {
         name: 'Src', url: 'https://example.com', sensitiveUrl: true, sslExpiryThreshold: 14,
         failureCountThreshold: 4, uptimeCheckInterval: 120, sslCheckEnabled: true,
         latencyHistoryEnabled: false, forceNoCache: false, followRedirects: false,
+        crossOriginHeaderPropagation: true,
         requestMethod: 'POST', integrations: ['slack'], expectedStatusCodes: [200, 301],
         expectedKeyword: 'ok', expectedKeywordCaseSensitive: true, expectedKeywordNegated: true,
         responseTimeThresholdMillis: 500, requestHeaders: {'X-A': '1'}, expectedHeaders: {'X-B': '2'},
@@ -249,6 +250,7 @@ test('HTTP populateFrom copies a source and falls back to defaults', () => {
     assert.equal(form.latencyHistoryEnabled, false);
     assert.equal(form.forceNoCache, false);
     assert.equal(form.followRedirects, false);
+    assert.equal(form.crossOriginHeaderPropagation, true);
     assert.equal(form.requestMethod, 'POST');
     assert.deepEqual(form.integrations, ['slack']);
     // Status codes are stringified for the TomSelect widget
@@ -272,6 +274,7 @@ test('HTTP populateFrom copies a source and falls back to defaults', () => {
     assert.equal(form.latencyHistoryEnabled, true);
     assert.equal(form.forceNoCache, true);
     assert.equal(form.followRedirects, true);
+    assert.equal(form.crossOriginHeaderPropagation, false);
     assert.equal(form.requestMethod, 'GET');
     assert.deepEqual(form.integrations, []);
     assert.deepEqual(form.selectedHttpStatusCodes, []);

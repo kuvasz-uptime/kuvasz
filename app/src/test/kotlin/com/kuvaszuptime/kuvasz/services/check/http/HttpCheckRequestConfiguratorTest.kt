@@ -108,6 +108,7 @@ class HttpCheckRequestConfiguratorTest : ShouldSpec({
                     this.forceNoCache = forceNoCache
                     this.expectedKeyword = expectedKeyword
                     this.url = "https://irrelevant.com" // URL will be overridden by the URI
+                    this.crossOriginHeaderPropagation = false
                     this.requestHeaders = JsonNodeFactory.instance.objectNode()
                     this.requestBody = requestBody
                 }
@@ -130,6 +131,8 @@ class HttpCheckRequestConfiguratorTest : ShouldSpec({
 
         should("add custom request headers to the request") {
             val monitor = HttpMonitorRecord().apply {
+                url = "https://example.com"
+                crossOriginHeaderPropagation = false
                 forceNoCache = true
                 requestMethod = HttpMethod.GET
                 requestHeaders = JsonNodeFactory.instance.objectNode().apply {
@@ -158,6 +161,64 @@ class HttpCheckRequestConfiguratorTest : ShouldSpec({
         }
     }
 
+    context("the configurator logic - custom request headers on a different origin") {
+
+        should("withhold the custom request headers from other origins unless propagation is enabled") {
+
+            table(
+                headers("monitorUrl", "requestUri", "crossOriginHeaderPropagation", "expectCustomHeaders"),
+                // Same origin
+                row("https://example.com/path", "https://example.com/other", false, true),
+                row("https://example.com", "HTTPS://EXAMPLE.com/other", false, true),
+                row("https://example.com", "https://example.com:443/other", false, true),
+                row("http://example.com:80", "http://example.com/other", false, true),
+                row("https://example.com:8443", "https://example.com:8443/other", false, true),
+                row("http://internal_api:8080/health", "http://INTERNAL_API:8080/other", false, true),
+                // Different origin
+                row("https://example.com", "http://example.com/other", false, false),
+                row("http://example.com", "https://example.com/other", false, false),
+                row("https://example.com", "https://example.com:8443/other", false, false),
+                row("https://example.com", "https://other.com/path", false, false),
+                row("https://example.com", "https://sub.example.com", false, false),
+                // Hosts that can't be parsed by java.net.URI (e.g. containing an underscore)
+                row("http://internal_api:8080", "http://other_svc:9090/path", false, false),
+                row("http://internal_api:8080", "http://other_svc:8080/path", false, false),
+                row("http://internal_api:8080", "http://internal_api:9090/path", false, false),
+                row("https://example.com", "https://some_host.example.com/path", false, false),
+                row("http://internal_api", "http://example.com/path", false, false),
+                // Propagation is enabled
+                row("https://example.com", "https://other.com/path", true, true),
+                row("https://example.com", "http://example.com:8080/other", true, true),
+                row("https://example.com", "https://example.com/other", true, true),
+            ).forAll { monitorUrl, requestUri, crossOriginHeaderPropagation, expectCustomHeaders ->
+
+                val monitor = HttpMonitorRecord().apply {
+                    url = monitorUrl
+                    requestMethod = HttpMethod.GET
+                    forceNoCache = true
+                    this.crossOriginHeaderPropagation = crossOriginHeaderPropagation
+                    requestHeaders = JsonNodeFactory.instance.objectNode().apply {
+                        put(HttpHeaders.AUTHORIZATION, "Bearer secret")
+                        put(HttpHeaders.USER_AGENT, "CustomUserAgent/1.0")
+                    }
+                }
+
+                val request = configurator.fromMonitor(monitor, requestUri.toUri())
+
+                if (expectCustomHeaders) {
+                    request.headers.get(HttpHeaders.AUTHORIZATION) shouldBe "Bearer secret"
+                    request.headers.get(HttpHeaders.USER_AGENT) shouldBe "CustomUserAgent/1.0"
+                } else {
+                    request.headers.get(HttpHeaders.AUTHORIZATION) shouldBe null
+                    // The built-in headers are sent regardless
+                    request.headers.get(HttpHeaders.USER_AGENT) shouldBe HttpCheckRequestConfigurator.USER_AGENT
+                }
+                request.headers.get(HttpHeaders.ACCEPT) shouldBe "*/*"
+                request.headers.get(HttpHeaders.CACHE_CONTROL) shouldBe "no-cache"
+            }
+        }
+    }
+
     context("the configurator logic - custom request body and method") {
 
         should("add the body to the requests with the supported methods") {
@@ -178,6 +239,8 @@ class HttpCheckRequestConfiguratorTest : ShouldSpec({
                     requestMethod = method
                     requestBody = body
                     forceNoCache = false // irrelevant for this test
+                    url = "https://example.com" // irrelevant for this test
+                    crossOriginHeaderPropagation = false // irrelevant for this test
                     requestHeaders = JsonNodeFactory.instance.objectNode() // irrelevant for this test
                 }
                 val requestUri = "https://example.com".toUri()

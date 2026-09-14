@@ -172,6 +172,7 @@ sensor:
       - latencyHistoryEnabled
       - forceNoCache
       - followRedirects
+      - crossOriginHeaderPropagation
       - sslExpiryThreshold
       - failureCountThreshold
       - sslValidUntil
@@ -1494,6 +1495,7 @@ http-monitors:
     request-method: "POST"
     latency-history-enabled: true
     follow-redirects: true
+    cross-origin-header-propagation: false
     force-no-cache: true
     ssl-expiry-threshold: 30
     failure-count-threshold: 2

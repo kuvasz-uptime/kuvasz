@@ -137,6 +137,12 @@ data class PushMonitorSummarySchema(
 
 @JsonSchema
 @Introspected
+data class PushMonitorListSchema(
+    val monitors: List<PushMonitorSummarySchema>,
+)
+
+@JsonSchema
+@Introspected
 data class PushMonitorCreatorSchema(
     @get:NotBlank
     val name: String,

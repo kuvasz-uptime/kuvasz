@@ -71,6 +71,16 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
                         isDisabled = isReadOnlyMode,
                     )
                 }
+                // Cross-origin header propagation
+                div {
+                    classes(MB_3)
+                    toggleSwitch(
+                        propName = "crossOriginHeaderPropagation",
+                        label = Messages.crossOriginHeaderPropagationSwitchLabel(),
+                        description = Messages.crossOriginHeaderPropagationSwitchDescription(),
+                        isDisabled = isReadOnlyMode,
+                    )
+                }
                 // Force no-cache header
                 div {
                     classes(MB_3)

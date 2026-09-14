@@ -51,6 +51,25 @@ class HttpMonitorCrudUiTest : UiTestSpec() {
             assertThat(list.emptyState).isVisible()
         }
 
+        "cross-origin header propagation is disabled by default, and enabling it survives the save" {
+            val page = newPage()
+            val list = HttpMonitorListPage(page)
+            list.navigate()
+
+            val modal = list.openCreateModal()
+                .setName("HTTP Header Propagation Monitor")
+                .setUrl("https://propagation.example.com")
+                .expandRequestSettings()
+            assertThat(modal.crossOriginHeaderPropagationToggle).not().isChecked()
+            modal.crossOriginHeaderPropagationToggle.check()
+            modal.save()
+            page.waitForURL("**/http-monitors/*")
+
+            // Re-opening the monitor's configuration must show the persisted setting
+            val reopened = HttpMonitorDetailsPage(page).openConfigureModal().expandRequestSettings()
+            assertThat(reopened.crossOriginHeaderPropagationToggle).isChecked()
+        }
+
         "an HTTP monitor can be cloned from the list, pre-filling a fresh create form" {
             val page = newPage()
             val list = HttpMonitorListPage(page)

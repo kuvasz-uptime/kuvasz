@@ -163,6 +163,7 @@ class HttpMonitorConfigDefaultValuesTest(applicationContext: ApplicationContext)
                 monitorConfig.latencyHistoryEnabled shouldBe HttpMonitorDefaults.LATENCY_HISTORY_ENABLED
                 monitorConfig.forceNoCache shouldBe HttpMonitorDefaults.FORCE_NO_CACHE
                 monitorConfig.followRedirects shouldBe HttpMonitorDefaults.FOLLOW_REDIRECTS
+                monitorConfig.crossOriginHeaderPropagation shouldBe HttpMonitorDefaults.CROSS_ORIGIN_HEADER_PROPAGATION
                 monitorConfig.sslExpiryThreshold shouldBe HttpMonitorDefaults.SSL_EXPIRY_THRESHOLD_DAYS
                 monitorConfig.integrations.shouldBeNull()
                 monitorConfig.expectedStatusCodes.shouldBeNull()

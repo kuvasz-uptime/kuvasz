@@ -91,6 +91,7 @@ http-monitors:
     latency-history-enabled: true
     request-method: "GET"
     follow-redirects: true
+    cross-origin-header-propagation: false
     force-no-cache: true
     ssl-expiry-threshold: 30
     failure-count-threshold: 1

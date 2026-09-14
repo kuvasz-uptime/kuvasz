@@ -24,6 +24,7 @@
       latency-history-enabled: true # (6)!
       request-method: "GET" # (7)!
       follow-redirects: true # (8)!
+      cross-origin-header-propagation: false # (23)!
       force-no-cache: true # (9)!
       ssl-expiry-threshold: 30 # (10)!
       failure-count-threshold: 1 # (20)!
@@ -67,6 +68,7 @@
     20. **Failure count threshold**: The number of consecutive failures that should occur before the monitor is considered down. Defaults to 1.
     21. **Sensitive URL**: Whether the URL of the monitor is considered sensitive or not. If it's set to `true`, the URL will be masked in the metrics, logs and notifications/integrations.
     22. **Category**: An optional, free-form category to group the monitor on the status pages (e.g. a product or service name).
+    23. **Cross-origin header propagation**: Whether the custom request headers should be sent to a redirect target whose origin (scheme, host and port) differs from the origin of the monitored URL. Defaults to false.
 
 === "API (expert)"
 
@@ -184,6 +186,27 @@ The number of redirects followed in a single check is capped by the global [HTTP
 
 A **relative** `Location` header is resolved against the URL of the hop that returned it, following [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110#field.location) — not against the monitor's own URL.
 
+Your [**custom request headers**](#request-headers) are only sent to a redirect target on a different origin if [**cross-origin header propagation**](#cross-origin-header-propagation) is enabled.
+
+### Cross-origin header propagation
+
+<!-- md:version 4.4.0 -->
+<!-- md:default `false` -->
+<!-- md:type boolean -->
+<!-- md:yaml_prop `cross-origin-header-propagation` -->
+
+Whether the [**custom request headers**](#request-headers) should be sent along when a [**redirect**](#follow-redirects) leads to an origin that **differs from the origin of the monitored URL**. Your request headers might contain secrets (e.g. an `Authorization` header or an API key), so by default they're **only sent to the origin of the monitored URL**, and they're withheld from every hop of the redirect chain that points to a different origin.
+
+- The **origin** consists of the **scheme**, the **host** (compared case-insensitively) and the **port**, where a missing port means the default port of the scheme: a redirect from `https://example.com` to `https://example.com:443/login` keeps the headers, while a redirect to `http://example.com`, `https://example.com:8443` or `https://www.example.com` doesn't.
+- Every hop is compared with the **monitored URL**, not with the previous hop, so the headers are sent again if the chain leads back to the origin of the monitored URL.
+- The [**default headers**](#request-headers) added by _Kuvasz_ and the [**request body**](#request-body) are sent regardless of this setting.
+
+Enable it only if the target of the redirect really needs your custom headers, and you trust every host the monitored URL might redirect to.
+
+!!! info "Existing monitors"
+
+    Monitors that were created before [4.4.0](../changelog.md#4.4.0) have this option **disabled** as well, just like the new ones. If any of them relies on sending its custom headers to a different origin (e.g. it's redirected from `http` to `https`, or to another domain), you have to enable it explicitly.
+
 ### Force no-cache header
 
 <!-- md:version 2.0.0 -->
@@ -214,6 +237,10 @@ A set of request headers to send with the request. This is useful if you need to
     - `Cache-Control`: `no-cache` (if the [**force no-cache header**](#force-no-cache-header) option is enabled)
 
     If you define any of these headers along your custom request headers, they **will be overridden** by your values!
+
+!!! warning "Redirects to other origins"
+
+    If [**following redirects**](#follow-redirects) is enabled, your custom request headers are **not sent to a redirect target on a different origin**, unless [**cross-origin header propagation**](#cross-origin-header-propagation) is enabled.
 
 ### Request body
 

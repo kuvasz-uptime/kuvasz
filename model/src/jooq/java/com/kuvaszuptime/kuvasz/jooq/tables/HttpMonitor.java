@@ -198,6 +198,12 @@ public class HttpMonitor extends TableImpl<HttpMonitorRecord> {
      */
     public final TableField<HttpMonitorRecord, String> CATEGORY = createField(DSL.name("category"), SQLDataType.CLOB, this, "");
 
+    /**
+     * The column
+     * <code>kuvasz.http_monitor.cross_origin_header_propagation</code>.
+     */
+    public final TableField<HttpMonitorRecord, Boolean> CROSS_ORIGIN_HEADER_PROPAGATION = createField(DSL.name("cross_origin_header_propagation"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("false"), SQLDataType.BOOLEAN)), this, "");
+
     private HttpMonitor(Name alias, Table<HttpMonitorRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }

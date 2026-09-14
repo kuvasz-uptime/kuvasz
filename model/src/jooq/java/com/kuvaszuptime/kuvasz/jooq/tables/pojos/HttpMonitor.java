@@ -63,6 +63,7 @@ public class HttpMonitor implements Serializable {
     private Long failureCountThreshold;
     private Boolean sensitiveUrl;
     private String category;
+    private Boolean crossOriginHeaderPropagation;
 
     public HttpMonitor() {}
 
@@ -92,6 +93,7 @@ public class HttpMonitor implements Serializable {
         this.failureCountThreshold = value.failureCountThreshold;
         this.sensitiveUrl = value.sensitiveUrl;
         this.category = value.category;
+        this.crossOriginHeaderPropagation = value.crossOriginHeaderPropagation;
     }
 
     public HttpMonitor(
@@ -119,7 +121,8 @@ public class HttpMonitor implements Serializable {
         String requestBody,
         Long failureCountThreshold,
         Boolean sensitiveUrl,
-        String category
+        String category,
+        Boolean crossOriginHeaderPropagation
     ) {
         this.id = id;
         this.name = name;
@@ -146,6 +149,7 @@ public class HttpMonitor implements Serializable {
         this.failureCountThreshold = failureCountThreshold;
         this.sensitiveUrl = sensitiveUrl;
         this.category = category;
+        this.crossOriginHeaderPropagation = crossOriginHeaderPropagation;
     }
 
     /**
@@ -531,6 +535,23 @@ public class HttpMonitor implements Serializable {
         return this;
     }
 
+    /**
+     * Getter for
+     * <code>kuvasz.http_monitor.cross_origin_header_propagation</code>.
+     */
+    public Boolean getCrossOriginHeaderPropagation() {
+        return this.crossOriginHeaderPropagation;
+    }
+
+    /**
+     * Setter for
+     * <code>kuvasz.http_monitor.cross_origin_header_propagation</code>.
+     */
+    public HttpMonitor setCrossOriginHeaderPropagation(Boolean crossOriginHeaderPropagation) {
+        this.crossOriginHeaderPropagation = crossOriginHeaderPropagation;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -690,6 +711,12 @@ public class HttpMonitor implements Serializable {
         }
         else if (!this.category.equals(other.category))
             return false;
+        if (this.crossOriginHeaderPropagation == null) {
+            if (other.crossOriginHeaderPropagation != null)
+                return false;
+        }
+        else if (!this.crossOriginHeaderPropagation.equals(other.crossOriginHeaderPropagation))
+            return false;
         return true;
     }
 
@@ -722,6 +749,7 @@ public class HttpMonitor implements Serializable {
         result = prime * result + ((this.failureCountThreshold == null) ? 0 : this.failureCountThreshold.hashCode());
         result = prime * result + ((this.sensitiveUrl == null) ? 0 : this.sensitiveUrl.hashCode());
         result = prime * result + ((this.category == null) ? 0 : this.category.hashCode());
+        result = prime * result + ((this.crossOriginHeaderPropagation == null) ? 0 : this.crossOriginHeaderPropagation.hashCode());
         return result;
     }
 
@@ -754,6 +782,7 @@ public class HttpMonitor implements Serializable {
         sb.append(", ").append(failureCountThreshold);
         sb.append(", ").append(sensitiveUrl);
         sb.append(", ").append(category);
+        sb.append(", ").append(crossOriginHeaderPropagation);
 
         sb.append(")");
         return sb.toString();

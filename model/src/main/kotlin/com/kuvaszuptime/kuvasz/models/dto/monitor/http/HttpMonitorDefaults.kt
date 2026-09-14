@@ -8,6 +8,7 @@ object HttpMonitorDefaults {
     const val LATENCY_HISTORY_ENABLED = true
     const val FORCE_NO_CACHE = true
     const val FOLLOW_REDIRECTS = true
+    const val CROSS_ORIGIN_HEADER_PROPAGATION = false
     const val SSL_EXPIRY_THRESHOLD_DAYS = 30
     const val FAILURE_COUNT_THRESHOLD = 1L
     const val EXPECTED_KEYWORD_CASE_SENSITIVE = false

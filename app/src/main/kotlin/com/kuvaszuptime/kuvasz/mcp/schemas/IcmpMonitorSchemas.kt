@@ -142,6 +142,12 @@ data class IcmpMonitorSummarySchema(
 
 @JsonSchema
 @Introspected
+data class IcmpMonitorListSchema(
+    val monitors: List<IcmpMonitorSummarySchema>,
+)
+
+@JsonSchema
+@Introspected
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class IcmpMonitorStatsSchema(
     val id: Long,

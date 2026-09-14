@@ -41,6 +41,9 @@ interface HttpMonitorConfig : HttpMonitorCreator, MonitorConfig {
     @get:Bindable(defaultValue = HttpMonitorDefaults.FOLLOW_REDIRECTS.toString())
     override val followRedirects: Boolean
 
+    @get:Bindable(defaultValue = HttpMonitorDefaults.CROSS_ORIGIN_HEADER_PROPAGATION.toString())
+    override val crossOriginHeaderPropagation: Boolean
+
     @get:Bindable(defaultValue = HttpMonitorDefaults.SSL_EXPIRY_THRESHOLD_DAYS.toString())
     override val sslExpiryThreshold: Int
 

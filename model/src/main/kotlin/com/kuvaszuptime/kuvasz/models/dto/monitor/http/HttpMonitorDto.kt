@@ -34,6 +34,8 @@ data class HttpMonitorDto(
     val forceNoCache: Boolean,
     @param:Schema(description = HttpMonitorDocs.FOLLOW_REDIRECTS, required = true)
     val followRedirects: Boolean,
+    @param:Schema(description = HttpMonitorDocs.CROSS_ORIGIN_HEADER_PROPAGATION, required = true)
+    val crossOriginHeaderPropagation: Boolean,
     @param:Schema(description = HttpMonitorDocs.SSL_EXPIRY_THRESHOLD, required = true)
     val sslExpiryThreshold: Int,
     @param:Schema(description = MonitorDocs.FAILURE_COUNT_THRESHOLD, required = true)
@@ -77,6 +79,7 @@ data class HttpMonitorDto(
                 latencyHistoryEnabled = record.metricsHistoryEnabled,
                 forceNoCache = record.forceNoCache,
                 followRedirects = record.followRedirects,
+                crossOriginHeaderPropagation = record.crossOriginHeaderPropagation,
                 sslExpiryThreshold = record.sslExpiryThreshold,
                 failureCountThreshold = record.failureCountThreshold,
                 integrations = record.integrations.toSet(),
