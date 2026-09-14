@@ -11,7 +11,7 @@ jooq = "3.21.8"
 jooqPlugin = "10.2.1"
 keycloakTestcontainers = "4.3.1"
 # @pin Better to move it together with the version that comes from Micronaut's BOM
-kotest = "6.1.11"
+kotest = "6.2.5"
 kotlin = "2.4.20"
 kotlinCoroutines = "1.11.0"
 kotlinHtmx = "0.0.1"
