@@ -19,11 +19,14 @@ const {
     upsertIcmpMonitorForm,
     upsertTcpMonitorForm,
     upsertDnsMonitorForm,
+    upsertStatusPageForm,
     upsertMaintenanceWindowForm,
     httpMetricsBlock,
     icmpMetricsBlock,
     tcpMetricsBlock,
     dnsMetricsBlock,
+    buildIncidentAnnotations,
+    formatChartTimestamp,
 } = require('../main/resources/js/kuvasz.js');
 
 // --------- #1: isValidHttpHeaderName (regex) ---------
@@ -102,50 +105,402 @@ test('buildRequestBody leaves start null for a SINGLE window without a value', (
     assert.equal(form.buildRequestBody().start, null);
 });
 
-// --------- #3: chart data transforms ---------
+// --------- #3: metrics blocks ---------
+
+const CHART_LABELS = {
+    noData: 'no data',
+    incidentStarted: 'Incident started',
+    incidentResolved: 'Incident resolved',
+    latency: 'Latency',
+    packetLoss: 'Packet loss',
+};
+const MARKER_COLORS = {started: 'red', resolved: 'green'};
+const METRICS_LOGS_OF_AN_HOUR = [
+    {createdAt: '2024-01-01T00:00:00Z', latencyInMs: 10},
+    {createdAt: '2024-01-01T01:00:00Z', latencyInMs: 20},
+];
+const NOW = Date.parse('2024-01-01T02:00:00Z');
+const ONE_DAY_IN_MILLIS = 24 * 60 * 60 * 1000;
+
+// A metrics block that sees the given moment as the current time
+const metricsBlockAt = (factory, now) => {
+    const block = factory(1, true, 60, CHART_LABELS, 'PT24H');
+    block.markerColors = MARKER_COLORS;
+    block.now = () => now;
+    return block;
+};
+
+const jsonResponse = (body) => ({ok: true, json: async () => body});
+
+// Replaces the global fetch for the duration of a single test
+const stubFetch = (t, implementation) => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = implementation;
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+};
 
 test('httpMetricsBlock.transformData maps latency logs to a single series', () => {
-    const block = httpMetricsBlock(1, true, 60, 'no data', 24);
+    const block = httpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
     const result = block.transformData({
         latencyLogs: [
             {createdAt: '2024-01-01T00:00:00Z', latencyInMs: '123'},
             {createdAt: '2024-01-01T00:01:00Z', latencyInMs: 200},
         ],
-    });
+    }, []);
     assert.equal(result.labels.length, 2);
     assert.equal(result.series.length, 1);
     assert.equal(result.series[0].name, 'Latency');
     assert.deepEqual(result.series[0].data, [123, 200]);
+    assert.deepEqual(result.annotations, {xaxis: [], points: []});
 });
 
-test('icmpMetricsBlock.transformData preserves null latency but parses packet loss', () => {
-    const block = icmpMetricsBlock(1, true, 60, 'no data', 24);
+test('icmpMetricsBlock.transformData merges latency and packet loss into a single chart', () => {
+    const block = icmpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
     const result = block.transformData({
         metricsLogs: [
             {createdAt: '2024-01-01T00:00:00Z', latencyInMs: null, packetLossPercentage: '50'},
             {createdAt: '2024-01-01T00:01:00Z', latencyInMs: '80', packetLossPercentage: 0},
         ],
-    });
+    }, []);
+    assert.equal(result.labels.length, 2);
+    // Both series share the same labels, but are rendered differently, on an axis of their own
+    assert.deepEqual(result.series.map(series => series.name), ['Latency', 'Packet loss']);
+    assert.deepEqual(result.series.map(series => series.type), ['area', 'line']);
     // Null latency must stay null (a gap in the chart), not become NaN
-    assert.deepEqual(result.latency.series[0].data, [null, 80]);
-    assert.deepEqual(result.packetLoss.series[0].data, [50, 0]);
-    assert.equal(result.latency.labels.length, 2);
-    assert.equal(result.packetLoss.labels.length, 2);
+    assert.deepEqual(result.series[0].data, [null, 80]);
+    assert.deepEqual(result.series[1].data, [50, 0]);
 });
 
 test('tcpMetricsBlock.transformData preserves null latency and has no packet-loss series', () => {
-    const block = tcpMetricsBlock(1, true, 60, 'no data', 24);
+    const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
     const result = block.transformData({
         metricsLogs: [
             {createdAt: '2024-01-01T00:00:00Z', latencyInMs: null},
             {createdAt: '2024-01-01T00:01:00Z', latencyInMs: '80'},
         ],
-    });
+    }, []);
     // Null latency must stay null (a gap in the chart), not become NaN
-    assert.deepEqual(result.latency.series[0].data, [null, 80]);
-    assert.equal(result.latency.labels.length, 2);
+    assert.deepEqual(result.series[0].data, [null, 80]);
+    assert.equal(result.labels.length, 2);
     // TCP monitors track latency only - there is no packet-loss series
-    assert.equal(result.packetLoss, undefined);
+    assert.equal(result.series.length, 1);
+});
+
+test('transformData marks the incidents of the whole selected period, not only of the range of the logs', () => {
+    const block = metricsBlockAt(tcpMetricsBlock, NOW);
+    const result = block.transformData({metricsLogs: METRICS_LOGS_OF_AN_HOUR}, [
+        {incidentType: 'TCP', startedAt: '2024-01-01T00:10:00Z', endedAt: '2024-01-01T00:20:00Z', details: null},
+        // Resolved before the first log
+        {incidentType: 'TCP', startedAt: '2023-12-31T23:00:00Z', endedAt: '2023-12-31T23:30:00Z', details: null},
+        // Started after the last log, and still ongoing
+        {incidentType: 'TCP', startedAt: '2024-01-01T01:00:00.004Z', endedAt: null, details: null},
+        // Started before the selected period, so only its end is marked
+        {incidentType: 'TCP', startedAt: '2023-12-31T01:00:00Z', endedAt: '2024-01-01T00:05:00Z', details: null},
+    ]);
+    assert.deepEqual(result.range, {start: NOW - ONE_DAY_IN_MILLIS, end: NOW});
+    assert.deepEqual(
+        result.annotations.xaxis.map(annotation => [annotation.x, annotation.borderColor]),
+        [
+            [Date.parse('2024-01-01T00:10:00Z'), 'red'],
+            [Date.parse('2024-01-01T00:20:00Z'), 'green'],
+            [Date.parse('2023-12-31T23:00:00Z'), 'red'],
+            [Date.parse('2023-12-31T23:30:00Z'), 'green'],
+            [Date.parse('2024-01-01T01:00:00.004Z'), 'red'],
+            [Date.parse('2024-01-01T00:05:00Z'), 'green'],
+        ],
+    );
+});
+
+test('transformData marks the incidents of an HTTP monitor without any latency logs in the selected period', () => {
+    // An HTTP monitor only logs the latency of its successful checks, so there are no logs while it's down
+    const block = metricsBlockAt(httpMetricsBlock, NOW);
+    const result = block.transformData({latencyLogs: []}, [
+        {incidentType: 'HTTP', startedAt: '2023-12-31T12:00:00Z', endedAt: null, details: 'Connection refused'},
+    ]);
+    assert.deepEqual(result.series[0].data, []);
+    assert.deepEqual(result.range, {start: NOW - ONE_DAY_IN_MILLIS, end: NOW});
+    assert.deepEqual(result.annotations.points.map(point => point.x), [Date.parse('2023-12-31T12:00:00Z')]);
+});
+
+test('transformData extends the range to the data newer than the local clock', () => {
+    const block = metricsBlockAt(dnsMetricsBlock, NOW);
+    const result = block.transformData({metricsLogs: [{createdAt: '2024-01-01T02:00:01Z', latencyInMs: 5}]}, [
+        {incidentType: 'DNS', startedAt: '2024-01-01T02:00:01.004Z', endedAt: '2024-01-01T02:00:02Z', details: null},
+    ]);
+    assert.deepEqual(result.range, {start: NOW - ONE_DAY_IN_MILLIS, end: Date.parse('2024-01-01T02:00:02Z')});
+    assert.equal(result.annotations.points.length, 2);
+});
+
+test('transformData displays the selected period up to the current time', () => {
+    const block = metricsBlockAt(icmpMetricsBlock, NOW);
+    block.period = 'PT720H';
+    const result = block.transformData({metricsLogs: []}, []);
+    assert.deepEqual(result.range, {start: NOW - 30 * ONE_DAY_IN_MILLIS, end: NOW});
+});
+
+test('updateChart spans the time axis over the displayed range', () => {
+    const block = metricsBlockAt(tcpMetricsBlock, NOW);
+    const updates = [];
+    block.chart = {updateOptions: (options) => updates.push(options)};
+    const data = block.transformData({metricsLogs: METRICS_LOGS_OF_AN_HOUR}, []);
+
+    block.updateChart(data);
+
+    assert.deepEqual(updates, [{
+        labels: data.labels,
+        series: data.series,
+        annotations: data.annotations,
+        xaxis: {min: NOW - ONE_DAY_IN_MILLIS, max: NOW},
+    }]);
+});
+
+const RANGE_START = Date.parse('2024-01-01T00:00:00Z');
+const RANGE_END = Date.parse('2024-01-01T12:00:00Z');
+const buildAnnotations = (incidents) =>
+    buildIncidentAnnotations(incidents, RANGE_START, RANGE_END, CHART_LABELS, MARKER_COLORS);
+const anIncident = (overrides) => ({
+    incidentType: 'HTTP',
+    startedAt: '2024-01-01T01:00:00Z',
+    endedAt: '2024-01-01T02:00:00Z',
+    details: null,
+    ...overrides,
+});
+
+test('buildIncidentAnnotations marks both ends of an incident within the range', () => {
+    const result = buildAnnotations([anIncident({details: 'Connection timed out'})]);
+    assert.equal(result.xaxis.length, 2);
+    assert.equal(result.points.length, 2);
+
+    const [start, end] = result.points;
+    // The vertical line and the point carrying the tooltip belong to the same moment
+    assert.equal(result.xaxis[0].x, start.x);
+    assert.equal(start.x, Date.parse('2024-01-01T01:00:00Z'));
+    // The points sit on the zero line of the first axis
+    assert.equal(start.y, 0);
+    assert.equal(start.yAxisIndex, 0);
+    assert.equal(start.marker.fillColor, 'red');
+    assert.equal(start.tooltip.enabled, true);
+    assert.match(start.tooltip.text, /Incident started/);
+    assert.match(start.tooltip.text, /Connection timed out/);
+
+    assert.equal(end.x, Date.parse('2024-01-01T02:00:00Z'));
+    assert.equal(end.marker.fillColor, 'green');
+    assert.match(end.tooltip.text, /Incident resolved/);
+    assert.match(end.tooltip.text, /Connection timed out/);
+});
+
+test('buildIncidentAnnotations only marks the end of an incident that started before the range', () => {
+    const result = buildAnnotations([anIncident({startedAt: '2023-12-31T23:00:00Z'})]);
+    assert.equal(result.points.length, 1);
+    assert.equal(result.points[0].marker.fillColor, 'green');
+});
+
+test('buildIncidentAnnotations only marks the start of an ongoing incident', () => {
+    const result = buildAnnotations([anIncident({endedAt: null})]);
+    assert.equal(result.points.length, 1);
+    assert.equal(result.points[0].marker.fillColor, 'red');
+});
+
+test('buildIncidentAnnotations ignores the incidents outside of the range', () => {
+    const result = buildAnnotations([
+        anIncident({startedAt: '2024-01-01T13:00:00Z', endedAt: null}),
+        anIncident({startedAt: '2023-12-31T10:00:00Z', endedAt: '2023-12-31T11:00:00Z'}),
+    ]);
+    assert.deepEqual(result, {xaxis: [], points: []});
+});
+
+test('buildIncidentAnnotations ignores SSL incidents', () => {
+    assert.deepEqual(buildAnnotations([anIncident({incidentType: 'SSL'})]), {xaxis: [], points: []});
+});
+
+test('buildIncidentAnnotations escapes the details of an incident in the tooltip', () => {
+    const [start] = buildAnnotations([anIncident({details: '<img src=x onerror=alert(1)>'})]).points;
+    assert.ok(!start.tooltip.text.includes('<img'));
+    assert.ok(start.tooltip.text.includes('&lt;img src=x onerror=alert(1)&gt;'));
+});
+
+test('buildIncidentAnnotations leaves the details out of the tooltip of an incident without any', () => {
+    const [start] = buildAnnotations([anIncident({details: null})]).points;
+    assert.equal(start.tooltip.text.split('<div>').length - 1, 1);
+});
+
+test('formatChartTimestamp pads every part of the date to two digits', () => {
+    assert.equal(formatChartTimestamp(new Date(2024, 0, 2, 3, 4, 5)), '2024/01/02 03:04:05');
+});
+
+test('the metrics blocks fetch their stats and incidents for the selected period', () => {
+    const cases = [
+        [httpMetricsBlock, 'http-monitors'],
+        [icmpMetricsBlock, 'icmp-monitors'],
+        [tcpMetricsBlock, 'tcp-monitors'],
+        [dnsMetricsBlock, 'dns-monitors'],
+    ];
+    for (const [factory, statsPath] of cases) {
+        const block = factory(42, true, 60, CHART_LABELS, 'PT24H');
+        assert.equal(block.statsUrl(), `/api/v2/${statsPath}/42/stats?period=PT24H`);
+        assert.equal(block.incidentsUrl(), '/api/v2/incidents?monitorId=42&period=PT24H&includeResolved=true');
+
+        block.period = 'PT168H';
+        assert.equal(block.statsUrl(), `/api/v2/${statsPath}/42/stats?period=PT168H`);
+        assert.equal(block.incidentsUrl(), '/api/v2/incidents?monitorId=42&period=PT168H&includeResolved=true');
+    }
+});
+
+test('changing the period drops the previous data and polls the metrics right away', () => {
+    const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
+    const watchers = {};
+    let polls = 0;
+    Object.assign(block, {
+        $watch: (property, callback) => {
+            watchers[property] = callback;
+        },
+        initializeChart() {},
+        pollEndpoint() {
+            polls++;
+        },
+    });
+    block.init();
+    const pollsAfterInit = polls;
+
+    block.previousData = {labels: []};
+    block.period = 'PT168H';
+    watchers.period();
+
+    assert.equal(block.previousData, null);
+    assert.equal(block.isPeriodLoading, true);
+    assert.equal(polls, pollsAfterInit + 1);
+});
+
+test('pollEndpoint renders the fetched metrics along with the incidents, but only once they change', async (t) => {
+    let now = NOW;
+    const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
+    block.now = () => now;
+    const rendered = [];
+    block.updateChart = (data) => rendered.push(data);
+    const stats = {metricsLogs: METRICS_LOGS_OF_AN_HOUR};
+    stubFetch(t, async (url) => url.startsWith('/api/v2/incidents')
+        ? jsonResponse([{incidentType: 'TCP', startedAt: '2024-01-01T00:30:00Z', endedAt: null, details: null}])
+        : jsonResponse(stats));
+
+    await block.pollEndpoint();
+    assert.equal(block.lastResponse, stats);
+    assert.equal(rendered.length, 1);
+    assert.equal(rendered[0].annotations.points.length, 1);
+
+    // The displayed range follows the clock, but that alone doesn't re-render the same data
+    now += 60 * 1000;
+    await block.pollEndpoint();
+    assert.equal(rendered.length, 1);
+});
+
+test('pollEndpoint still renders the metrics when the incidents cannot be fetched', async (t) => {
+    t.mock.method(console, 'error', () => {});
+    const stats = {metricsLogs: METRICS_LOGS_OF_AN_HOUR};
+    const failures = [
+        async () => ({ok: false, status: 500}),
+        async () => {
+            throw new Error('network down');
+        },
+    ];
+    for (const failure of failures) {
+        const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
+        const rendered = [];
+        block.updateChart = (data) => rendered.push(data);
+        stubFetch(t, async (url) => url.startsWith('/api/v2/incidents') ? failure() : jsonResponse(stats));
+
+        await block.pollEndpoint();
+
+        assert.equal(block.lastResponse, stats);
+        assert.equal(rendered.length, 1);
+        assert.deepEqual(rendered[0].annotations, {xaxis: [], points: []});
+    }
+});
+
+test('pollEndpoint renders nothing when the stats cannot be fetched', async (t) => {
+    t.mock.method(console, 'error', () => {});
+    const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
+    const rendered = [];
+    block.updateChart = (data) => rendered.push(data);
+    stubFetch(t, async (url) => url.startsWith('/api/v2/incidents') ? jsonResponse([]) : {ok: false, status: 500});
+
+    await block.pollEndpoint();
+
+    assert.equal(block.lastResponse, null);
+    assert.equal(rendered.length, 0);
+});
+
+test('pollEndpoint discards the response of a period that has been changed in the meantime', async (t) => {
+    const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
+    const rendered = [];
+    block.updateChart = (data) => rendered.push(data);
+    let resolveStats;
+    stubFetch(t, (url) => url.startsWith('/api/v2/incidents')
+        ? Promise.resolve(jsonResponse([]))
+        : new Promise(resolve => {
+            resolveStats = resolve;
+        }));
+
+    const polling = block.pollEndpoint();
+    // What the watcher of the period does
+    block.period = 'PT168H';
+    block.isPeriodLoading = true;
+    resolveStats(jsonResponse({metricsLogs: METRICS_LOGS_OF_AN_HOUR}));
+    await polling;
+
+    // The loading of the newly selected period is still in progress
+    assert.equal(block.isPeriodLoading, true);
+
+    assert.equal(block.lastResponse, null);
+    assert.equal(rendered.length, 0);
+});
+
+test('changing the period shows the loading state until the response of the new period is handled', async (t) => {
+    t.mock.method(console, 'error', () => {});
+    const cases = [
+        [jsonResponse({metricsLogs: METRICS_LOGS_OF_AN_HOUR}), 1],
+        // A failed request must not leave the block loading forever
+        [{ok: false, status: 500}, 0],
+    ];
+    for (const [statsResponse, expectedRenderCount] of cases) {
+        const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
+        const rendered = [];
+        block.updateChart = (data) => rendered.push(data);
+        let resolveStats;
+        stubFetch(t, (url) => url.startsWith('/api/v2/incidents')
+            ? Promise.resolve(jsonResponse([]))
+            : new Promise(resolve => {
+                resolveStats = resolve;
+            }));
+
+        block.period = 'PT168H';
+        const refreshing = block.refreshPeriod();
+        assert.equal(block.isPeriodLoading, true);
+
+        resolveStats(statsResponse);
+        await refreshing;
+
+        assert.equal(block.isPeriodLoading, false);
+        assert.equal(rendered.length, expectedRenderCount);
+    }
+});
+
+test('the auto-refresh never shows the loading state', async (t) => {
+    const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
+    block.updateChart = () => {};
+    const loadingStatesDuringRequests = [];
+    stubFetch(t, async (url) => {
+        loadingStatesDuringRequests.push(block.isPeriodLoading);
+        return url.startsWith('/api/v2/incidents')
+            ? jsonResponse([])
+            : jsonResponse({metricsLogs: METRICS_LOGS_OF_AN_HOUR});
+    });
+
+    await block.pollEndpoint();
+
+    assert.deepEqual(loadingStatesDuringRequests, [false, false]);
+    assert.equal(block.isPeriodLoading, false);
 });
 
 // --------- #4: numeric-boundary validators ---------
@@ -376,18 +731,18 @@ test('TCP populateFrom copies a source and falls back to defaults', () => {
 // --------- DNS: metrics block ---------
 
 test('dnsMetricsBlock.transformData preserves null latency and has no packet-loss series', () => {
-    const block = dnsMetricsBlock(1, true, 60, 'no data', 24);
+    const block = dnsMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
     const result = block.transformData({
         metricsLogs: [
             {createdAt: '2024-01-01T00:00:00Z', latencyInMs: null},
             {createdAt: '2024-01-01T00:01:00Z', latencyInMs: '42'},
         ],
-    });
+    }, []);
     // Null latency must stay null (a gap in the chart), not become NaN
-    assert.deepEqual(result.latency.series[0].data, [null, 42]);
-    assert.equal(result.latency.labels.length, 2);
+    assert.deepEqual(result.series[0].data, [null, 42]);
+    assert.equal(result.labels.length, 2);
     // DNS monitors track latency only - there is no packet-loss series
-    assert.equal(result.packetLoss, undefined);
+    assert.equal(result.series.length, 1);
 });
 
 // --------- DNS: numeric-boundary validators ---------
@@ -770,4 +1125,235 @@ test('fetchCategories fails open when the request throws', async () => {
     } finally {
         console.error = originalConsoleError;
     }
+});
+
+// --------- Upsert forms ---------
+
+// Stubs the browser globals of a submitted form, recording the navigation and the alerts
+const stubBrowser = (t) => {
+    const browser = {location: {href: null, reloaded: false, reload() { this.reloaded = true; }}, alerts: []};
+    const originalWindow = globalThis.window;
+    const originalAlert = globalThis.alert;
+    globalThis.window = browser;
+    globalThis.alert = (message) => browser.alerts.push(message);
+    t.mock.method(console, 'error', () => {});
+    t.after(() => {
+        globalThis.window = originalWindow;
+        globalThis.alert = originalAlert;
+    });
+    return browser;
+};
+
+// Stubs fetch with the given responses (or errors to throw) in order, recording the requests
+const stubRequests = (t, ...responses) => {
+    const requests = [];
+    stubFetch(t, async (url, init) => {
+        requests.push({url, method: init.method, body: init.body && JSON.parse(init.body)});
+        const response = responses.shift();
+        if (response instanceof Error) throw response;
+        return response;
+    });
+    return requests;
+};
+
+const errorResponse = (status, body) => ({ok: false, status, statusText: 'Error', json: async () => body});
+
+test('upsert creates a monitor and redirects to its page', async (t) => {
+    const browser = stubBrowser(t);
+    const requests = stubRequests(t, jsonResponse({id: 42}));
+    const form = upsertIcmpMonitorForm(null, {}, 'category-select', 0);
+    form.populateFrom({name: 'ping', host: 'example.com', category: ' '});
+
+    await form.upsert();
+
+    assert.equal(requests.length, 1);
+    assert.equal(requests[0].url, '/api/v2/icmp-monitors');
+    assert.equal(requests[0].method, 'POST');
+    assert.deepEqual(requests[0].body, {
+        name: 'ping', failureCountThreshold: 1, integrations: [], category: null, host: 'example.com',
+        uptimeCheckInterval: 60, packetCount: 3, timeoutSeconds: 5, packetLossThreshold: 100,
+        metricsHistoryEnabled: true, enabled: true,
+    });
+    assert.equal(browser.location.href, '/icmp-monitors/42');
+    assert.equal(form.isRequestLoading, false);
+});
+
+test('upsert updates an existing monitor without touching its enabled state and reloads the page', async (t) => {
+    const browser = stubBrowser(t);
+    let isBodyRead = false;
+    const requests = stubRequests(t, {ok: true, json: async () => { isBodyRead = true; return {id: 7}; }});
+    const form = upsertTcpMonitorForm({id: 7, name: 'db', host: 'db.local', port: '5432'}, {}, 'category-select', 0);
+    form.resetState();
+
+    await form.upsert();
+
+    assert.equal(requests[0].url, '/api/v2/tcp-monitors/7');
+    assert.equal(requests[0].method, 'PATCH');
+    assert.equal('enabled' in requests[0].body, false);
+    assert.equal(requests[0].body.port, 5432);
+    assert.equal(requests[0].body.latencyThresholdMs, null);
+    assert.equal(isBodyRead, true);
+    assert.equal(browser.location.reloaded, true);
+    assert.equal(browser.location.href, null);
+});
+
+test('upsert flags the conflicting fields of each entity', async (t) => {
+    stubBrowser(t);
+    stubRequests(t, errorResponse(409), errorResponse(409), errorResponse(409));
+    const messages = {
+        nameAlreadyExists: 'NAME', nameOrClientSecretAlreadyExists: 'NAME_OR_SECRET', slugAlreadyExists: 'SLUG',
+    };
+    const dnsForm = upsertDnsMonitorForm(null, messages, 'category-select', 0);
+    const pushForm = upsertPushMonitorForm(null, messages, 'category-select', 0);
+    const statusPageForm = upsertStatusPageForm(null, messages, 'monitor-select', [], 'categories-select');
+
+    for (const form of [dnsForm, pushForm, statusPageForm]) {
+        form.resetState();
+        await form.upsert();
+        assert.equal(form.isRequestLoading, false);
+    }
+
+    assert.deepEqual(dnsForm.errors, {name: 'NAME'});
+    assert.deepEqual(pushForm.errors, {name: 'NAME_OR_SECRET', clientSecret: 'NAME_OR_SECRET'});
+    assert.deepEqual(statusPageForm.errors, {slug: 'SLUG'});
+});
+
+test('upsert shows the rejected name change of a monitor on its field, every other bad request on the form', async (t) => {
+    stubBrowser(t);
+    stubRequests(
+        t,
+        errorResponse(400, {errorCode: 'MONITOR_NAME_CANNOT_BE_CHANGED', message: 'immutable'}),
+        errorResponse(400, {errorCode: 'VALIDATION_ERROR', message: 'invalid monitor'}),
+        errorResponse(400, {message: 'invalid window'}),
+    );
+    const messages = {nameCannotBeChanged: 'IMMUTABLE'};
+    const monitorForm = upsertHttpMonitorForm({id: 1, name: 'site'}, messages, 'category-select', 'select', [], 0);
+    const maintenanceWindowForm = upsertMaintenanceWindowForm(null, messages, 'select', []);
+
+    monitorForm.resetState();
+    await monitorForm.upsert();
+    assert.deepEqual(monitorForm.errors, {name: 'IMMUTABLE'});
+    assert.equal(monitorForm.formError, null);
+
+    monitorForm.resetState();
+    await monitorForm.upsert();
+    assert.deepEqual(monitorForm.errors, {});
+    assert.equal(monitorForm.formError, 'invalid monitor');
+
+    maintenanceWindowForm.resetState();
+    await maintenanceWindowForm.upsert();
+    assert.deepEqual(maintenanceWindowForm.errors, {});
+    assert.equal(maintenanceWindowForm.formError, 'invalid window');
+});
+
+test('upsert alerts on an unexpected response and on a failed request', async (t) => {
+    const browser = stubBrowser(t);
+    stubRequests(t, errorResponse(500), new Error('network down'));
+    const form = upsertStatusPageForm({id: 2, title: 'Status', slug: 'status'}, {}, 'monitor-select', [], 'categories-select');
+    form.resetState();
+
+    await form.upsert();
+    await form.upsert();
+
+    assert.equal(browser.alerts.length, 2);
+    assert.ok(browser.alerts.every(alert => alert.includes('status page')));
+    assert.deepEqual(form.errors, {});
+    assert.equal(form.isRequestLoading, false);
+    assert.equal(browser.location.reloaded, false);
+});
+
+test('submitForm only sends a valid form', async (t) => {
+    stubBrowser(t);
+    const requests = stubRequests(t, jsonResponse({id: 3}), jsonResponse({id: 4}));
+    const monitorForm = upsertIcmpMonitorForm(null, {nameRequired: 'NAME', hostRequired: 'HOST'}, 'category-select', 0);
+    const maintenanceWindowForm = upsertMaintenanceWindowForm(null, {nameRequired: 'NAME'}, 'select', []);
+
+    monitorForm.resetState();
+    monitorForm.submitForm();
+    assert.equal(requests.length, 0);
+    assert.equal(monitorForm.errors.name, 'NAME');
+    assert.equal(monitorForm.errors.host, 'HOST');
+
+    Object.assign(monitorForm, {name: 'ping', host: 'example.com'});
+    monitorForm.submitForm();
+    await new Promise(setImmediate);
+    assert.equal(requests.length, 1);
+
+    maintenanceWindowForm.resetState();
+    await maintenanceWindowForm.submitForm();
+    assert.equal(requests.length, 1);
+    assert.equal(maintenanceWindowForm.errors.name, 'NAME');
+
+    maintenanceWindowForm.name = 'Upgrade';
+    await maintenanceWindowForm.submitForm();
+    await new Promise(setImmediate);
+    assert.equal(requests.length, 2);
+    assert.equal(requests[1].url, '/api/v2/maintenance-windows');
+});
+
+test('cloneFrom copies the source monitor under the new name, with a fresh client secret for push monitors', async (t) => {
+    const pushSource = {name: 'job', heartbeatInterval: 30, clientSecret: 'x'.repeat(36), category: 'Jobs'};
+    const icmpSource = {name: 'ping', host: 'example.com', packetCount: 5};
+    const requests = stubRequests(t, jsonResponse(pushSource), jsonResponse(icmpSource));
+    const pushForm = upsertPushMonitorForm(null, {}, 'category-select', 0);
+    const icmpForm = upsertIcmpMonitorForm(null, {}, 'category-select', 0);
+
+    pushForm.cloneFrom(5, 'job (copy)');
+    assert.equal(pushForm.isCloning, true);
+    await new Promise(setImmediate);
+    icmpForm.cloneFrom(6, 'ping (copy)');
+    await new Promise(setImmediate);
+
+    assert.deepEqual(requests.map(request => request.url), ['/api/v2/push-monitors/5', '/api/v2/icmp-monitors/6']);
+    assert.equal(pushForm.isCloning, false);
+    assert.equal(pushForm.name, 'job (copy)');
+    assert.equal(pushForm.heartbeatInterval, 30);
+    assert.equal(pushForm.category, 'Jobs');
+    assert.notEqual(pushForm.clientSecret, pushSource.clientSecret);
+    assert.equal(icmpForm.name, 'ping (copy)');
+    assert.equal(icmpForm.host, 'example.com');
+    assert.equal(icmpForm.packetCount, 5);
+});
+
+test('HTTP validators enforce the name, SSL expiry, interval, failure count and response time rules', () => {
+    const msgs = {
+        nameRequired: 'N', sslExpiryThresholdInvalid: 'SSL', uptimeCheckIntervalInvalid: 'UI',
+        failureCountThresholdInvalid: 'FC', responseTimeThresholdInvalid: 'RT',
+    };
+    const buildForm = () => upsertHttpMonitorForm(null, msgs, 'category-select', 'select', [], 0);
+
+    assertValidatorBoundaries(buildForm, 'name', 'validateName', 'N', [
+        ['', true], ['   ', true], [null, true], ['site', false],
+    ]);
+    assertValidatorBoundaries(buildForm, 'sslExpiryThreshold', 'validateSslExpiryThreshold', 'SSL', [
+        [0, true], [-1, true], ['', true], [1, false],
+    ]);
+    assertValidatorBoundaries(buildForm, 'uptimeCheckInterval', 'validateUptimeCheckInterval', 'UI', [
+        [4, true], [5, false], ['abc', true],
+    ]);
+    assertValidatorBoundaries(buildForm, 'failureCountThreshold', 'validateFailureCountThreshold', 'FC', [
+        [0, true], [1, false], ['abc', true],
+    ]);
+    // responseTimeThresholdMillis: optional (null), otherwise valid 1..30000
+    assertValidatorBoundaries(buildForm, 'responseTimeThresholdMillis', 'validateResponseTimeThreshold', 'RT', [
+        [null, false], [0, true], [1, false], [30000, false], [30001, true], ['', true],
+    ]);
+});
+
+test('HTTP submitForm keeps an invalid request body on its field instead of sending it', async (t) => {
+    stubBrowser(t);
+    const requests = stubRequests(t, jsonResponse({id: 8}));
+    const form = upsertHttpMonitorForm(null, {requestBodyInvalid: 'JSON'}, 'category-select', 'select', [], 0);
+    form.resetState();
+    Object.assign(form, {name: 'api', url: 'https://example.com', requestBody: '{"key": '});
+
+    form.submitForm();
+    assert.equal(requests.length, 0);
+    assert.equal(form.errors.requestBody, 'JSON');
+
+    form.requestBody = '{"key": "value"}';
+    form.submitForm();
+    await new Promise(setImmediate);
+    assert.equal(requests.length, 1);
+    assert.equal(requests[0].body.requestBody, '{"key": "value"}');
 });

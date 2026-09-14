@@ -6,7 +6,6 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
-import com.kuvaszuptime.kuvasz.util.UIDefaults
 import kotlinx.html.*
 
 internal fun FlowContent.httpMonitorDetailsContent(monitor: HttpMonitorDetailsDto, stats: HistoricalUptimeStatsDto) =
@@ -17,14 +16,6 @@ internal fun FlowContent.httpMonitorDetailsContent(monitor: HttpMonitorDetailsDt
     ) {
         // Latency metrics
         if (monitor.latencyHistoryEnabled) {
-            h2 {
-                testId("latency-block-title")
-                +Messages.latencyBlockTitle()
-                span {
-                    classes(BADGE)
-                    +Messages.lastXHours(UIDefaults.HTTP_MONITOR_LATENCY_STATS_PERIOD_HOURS)
-                }
-            }
             detailsMetricsBlock(monitor)
         }
         // SSL check metrics

@@ -18,6 +18,9 @@ class TcpMonitorDetailsPage(private val page: Page) {
     // ApexCharts container; once rendered it holds an `<svg>`.
     val latencyChartSvg: Locator get() = page.locator("#tcp-monitor-details-latency-chart svg")
 
+    // The period selector of the metrics block, changing it refreshes the metrics without reloading the page
+    val metricsPeriodSelector: Locator get() = page.getByTestId("metrics-period-selector")
+
     val configureButton: Locator get() = page.getByTestId("configure-button")
 
     // The badge in the header showing the monitor's category, if it has one

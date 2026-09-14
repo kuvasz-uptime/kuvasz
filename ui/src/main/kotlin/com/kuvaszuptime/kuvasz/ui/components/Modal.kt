@@ -6,29 +6,13 @@ import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
 
-fun FlowContent.cloningOverlay() {
-    templateTag {
-        xIf("isCloning")
-        div {
-            classes(
-                POSITION_ABSOLUTE, TOP_0, START_0, END_0, BOTTOM_0,
-                D_FLEX, ALIGN_ITEMS_CENTER, JUSTIFY_CONTENT_CENTER,
-                BG_SURFACE_BACKDROP, ROUNDED
-            )
-            testId("cloning-overlay")
-            div {
-                classes(SPINNER_GROW)
-                role = "status"
-            }
-        }
-    }
-}
+internal fun FlowContent.cloningOverlay() = loadingOverlay(xShowIf = "isCloning", overlayTestId = "cloning-overlay")
 
 /**
  * The error the server reported for a save that the client-side validation let through (e.g. a constraint only the
  * backend can check). Without it such a response would leave the modal open with no explanation at all.
  */
-fun FlowContent.formErrorAlert() {
+internal fun FlowContent.formErrorAlert() {
     templateTag {
         xIf("formError")
         div {
@@ -39,7 +23,7 @@ fun FlowContent.formErrorAlert() {
     }
 }
 
-fun FlowContent.upsertModalFooter(
+internal fun FlowContent.upsertModalFooter(
     isReadOnlyMode: Boolean,
     xSaveDisabledIf: String,
     xOnSaveClicked: String,

@@ -13,3 +13,24 @@ fun FlowContent.htmxLoadingIndicator() {
         }
     }
 }
+
+/**
+ * An overlay with a spinner, covering its closest positioned ancestor while the Alpine.js [xShowIf] expression holds.
+ */
+internal fun FlowContent.loadingOverlay(xShowIf: String, overlayTestId: String) {
+    templateTag {
+        xIf(xShowIf)
+        div {
+            classes(
+                POSITION_ABSOLUTE, TOP_0, START_0, END_0, BOTTOM_0,
+                D_FLEX, ALIGN_ITEMS_CENTER, JUSTIFY_CONTENT_CENTER,
+                BG_BODY, BG_OPACITY_75, ROUNDED
+            )
+            testId(overlayTestId)
+            div {
+                classes(SPINNER_GROW)
+                role = "status"
+            }
+        }
+    }
+}

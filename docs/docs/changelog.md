@@ -11,6 +11,12 @@ Both selectors are **additive** with the explicit monitor list, and a category n
 
 The monitor lists themselves can be **filtered by category** too, on the Web UI and through the REST API alike.
 
+The **metrics** on the monitor details pages got some love as well:
+
+- The **incidents** that started or got resolved in the displayed time range are **marked on the charts**, and hovering a marker reveals the details of the incident.
+- The metrics can be displayed for a **selectable period**, from the last hour up to the last 30 days (the last day by default). Changing it refreshes the metrics in place, without reloading the page, and shows a loader until the metrics of the new period arrive.
+- The latency and the packet loss of **ICMP monitors** are drawn on a **single chart**, each of them with an axis of its own.
+
 ### Security
 
 - **Custom request headers were sent to every origin a redirect pointed to**: an HTTP monitor that follows redirects attached its [**request headers**](management/http-monitors.md#request-headers) to **every hop** of the redirect chain, so a secret in them - an `Authorization` header or an API key, for example - reached whatever origin the monitored URL (or any later hop) redirected to, even over plain HTTP. From now on, the custom request headers are **only sent to the origin (scheme, host and port) of the monitored URL**, and they're withheld from every hop on a different origin. The default headers added by _Kuvasz_ and the request body are not affected. If a monitor really needs its headers on another origin, the new [**cross-origin header propagation**](management/http-monitors.md#cross-origin-header-propagation) option restores the previous behavior. It's available on the Web UI, through the REST API, over MCP and in the YAML config (`cross-origin-header-propagation`) as well.
