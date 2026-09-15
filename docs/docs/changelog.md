@@ -27,11 +27,11 @@ The monitor lists themselves can be **filtered by category** too, on the Web UI 
 
 The **metrics** on the monitor details pages got some love as well:
 
-- The **incidents** that started or got resolved in the displayed time range are **marked on the charts**, and hovering a marker reveals the details of the incident.
+- The **incidents** that started or got resolved in the displayed time range are **marked on the charts**.
 
 ![Incidents on the charts](images/features/new_charts.webp)
 
-- The metrics can be displayed for a **selectable period**, from the last hour up to the last 30 days (the last day by default). Changing it refreshes the metrics in place, without reloading the page, and shows a loader until the metrics of the new period arrive.
+- The metrics can be displayed for a **selectable period**, from the last hour up to the last 30 days (the last day by default).
 - The latency and the packet loss of **ICMP monitors** are drawn on a **single chart**, each of them with an axis of its own.
 
 ![Merged charts of ICMP monitors](images/features/new_icmp_charts.webp)
@@ -42,7 +42,7 @@ The **metrics** on the monitor details pages got some love as well:
 
 Every row of the monitor, status page and maintenance window lists got a :material-cog-outline: **configure** button, which opens the settings of the given entity without leaving the list, and saving them brings you back to the very same list. Going through a bunch of them one after the other doesn't take a detour to their details pages anymore.
 
-Just like monitors, **status pages** and **maintenance windows** can be :material-content-copy: **cloned** from their lists as well. A copy starts **private** (status pages) or **disabled** (maintenance windows), so it doesn't take effect before you've adjusted it.
+Just like monitors, **status pages** and **maintenance windows** can be :material-content-copy: **cloned** from their lists as well.
 
 ### Improvements
 
