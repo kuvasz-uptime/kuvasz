@@ -1,0 +1,4 @@
+User-agent: *
+Disallow:
+Disallow: /api-docs
+Sitemap: https://kuvasz-uptime.dev/sitemap.xml
