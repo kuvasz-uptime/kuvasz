@@ -47,7 +47,7 @@ body {
 /* TomSelect clear button */
 div.ts-wrapper.form-select.plugin-clear_button > div.ts-control > div.clear-button {
     border: none !important;
-    transform: translateY(-62%) !important;
+    transform: translateY(-55%) !important;
     font-size: 24px !important;
 }
 
@@ -58,6 +58,15 @@ div.ts-wrapper.form-select.plugin-clear_button > div.ts-control > div.clear-butt
 
 .ts-wrapper .ts-control > div.item {
     border-radius: 6px !important; /* Match the border-radius of the parent input */
+}
+
+/* Disabled TomSelect. The library rounds the control with the undefined `--bs-border-radius`, which only shows up
+   once the disabled state paints a background on it: its square corners stick out of the wrapper's rounded border.
+   The background also follows the other disabled form fields instead of Tabler's darker `--tblr-secondary-bg`. The
+   `div` outranks the vendor rules, which are loaded after this file. */
+div.ts-wrapper.disabled .ts-control {
+    background-color: var(--tblr-bg-forms-disabled);
+    border-radius: calc(var(--tblr-border-radius) - var(--tblr-border-width));
 }
 
 /* TomSelect active option background - dark */
