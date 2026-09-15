@@ -9,6 +9,7 @@ class StatusPageFormModal(page: Page) : ModalView(page) {
 
     val titleInput: Locator get() = modal.locator("#title-input")
     val slugInput: Locator get() = modal.locator("#slug-input")
+    val publicToggle: Locator get() = modal.locator("input[name='public']")
 
     fun setTitle(value: String): StatusPageFormModal {
         titleInput.fill(value)

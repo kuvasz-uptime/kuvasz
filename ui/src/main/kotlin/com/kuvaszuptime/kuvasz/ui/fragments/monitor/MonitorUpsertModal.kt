@@ -134,10 +134,10 @@ internal fun FlowContent.monitorUpsertModal(
                 // Modal footer
                 upsertModalFooter(
                     isReadOnlyMode,
-                    xSaveDisabledIf = "hasNonNullValue(errors) || isRequestLoading || isCloning",
+                    xSaveDisabledIf = "hasNonNullValue(errors) || isRequestLoading || isLoadingEntity",
                     xOnSaveClicked = "submitForm()",
                 )
-                cloningOverlay()
+                entityLoadingOverlay()
             }
         }
     }

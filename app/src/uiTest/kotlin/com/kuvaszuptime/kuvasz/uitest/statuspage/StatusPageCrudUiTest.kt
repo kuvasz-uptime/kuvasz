@@ -12,6 +12,7 @@ import com.kuvaszuptime.kuvasz.uitest.pages.statuspage.StatusPageDetailsPage
 import com.kuvaszuptime.kuvasz.uitest.pages.statuspage.StatusPageListPage
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldEndWith
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 
 @MicronautTest(environments = [PlaywrightSupport.UI_TEST_ENV])
@@ -40,6 +41,174 @@ class StatusPageCrudUiTest(private val httpMonitorRepository: HttpMonitorReposit
             assertThat(modal.saveButton).isVisible()
             modal.setTitle(updatedTitle).save()
             assertThat(details.heading(updatedTitle)).isVisible()
+        }
+
+        "a status page can be edited from its list row, and saving it leads back to the list" {
+            createHttpMonitor(httpMonitorRepository, monitorName = "Listed Monitor")
+            createStatusPage(
+                dslContext,
+                title = "List Edit Source",
+                slug = "list-edit-source",
+                monitors = listOf(MonitorID(MonitorType.HTTP_SSL, "Listed Monitor")),
+                categories = listOf("Payments"),
+            )
+            createStatusPage(dslContext, title = "Neighbour Page", slug = "neighbour-page")
+
+            val page = newPage()
+            val list = StatusPageListPage(page)
+            list.navigate()
+
+            val modal = list.configureStatusPage("List Edit Source")
+            assertThat(modal.title).hasText(Messages.updateStatusPage("List Edit Source"))
+            // Every value is loaded from the status page of the row
+            assertThat(modal.titleInput).hasValue("List Edit Source")
+            assertThat(modal.titleInput).isEnabled()
+            assertThat(modal.slugInput).hasValue("list-edit-source")
+            assertThat(modal.selectedOptions).hasCount(1)
+            assertThat(modal.selectedOptions).containsText("Listed Monitor")
+            assertThat(modal.selectedCategories).hasCount(1)
+            assertThat(modal.selectedCategories).containsText("Payments")
+
+            modal.setTitle("List Edit Renamed").setSlug("list-edit-renamed")
+            modal.clearCategories()
+            modal.save()
+
+            // The list is reloaded in place, instead of navigating to the details page of the status page
+            assertThat(list.rowByTitle("List Edit Renamed")).isVisible()
+            page.url() shouldEndWith "/status-pages"
+            // ...and the status page was updated rather than created anew, while its neighbour was left alone
+            assertThat(list.rows).hasCount(2)
+            assertThat(list.rowByTitle("List Edit Source")).hasCount(0)
+            assertThat(list.rowByTitle("List Edit Renamed")).containsText("/status/list-edit-renamed")
+            assertThat(list.categoriesCell("List Edit Renamed")).hasText("0")
+            assertThat(list.rowByTitle("Neighbour Page")).containsText("/status/neighbour-page")
+        }
+
+        "the list's modal loads the status page of each row, discards abandoned edits and still creates new ones" {
+            createStatusPage(
+                dslContext,
+                title = "First Row Page",
+                slug = "first-row-page",
+                categories = listOf("Payments"),
+            )
+            createStatusPage(dslContext, title = "Second Row Page", slug = "second-row-page")
+
+            val page = newPage()
+            val list = StatusPageListPage(page)
+            list.navigate()
+
+            val first = list.configureStatusPage("First Row Page")
+            assertThat(first.titleInput).hasValue("First Row Page")
+            first.setTitle("Abandoned Title").setSlug("abandoned-slug").dismiss()
+
+            val second = list.configureStatusPage("Second Row Page")
+            assertThat(second.title).hasText(Messages.updateStatusPage("Second Row Page"))
+            assertThat(second.titleInput).hasValue("Second Row Page")
+            assertThat(second.slugInput).hasValue("second-row-page")
+            assertThat(second.selectedCategories).hasCount(0)
+            second.dismiss()
+
+            val firstAgain = list.configureStatusPage("First Row Page")
+            assertThat(firstAgain.titleInput).hasValue("First Row Page")
+            assertThat(firstAgain.slugInput).hasValue("first-row-page")
+            assertThat(firstAgain.selectedCategories).hasCount(1)
+            firstAgain.dismiss()
+
+            // The header button still opens a blank create form, which creates a brand new status page
+            val create = list.openCreateModal()
+            assertThat(create.title).hasText(Messages.createNewStatusPage())
+            assertThat(create.titleInput).hasValue("")
+            assertThat(create.slugInput).hasValue("")
+            assertThat(create.selectedCategories).hasCount(0)
+            create.setTitle("Created After Edits").setSlug("created-after-edits").save()
+            page.waitForURL("**/status-pages/*")
+            assertThat(StatusPageDetailsPage(page).heading("Created After Edits")).isVisible()
+
+            // None of the status pages opened on the way were changed
+            list.navigate()
+            assertThat(list.rowByTitle("Created After Edits")).isVisible()
+            assertThat(list.rowByTitle("First Row Page")).containsText("/status/first-row-page")
+            assertThat(list.rowByTitle("Abandoned Title")).hasCount(0)
+        }
+
+        "a status page can be cloned from its list row, pre-filling a create form under a new title and slug" {
+            createHttpMonitor(httpMonitorRepository, monitorName = "Cloned Monitor")
+            createStatusPage(
+                dslContext,
+                title = "Clone Source Page",
+                slug = "clone-source-page",
+                public = true,
+                monitors = listOf(MonitorID(MonitorType.HTTP_SSL, "Cloned Monitor")),
+                categories = listOf("Payments"),
+                displayCategories = false,
+            )
+
+            val page = newPage()
+            val list = StatusPageListPage(page)
+            list.navigate()
+
+            val clonedTitle = Messages.clonedStatusPageTitle("Clone Source Page")
+            val modal = list.cloneStatusPage("Clone Source Page")
+            assertThat(modal.title).hasText(Messages.createNewStatusPage())
+            // Every value is copied from the source, except the title and the slug, which has to be unique, and the
+            // visibility, as a copy starts private
+            assertThat(modal.titleInput).hasValue(clonedTitle)
+            assertThat(modal.slugInput).hasValue("clone-source-page-copy")
+            assertThat(modal.publicToggle).not().isChecked()
+            assertThat(modal.selectedOptions).hasCount(1)
+            assertThat(modal.selectedOptions).containsText("Cloned Monitor")
+            assertThat(modal.selectedCategories).hasCount(1)
+            assertThat(modal.selectedCategories).containsText("Payments")
+            assertThat(modal.displayCategoriesToggle).not().isChecked()
+
+            modal.save()
+            page.waitForURL("**/status-pages/*")
+            assertThat(StatusPageDetailsPage(page).heading(clonedTitle)).isVisible()
+
+            list.navigate()
+            assertThat(list.rows).hasCount(2)
+            assertThat(list.rowByTitle(clonedTitle)).containsText("/status/clone-source-page-copy")
+            assertThat(list.categoriesCell(clonedTitle)).hasText("1")
+            assertThat(list.privateIndicator(clonedTitle)).isVisible()
+        }
+
+        "cloning and editing through the list's modal never mix up creating and updating a status page" {
+            val longSlug = "a".repeat(SLUG_MAX_LENGTH)
+            createStatusPage(dslContext, title = "Edited Page", slug = "edited-page")
+            createStatusPage(dslContext, title = "Cloned Page", slug = longSlug)
+
+            val page = newPage()
+            val list = StatusPageListPage(page)
+            list.navigate()
+
+            // An abandoned clone doesn't turn the next edit into a create...
+            val abandonedClone = list.cloneStatusPage("Cloned Page")
+            assertThat(abandonedClone.titleInput).hasValue(Messages.clonedStatusPageTitle("Cloned Page"))
+            abandonedClone.dismiss()
+
+            val edit = list.configureStatusPage("Edited Page")
+            assertThat(edit.titleInput).hasValue("Edited Page")
+            edit.setTitle("Edited Page Renamed").save()
+            assertThat(list.rowByTitle("Edited Page Renamed")).isVisible()
+            assertThat(list.rows).hasCount(2)
+
+            // ...and an edit doesn't turn the next clone into an update
+            val clone = list.cloneStatusPage("Cloned Page")
+            assertThat(clone.title).hasText(Messages.createNewStatusPage())
+            assertThat(clone.titleInput).hasValue(Messages.clonedStatusPageTitle("Cloned Page"))
+            // The suffixed slug still fits into the maximum length of a slug
+            val clonedSlug = "a".repeat(SLUG_MAX_LENGTH - CLONED_SLUG_SUFFIX.length) + CLONED_SLUG_SUFFIX
+            assertThat(clone.slugInput).hasValue(clonedSlug)
+            clone.save()
+            page.waitForURL("**/status-pages/*")
+
+            list.navigate()
+            // The source and its copy, which didn't overwrite it
+            assertThat(list.rowByTitle("Cloned Page")).hasCount(2)
+            assertThat(list.rowByTitle("Cloned Page").first()).containsText("/status/$longSlug")
+            assertThat(list.rowByTitle(Messages.clonedStatusPageTitle("Cloned Page")))
+                .containsText("/status/$clonedSlug")
+            assertThat(list.rowByTitle("Edited Page Renamed")).containsText("/status/edited-page")
         }
 
         "an abandoned create form is reset when the modal is reopened" {
@@ -206,6 +375,9 @@ class StatusPageCrudUiTest(private val httpMonitorRepository: HttpMonitorReposit
             val list = StatusPageListPage(page)
             list.navigate()
             assertThat(list.publicIndicator("List Toggle Status Page")).isVisible()
+            assertThat(list.configureButtonIn("List Toggle Status Page")).isVisible()
+            // The view-only configuration button is reserved for the read-only status pages
+            assertThat(list.configurationButtonIn("List Toggle Status Page")).hasCount(0)
 
             list.toggleVisibility("List Toggle Status Page")
             assertThat(list.privateIndicator("List Toggle Status Page")).isVisible()
@@ -262,5 +434,10 @@ class StatusPageCrudUiTest(private val httpMonitorRepository: HttpMonitorReposit
             assertThat(list.rows).hasCount(titles.size)
             list.titles shouldBe listOf("alpha", "bravo", "Charlie", "Delta")
         }
+    }
+
+    companion object {
+        private const val SLUG_MAX_LENGTH = 50
+        private const val CLONED_SLUG_SUFFIX = "-copy"
     }
 }

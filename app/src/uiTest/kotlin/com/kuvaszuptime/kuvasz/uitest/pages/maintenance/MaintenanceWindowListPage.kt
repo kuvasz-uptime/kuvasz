@@ -26,6 +26,24 @@ class MaintenanceWindowListPage(private val page: Page) {
 
     fun rowByName(name: String): Locator = rows.filter(Locator.FilterOptions().setHasText(name))
 
+    // Opens the given window's configuration from its row, returning the pre-filled update modal.
+    fun configureMaintenanceWindow(name: String): MaintenanceWindowFormModal {
+        configureButtonIn(name).click()
+        return MaintenanceWindowFormModal(page)
+    }
+
+    fun configureButtonIn(name: String): Locator = rowByName(name).getByTestId("maintenance-window-configure-button")
+
+    // Clones the given window, returning the pre-filled create modal.
+    fun cloneMaintenanceWindow(name: String): MaintenanceWindowFormModal {
+        rowByName(name).getByTestId("maintenance-window-clone-button").click()
+        return MaintenanceWindowFormModal(page)
+    }
+
+    // Only rendered when the maintenance windows are read-only, in place of every other action of the row.
+    fun configurationButtonIn(name: String): Locator =
+        rowByName(name).getByTestId("maintenance-window-configuration-button")
+
     // The "Monitors" column cell of a row: either the global-scope badge or the affected-monitor count.
     fun monitorsCell(name: String): Locator = rowByName(name).getByTestId("maintenance-window-monitors")
 

@@ -9,7 +9,7 @@ abstract class ModalView(protected val page: Page) {
 
     protected val modal: Locator get() = page.locator(".modal.show")
 
-    // The title of a monitor modal. It holds both the server-rendered title and the one of a monitor opened from a list
+    // The title of an upsert modal. It holds both the server-rendered title and the one of an entity opened from a list
     // row, so only the one actually shown counts.
     val title: Locator get() = modal.locator(".modal-title > span:visible")
 

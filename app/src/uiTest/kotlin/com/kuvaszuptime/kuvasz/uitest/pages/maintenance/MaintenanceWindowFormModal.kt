@@ -15,6 +15,7 @@ class MaintenanceWindowFormModal(page: Page) : ModalView(page) {
     val durationInput: Locator get() = modal.locator("#duration-input")
 
     private val globalToggle: Locator get() = modal.locator("input[name='global']")
+    val enabledToggle: Locator get() = modal.locator("input[name='enabled']")
 
     // The TomSelect monitor multi-select; hidden for global windows (which apply to every monitor).
     val monitorSelector: Locator get() = modal.getByTestId("multi-select")

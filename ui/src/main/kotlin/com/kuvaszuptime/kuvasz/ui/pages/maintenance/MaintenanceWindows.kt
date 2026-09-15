@@ -41,7 +41,7 @@ fun renderMaintenanceWindowsPage(globals: AppGlobals) =
     }
 
 internal fun HtmlBlockTag.maintenanceWindowsHeader(globals: AppGlobals) {
-    val createModalId = "create-maintenance-window-modal"
+    val createModalId = CREATE_MAINTENANCE_WINDOW_MODAL_ID
     div {
         classes(CONTAINER_XL)
         div {
@@ -87,8 +87,6 @@ internal fun HtmlBlockTag.maintenanceWindowsHeader(globals: AppGlobals) {
                 }
             }
         }
-        if (!globals.editabilityState.areMaintenanceWindowsReadOnly()) {
-            maintenanceWindowCreateUpdateModal(modalId = createModalId, maintenanceWindow = null, globals)
-        }
+        maintenanceWindowCreateUpdateModal(modalId = createModalId, maintenanceWindow = null, globals)
     }
 }

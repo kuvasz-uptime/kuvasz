@@ -262,10 +262,18 @@ const tcpMonitorListItem = monitorListItem(tcpMonitorApi, refreshTcpMonitorList)
 const dnsMonitorListItem = monitorListItem(dnsMonitorApi, refreshDnsMonitorList);
 const pushMonitorListItem = monitorListItem(pushMonitorApi, refreshPushMonitorList);
 
-const statusPageListItem = (statusPageId, isStatusPagePublic) => ({
+const statusPageListItem = (statusPageId, isStatusPagePublic, clonedFields, editTitle) => ({
     statusPageId,
     isStatusPagePublic,
+    clonedFields,
+    editTitle,
     isRequestLoading: false,
+    cloneStatusPage() {
+        this.$dispatch('clone-status-page', {id: this.statusPageId, fields: this.clonedFields});
+    },
+    editStatusPage() {
+        this.$dispatch('edit-status-page', {id: this.statusPageId, title: this.editTitle});
+    },
     toggleStatusPageVisibility() {
         statusPageApi.patch(
             this.statusPageId,
@@ -794,16 +802,62 @@ const rangeError = (value, min, max, message) =>
 
 const isBlankNumber = (value) => value === '' || value == null;
 
-// Shared by the create/update forms of every entity, the forms provide resetState, validate and buildRequestBody
-const upsertForm = ({entity, errorMessages, pagePath, entityLabel}) => ({
+// Shared by the create/update forms of every entity, the forms provide resetState, populateFrom, validate and
+// buildRequestBody
+const upsertForm = ({api, entity, errorMessages, pagePath, entityLabel}) => ({
     errorMessages: errorMessages || {},
     isRequestLoading: false,
     formError: null,
     isUpdate: !!entity,
     entityId: entity?.id ?? null,
+    isLoadingEntity: false,
+    // Identifies the latest entity load, the responses of the earlier ones are discarded
+    entityLoadId: 0,
+    editTitle: null,
 
     init() {
         this.resetState();
+    },
+
+    // Points the form to the entity it saves: the one it was rendered for (none for a create form), or the one opened
+    // from a list row by editFrom
+    setEditTarget(target, editTitle) {
+        Object.assign(this, {isUpdate: !!target, entityId: target?.id ?? null, editTitle});
+    },
+
+    loadEntity(entityId, onLoaded) {
+        const loadId = ++this.entityLoadId;
+        const isCurrentLoad = () => loadId === this.entityLoadId;
+        return api.get(
+            entityId,
+            () => this.isLoadingEntity = true,
+            async (response) => {
+                const source = await response.json();
+                if (!isCurrentLoad()) return;
+                this.populateFrom(source);
+                onLoaded(source);
+                this.isLoadingEntity = false;
+            },
+            () => {
+                if (isCurrentLoad()) this.isLoadingEntity = false;
+            }
+        );
+    },
+
+    // Keeps a load that is still in progress from populating the form after it has been reset, e.g. by closing the modal
+    discardEntityLoad() {
+        this.entityLoadId++;
+        this.isLoadingEntity = false;
+    },
+
+    // Loads the entity of a list row, so the modal of the list updates it instead of creating a new one
+    editFrom(entityId, title) {
+        return this.loadEntity(entityId, (source) => this.setEditTarget(source, title));
+    },
+
+    // Loads the entity of a list row into the create form of the list, with the values its copy differs in
+    cloneFrom(entityId, overrides) {
+        return this.loadEntity(entityId, () => Object.assign(this, overrides));
     },
 
     submitForm() {
@@ -856,21 +910,17 @@ const upsertForm = ({entity, errorMessages, pagePath, entityLabel}) => ({
 
 // Shared by every monitor type, the forms provide populateTypeFields, validateTypeFields and typeRequestBody
 const monitorForm = ({api, pagePath, monitor, errorMessages, categorySelectId, isNameLocked, globalIntegrationCount}) => ({
-    ...upsertForm({entity: monitor, errorMessages, pagePath, entityLabel: 'monitor'}),
-    isCloning: false,
+    ...upsertForm({api, entity: monitor, errorMessages, pagePath, entityLabel: 'monitor'}),
     globalIntegrationCount: globalIntegrationCount || 0,
-    // The title of the modal, only known for a monitor opened from a list row
-    editTitle: null,
     // The name of a monitor can't be changed while it's on a status page that is read-only
     isNameLocked: !!isNameLocked,
 
     resetState() {
+        this.discardEntityLoad();
         this.setEditTarget(monitor || null, null, !!isNameLocked);
         this.populateFrom(monitor || null);
     },
 
-    // Points the form to the monitor it saves: the one it was rendered for (none for a create form), or the one opened
-    // from a list row by editFrom
     setEditTarget(target, editTitle, isNameLocked) {
         Object.assign(this, {isUpdate: !!target, entityId: target?.id ?? null, editTitle, isNameLocked});
     },
@@ -886,23 +936,8 @@ const monitorForm = ({api, pagePath, monitor, errorMessages, categorySelectId, i
         this.formError = null;
     },
 
-    // Loads a monitor into the form, keeping the loading overlay up meanwhile
-    loadMonitor(monitorId, onLoaded) {
-        return api.get(
-            monitorId,
-            () => this.isCloning = true,
-            async (response) => {
-                const source = await response.json();
-                this.populateFrom(source);
-                onLoaded(source);
-                this.isCloning = false;
-            },
-            () => this.isCloning = false
-        );
-    },
-
     cloneFrom(monitorId, clonedName) {
-        return this.loadMonitor(monitorId, () => {
+        return this.loadEntity(monitorId, () => {
             this.name = clonedName;
             this.regenerateUniqueFields();
         });
@@ -910,7 +945,7 @@ const monitorForm = ({api, pagePath, monitor, errorMessages, categorySelectId, i
 
     // Loads the monitor of a list row, so the modal of the list updates it instead of creating a new one
     editFrom(monitorId, title, isNameLocked) {
-        return this.loadMonitor(monitorId, (source) => this.setEditTarget(source, title, isNameLocked));
+        return this.loadEntity(monitorId, (source) => this.setEditTarget(source, title, isNameLocked));
     },
 
     regenerateUniqueFields() {
@@ -1453,7 +1488,13 @@ const upsertStatusPageForm = (
     selectableMonitors,
     categorySelectId,
 ) => ({
-    ...upsertForm({entity: statusPage, errorMessages, pagePath: '/status-pages', entityLabel: 'status page'}),
+    ...upsertForm({
+        api: statusPageApi,
+        entity: statusPage,
+        errorMessages,
+        pagePath: '/status-pages',
+        entityLabel: 'status page',
+    }),
     selectableMonitors: selectableMonitors || [],
     /*
      The persisted categories have to be in the DOM as options before TomSelect takes the select over, because
@@ -1463,14 +1504,20 @@ const upsertStatusPageForm = (
     imagePreviewState: {},
 
     resetState() {
-        this.title = statusPage?.title || '';
-        this.slug = statusPage?.slug || '';
-        this.customLogoUrl = statusPage?.customLogoUrl || null;
-        this.customFaviconUrl = statusPage?.customFaviconUrl || null;
-        this.selectedMonitors = statusPage?.monitors || [];
-        this.selectedCategories = statusPage?.categories || [];
-        this.displayCategories = statusPage?.displayCategories ?? true;
-        this.public = statusPage?.public ?? false;
+        this.discardEntityLoad();
+        this.setEditTarget(statusPage || null, null);
+        this.populateFrom(statusPage || null);
+    },
+
+    populateFrom(source) {
+        this.title = source?.title || '';
+        this.slug = source?.slug || '';
+        this.customLogoUrl = source?.customLogoUrl || null;
+        this.customFaviconUrl = source?.customFaviconUrl || null;
+        this.selectedMonitors = source?.monitors || [];
+        this.selectedCategories = source?.categories || [];
+        this.displayCategories = source?.displayCategories ?? true;
+        this.public = source?.public ?? false;
         this.errors = {};
         this.formError = null;
 
@@ -1874,10 +1921,18 @@ const refreshMaintenanceWindowDetailStatus = () => {
     sendHtmxEvent('#maintenance-window-detail-heading', 'refresh-maintenance-window-detail-status');
 };
 
-const maintenanceWindowListItem = (maintenanceWindowId, isMaintenanceWindowEnabled) => ({
+const maintenanceWindowListItem = (maintenanceWindowId, isMaintenanceWindowEnabled, clonedFields, editTitle) => ({
     maintenanceWindowId,
     isMaintenanceWindowEnabled,
+    clonedFields,
+    editTitle,
     isRequestLoading: false,
+    cloneMaintenanceWindow() {
+        this.$dispatch('clone-maintenance-window', {id: this.maintenanceWindowId, fields: this.clonedFields});
+    },
+    editMaintenanceWindow() {
+        this.$dispatch('edit-maintenance-window', {id: this.maintenanceWindowId, title: this.editTitle});
+    },
     toggleMaintenanceWindow() {
         maintenanceWindowApi.patch(
             this.maintenanceWindowId,
@@ -1932,6 +1987,7 @@ const upsertMaintenanceWindowForm = (
     categorySelectId,
 ) => ({
     ...upsertForm({
+        api: maintenanceWindowApi,
         entity: maintenanceWindow,
         errorMessages,
         pagePath: '/maintenance-windows',
@@ -1944,18 +2000,24 @@ const upsertMaintenanceWindowForm = (
     globalIntegrationCount: 0,
 
     resetState() {
-        this.name = maintenanceWindow?.name || '';
-        this.description = maintenanceWindow?.description || null;
-        this.type = resolveMaintenanceWindowType(maintenanceWindow);
-        this.cron = maintenanceWindow?.cron || '';
-        this.start = toDateTimeLocalValue(maintenanceWindow?.start);
-        this.duration = maintenanceWindow?.duration || '';
-        this.enabled = maintenanceWindow?.enabled ?? true;
-        this.global = maintenanceWindow?.global ?? false;
-        this.showOnStatusPages = maintenanceWindow?.showOnStatusPages ?? false;
-        this.selectedMonitors = maintenanceWindow?.monitors || [];
-        this.selectedCategories = maintenanceWindow?.categories || [];
-        this.integrations = maintenanceWindow?.integrations || [];
+        this.discardEntityLoad();
+        this.setEditTarget(maintenanceWindow || null, null);
+        this.populateFrom(maintenanceWindow || null);
+    },
+
+    populateFrom(source) {
+        this.name = source?.name || '';
+        this.description = source?.description || null;
+        this.type = resolveMaintenanceWindowType(source);
+        this.cron = source?.cron || '';
+        this.start = toDateTimeLocalValue(source?.start);
+        this.duration = source?.duration || '';
+        this.enabled = source?.enabled ?? true;
+        this.global = source?.global ?? false;
+        this.showOnStatusPages = source?.showOnStatusPages ?? false;
+        this.selectedMonitors = source?.monitors || [];
+        this.selectedCategories = source?.categories || [];
+        this.integrations = source?.integrations || [];
         this.errors = {};
         this.formError = null;
 
@@ -2086,6 +2148,8 @@ if (typeof module !== 'undefined' && module.exports) {
         resetCategoryMultiSelect,
         // Alpine x-data component factories
         monitorListItem,
+        statusPageListItem,
+        maintenanceWindowListItem,
         upsertHttpMonitorForm,
         upsertPushMonitorForm,
         upsertIcmpMonitorForm,

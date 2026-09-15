@@ -25,10 +25,10 @@ class ReadOnlyConfigUiTest : UiTestSpec() {
             val page = newPage()
             val list = ListReadOnlyView(page, "/http-monitors")
             list.navigate()
-            assertMonitorListIsReadOnly(list, "yaml-http-monitor")
+            assertListIsReadOnly(list, "yaml-http-monitor")
 
             // The monitor is on a read-only status page as well, which must not make any difference in read-only mode
-            assertMonitorConfigIsReadOnly(
+            assertConfigIsReadOnly(
                 page,
                 list,
                 "yaml-http-monitor",
@@ -41,9 +41,9 @@ class ReadOnlyConfigUiTest : UiTestSpec() {
             val page = newPage()
             val list = ListReadOnlyView(page, "/push-monitors")
             list.navigate()
-            assertMonitorListIsReadOnly(list, "yaml-push-monitor")
+            assertListIsReadOnly(list, "yaml-push-monitor")
 
-            assertMonitorConfigIsReadOnly(
+            assertConfigIsReadOnly(
                 page,
                 list,
                 "yaml-push-monitor",
@@ -56,9 +56,9 @@ class ReadOnlyConfigUiTest : UiTestSpec() {
             val page = newPage()
             val list = ListReadOnlyView(page, "/icmp-monitors")
             list.navigate()
-            assertMonitorListIsReadOnly(list, "yaml-icmp-monitor")
+            assertListIsReadOnly(list, "yaml-icmp-monitor")
 
-            assertMonitorConfigIsReadOnly(
+            assertConfigIsReadOnly(
                 page,
                 list,
                 "yaml-icmp-monitor",
@@ -71,9 +71,9 @@ class ReadOnlyConfigUiTest : UiTestSpec() {
             val page = newPage()
             val list = ListReadOnlyView(page, "/tcp-monitors")
             list.navigate()
-            assertMonitorListIsReadOnly(list, "yaml-tcp-monitor")
+            assertListIsReadOnly(list, "yaml-tcp-monitor")
 
-            assertMonitorConfigIsReadOnly(
+            assertConfigIsReadOnly(
                 page,
                 list,
                 "yaml-tcp-monitor",
@@ -87,9 +87,9 @@ class ReadOnlyConfigUiTest : UiTestSpec() {
             val page = newPage()
             val list = ListReadOnlyView(page, "/dns-monitors")
             list.navigate()
-            assertMonitorListIsReadOnly(list, "yaml-dns-monitor")
+            assertListIsReadOnly(list, "yaml-dns-monitor")
 
-            assertMonitorConfigIsReadOnly(
+            assertConfigIsReadOnly(
                 page,
                 list,
                 "yaml-dns-monitor",
@@ -104,12 +104,14 @@ class ReadOnlyConfigUiTest : UiTestSpec() {
             val list = ListReadOnlyView(page, "/status-pages")
             list.navigate()
             assertListIsReadOnly(list, "YAML Status Page")
-            assertThat(list.actionButtonsIn("YAML Status Page")).hasCount(0)
 
-            val modal = openConfigModalFrom(page, list, "YAML Status Page")
-            assertReadOnlyField(modal, "title", "YAML Status Page")
-            assertReadOnlyField(modal, "slug", "yaml-status-page")
-            assertCannotBeSaved(modal)
+            assertConfigIsReadOnly(
+                page,
+                list,
+                "YAML Status Page",
+                "title" to "YAML Status Page",
+                "slug" to "yaml-status-page",
+            )
         }
 
         "YAML-configured maintenance windows are read-only on the list, detail page and config modal" {
@@ -117,13 +119,15 @@ class ReadOnlyConfigUiTest : UiTestSpec() {
             val list = ListReadOnlyView(page, "/maintenance-windows")
             list.navigate()
             assertListIsReadOnly(list, "yaml-maintenance-window")
-            assertThat(list.actionButtonsIn("yaml-maintenance-window")).hasCount(0)
 
-            val modal = openConfigModalFrom(page, list, "yaml-maintenance-window")
-            assertReadOnlyField(modal, "name", "yaml-maintenance-window")
-            assertReadOnlyField(modal, "cron", "0 2 * * *")
-            assertReadOnlyField(modal, "duration", "PT1H")
-            assertCannotBeSaved(modal)
+            assertConfigIsReadOnly(
+                page,
+                list,
+                "yaml-maintenance-window",
+                "name" to "yaml-maintenance-window",
+                "cron" to "0 2 * * *",
+                "duration" to "PT1H",
+            )
         }
 
         "the backup dropdown disables the status page and maintenance window import items when read-only" {
@@ -152,25 +156,25 @@ class ReadOnlyConfigUiTest : UiTestSpec() {
     }
 
     /**
-     * The configuration of a monitor is shown read-only both from its row on the list, without leaving it, and from its
+     * The configuration of an entity is shown read-only both from its row on the list, without leaving it, and from its
      * details page, and the two show exactly the same [fields].
      */
-    private fun assertMonitorConfigIsReadOnly(
+    private fun assertConfigIsReadOnly(
         page: Page,
         list: ListReadOnlyView,
         name: String,
         vararg fields: Pair<String, String>,
     ) {
         val fromList = list.openConfigurationModal(name)
-        assertMonitorModalIsReadOnly(fromList, name, fields)
+        assertModalIsReadOnly(fromList, name, fields)
         fromList.dismiss()
         page.url() shouldEndWith list.listPath
         assertThat(list.row(name)).isVisible()
 
-        assertMonitorModalIsReadOnly(openConfigModalFrom(page, list, name), name, fields)
+        assertModalIsReadOnly(openConfigModalFrom(page, list, name), name, fields)
     }
 
-    private fun assertMonitorModalIsReadOnly(
+    private fun assertModalIsReadOnly(
         modal: UpsertModalReadOnlyView,
         name: String,
         fields: Array<out Pair<String, String>>,
@@ -180,16 +184,12 @@ class ReadOnlyConfigUiTest : UiTestSpec() {
         assertCannotBeSaved(modal)
     }
 
-    // Read-only badge present, no "add" button, and the row is listed.
+    // Read-only badge present, no "add" button, and the row carries no toggle/clone/delete actions, only the view-only
+    // configuration button.
     private fun assertListIsReadOnly(list: ListReadOnlyView, name: String) {
         assertThat(list.readOnlyBadge).isVisible()
         assertThat(list.addButton).hasCount(0)
         assertThat(list.row(name)).isVisible()
-    }
-
-    // A read-only monitor's row carries no toggle/clone/delete actions, only the view-only configuration button.
-    private fun assertMonitorListIsReadOnly(list: ListReadOnlyView, name: String) {
-        assertListIsReadOnly(list, name)
         assertThat(list.actionButtonsIn(name)).hasCount(1)
         assertThat(list.configurationButtonIn(name)).isVisible()
     }

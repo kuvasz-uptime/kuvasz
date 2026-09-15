@@ -41,7 +41,7 @@ fun renderStatusPagesPage(globals: AppGlobals) =
     }
 
 internal fun HtmlBlockTag.statusPagesHeader(globals: AppGlobals) {
-    val createStatusPageModalId = "create-status-page-modal"
+    val createStatusPageModalId = CREATE_STATUS_PAGE_MODAL_ID
     div {
         classes(CONTAINER_XL)
         div {
@@ -87,8 +87,6 @@ internal fun HtmlBlockTag.statusPagesHeader(globals: AppGlobals) {
                 }
             }
         }
-        if (!globals.editabilityState.areStatusPagesReadOnly()) {
-            statusPageCreateUpdateModal(modalId = createStatusPageModalId, statusPage = null, globals)
-        }
+        statusPageCreateUpdateModal(modalId = createStatusPageModalId, statusPage = null, globals)
     }
 }

@@ -2,7 +2,9 @@ package com.kuvaszuptime.kuvasz.uitest.maintenance
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.models.maintenance.MaintenanceWindowType
+import com.kuvaszuptime.kuvasz.models.monitor.http.monitorId
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.uitest.PlaywrightSupport
 import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
@@ -10,6 +12,7 @@ import com.kuvaszuptime.kuvasz.uitest.pages.maintenance.MaintenanceWindowDetails
 import com.kuvaszuptime.kuvasz.uitest.pages.maintenance.MaintenanceWindowListPage
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldEndWith
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 
 @MicronautTest(environments = [PlaywrightSupport.UI_TEST_ENV])
@@ -42,6 +45,179 @@ class MaintenanceWindowCrudUiTest(private val httpMonitorRepository: HttpMonitor
             assertThat(editModal.saveButton).isVisible()
             editModal.setName(updatedName).save()
             assertThat(details.heading(updatedName)).isVisible()
+        }
+
+        "a maintenance window can be edited from its list row, and saving it leads back to the list" {
+            val monitor = createHttpMonitor(httpMonitorRepository, monitorName = "Listed Monitor")
+            createMaintenanceWindow(
+                dslContext,
+                name = "Window List Edit Source",
+                cron = "0 2 * * *",
+                duration = "PT1H",
+                monitors = listOf(monitor.monitorId()),
+                categories = listOf("Payments"),
+            )
+            createMaintenanceWindow(dslContext, name = "Neighbour Window", cron = "0 3 * * *", duration = "PT2H")
+
+            val page = newPage()
+            val list = MaintenanceWindowListPage(page)
+            list.navigate()
+
+            val modal = list.configureMaintenanceWindow("Window List Edit Source")
+            assertThat(modal.title).hasText(Messages.updateMaintenanceWindow("Window List Edit Source"))
+            // Every value is loaded from the window of the row
+            assertThat(modal.nameInput).hasValue("Window List Edit Source")
+            assertThat(modal.nameInput).isEnabled()
+            assertThat(modal.typeRadio(MaintenanceWindowType.CRON)).isChecked()
+            assertThat(modal.cronInput).hasValue("0 2 * * *")
+            assertThat(modal.durationInput).hasValue("PT1H")
+            assertThat(modal.selectedOptions).hasCount(1)
+            assertThat(modal.selectedOptions).containsText("Listed Monitor")
+            assertThat(modal.selectedCategories).hasCount(1)
+            assertThat(modal.selectedCategories).containsText("Payments")
+
+            modal.setName("Window List Edit Renamed").setCron("30 4 * * *")
+            modal.clearCategories()
+            modal.save()
+
+            // The list is reloaded in place, instead of navigating to the details page of the window
+            assertThat(list.rowByName("Window List Edit Renamed")).isVisible()
+            page.url() shouldEndWith "/maintenance-windows"
+            // ...and the window was updated rather than created anew, while its neighbour was left alone
+            assertThat(list.rows).hasCount(2)
+            assertThat(list.rowByName("Window List Edit Source")).hasCount(0)
+            assertThat(list.rowByName("Window List Edit Renamed")).containsText("30 4 * * *")
+            assertThat(list.monitorsCell("Window List Edit Renamed")).hasText("1")
+            assertThat(list.categoriesCell("Window List Edit Renamed")).hasText("0")
+            assertThat(list.rowByName("Neighbour Window")).containsText("0 3 * * *")
+        }
+
+        "the list's modal loads the window of each row, discards abandoned edits and still creates new ones" {
+            createMaintenanceWindow(
+                dslContext,
+                name = "First Row Window",
+                cron = "0 2 * * *",
+                duration = "PT1H",
+                categories = listOf("Payments"),
+            )
+            createMaintenanceWindow(dslContext, name = "Second Row Window", global = true)
+
+            val page = newPage()
+            val list = MaintenanceWindowListPage(page)
+            list.navigate()
+
+            val first = list.configureMaintenanceWindow("First Row Window")
+            assertThat(first.cronInput).hasValue("0 2 * * *")
+            first.setName("Abandoned Window").setCron("30 4 * * *").dismiss()
+
+            val second = list.configureMaintenanceWindow("Second Row Window")
+            assertThat(second.title).hasText(Messages.updateMaintenanceWindow("Second Row Window"))
+            assertThat(second.nameInput).hasValue("Second Row Window")
+            assertThat(second.typeRadio(MaintenanceWindowType.MANUAL)).isChecked()
+            // A global window hides its selectors
+            assertThat(second.monitorSelector).isHidden()
+            second.dismiss()
+
+            val firstAgain = list.configureMaintenanceWindow("First Row Window")
+            assertThat(firstAgain.nameInput).hasValue("First Row Window")
+            assertThat(firstAgain.typeRadio(MaintenanceWindowType.CRON)).isChecked()
+            assertThat(firstAgain.cronInput).hasValue("0 2 * * *")
+            assertThat(firstAgain.monitorSelector).isVisible()
+            assertThat(firstAgain.selectedCategories).hasCount(1)
+            firstAgain.dismiss()
+
+            // The header button still opens a blank create form, which creates a brand new window
+            val create = list.openCreateModal()
+            assertThat(create.title).hasText(Messages.createNewMaintenanceWindow())
+            assertThat(create.nameInput).hasValue("")
+            assertThat(create.cronInput).hasValue("")
+            assertThat(create.typeRadio(MaintenanceWindowType.MANUAL)).isChecked()
+            assertThat(create.selectedCategories).hasCount(0)
+            create.setName("Created After Edits").save()
+            page.waitForURL("**/maintenance-windows/*")
+            assertThat(MaintenanceWindowDetailsPage(page).heading("Created After Edits")).isVisible()
+
+            // None of the windows opened on the way were changed
+            list.navigate()
+            assertThat(list.rowByName("Created After Edits")).isVisible()
+            assertThat(list.rowByName("First Row Window")).containsText("0 2 * * *")
+            assertThat(list.rowByName("Abandoned Window")).hasCount(0)
+        }
+
+        "a maintenance window can be cloned from its list row, pre-filling a create form under a new name" {
+            val monitor = createHttpMonitor(httpMonitorRepository, monitorName = "Cloned Monitor")
+            createMaintenanceWindow(
+                dslContext,
+                name = "Window Clone Source",
+                cron = "0 2 * * *",
+                duration = "PT1H",
+                monitors = listOf(monitor.monitorId()),
+                categories = listOf("Payments"),
+            )
+
+            val page = newPage()
+            val list = MaintenanceWindowListPage(page)
+            list.navigate()
+
+            val clonedName = Messages.clonedMaintenanceWindowName("Window Clone Source")
+            val modal = list.cloneMaintenanceWindow("Window Clone Source")
+            assertThat(modal.title).hasText(Messages.createNewMaintenanceWindow())
+            // Every value is copied from the source, except the name which has to be unique, and the enabled
+            // state, as a copy starts disabled
+            assertThat(modal.nameInput).hasValue(clonedName)
+            assertThat(modal.enabledToggle).not().isChecked()
+            assertThat(modal.typeRadio(MaintenanceWindowType.CRON)).isChecked()
+            assertThat(modal.cronInput).hasValue("0 2 * * *")
+            assertThat(modal.durationInput).hasValue("PT1H")
+            assertThat(modal.selectedOptions).hasCount(1)
+            assertThat(modal.selectedOptions).containsText("Cloned Monitor")
+            assertThat(modal.selectedCategories).hasCount(1)
+            assertThat(modal.selectedCategories).containsText("Payments")
+
+            modal.save()
+            page.waitForURL("**/maintenance-windows/*")
+            assertThat(MaintenanceWindowDetailsPage(page).heading(clonedName)).isVisible()
+
+            list.navigate()
+            assertThat(list.rows).hasCount(2)
+            assertThat(list.rowByName(clonedName)).containsText("0 2 * * *")
+            assertThat(list.rowByName(clonedName)).containsText(Messages.disabled())
+            assertThat(list.monitorsCell(clonedName)).hasText("1")
+            assertThat(list.categoriesCell(clonedName)).hasText("1")
+        }
+
+        "cloning and editing through the list's modal never mix up creating and updating a maintenance window" {
+            createMaintenanceWindow(dslContext, name = "Edited Window", cron = "0 3 * * *", duration = "PT2H")
+            createMaintenanceWindow(dslContext, name = "Cloned Window", cron = "0 2 * * *", duration = "PT1H")
+
+            val page = newPage()
+            val list = MaintenanceWindowListPage(page)
+            list.navigate()
+
+            // An abandoned clone doesn't turn the next edit into a create...
+            val abandonedClone = list.cloneMaintenanceWindow("Cloned Window")
+            assertThat(abandonedClone.nameInput).hasValue(Messages.clonedMaintenanceWindowName("Cloned Window"))
+            abandonedClone.dismiss()
+
+            val edit = list.configureMaintenanceWindow("Edited Window")
+            assertThat(edit.nameInput).hasValue("Edited Window")
+            edit.setName("Edited Window Renamed").save()
+            assertThat(list.rowByName("Edited Window Renamed")).isVisible()
+            assertThat(list.rows).hasCount(2)
+
+            // ...and an edit doesn't turn the next clone into an update
+            val clone = list.cloneMaintenanceWindow("Cloned Window")
+            assertThat(clone.title).hasText(Messages.createNewMaintenanceWindow())
+            assertThat(clone.nameInput).hasValue(Messages.clonedMaintenanceWindowName("Cloned Window"))
+            assertThat(clone.cronInput).hasValue("0 2 * * *")
+            clone.save()
+            page.waitForURL("**/maintenance-windows/*")
+
+            list.navigate()
+            // The source and its copy, which didn't overwrite it
+            assertThat(list.rowByName("Cloned Window")).hasCount(2)
+            assertThat(list.rowByName("Edited Window Renamed")).containsText("0 3 * * *")
+            assertThat(list.rowByName(Messages.clonedMaintenanceWindowName("Cloned Window"))).containsText("0 2 * * *")
         }
 
         "a manual maintenance window can be created through the UI" {

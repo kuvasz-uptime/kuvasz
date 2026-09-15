@@ -12,6 +12,8 @@ import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
 import kotlinx.html.stream.*
 
+internal const val CREATE_MAINTENANCE_WINDOW_MODAL_ID = "create-maintenance-window-modal"
+
 fun renderMaintenanceWindowList(maintenanceWindows: List<MaintenanceWindowDetailsDto>, appGlobals: AppGlobals): String =
     createHTML(prettyPrint = false, xhtmlCompatible = false).run {
         val isReadOnlyMode = appGlobals.editabilityState.areMaintenanceWindowsReadOnly()
@@ -58,9 +60,7 @@ fun renderMaintenanceWindowList(maintenanceWindows: List<MaintenanceWindowDetail
                                 +Messages.categories()
                             }
                             // Actions
-                            if (!isReadOnlyMode) {
-                                th {}
-                            }
+                            th {}
                         }
                     }
                     tbody {
@@ -75,7 +75,19 @@ private fun TBODY.maintenanceWindowListItem(isReadOnlyMode: Boolean, window: Mai
     val type = window.resolveType()
     tr {
         testId("maintenance-window-row")
-        xData("maintenanceWindowListItem(${window.id}, ${window.enabled})")
+        val editTitle = if (isReadOnlyMode) {
+            Messages.configurationOf(window.name)
+        } else {
+            Messages.updateMaintenanceWindow(window.name)
+        }
+        // A copy starts disabled, so it doesn't put any monitor into maintenance before it's adjusted
+        val clonedFields = mapOf(
+            "name" to Messages.clonedMaintenanceWindowName(window.name),
+            "enabled" to false,
+        ).asJsonString()
+        xData(
+            "maintenanceWindowListItem(${window.id}, ${window.enabled}, $clonedFields, ${editTitle.asJsonString()})"
+        )
         // ID
         th {
             classes(TEXT_CENTER)
@@ -124,12 +136,28 @@ private fun TBODY.maintenanceWindowListItem(isReadOnlyMode: Boolean, window: Mai
             if (window.global) +"-" else +window.categories.size.toString()
         }
         // Actions
-        if (!isReadOnlyMode) {
-            td {
-                classes(TEXT_END)
-                val deleteModalId = "delete-maintenance-window-modal-${window.id}"
-                div {
-                    classes(FLEX_NOWRAP, BTN_GROUP, BTN_GROUP_SM)
+        td {
+            classes(TEXT_END)
+            val deleteModalId = "delete-maintenance-window-modal-${window.id}"
+            div {
+                classes(FLEX_NOWRAP, BTN_GROUP, BTN_GROUP_SM)
+                compactIconButton(Icon.SETTINGS) {
+                    testId(
+                        if (isReadOnlyMode) {
+                            "maintenance-window-configuration-button"
+                        } else {
+                            "maintenance-window-configure-button"
+                        }
+                    )
+                    modalOpener(CREATE_MAINTENANCE_WINDOW_MODAL_ID)
+                    xOnClick("editMaintenanceWindow()")
+                }
+                if (!isReadOnlyMode) {
+                    compactIconButton(Icon.COPY) {
+                        testId("maintenance-window-clone-button")
+                        modalOpener(CREATE_MAINTENANCE_WINDOW_MODAL_ID)
+                        xOnClick("cloneMaintenanceWindow()")
+                    }
                     val toggleIcon = if (window.enabled) Icon.PAUSE else Icon.PLAY
                     compactIconButton(toggleIcon) {
                         testId("maintenance-window-toggle-button")
@@ -137,10 +165,13 @@ private fun TBODY.maintenanceWindowListItem(isReadOnlyMode: Boolean, window: Mai
                         xOnClick("toggleMaintenanceWindow()")
                     }
                     compactIconButton(Icon.TRASH, classes = setOf(TEXT_RED)) {
+                        testId("maintenance-window-delete-button")
                         xBindDisabled("isRequestLoading")
                         modalOpener(deleteModalId)
                     }
                 }
+            }
+            if (!isReadOnlyMode) {
                 deleteMaintenanceWindowModal(
                     modalId = deleteModalId,
                     maintenanceWindowName = window.name,
