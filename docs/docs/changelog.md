@@ -38,9 +38,9 @@ The **metrics** on the monitor details pages got some love as well:
 
 ---
 
-**✏️ Editing monitors from their lists**
+**✏️ Editing monitors, status pages and maintenance windows from their lists**
 
-Every row of the monitor lists got a :material-cog-outline: **configure** button, which opens the settings of the monitor without leaving the list, and saving them brings you back to the very same list, keeping its category filter. Going through a bunch of monitors one after the other doesn't take a detour to their details pages anymore.
+Every row of the monitor, status page and maintenance window lists got a :material-cog-outline: **configure** button, which opens the settings of the given entity without leaving the list, and saving them brings you back to the very same list. Going through a bunch of them one after the other doesn't take a detour to their details pages anymore.
 
 ### Improvements
 

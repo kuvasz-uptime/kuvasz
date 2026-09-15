@@ -12,6 +12,8 @@ import com.kuvaszuptime.kuvasz.util.UIDefaults
 import kotlinx.html.*
 import kotlinx.html.stream.*
 
+internal const val CREATE_STATUS_PAGE_MODAL_ID = "create-status-page-modal"
+
 fun renderStatusPageList(statusPages: List<StatusPageDto>, appGlobals: AppGlobals): String =
     createHTML(prettyPrint = false, xhtmlCompatible = false).run {
         val isReadOnlyMode = appGlobals.editabilityState.areStatusPagesReadOnly()
@@ -51,9 +53,7 @@ fun renderStatusPageList(statusPages: List<StatusPageDto>, appGlobals: AppGlobal
                             +Messages.categories()
                         }
                         // Actions
-                        if (!isReadOnlyMode) {
-                            th {}
-                        }
+                        th {}
                     }
                 }
                 tbody {
@@ -106,10 +106,8 @@ fun renderStatusPageList(statusPages: List<StatusPageDto>, appGlobals: AppGlobal
                         td {
                             classes(D_NONE, D_MD_TABLE_CELL, TEXT_CENTER)
                         }
-                        // Actions
-                        if (!isReadOnlyMode) {
-                            td {}
-                        }
+                        // Actions: it's configured in the settings instead
+                        td {}
                     }
                     // Status pages
                     statusPages.forEach { page -> statusPageListItem(isReadOnlyMode, page) }
@@ -140,7 +138,12 @@ private fun FlowContent.statusPageVisibilityStatus(isPublic: Boolean) {
 private fun TBODY.statusPageListItem(isReadOnlyMode: Boolean, page: StatusPageDto) {
     tr {
         testId("status-page-row")
-        xData("statusPageListItem(${page.id}, ${page.public})")
+        val editTitle = if (isReadOnlyMode) {
+            Messages.configurationOf(page.title)
+        } else {
+            Messages.updateStatusPage(page.title)
+        }
+        xData("statusPageListItem(${page.id}, ${page.public}, ${editTitle.asJsonString()})")
         // ID
         th {
             classes(TEXT_CENTER)
@@ -186,12 +189,17 @@ private fun TBODY.statusPageListItem(isReadOnlyMode: Boolean, page: StatusPageDt
             +page.categories.size.toString()
         }
         // Actions
-        if (!isReadOnlyMode) {
-            td {
-                classes(TEXT_END)
-                val deleteModalId = "delete-status-page-modal-${page.id}"
-                div {
-                    classes(FLEX_NOWRAP, BTN_GROUP, BTN_GROUP_SM)
+        td {
+            classes(TEXT_END)
+            val deleteModalId = "delete-status-page-modal-${page.id}"
+            div {
+                classes(FLEX_NOWRAP, BTN_GROUP, BTN_GROUP_SM)
+                compactIconButton(Icon.SETTINGS) {
+                    testId(if (isReadOnlyMode) "status-page-configuration-button" else "status-page-configure-button")
+                    modalOpener(CREATE_STATUS_PAGE_MODAL_ID)
+                    xOnClick("editStatusPage()")
+                }
+                if (!isReadOnlyMode) {
                     // Publish / Unpublish button
                     toggleVisibilityButton(
                         isPublic = page.public,
@@ -204,6 +212,8 @@ private fun TBODY.statusPageListItem(isReadOnlyMode: Boolean, page: StatusPageDt
                         xDisabledIf = "isRequestLoading",
                     )
                 }
+            }
+            if (!isReadOnlyMode) {
                 deleteStatusPageModal(
                     modalId = deleteModalId,
                     statusPageTitle = page.title

@@ -23,6 +23,18 @@ class StatusPageListPage(private val page: Page) {
 
     fun rowByTitle(title: String): Locator = rows.filter(Locator.FilterOptions().setHasText(title))
 
+    // Opens the given status page's configuration from its row, returning the pre-filled update modal.
+    fun configureStatusPage(title: String): StatusPageFormModal {
+        configureButtonIn(title).click()
+        return StatusPageFormModal(page)
+    }
+
+    fun configureButtonIn(title: String): Locator = rowByTitle(title).getByTestId("status-page-configure-button")
+
+    // Only rendered when the status pages are read-only, in place of every other action of the row.
+    fun configurationButtonIn(title: String): Locator =
+        rowByTitle(title).getByTestId("status-page-configuration-button")
+
     fun toggleVisibility(title: String) {
         rowByTitle(title).getByTestId("status-page-toggle-visibility-button").click()
     }

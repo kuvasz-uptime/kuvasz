@@ -5,8 +5,8 @@ import com.microsoft.playwright.Page
 import com.microsoft.playwright.options.AriaRole
 
 /**
- * Read-only view over a monitor or status-page list. They share the same structure (read-only badge, no "add" button,
- * rows without action buttons)
+ * Read-only view over a monitor, status page or maintenance window list. They share the same structure (read-only
+ * badge, no "add" button, rows with only a view-only configuration button)
  */
 class ListReadOnlyView(
     private val page: Page,
@@ -26,15 +26,14 @@ class ListReadOnlyView(
     fun row(name: String): Locator =
         page.locator("tbody tr").filter(Locator.FilterOptions().setHasText(name))
 
-    // The per-row action buttons: none for a read-only status page or maintenance window, and only the view-only
-    // configuration one for a read-only monitor.
+    // The per-row action buttons, which is only the view-only configuration one for a read-only entity.
     fun actionButtonsIn(name: String): Locator = row(name).locator("button")
 
-    // The view-only configuration button of a read-only monitor's row, e.g. `http-monitor-configuration-button`.
+    // The view-only configuration button of a read-only row, e.g. `http-monitor-configuration-button`.
     fun configurationButtonIn(name: String): Locator =
-        row(name).locator("[data-testid$='-monitor-configuration-button']")
+        row(name).locator("[data-testid$='-configuration-button']")
 
-    // Opens the read-only configuration modal of a monitor straight from its row, without leaving the list.
+    // Opens the read-only configuration modal of an entity straight from its row, without leaving the list.
     fun openConfigurationModal(name: String): UpsertModalReadOnlyView {
         configurationButtonIn(name).click()
         return UpsertModalReadOnlyView(page)

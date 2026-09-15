@@ -12,6 +12,7 @@ import com.kuvaszuptime.kuvasz.uitest.pages.statuspage.StatusPageDetailsPage
 import com.kuvaszuptime.kuvasz.uitest.pages.statuspage.StatusPageListPage
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldEndWith
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 
 @MicronautTest(environments = [PlaywrightSupport.UI_TEST_ENV])
@@ -40,6 +41,94 @@ class StatusPageCrudUiTest(private val httpMonitorRepository: HttpMonitorReposit
             assertThat(modal.saveButton).isVisible()
             modal.setTitle(updatedTitle).save()
             assertThat(details.heading(updatedTitle)).isVisible()
+        }
+
+        "a status page can be edited from its list row, and saving it leads back to the list" {
+            createHttpMonitor(httpMonitorRepository, monitorName = "Listed Monitor")
+            createStatusPage(
+                dslContext,
+                title = "List Edit Source",
+                slug = "list-edit-source",
+                monitors = listOf(MonitorID(MonitorType.HTTP_SSL, "Listed Monitor")),
+                categories = listOf("Payments"),
+            )
+            createStatusPage(dslContext, title = "Neighbour Page", slug = "neighbour-page")
+
+            val page = newPage()
+            val list = StatusPageListPage(page)
+            list.navigate()
+
+            val modal = list.configureStatusPage("List Edit Source")
+            assertThat(modal.title).hasText(Messages.updateStatusPage("List Edit Source"))
+            // Every value is loaded from the status page of the row
+            assertThat(modal.titleInput).hasValue("List Edit Source")
+            assertThat(modal.titleInput).isEnabled()
+            assertThat(modal.slugInput).hasValue("list-edit-source")
+            assertThat(modal.selectedOptions).hasCount(1)
+            assertThat(modal.selectedOptions).containsText("Listed Monitor")
+            assertThat(modal.selectedCategories).hasCount(1)
+            assertThat(modal.selectedCategories).containsText("Payments")
+
+            modal.setTitle("List Edit Renamed").setSlug("list-edit-renamed")
+            modal.clearCategories()
+            modal.save()
+
+            // The list is reloaded in place, instead of navigating to the details page of the status page
+            assertThat(list.rowByTitle("List Edit Renamed")).isVisible()
+            page.url() shouldEndWith "/status-pages"
+            // ...and the status page was updated rather than created anew, while its neighbour was left alone
+            assertThat(list.rows).hasCount(2)
+            assertThat(list.rowByTitle("List Edit Source")).hasCount(0)
+            assertThat(list.rowByTitle("List Edit Renamed")).containsText("/status/list-edit-renamed")
+            assertThat(list.categoriesCell("List Edit Renamed")).hasText("0")
+            assertThat(list.rowByTitle("Neighbour Page")).containsText("/status/neighbour-page")
+        }
+
+        "the list's modal loads the status page of each row, discards abandoned edits and still creates new ones" {
+            createStatusPage(
+                dslContext,
+                title = "First Row Page",
+                slug = "first-row-page",
+                categories = listOf("Payments"),
+            )
+            createStatusPage(dslContext, title = "Second Row Page", slug = "second-row-page")
+
+            val page = newPage()
+            val list = StatusPageListPage(page)
+            list.navigate()
+
+            val first = list.configureStatusPage("First Row Page")
+            assertThat(first.titleInput).hasValue("First Row Page")
+            first.setTitle("Abandoned Title").setSlug("abandoned-slug").dismiss()
+
+            val second = list.configureStatusPage("Second Row Page")
+            assertThat(second.title).hasText(Messages.updateStatusPage("Second Row Page"))
+            assertThat(second.titleInput).hasValue("Second Row Page")
+            assertThat(second.slugInput).hasValue("second-row-page")
+            assertThat(second.selectedCategories).hasCount(0)
+            second.dismiss()
+
+            val firstAgain = list.configureStatusPage("First Row Page")
+            assertThat(firstAgain.titleInput).hasValue("First Row Page")
+            assertThat(firstAgain.slugInput).hasValue("first-row-page")
+            assertThat(firstAgain.selectedCategories).hasCount(1)
+            firstAgain.dismiss()
+
+            // The header button still opens a blank create form, which creates a brand new status page
+            val create = list.openCreateModal()
+            assertThat(create.title).hasText(Messages.createNewStatusPage())
+            assertThat(create.titleInput).hasValue("")
+            assertThat(create.slugInput).hasValue("")
+            assertThat(create.selectedCategories).hasCount(0)
+            create.setTitle("Created After Edits").setSlug("created-after-edits").save()
+            page.waitForURL("**/status-pages/*")
+            assertThat(StatusPageDetailsPage(page).heading("Created After Edits")).isVisible()
+
+            // None of the status pages opened on the way were changed
+            list.navigate()
+            assertThat(list.rowByTitle("Created After Edits")).isVisible()
+            assertThat(list.rowByTitle("First Row Page")).containsText("/status/first-row-page")
+            assertThat(list.rowByTitle("Abandoned Title")).hasCount(0)
         }
 
         "an abandoned create form is reset when the modal is reopened" {
@@ -206,6 +295,9 @@ class StatusPageCrudUiTest(private val httpMonitorRepository: HttpMonitorReposit
             val list = StatusPageListPage(page)
             list.navigate()
             assertThat(list.publicIndicator("List Toggle Status Page")).isVisible()
+            assertThat(list.configureButtonIn("List Toggle Status Page")).isVisible()
+            // The view-only configuration button is reserved for the read-only status pages
+            assertThat(list.configurationButtonIn("List Toggle Status Page")).hasCount(0)
 
             list.toggleVisibility("List Toggle Status Page")
             assertThat(list.privateIndicator("List Toggle Status Page")).isVisible()

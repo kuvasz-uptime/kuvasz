@@ -30,6 +30,21 @@ class MaintenanceWindowListUiTest(private val httpMonitorRepository: HttpMonitor
             assertThat(list.rowByName("List Toggle Window")).containsText(Messages.maintenanceWindowActive())
         }
 
+        "each row exposes configure, toggle and delete action buttons" {
+            createMaintenanceWindow(dslContext, name = "Actions Window")
+
+            val page = newPage()
+            val list = MaintenanceWindowListPage(page)
+            list.navigate()
+
+            val row = list.rowByName("Actions Window")
+            assertThat(list.configureButtonIn("Actions Window")).isVisible()
+            // The view-only configuration button is reserved for the read-only maintenance windows
+            assertThat(list.configurationButtonIn("Actions Window")).hasCount(0)
+            assertThat(row.getByTestId("maintenance-window-toggle-button")).isVisible()
+            assertThat(row.getByTestId("maintenance-window-delete-button")).isVisible()
+        }
+
         "a global window shows the all-monitors badge in the monitors column" {
             createMaintenanceWindow(dslContext, name = "Global Window", global = true)
 

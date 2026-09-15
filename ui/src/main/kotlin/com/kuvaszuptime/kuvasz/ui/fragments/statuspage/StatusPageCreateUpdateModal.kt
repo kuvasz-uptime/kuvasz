@@ -40,6 +40,7 @@ internal fun FlowContent.statusPageCreateUpdateModal(
             """.trimMargin()
         )
         attributes["@$modalClosedEvent.window"] = "resetState()"
+        attributes["@edit-status-page.window"] = "editFrom(\$event.detail.id, \$event.detail.title)"
         tabIndex = "-1"
         role = "dialog"
 
@@ -48,18 +49,26 @@ internal fun FlowContent.statusPageCreateUpdateModal(
             role = "document"
 
             div {
-                classes(MODAL_CONTENT)
+                classes(MODAL_CONTENT, POSITION_RELATIVE)
                 // Modal header
                 div {
                     classes(MODAL_HEADER)
                     h5 {
                         classes(MODAL_TITLE)
-                        if (statusPage == null) {
-                            +Messages.createNewStatusPage()
-                        } else if (isReadOnlyMode) {
-                            +Messages.configurationOf(statusPage.title)
-                        } else {
-                            +Messages.updateStatusPage(statusPage.title)
+                        span {
+                            xShow("!editTitle")
+                            if (statusPage == null) {
+                                +Messages.createNewStatusPage()
+                            } else if (isReadOnlyMode) {
+                                +Messages.configurationOf(statusPage.title)
+                            } else {
+                                +Messages.updateStatusPage(statusPage.title)
+                            }
+                        }
+                        // The title of a status page opened from a list row, which is only known once it's opened
+                        span {
+                            xShow("editTitle")
+                            xText("editTitle")
                         }
                     }
                     button(type = ButtonType.button) {
@@ -181,9 +190,10 @@ internal fun FlowContent.statusPageCreateUpdateModal(
                 // Modal footer
                 upsertModalFooter(
                     isReadOnlyMode,
-                    xSaveDisabledIf = "hasNonNullValue(errors) || isRequestLoading",
+                    xSaveDisabledIf = "hasNonNullValue(errors) || isRequestLoading || isLoadingEntity",
                     xOnSaveClicked = "submitForm()",
                 )
+                entityLoadingOverlay()
             }
         }
     }

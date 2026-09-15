@@ -47,6 +47,7 @@ internal fun FlowContent.maintenanceWindowCreateUpdateModal(
             """.trimMargin()
         )
         attributes["@$modalClosedEvent.window"] = "resetState()"
+        attributes["@edit-maintenance-window.window"] = "editFrom(\$event.detail.id, \$event.detail.title)"
         tabIndex = "-1"
         role = "dialog"
 
@@ -55,18 +56,26 @@ internal fun FlowContent.maintenanceWindowCreateUpdateModal(
             role = "document"
 
             div {
-                classes(MODAL_CONTENT)
+                classes(MODAL_CONTENT, POSITION_RELATIVE)
                 // Modal header
                 div {
                     classes(MODAL_HEADER)
                     h5 {
                         classes(MODAL_TITLE)
-                        if (maintenanceWindow == null) {
-                            +Messages.createNewMaintenanceWindow()
-                        } else if (isReadOnlyMode) {
-                            +Messages.configurationOf(maintenanceWindow.name)
-                        } else {
-                            +Messages.updateMaintenanceWindow(maintenanceWindow.name)
+                        span {
+                            xShow("!editTitle")
+                            if (maintenanceWindow == null) {
+                                +Messages.createNewMaintenanceWindow()
+                            } else if (isReadOnlyMode) {
+                                +Messages.configurationOf(maintenanceWindow.name)
+                            } else {
+                                +Messages.updateMaintenanceWindow(maintenanceWindow.name)
+                            }
+                        }
+                        // The title of a window opened from a list row, which is only known once it's opened
+                        span {
+                            xShow("editTitle")
+                            xText("editTitle")
                         }
                     }
                     button(type = ButtonType.button) {
@@ -220,9 +229,10 @@ internal fun FlowContent.maintenanceWindowCreateUpdateModal(
                 // Modal footer
                 upsertModalFooter(
                     isReadOnlyMode,
-                    xSaveDisabledIf = "hasNonNullValue(errors) || isRequestLoading",
+                    xSaveDisabledIf = "hasNonNullValue(errors) || isRequestLoading || isLoadingEntity",
                     xOnSaveClicked = "submitForm()",
                 )
+                entityLoadingOverlay()
             }
         }
     }

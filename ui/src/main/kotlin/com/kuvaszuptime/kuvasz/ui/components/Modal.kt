@@ -6,7 +6,8 @@ import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
 
-internal fun FlowContent.cloningOverlay() = loadingOverlay(xShowIf = "isCloning", overlayTestId = "cloning-overlay")
+internal fun FlowContent.entityLoadingOverlay() =
+    loadingOverlay(xShowIf = "isLoadingEntity", overlayTestId = "entity-loading-overlay")
 
 /**
  * The error the server reported for a save that the client-side validation let through (e.g. a constraint only the

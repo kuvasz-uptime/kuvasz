@@ -15,6 +15,8 @@ const {
     resetCategorySelect,
     resetCategoryMultiSelect,
     monitorListItem,
+    statusPageListItem,
+    maintenanceWindowListItem,
     upsertHttpMonitorForm,
     upsertPushMonitorForm,
     upsertIcmpMonitorForm,
@@ -1157,6 +1159,13 @@ const stubRequests = (t, ...responses) => {
     return requests;
 };
 
+// Stubs fetch with requests that stay pending until the test resolves them
+const stubPendingRequests = (t) => {
+    const pending = [];
+    stubFetch(t, (url, init) => new Promise(resolve => pending.push({url, method: init.method, resolve})));
+    return pending;
+};
+
 const errorResponse = (status, body) => ({ok: false, status, statusText: 'Error', json: async () => body});
 
 test('upsert creates a monitor and redirects to its page', async (t) => {
@@ -1300,13 +1309,13 @@ test('cloneFrom copies the source monitor under the new name, with a fresh clien
     const icmpForm = upsertIcmpMonitorForm(null, {}, 'category-select', false, 0);
 
     pushForm.cloneFrom(5, 'job (copy)');
-    assert.equal(pushForm.isCloning, true);
+    assert.equal(pushForm.isLoadingEntity, true);
     await new Promise(setImmediate);
     icmpForm.cloneFrom(6, 'ping (copy)');
     await new Promise(setImmediate);
 
     assert.deepEqual(requests.map(request => request.url), ['/api/v2/push-monitors/5', '/api/v2/icmp-monitors/6']);
-    assert.equal(pushForm.isCloning, false);
+    assert.equal(pushForm.isLoadingEntity, false);
     assert.equal(pushForm.name, 'job (copy)');
     assert.equal(pushForm.heartbeatInterval, 30);
     assert.equal(pushForm.category, 'Jobs');
@@ -1388,7 +1397,7 @@ Object.entries(monitorFormFactories).forEach(([type, createForm]) => {
         assert.equal(form.entityId, 7);
         assert.equal(form.editTitle, 'Update Source');
         assert.equal(form.isNameLocked, true);
-        assert.equal(form.isCloning, false);
+        assert.equal(form.isLoadingEntity, false);
 
         await form.upsert();
 
@@ -1473,12 +1482,35 @@ Object.entries(monitorFormFactories).forEach(([type, createForm]) => {
 
         await form.editFrom(7, 'Update Source', true);
 
-        assert.equal(form.isCloning, false);
+        assert.equal(form.isLoadingEntity, false);
         assert.equal(form.isUpdate, false);
         assert.equal(form.entityId, null);
         assert.equal(form.editTitle, null);
         assert.equal(form.isNameLocked, false);
         assert.equal(browser.alerts.length, 1);
+    });
+
+    test(`${type} a monitor that loads after the modal has been closed doesn't populate the reset form`, async (t) => {
+        stubBrowser(t);
+        const pending = stubPendingRequests(t);
+        const form = createForm();
+        form.init();
+
+        const editing = form.editFrom(7, 'Update Source', true);
+        const cloning = form.cloneFrom(7, 'Source (copy)');
+        assert.equal(form.isLoadingEntity, true);
+        form.resetState();
+        assert.equal(form.isLoadingEntity, false);
+
+        pending.forEach(request => request.resolve(jsonResponse(sourceMonitor)));
+        await Promise.all([editing, cloning]);
+
+        assert.equal(form.name, '');
+        assert.equal(form.isUpdate, false);
+        assert.equal(form.entityId, null);
+        assert.equal(form.editTitle, null);
+        assert.equal(form.isNameLocked, false);
+        assert.equal(form.isLoadingEntity, false);
     });
 });
 
@@ -1494,6 +1526,224 @@ test('Push editFrom keeps the client secret of the monitor, while cloneFrom gene
 
     assert.equal(edited.clientSecret, sourceMonitor.clientSecret);
     assert.notEqual(cloned.clientSecret, sourceMonitor.clientSecret);
+});
+
+// --------- Editing a status page or a maintenance window through the upsert modal of its list ---------
+
+const listEditedEntities = {
+    'status-pages': {
+        createForm: (entity = null) => upsertStatusPageForm(entity, {}, 'monitor-select', [], 'categories-select'),
+        source: {
+            id: 7,
+            title: 'Source',
+            slug: 'source',
+            monitors: ['http:Site'],
+            categories: ['Payments'],
+            displayCategories: false,
+            public: true,
+        },
+        rendered: {id: 3, title: 'Rendered', slug: 'rendered'},
+        assertLoaded: (form) => {
+            assert.equal(form.title, 'Source');
+            assert.equal(form.slug, 'source');
+            assert.deepEqual(form.selectedMonitors, ['http:Site']);
+            assert.deepEqual(form.selectedCategories, ['Payments']);
+            assert.equal(form.displayCategories, false);
+            assert.equal(form.public, true);
+        },
+        assertBlank: (form) => {
+            assert.equal(form.title, '');
+            assert.deepEqual(form.selectedCategories, []);
+        },
+        assertRendered: (form) => assert.equal(form.title, 'Rendered'),
+    },
+    'maintenance-windows': {
+        createForm: (entity = null) => upsertMaintenanceWindowForm(entity, {}, 'monitor-select', [], 'categories-select'),
+        source: {
+            id: 7,
+            name: 'Source',
+            cron: '0 2 * * *',
+            duration: 'PT1H',
+            enabled: false,
+            monitors: ['http:Site'],
+            categories: ['Payments'],
+            integrations: ['email:ops'],
+        },
+        rendered: {id: 3, name: 'Rendered'},
+        assertLoaded: (form) => {
+            assert.equal(form.name, 'Source');
+            assert.equal(form.type, MAINTENANCE_WINDOW_TYPES.CRON);
+            assert.equal(form.cron, '0 2 * * *');
+            assert.equal(form.duration, 'PT1H');
+            assert.equal(form.enabled, false);
+            assert.deepEqual(form.selectedMonitors, ['http:Site']);
+            assert.deepEqual(form.selectedCategories, ['Payments']);
+            assert.deepEqual(form.integrations, ['email:ops']);
+        },
+        assertBlank: (form) => {
+            assert.equal(form.name, '');
+            assert.equal(form.type, MAINTENANCE_WINDOW_TYPES.MANUAL);
+            assert.deepEqual(form.selectedCategories, []);
+        },
+        assertRendered: (form) => assert.equal(form.name, 'Rendered'),
+    },
+};
+
+Object.entries(listEditedEntities).forEach(([path, {createForm, source, rendered, assertLoaded, assertBlank, assertRendered}]) => {
+    test(`${path} editFrom loads the entity into update mode and saves it with a PATCH, reloading the page`, async (t) => {
+        const browser = stubBrowser(t);
+        const requests = stubRequests(t, jsonResponse(source), jsonResponse({id: 7}));
+        const form = createForm();
+        form.init();
+
+        const loading = form.editFrom(7, 'Update Source');
+        assert.equal(form.isLoadingEntity, true);
+        await loading;
+        assertLoaded(form);
+        assert.equal(form.isUpdate, true);
+        assert.equal(form.entityId, 7);
+        assert.equal(form.editTitle, 'Update Source');
+        assert.equal(form.isLoadingEntity, false);
+
+        await form.upsert();
+
+        assert.deepEqual(methodsAndUrlsOf(requests), [
+            ['GET', `/api/v2/${path}/7`],
+            ['PATCH', `/api/v2/${path}/7`],
+        ]);
+        assert.deepEqual(requests[1].body.categories, ['Payments']);
+        assert.equal(browser.location.reloaded, true);
+        assert.equal(browser.location.href, null);
+    });
+
+    test(`${path} resetState after editFrom turns the form back into a create form`, async (t) => {
+        const browser = stubBrowser(t);
+        const requests = stubRequests(t, jsonResponse(source), jsonResponse({id: 42}));
+        const form = createForm();
+        form.init();
+
+        await form.editFrom(7, 'Update Source');
+        form.resetState();
+        assertBlank(form);
+        assert.equal(form.isUpdate, false);
+        assert.equal(form.entityId, null);
+        assert.equal(form.editTitle, null);
+
+        await form.upsert();
+
+        assert.deepEqual(methodsAndUrlsOf(requests)[1], ['POST', `/api/v2/${path}`]);
+        assert.equal(browser.location.reloaded, false);
+        assert.equal(browser.location.href, `/${path}/42`);
+    });
+
+    test(`${path} a form rendered for an entity gets that entity back after loading another one`, async (t) => {
+        const browser = stubBrowser(t);
+        const requests = stubRequests(t, jsonResponse(source), jsonResponse({id: 3}));
+        const form = createForm(rendered);
+        form.init();
+        assert.equal(form.isUpdate, true);
+        assert.equal(form.entityId, 3);
+
+        await form.editFrom(7, 'Update Source');
+        assert.equal(form.entityId, 7);
+
+        form.resetState();
+        assertRendered(form);
+        assert.equal(form.isUpdate, true);
+        assert.equal(form.entityId, 3);
+        assert.equal(form.editTitle, null);
+
+        await form.upsert();
+        assert.deepEqual(methodsAndUrlsOf(requests)[1], ['PATCH', `/api/v2/${path}/3`]);
+        assert.equal(browser.location.reloaded, true);
+    });
+
+    test(`${path} editFrom hides the overlay without switching to update mode when the entity can't be loaded`, async (t) => {
+        const browser = stubBrowser(t);
+        stubRequests(t, errorResponse(500));
+        const form = createForm();
+        form.init();
+
+        await form.editFrom(7, 'Update Source');
+
+        assert.equal(form.isLoadingEntity, false);
+        assert.equal(form.isUpdate, false);
+        assert.equal(form.entityId, null);
+        assert.equal(form.editTitle, null);
+        assertBlank(form);
+        assert.equal(browser.alerts.length, 1);
+    });
+
+    test(`${path} an entity that loads after the modal has been closed doesn't turn the reset form into an update`, async (t) => {
+        const browser = stubBrowser(t);
+        const pending = stubPendingRequests(t);
+        const form = createForm();
+        form.init();
+
+        const loading = form.editFrom(7, 'Update Source');
+        form.resetState();
+        assert.equal(form.isLoadingEntity, false);
+
+        pending[0].resolve(jsonResponse(source));
+        await loading;
+
+        assertBlank(form);
+        assert.equal(form.isUpdate, false);
+        assert.equal(form.entityId, null);
+        assert.equal(form.editTitle, null);
+        assert.equal(form.isLoadingEntity, false);
+
+        const saving = form.upsert();
+        pending[1].resolve(jsonResponse({id: 42}));
+        await saving;
+        assert.equal(pending[1].method, 'POST');
+        assert.equal(pending[1].url, `/api/v2/${path}`);
+        assert.equal(browser.location.href, `/${path}/42`);
+    });
+
+    test(`${path} the response of an earlier load neither overrides nor ends the load of another entity`, async (t) => {
+        const browser = stubBrowser(t);
+        const pending = stubPendingRequests(t);
+        const form = createForm();
+        form.init();
+
+        const loadingFailing = form.editFrom(5, 'Update Failing');
+        const loadingStale = form.editFrom(6, 'Update Stale');
+        const loadingCurrent = form.editFrom(7, 'Update Source');
+
+        pending[0].resolve(errorResponse(500));
+        pending[1].resolve(jsonResponse({...source, id: 6}));
+        await Promise.all([loadingFailing, loadingStale]);
+        // The overlay stays up for the entity that is still being loaded
+        assert.equal(form.isLoadingEntity, true);
+        assert.equal(form.isUpdate, false);
+        assert.equal(form.entityId, null);
+        assert.equal(browser.alerts.length, 1);
+
+        pending[2].resolve(jsonResponse(source));
+        await loadingCurrent;
+
+        assertLoaded(form);
+        assert.equal(form.isUpdate, true);
+        assert.equal(form.entityId, 7);
+        assert.equal(form.editTitle, 'Update Source');
+        assert.equal(form.isLoadingEntity, false);
+    });
+});
+
+test('the list items of status pages and maintenance windows dispatch the events of the upsert modal of their list', () => {
+    const statusPage = statusPageListItem(7, true, 'Update Status');
+    const maintenanceWindow = maintenanceWindowListItem(8, false, 'Update Window');
+    const dispatched = [];
+    [statusPage, maintenanceWindow].forEach(item => item.$dispatch = (name, detail) => dispatched.push([name, detail]));
+
+    statusPage.editStatusPage();
+    maintenanceWindow.editMaintenanceWindow();
+
+    assert.deepEqual(dispatched, [
+        ['edit-status-page', {id: 7, title: 'Update Status'}],
+        ['edit-maintenance-window', {id: 8, title: 'Update Window'}],
+    ]);
 });
 
 test('monitorListItem dispatches the events the shared upsert modal of the list listens to', () => {
