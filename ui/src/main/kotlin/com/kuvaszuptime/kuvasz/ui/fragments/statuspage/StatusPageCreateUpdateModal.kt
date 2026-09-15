@@ -41,6 +41,7 @@ internal fun FlowContent.statusPageCreateUpdateModal(
         )
         attributes["@$modalClosedEvent.window"] = "resetState()"
         attributes["@edit-status-page.window"] = "editFrom(\$event.detail.id, \$event.detail.title)"
+        attributes["@clone-status-page.window"] = "cloneFrom(\$event.detail.id, \$event.detail.fields)"
         tabIndex = "-1"
         role = "dialog"
 

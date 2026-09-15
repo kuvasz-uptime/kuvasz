@@ -131,6 +131,86 @@ class StatusPageCrudUiTest(private val httpMonitorRepository: HttpMonitorReposit
             assertThat(list.rowByTitle("Abandoned Title")).hasCount(0)
         }
 
+        "a status page can be cloned from its list row, pre-filling a create form under a new title and slug" {
+            createHttpMonitor(httpMonitorRepository, monitorName = "Cloned Monitor")
+            createStatusPage(
+                dslContext,
+                title = "Clone Source Page",
+                slug = "clone-source-page",
+                public = true,
+                monitors = listOf(MonitorID(MonitorType.HTTP_SSL, "Cloned Monitor")),
+                categories = listOf("Payments"),
+                displayCategories = false,
+            )
+
+            val page = newPage()
+            val list = StatusPageListPage(page)
+            list.navigate()
+
+            val clonedTitle = Messages.clonedStatusPageTitle("Clone Source Page")
+            val modal = list.cloneStatusPage("Clone Source Page")
+            assertThat(modal.title).hasText(Messages.createNewStatusPage())
+            // Every value is copied from the source, except the title and the slug, which has to be unique, and the
+            // visibility, as a copy starts private
+            assertThat(modal.titleInput).hasValue(clonedTitle)
+            assertThat(modal.slugInput).hasValue("clone-source-page-copy")
+            assertThat(modal.publicToggle).not().isChecked()
+            assertThat(modal.selectedOptions).hasCount(1)
+            assertThat(modal.selectedOptions).containsText("Cloned Monitor")
+            assertThat(modal.selectedCategories).hasCount(1)
+            assertThat(modal.selectedCategories).containsText("Payments")
+            assertThat(modal.displayCategoriesToggle).not().isChecked()
+
+            modal.save()
+            page.waitForURL("**/status-pages/*")
+            assertThat(StatusPageDetailsPage(page).heading(clonedTitle)).isVisible()
+
+            list.navigate()
+            assertThat(list.rows).hasCount(2)
+            assertThat(list.rowByTitle(clonedTitle)).containsText("/status/clone-source-page-copy")
+            assertThat(list.categoriesCell(clonedTitle)).hasText("1")
+            assertThat(list.privateIndicator(clonedTitle)).isVisible()
+        }
+
+        "cloning and editing through the list's modal never mix up creating and updating a status page" {
+            val longSlug = "a".repeat(SLUG_MAX_LENGTH)
+            createStatusPage(dslContext, title = "Edited Page", slug = "edited-page")
+            createStatusPage(dslContext, title = "Cloned Page", slug = longSlug)
+
+            val page = newPage()
+            val list = StatusPageListPage(page)
+            list.navigate()
+
+            // An abandoned clone doesn't turn the next edit into a create...
+            val abandonedClone = list.cloneStatusPage("Cloned Page")
+            assertThat(abandonedClone.titleInput).hasValue(Messages.clonedStatusPageTitle("Cloned Page"))
+            abandonedClone.dismiss()
+
+            val edit = list.configureStatusPage("Edited Page")
+            assertThat(edit.titleInput).hasValue("Edited Page")
+            edit.setTitle("Edited Page Renamed").save()
+            assertThat(list.rowByTitle("Edited Page Renamed")).isVisible()
+            assertThat(list.rows).hasCount(2)
+
+            // ...and an edit doesn't turn the next clone into an update
+            val clone = list.cloneStatusPage("Cloned Page")
+            assertThat(clone.title).hasText(Messages.createNewStatusPage())
+            assertThat(clone.titleInput).hasValue(Messages.clonedStatusPageTitle("Cloned Page"))
+            // The suffixed slug still fits into the maximum length of a slug
+            val clonedSlug = "a".repeat(SLUG_MAX_LENGTH - CLONED_SLUG_SUFFIX.length) + CLONED_SLUG_SUFFIX
+            assertThat(clone.slugInput).hasValue(clonedSlug)
+            clone.save()
+            page.waitForURL("**/status-pages/*")
+
+            list.navigate()
+            // The source and its copy, which didn't overwrite it
+            assertThat(list.rowByTitle("Cloned Page")).hasCount(2)
+            assertThat(list.rowByTitle("Cloned Page").first()).containsText("/status/$longSlug")
+            assertThat(list.rowByTitle(Messages.clonedStatusPageTitle("Cloned Page")))
+                .containsText("/status/$clonedSlug")
+            assertThat(list.rowByTitle("Edited Page Renamed")).containsText("/status/edited-page")
+        }
+
         "an abandoned create form is reset when the modal is reopened" {
             createHttpMonitor(httpMonitorRepository, monitorName = "Abandoned Selection")
 
@@ -354,5 +434,10 @@ class StatusPageCrudUiTest(private val httpMonitorRepository: HttpMonitorReposit
             assertThat(list.rows).hasCount(titles.size)
             list.titles shouldBe listOf("alpha", "bravo", "Charlie", "Delta")
         }
+    }
+
+    companion object {
+        private const val SLUG_MAX_LENGTH = 50
+        private const val CLONED_SLUG_SUFFIX = "-copy"
     }
 }

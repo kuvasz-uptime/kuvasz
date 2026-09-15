@@ -80,7 +80,14 @@ private fun TBODY.maintenanceWindowListItem(isReadOnlyMode: Boolean, window: Mai
         } else {
             Messages.updateMaintenanceWindow(window.name)
         }
-        xData("maintenanceWindowListItem(${window.id}, ${window.enabled}, ${editTitle.asJsonString()})")
+        // A copy starts disabled, so it doesn't put any monitor into maintenance before it's adjusted
+        val clonedFields = mapOf(
+            "name" to Messages.clonedMaintenanceWindowName(window.name),
+            "enabled" to false,
+        ).asJsonString()
+        xData(
+            "maintenanceWindowListItem(${window.id}, ${window.enabled}, $clonedFields, ${editTitle.asJsonString()})"
+        )
         // ID
         th {
             classes(TEXT_CENTER)
@@ -146,6 +153,11 @@ private fun TBODY.maintenanceWindowListItem(isReadOnlyMode: Boolean, window: Mai
                     xOnClick("editMaintenanceWindow()")
                 }
                 if (!isReadOnlyMode) {
+                    compactIconButton(Icon.COPY) {
+                        testId("maintenance-window-clone-button")
+                        modalOpener(CREATE_MAINTENANCE_WINDOW_MODAL_ID)
+                        xOnClick("cloneMaintenanceWindow()")
+                    }
                     val toggleIcon = if (window.enabled) Icon.PAUSE else Icon.PLAY
                     compactIconButton(toggleIcon) {
                         testId("maintenance-window-toggle-button")

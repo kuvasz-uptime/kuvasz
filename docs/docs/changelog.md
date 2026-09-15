@@ -38,9 +38,11 @@ The **metrics** on the monitor details pages got some love as well:
 
 ---
 
-**✏️ Editing monitors, status pages and maintenance windows from their lists**
+**✏️ Editing monitors, status pages and maintenance windows from their lists (status pages and maintenance windows are also clonable from now on!)**
 
 Every row of the monitor, status page and maintenance window lists got a :material-cog-outline: **configure** button, which opens the settings of the given entity without leaving the list, and saving them brings you back to the very same list. Going through a bunch of them one after the other doesn't take a detour to their details pages anymore.
+
+Just like monitors, **status pages** and **maintenance windows** can be :material-content-copy: **cloned** from their lists as well. A copy starts **private** (status pages) or **disabled** (maintenance windows), so it doesn't take effect before you've adjusted it.
 
 ### Improvements
 

@@ -1533,6 +1533,7 @@ test('Push editFrom keeps the client secret of the monitor, while cloneFrom gene
 const listEditedEntities = {
     'status-pages': {
         createForm: (entity = null) => upsertStatusPageForm(entity, {}, 'monitor-select', [], 'categories-select'),
+        clonedFields: {title: 'Copy of Source', slug: 'source-copy', public: false},
         source: {
             id: 7,
             title: 'Source',
@@ -1559,12 +1560,13 @@ const listEditedEntities = {
     },
     'maintenance-windows': {
         createForm: (entity = null) => upsertMaintenanceWindowForm(entity, {}, 'monitor-select', [], 'categories-select'),
+        clonedFields: {name: 'Copy of Source', enabled: false},
         source: {
             id: 7,
             name: 'Source',
             cron: '0 2 * * *',
             duration: 'PT1H',
-            enabled: false,
+            enabled: true,
             monitors: ['http:Site'],
             categories: ['Payments'],
             integrations: ['email:ops'],
@@ -1575,7 +1577,7 @@ const listEditedEntities = {
             assert.equal(form.type, MAINTENANCE_WINDOW_TYPES.CRON);
             assert.equal(form.cron, '0 2 * * *');
             assert.equal(form.duration, 'PT1H');
-            assert.equal(form.enabled, false);
+            assert.equal(form.enabled, true);
             assert.deepEqual(form.selectedMonitors, ['http:Site']);
             assert.deepEqual(form.selectedCategories, ['Payments']);
             assert.deepEqual(form.integrations, ['email:ops']);
@@ -1589,7 +1591,7 @@ const listEditedEntities = {
     },
 };
 
-Object.entries(listEditedEntities).forEach(([path, {createForm, source, rendered, assertLoaded, assertBlank, assertRendered}]) => {
+Object.entries(listEditedEntities).forEach(([path, {createForm, clonedFields, source, rendered, assertLoaded, assertBlank, assertRendered}]) => {
     test(`${path} editFrom loads the entity into update mode and saves it with a PATCH, reloading the page`, async (t) => {
         const browser = stubBrowser(t);
         const requests = stubRequests(t, jsonResponse(source), jsonResponse({id: 7}));
@@ -1632,6 +1634,40 @@ Object.entries(listEditedEntities).forEach(([path, {createForm, source, rendered
         await form.upsert();
 
         assert.deepEqual(methodsAndUrlsOf(requests)[1], ['POST', `/api/v2/${path}`]);
+        assert.equal(browser.location.reloaded, false);
+        assert.equal(browser.location.href, `/${path}/42`);
+    });
+
+    test(`${path} cloneFrom after an edit loads the entity into a create form, overriding the values its copy differs in`, async (t) => {
+        const browser = stubBrowser(t);
+        const requests = stubRequests(t, jsonResponse(source), jsonResponse(source), jsonResponse({id: 42}));
+        const form = createForm();
+        form.init();
+
+        await form.editFrom(7, 'Update Source');
+        form.resetState();
+        const cloning = form.cloneFrom(7, clonedFields);
+        assert.equal(form.isLoadingEntity, true);
+        await cloning;
+
+        Object.entries(clonedFields).forEach(([field, value]) => assert.equal(form[field], value));
+        // Everything else is copied from the source
+        assert.deepEqual(form.selectedMonitors, ['http:Site']);
+        assert.deepEqual(form.selectedCategories, ['Payments']);
+        assert.equal(form.isUpdate, false);
+        assert.equal(form.entityId, null);
+        assert.equal(form.editTitle, null);
+        assert.equal(form.isLoadingEntity, false);
+
+        await form.upsert();
+
+        assert.deepEqual(methodsAndUrlsOf(requests), [
+            ['GET', `/api/v2/${path}/7`],
+            ['GET', `/api/v2/${path}/7`],
+            ['POST', `/api/v2/${path}`],
+        ]);
+        Object.entries(clonedFields).forEach(([field, value]) => assert.equal(requests[2].body[field], value));
+        assert.deepEqual(requests[2].body.categories, ['Payments']);
         assert.equal(browser.location.reloaded, false);
         assert.equal(browser.location.href, `/${path}/42`);
     });
@@ -1732,17 +1768,21 @@ Object.entries(listEditedEntities).forEach(([path, {createForm, source, rendered
 });
 
 test('the list items of status pages and maintenance windows dispatch the events of the upsert modal of their list', () => {
-    const statusPage = statusPageListItem(7, true, 'Update Status');
-    const maintenanceWindow = maintenanceWindowListItem(8, false, 'Update Window');
+    const statusPage = statusPageListItem(7, true, {title: 'Copy of Status', slug: 'status-copy'}, 'Update Status');
+    const maintenanceWindow = maintenanceWindowListItem(8, false, {name: 'Copy of Window'}, 'Update Window');
     const dispatched = [];
     [statusPage, maintenanceWindow].forEach(item => item.$dispatch = (name, detail) => dispatched.push([name, detail]));
 
     statusPage.editStatusPage();
     maintenanceWindow.editMaintenanceWindow();
+    statusPage.cloneStatusPage();
+    maintenanceWindow.cloneMaintenanceWindow();
 
     assert.deepEqual(dispatched, [
         ['edit-status-page', {id: 7, title: 'Update Status'}],
         ['edit-maintenance-window', {id: 8, title: 'Update Window'}],
+        ['clone-status-page', {id: 7, fields: {title: 'Copy of Status', slug: 'status-copy'}}],
+        ['clone-maintenance-window', {id: 8, fields: {name: 'Copy of Window'}}],
     ]);
 });
 

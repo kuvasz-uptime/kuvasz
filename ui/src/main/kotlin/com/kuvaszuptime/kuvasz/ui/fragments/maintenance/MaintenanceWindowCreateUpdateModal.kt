@@ -48,6 +48,7 @@ internal fun FlowContent.maintenanceWindowCreateUpdateModal(
         )
         attributes["@$modalClosedEvent.window"] = "resetState()"
         attributes["@edit-maintenance-window.window"] = "editFrom(\$event.detail.id, \$event.detail.title)"
+        attributes["@clone-maintenance-window.window"] = "cloneFrom(\$event.detail.id, \$event.detail.fields)"
         tabIndex = "-1"
         role = "dialog"
 

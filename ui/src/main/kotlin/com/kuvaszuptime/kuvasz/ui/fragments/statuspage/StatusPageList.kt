@@ -13,6 +13,8 @@ import kotlinx.html.*
 import kotlinx.html.stream.*
 
 internal const val CREATE_STATUS_PAGE_MODAL_ID = "create-status-page-modal"
+private const val STATUS_PAGE_SLUG_MAX_LENGTH = 50
+private const val CLONED_SLUG_SUFFIX = "-copy"
 
 fun renderStatusPageList(statusPages: List<StatusPageDto>, appGlobals: AppGlobals): String =
     createHTML(prettyPrint = false, xhtmlCompatible = false).run {
@@ -143,7 +145,13 @@ private fun TBODY.statusPageListItem(isReadOnlyMode: Boolean, page: StatusPageDt
         } else {
             Messages.updateStatusPage(page.title)
         }
-        xData("statusPageListItem(${page.id}, ${page.public}, ${editTitle.asJsonString()})")
+        // A copy starts private, so it isn't published before it's adjusted
+        val clonedFields = mapOf(
+            "title" to Messages.clonedStatusPageTitle(page.title),
+            "slug" to clonedSlugOf(page.slug),
+            "public" to false,
+        ).asJsonString()
+        xData("statusPageListItem(${page.id}, ${page.public}, $clonedFields, ${editTitle.asJsonString()})")
         // ID
         th {
             classes(TEXT_CENTER)
@@ -200,6 +208,11 @@ private fun TBODY.statusPageListItem(isReadOnlyMode: Boolean, page: StatusPageDt
                     xOnClick("editStatusPage()")
                 }
                 if (!isReadOnlyMode) {
+                    compactIconButton(Icon.COPY) {
+                        testId("status-page-clone-button")
+                        modalOpener(CREATE_STATUS_PAGE_MODAL_ID)
+                        xOnClick("cloneStatusPage()")
+                    }
                     // Publish / Unpublish button
                     toggleVisibilityButton(
                         isPublic = page.public,
@@ -222,6 +235,10 @@ private fun TBODY.statusPageListItem(isReadOnlyMode: Boolean, page: StatusPageDt
         }
     }
 }
+
+// The slug has to be unique as well, so the clone gets a suffixed one, which still fits into the maximum length
+private fun clonedSlugOf(slug: String): String =
+    slug.take(STATUS_PAGE_SLUG_MAX_LENGTH - CLONED_SLUG_SUFFIX.length) + CLONED_SLUG_SUFFIX
 
 fun FlowContent.statusPagePreviewButton(slug: String) {
     a(href = "/status/${slug.urlEncode()}") {

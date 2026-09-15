@@ -34,6 +34,12 @@ class MaintenanceWindowListPage(private val page: Page) {
 
     fun configureButtonIn(name: String): Locator = rowByName(name).getByTestId("maintenance-window-configure-button")
 
+    // Clones the given window, returning the pre-filled create modal.
+    fun cloneMaintenanceWindow(name: String): MaintenanceWindowFormModal {
+        rowByName(name).getByTestId("maintenance-window-clone-button").click()
+        return MaintenanceWindowFormModal(page)
+    }
+
     // Only rendered when the maintenance windows are read-only, in place of every other action of the row.
     fun configurationButtonIn(name: String): Locator =
         rowByName(name).getByTestId("maintenance-window-configuration-button")

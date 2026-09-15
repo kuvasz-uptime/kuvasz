@@ -262,11 +262,15 @@ const tcpMonitorListItem = monitorListItem(tcpMonitorApi, refreshTcpMonitorList)
 const dnsMonitorListItem = monitorListItem(dnsMonitorApi, refreshDnsMonitorList);
 const pushMonitorListItem = monitorListItem(pushMonitorApi, refreshPushMonitorList);
 
-const statusPageListItem = (statusPageId, isStatusPagePublic, editTitle) => ({
+const statusPageListItem = (statusPageId, isStatusPagePublic, clonedFields, editTitle) => ({
     statusPageId,
     isStatusPagePublic,
+    clonedFields,
     editTitle,
     isRequestLoading: false,
+    cloneStatusPage() {
+        this.$dispatch('clone-status-page', {id: this.statusPageId, fields: this.clonedFields});
+    },
     editStatusPage() {
         this.$dispatch('edit-status-page', {id: this.statusPageId, title: this.editTitle});
     },
@@ -849,6 +853,11 @@ const upsertForm = ({api, entity, errorMessages, pagePath, entityLabel}) => ({
     // Loads the entity of a list row, so the modal of the list updates it instead of creating a new one
     editFrom(entityId, title) {
         return this.loadEntity(entityId, (source) => this.setEditTarget(source, title));
+    },
+
+    // Loads the entity of a list row into the create form of the list, with the values its copy differs in
+    cloneFrom(entityId, overrides) {
+        return this.loadEntity(entityId, () => Object.assign(this, overrides));
     },
 
     submitForm() {
@@ -1912,11 +1921,15 @@ const refreshMaintenanceWindowDetailStatus = () => {
     sendHtmxEvent('#maintenance-window-detail-heading', 'refresh-maintenance-window-detail-status');
 };
 
-const maintenanceWindowListItem = (maintenanceWindowId, isMaintenanceWindowEnabled, editTitle) => ({
+const maintenanceWindowListItem = (maintenanceWindowId, isMaintenanceWindowEnabled, clonedFields, editTitle) => ({
     maintenanceWindowId,
     isMaintenanceWindowEnabled,
+    clonedFields,
     editTitle,
     isRequestLoading: false,
+    cloneMaintenanceWindow() {
+        this.$dispatch('clone-maintenance-window', {id: this.maintenanceWindowId, fields: this.clonedFields});
+    },
     editMaintenanceWindow() {
         this.$dispatch('edit-maintenance-window', {id: this.maintenanceWindowId, title: this.editTitle});
     },

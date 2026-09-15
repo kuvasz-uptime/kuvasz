@@ -144,6 +144,82 @@ class MaintenanceWindowCrudUiTest(private val httpMonitorRepository: HttpMonitor
             assertThat(list.rowByName("Abandoned Window")).hasCount(0)
         }
 
+        "a maintenance window can be cloned from its list row, pre-filling a create form under a new name" {
+            val monitor = createHttpMonitor(httpMonitorRepository, monitorName = "Cloned Monitor")
+            createMaintenanceWindow(
+                dslContext,
+                name = "Window Clone Source",
+                cron = "0 2 * * *",
+                duration = "PT1H",
+                monitors = listOf(monitor.monitorId()),
+                categories = listOf("Payments"),
+            )
+
+            val page = newPage()
+            val list = MaintenanceWindowListPage(page)
+            list.navigate()
+
+            val clonedName = Messages.clonedMaintenanceWindowName("Window Clone Source")
+            val modal = list.cloneMaintenanceWindow("Window Clone Source")
+            assertThat(modal.title).hasText(Messages.createNewMaintenanceWindow())
+            // Every value is copied from the source, except the name which has to be unique, and the enabled
+            // state, as a copy starts disabled
+            assertThat(modal.nameInput).hasValue(clonedName)
+            assertThat(modal.enabledToggle).not().isChecked()
+            assertThat(modal.typeRadio(MaintenanceWindowType.CRON)).isChecked()
+            assertThat(modal.cronInput).hasValue("0 2 * * *")
+            assertThat(modal.durationInput).hasValue("PT1H")
+            assertThat(modal.selectedOptions).hasCount(1)
+            assertThat(modal.selectedOptions).containsText("Cloned Monitor")
+            assertThat(modal.selectedCategories).hasCount(1)
+            assertThat(modal.selectedCategories).containsText("Payments")
+
+            modal.save()
+            page.waitForURL("**/maintenance-windows/*")
+            assertThat(MaintenanceWindowDetailsPage(page).heading(clonedName)).isVisible()
+
+            list.navigate()
+            assertThat(list.rows).hasCount(2)
+            assertThat(list.rowByName(clonedName)).containsText("0 2 * * *")
+            assertThat(list.rowByName(clonedName)).containsText(Messages.disabled())
+            assertThat(list.monitorsCell(clonedName)).hasText("1")
+            assertThat(list.categoriesCell(clonedName)).hasText("1")
+        }
+
+        "cloning and editing through the list's modal never mix up creating and updating a maintenance window" {
+            createMaintenanceWindow(dslContext, name = "Edited Window", cron = "0 3 * * *", duration = "PT2H")
+            createMaintenanceWindow(dslContext, name = "Cloned Window", cron = "0 2 * * *", duration = "PT1H")
+
+            val page = newPage()
+            val list = MaintenanceWindowListPage(page)
+            list.navigate()
+
+            // An abandoned clone doesn't turn the next edit into a create...
+            val abandonedClone = list.cloneMaintenanceWindow("Cloned Window")
+            assertThat(abandonedClone.nameInput).hasValue(Messages.clonedMaintenanceWindowName("Cloned Window"))
+            abandonedClone.dismiss()
+
+            val edit = list.configureMaintenanceWindow("Edited Window")
+            assertThat(edit.nameInput).hasValue("Edited Window")
+            edit.setName("Edited Window Renamed").save()
+            assertThat(list.rowByName("Edited Window Renamed")).isVisible()
+            assertThat(list.rows).hasCount(2)
+
+            // ...and an edit doesn't turn the next clone into an update
+            val clone = list.cloneMaintenanceWindow("Cloned Window")
+            assertThat(clone.title).hasText(Messages.createNewMaintenanceWindow())
+            assertThat(clone.nameInput).hasValue(Messages.clonedMaintenanceWindowName("Cloned Window"))
+            assertThat(clone.cronInput).hasValue("0 2 * * *")
+            clone.save()
+            page.waitForURL("**/maintenance-windows/*")
+
+            list.navigate()
+            // The source and its copy, which didn't overwrite it
+            assertThat(list.rowByName("Cloned Window")).hasCount(2)
+            assertThat(list.rowByName("Edited Window Renamed")).containsText("0 3 * * *")
+            assertThat(list.rowByName(Messages.clonedMaintenanceWindowName("Cloned Window"))).containsText("0 2 * * *")
+        }
+
         "a manual maintenance window can be created through the UI" {
             val page = newPage()
             val list = MaintenanceWindowListPage(page)

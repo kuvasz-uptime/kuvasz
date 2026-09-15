@@ -30,7 +30,7 @@ class MaintenanceWindowListUiTest(private val httpMonitorRepository: HttpMonitor
             assertThat(list.rowByName("List Toggle Window")).containsText(Messages.maintenanceWindowActive())
         }
 
-        "each row exposes configure, toggle and delete action buttons" {
+        "each row exposes configure, clone, toggle and delete action buttons" {
             createMaintenanceWindow(dslContext, name = "Actions Window")
 
             val page = newPage()
@@ -41,6 +41,7 @@ class MaintenanceWindowListUiTest(private val httpMonitorRepository: HttpMonitor
             assertThat(list.configureButtonIn("Actions Window")).isVisible()
             // The view-only configuration button is reserved for the read-only maintenance windows
             assertThat(list.configurationButtonIn("Actions Window")).hasCount(0)
+            assertThat(row.getByTestId("maintenance-window-clone-button")).isVisible()
             assertThat(row.getByTestId("maintenance-window-toggle-button")).isVisible()
             assertThat(row.getByTestId("maintenance-window-delete-button")).isVisible()
         }
