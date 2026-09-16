@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDefaults
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDto
@@ -51,6 +52,7 @@ data class HttpMonitorSchema(
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime?,
     val category: String?,
+    val ignoreConnectivityCheck: Boolean,
 ) {
     companion object {
         fun fromDto(dto: HttpMonitorDto) = HttpMonitorSchema(
@@ -80,6 +82,7 @@ data class HttpMonitorSchema(
             createdAt = dto.createdAt,
             updatedAt = dto.updatedAt,
             category = dto.category,
+            ignoreConnectivityCheck = dto.ignoreConnectivityCheck,
         )
     }
 }
@@ -98,6 +101,7 @@ data class HttpMonitorDetailsSchema(
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime?,
     val category: String?,
+    val ignoreConnectivityCheck: Boolean,
     val uptimeStatus: UptimeStatus?,
     val uptimeStatusStartedAt: OffsetDateTime?,
     val lastUptimeCheck: OffsetDateTime?,
@@ -142,6 +146,7 @@ data class HttpMonitorDetailsSchema(
                 createdAt = dto.createdAt,
                 updatedAt = dto.updatedAt,
                 category = dto.category,
+                ignoreConnectivityCheck = dto.ignoreConnectivityCheck,
                 uptimeStatus = dto.uptimeStatus,
                 uptimeStatusStartedAt = dto.uptimeStatusStartedAt,
                 lastUptimeCheck = dto.lastUptimeCheck,
@@ -217,6 +222,7 @@ data class HttpMonitorSummarySchema(
     val sslError: String?,
     val sslValidUntil: OffsetDateTime?,
     val category: String?,
+    val ignoreConnectivityCheck: Boolean,
 ) {
     companion object {
         fun fromDto(dto: HttpMonitorDetailsDto) =
@@ -236,6 +242,7 @@ data class HttpMonitorSummarySchema(
                 sslError = dto.sslError,
                 sslValidUntil = dto.sslValidUntil,
                 category = dto.category,
+                ignoreConnectivityCheck = dto.ignoreConnectivityCheck,
             )
     }
 }
@@ -279,6 +286,7 @@ data class HttpMonitorCreatorSchema(
     @get:Positive
     val failureCountThreshold: Long?,
     val category: String? = null,
+    val ignoreConnectivityCheck: Boolean?,
 ) {
 
     fun toDto() = HttpMonitorCreateDto(
@@ -307,5 +315,6 @@ data class HttpMonitorCreatorSchema(
         requestBody = requestBody,
         failureCountThreshold = failureCountThreshold ?: HttpMonitorDefaults.FAILURE_COUNT_THRESHOLD,
         category = category,
+        ignoreConnectivityCheck = ignoreConnectivityCheck ?: MonitorDefaults.IGNORE_CONNECTIVITY_CHECK,
     )
 }

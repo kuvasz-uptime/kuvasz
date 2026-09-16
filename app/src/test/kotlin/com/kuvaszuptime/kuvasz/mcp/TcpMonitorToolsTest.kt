@@ -17,6 +17,7 @@ import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.testutils.shouldHaveError
@@ -68,6 +69,7 @@ class TcpMonitorToolsTest(
                     val details = response.structuredContentAs<TcpMonitorDetailsSchema>().shouldNotBeNull()
                     details.id shouldBe monitor.id
                     details.name shouldBe monitor.name
+                    details.ignoreConnectivityCheck shouldBe monitor.ignoreConnectivityCheck
                     details.port shouldBe monitor.port
 
                     response.contentAs<TcpMonitorDetailsSchema>() shouldBe details
@@ -128,9 +130,32 @@ class TcpMonitorToolsTest(
                         port shouldBe 5432
                         uptimeCheckInterval shouldBe 60
                         enabled shouldBe true
+                        ignoreConnectivityCheck shouldBe MonitorDefaults.IGNORE_CONNECTIVITY_CHECK
 
                         response.contentAs<TcpMonitorSchema>() shouldBe this
                     }
+                }
+            }
+
+            `when`("create-tcp-monitor is called with ignoreConnectivityCheck set") {
+                val response = callToolWithMcpClient(
+                    CREATE_TCP_MONITOR,
+                    mapOf(
+                        "name" to "mcp-created-tcp-monitor-ignoring-connectivity",
+                        "host" to "10.0.0.2",
+                        "port" to 5432,
+                        "uptimeCheckInterval" to 60,
+                        "ignoreConnectivityCheck" to true,
+                    )
+                )
+
+                then("the created monitor should keep being checked without outbound connectivity") {
+                    response.isError shouldBe false
+
+                    response.structuredContentAs<TcpMonitorSchema>().shouldNotBeNull()
+                        .ignoreConnectivityCheck shouldBe true
+                    tcpMonitorRepository.findByName("mcp-created-tcp-monitor-ignoring-connectivity")
+                        .shouldNotBeNull().ignoreConnectivityCheck shouldBe true
                 }
             }
 

@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.mcp.schemas
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.dto.Validation
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.dto.monitor.TcpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorDefaults
@@ -33,6 +34,7 @@ data class TcpMonitorSchema(
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime,
     val category: String?,
+    val ignoreConnectivityCheck: Boolean,
 ) {
     companion object {
         fun fromDto(dto: TcpMonitorDto) = TcpMonitorSchema(
@@ -50,6 +52,7 @@ data class TcpMonitorSchema(
             createdAt = dto.createdAt,
             updatedAt = dto.updatedAt,
             category = dto.category,
+            ignoreConnectivityCheck = dto.ignoreConnectivityCheck,
         )
     }
 }
@@ -71,6 +74,7 @@ data class TcpMonitorDetailsSchema(
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime,
     val category: String?,
+    val ignoreConnectivityCheck: Boolean,
     val uptimeStatus: UptimeStatus?,
     val uptimeStatusStartedAt: OffsetDateTime?,
     val lastUptimeCheck: OffsetDateTime?,
@@ -96,6 +100,7 @@ data class TcpMonitorDetailsSchema(
             createdAt = dto.createdAt,
             updatedAt = dto.updatedAt,
             category = dto.category,
+            ignoreConnectivityCheck = dto.ignoreConnectivityCheck,
             uptimeStatus = dto.uptimeStatus,
             uptimeStatusStartedAt = dto.uptimeStatusStartedAt,
             lastUptimeCheck = dto.lastUptimeCheck,
@@ -124,6 +129,7 @@ data class TcpMonitorSummarySchema(
     val uptimeStatusStartedAt: OffsetDateTime?,
     val uptimeError: String?,
     val category: String?,
+    val ignoreConnectivityCheck: Boolean,
 ) {
     companion object {
         fun fromDto(dto: TcpMonitorDetailsDto) = TcpMonitorSummarySchema(
@@ -139,6 +145,7 @@ data class TcpMonitorSummarySchema(
             uptimeStatusStartedAt = dto.uptimeStatusStartedAt,
             uptimeError = dto.uptimeError,
             category = dto.category,
+            ignoreConnectivityCheck = dto.ignoreConnectivityCheck,
         )
     }
 }
@@ -186,6 +193,7 @@ data class TcpMonitorCreatorSchema(
     val latencyThresholdMs: Int?,
     val failureCountThreshold: Long?,
     val category: String? = null,
+    val ignoreConnectivityCheck: Boolean?,
     val enabled: Boolean?,
     val integrations: List<String>?,
     val metricsHistoryEnabled: Boolean?,
@@ -199,6 +207,7 @@ data class TcpMonitorCreatorSchema(
         latencyThresholdMs = latencyThresholdMs,
         failureCountThreshold = failureCountThreshold ?: TcpMonitorDefaults.FAILURE_COUNT_THRESHOLD,
         category = category,
+        ignoreConnectivityCheck = ignoreConnectivityCheck ?: MonitorDefaults.IGNORE_CONNECTIVITY_CHECK,
         enabled = enabled ?: TcpMonitorDefaults.MONITOR_ENABLED,
         integrations = integrations.orEmpty(),
         metricsHistoryEnabled = metricsHistoryEnabled ?: TcpMonitorDefaults.METRICS_HISTORY_ENABLED

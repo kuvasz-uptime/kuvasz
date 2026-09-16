@@ -17,6 +17,7 @@ import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.testutils.shouldHaveError
@@ -68,6 +69,7 @@ class IcmpMonitorToolsTest(
                     val details = response.structuredContentAs<IcmpMonitorDetailsSchema>().shouldNotBeNull()
                     details.id shouldBe monitor.id
                     details.name shouldBe monitor.name
+                    details.ignoreConnectivityCheck shouldBe monitor.ignoreConnectivityCheck
 
                     response.contentAs<IcmpMonitorDetailsSchema>() shouldBe details
                 }
@@ -126,8 +128,31 @@ class IcmpMonitorToolsTest(
                         uptimeCheckInterval shouldBe 60
                         enabled shouldBe true
 
+                        ignoreConnectivityCheck shouldBe MonitorDefaults.IGNORE_CONNECTIVITY_CHECK
+
                         response.contentAs<IcmpMonitorSchema>() shouldBe this
                     }
+                }
+            }
+
+            `when`("create-icmp-monitor is called with ignoreConnectivityCheck set") {
+                val response = callToolWithMcpClient(
+                    CREATE_ICMP_MONITOR,
+                    mapOf(
+                        "name" to "mcp-created-icmp-monitor-ignoring-connectivity",
+                        "host" to "10.0.0.2",
+                        "uptimeCheckInterval" to 60,
+                        "ignoreConnectivityCheck" to true,
+                    )
+                )
+
+                then("the created monitor should keep being checked without outbound connectivity") {
+                    response.isError shouldBe false
+
+                    response.structuredContentAs<IcmpMonitorSchema>().shouldNotBeNull()
+                        .ignoreConnectivityCheck shouldBe true
+                    icmpMonitorRepository.findByName("mcp-created-icmp-monitor-ignoring-connectivity").shouldNotBeNull()
+                        .ignoreConnectivityCheck shouldBe true
                 }
             }
 

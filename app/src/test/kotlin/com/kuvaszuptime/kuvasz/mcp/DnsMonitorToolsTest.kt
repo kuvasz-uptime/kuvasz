@@ -18,6 +18,7 @@ import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.jooq.enums.DnsTransport
 import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsMatchType
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordMatcher
@@ -77,6 +78,7 @@ class DnsMonitorToolsTest(
                     val details = response.structuredContentAs<DnsMonitorDetailsSchema>().shouldNotBeNull()
                     details.id shouldBe monitor.id
                     details.name shouldBe monitor.name
+                    details.ignoreConnectivityCheck shouldBe monitor.ignoreConnectivityCheck
                     details.host shouldBe "example.com"
                     details.transport shouldBe DnsTransport.TCP
                     details.recordMatchers.forOne { it.value shouldBe "1.2.3.4" }
@@ -139,8 +141,31 @@ class DnsMonitorToolsTest(
                         transport shouldBe DnsTransport.UDP
                         enabled shouldBe true
 
+                        ignoreConnectivityCheck shouldBe MonitorDefaults.IGNORE_CONNECTIVITY_CHECK
+
                         response.contentAs<DnsMonitorSchema>() shouldBe this
                     }
+                }
+            }
+
+            `when`("create-dns-monitor is called with ignoreConnectivityCheck set") {
+                val response = callToolWithMcpClient(
+                    CREATE_DNS_MONITOR,
+                    mapOf(
+                        "name" to "mcp-created-dns-monitor-ignoring-connectivity",
+                        "host" to "example.org",
+                        "uptimeCheckInterval" to 60,
+                        "ignoreConnectivityCheck" to true,
+                    )
+                )
+
+                then("the created monitor should keep being checked without outbound connectivity") {
+                    response.isError shouldBe false
+
+                    response.structuredContentAs<DnsMonitorSchema>().shouldNotBeNull()
+                        .ignoreConnectivityCheck shouldBe true
+                    dnsMonitorRepository.findByName("mcp-created-dns-monitor-ignoring-connectivity").shouldNotBeNull()
+                        .ignoreConnectivityCheck shouldBe true
                 }
             }
 
