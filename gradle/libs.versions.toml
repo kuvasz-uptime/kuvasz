@@ -1,5 +1,5 @@
 [versions]
-buildconfig = "6.0.10"
+buildconfig = "6.1.0"
 detekt = "2.0.0-alpha.6"
 detektFormatting = "1.23.8"
 dnsjava = "3.6.5"
