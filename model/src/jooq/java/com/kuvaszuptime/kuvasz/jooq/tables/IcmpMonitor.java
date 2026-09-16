@@ -134,6 +134,11 @@ public class IcmpMonitor extends TableImpl<IcmpMonitorRecord> {
      */
     public final TableField<IcmpMonitorRecord, String> CATEGORY = createField(DSL.name("category"), SQLDataType.CLOB, this, "");
 
+    /**
+     * The column <code>kuvasz.icmp_monitor.ignore_connectivity_check</code>.
+     */
+    public final TableField<IcmpMonitorRecord, Boolean> IGNORE_CONNECTIVITY_CHECK = createField(DSL.name("ignore_connectivity_check"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("false"), SQLDataType.BOOLEAN)), this, "");
+
     private IcmpMonitor(Name alias, Table<IcmpMonitorRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }

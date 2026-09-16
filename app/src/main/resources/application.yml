@@ -172,6 +172,11 @@ app-config:
   check-updates: ${ENABLE_CHECK_UPDATES:`true`}
   http-check-timeout-seconds: ${HTTP_CHECK_TIMEOUT_SECONDS:`30`}
   http-check-max-redirects: ${HTTP_CHECK_MAX_REDIRECTS:`10`}
+  connectivity-check:
+    enabled: ${ENABLE_CONNECTIVITY_CHECK:`false`}
+    targets: ${CONNECTIVITY_CHECK_TARGETS:`1.1.1.1:53,8.8.8.8:53`}
+    interval-seconds: ${CONNECTIVITY_CHECK_INTERVAL_SECONDS:`60`}
+    timeout-seconds: ${CONNECTIVITY_CHECK_TIMEOUT_SECONDS:`5`}
 ---
 admin-auth:
   username: ${ADMIN_USER}

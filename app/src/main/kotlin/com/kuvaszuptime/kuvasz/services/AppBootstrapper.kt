@@ -31,6 +31,7 @@ import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.security.api.HeaderApiKeyReader.Companion.API_KEY_MIN_LENGTH
 import com.kuvaszuptime.kuvasz.services.check.MonitorCheckScheduler
+import com.kuvaszuptime.kuvasz.services.connectivity.ConnectivityCheckScheduler
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowImporter
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowScheduler
@@ -67,6 +68,7 @@ class AppBootstrapper(
     private val maintenanceWindowRepository: MaintenanceWindowRepository,
     private val maintenanceWindowScheduler: MaintenanceWindowScheduler,
     private val apiKeyConfig: ApiKeyConfig?,
+    private val connectivityCheckScheduler: ConnectivityCheckScheduler?,
 ) {
 
     @Suppress("ProtectedMemberInFinalClass")
@@ -124,6 +126,9 @@ class AppBootstrapper(
         sanitizeIntegrationsOfMaintenanceWindows()
         // Conditionally initialize the metrics export if enabled
         metricsExportRegistry?.initialize()
+        // Priming the connectivity state before the first check is scheduled, so an instance that starts up
+        // during an outage doesn't emit a burst of false events
+        connectivityCheckScheduler?.initialize()
         // Scheduling the initial checks of every monitor type
         checkSchedulers.forEach { it.initialize() }
         // Scheduling the start/end notifications of the enabled maintenance windows

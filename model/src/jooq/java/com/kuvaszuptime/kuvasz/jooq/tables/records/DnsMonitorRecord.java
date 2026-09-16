@@ -328,6 +328,21 @@ public class DnsMonitorRecord extends UpdatableRecordImpl<DnsMonitorRecord> impl
         return (String) get(19);
     }
 
+    /**
+     * Setter for <code>kuvasz.dns_monitor.ignore_connectivity_check</code>.
+     */
+    public DnsMonitorRecord setIgnoreConnectivityCheck(Boolean value) {
+        set(20, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.dns_monitor.ignore_connectivity_check</code>.
+     */
+    public Boolean getIgnoreConnectivityCheck() {
+        return (Boolean) get(20);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -351,7 +366,7 @@ public class DnsMonitorRecord extends UpdatableRecordImpl<DnsMonitorRecord> impl
     /**
      * Create a detached, initialised DnsMonitorRecord
      */
-    public DnsMonitorRecord(Long id, String name, String host, String resolverHost, Integer resolverPort, DnsTransport transport, JsonNode recordMatchers, DnsResponseCode expectedResponseCode, Boolean driftDetectionEnabled, DnsRecordType[] driftRecordTypes, Integer uptimeCheckInterval, Integer timeoutMs, Integer latencyThresholdMs, Long failureCountThreshold, Boolean enabled, Boolean metricsHistoryEnabled, IntegrationID[] integrations, OffsetDateTime createdAt, OffsetDateTime updatedAt, String category) {
+    public DnsMonitorRecord(Long id, String name, String host, String resolverHost, Integer resolverPort, DnsTransport transport, JsonNode recordMatchers, DnsResponseCode expectedResponseCode, Boolean driftDetectionEnabled, DnsRecordType[] driftRecordTypes, Integer uptimeCheckInterval, Integer timeoutMs, Integer latencyThresholdMs, Long failureCountThreshold, Boolean enabled, Boolean metricsHistoryEnabled, IntegrationID[] integrations, OffsetDateTime createdAt, OffsetDateTime updatedAt, String category, Boolean ignoreConnectivityCheck) {
         super(DnsMonitor.DNS_MONITOR);
 
         setId(id);
@@ -374,6 +389,7 @@ public class DnsMonitorRecord extends UpdatableRecordImpl<DnsMonitorRecord> impl
         setCreatedAt(createdAt);
         setUpdatedAt(updatedAt);
         setCategory(category);
+        setIgnoreConnectivityCheck(ignoreConnectivityCheck);
         resetTouchedOnNotNull();
     }
 
@@ -404,6 +420,7 @@ public class DnsMonitorRecord extends UpdatableRecordImpl<DnsMonitorRecord> impl
             setCreatedAt(value.getCreatedAt());
             setUpdatedAt(value.getUpdatedAt());
             setCategory(value.getCategory());
+            setIgnoreConnectivityCheck(value.getIgnoreConnectivityCheck());
             resetTouchedOnNotNull();
         }
     }

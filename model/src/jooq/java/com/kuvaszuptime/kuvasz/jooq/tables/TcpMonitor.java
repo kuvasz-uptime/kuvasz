@@ -134,6 +134,11 @@ public class TcpMonitor extends TableImpl<TcpMonitorRecord> {
      */
     public final TableField<TcpMonitorRecord, String> CATEGORY = createField(DSL.name("category"), SQLDataType.CLOB, this, "");
 
+    /**
+     * The column <code>kuvasz.tcp_monitor.ignore_connectivity_check</code>.
+     */
+    public final TableField<TcpMonitorRecord, Boolean> IGNORE_CONNECTIVITY_CHECK = createField(DSL.name("ignore_connectivity_check"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("false"), SQLDataType.BOOLEAN)), this, "");
+
     private TcpMonitor(Name alias, Table<TcpMonitorRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }

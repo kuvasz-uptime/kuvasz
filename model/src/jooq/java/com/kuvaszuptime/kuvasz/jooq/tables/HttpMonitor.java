@@ -204,6 +204,11 @@ public class HttpMonitor extends TableImpl<HttpMonitorRecord> {
      */
     public final TableField<HttpMonitorRecord, Boolean> CROSS_ORIGIN_HEADER_PROPAGATION = createField(DSL.name("cross_origin_header_propagation"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("false"), SQLDataType.BOOLEAN)), this, "");
 
+    /**
+     * The column <code>kuvasz.http_monitor.ignore_connectivity_check</code>.
+     */
+    public final TableField<HttpMonitorRecord, Boolean> IGNORE_CONNECTIVITY_CHECK = createField(DSL.name("ignore_connectivity_check"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("false"), SQLDataType.BOOLEAN)), this, "");
+
     private HttpMonitor(Name alias, Table<HttpMonitorRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }

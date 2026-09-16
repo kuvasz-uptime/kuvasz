@@ -34,6 +34,12 @@ object ValidationMessages {
     const val APP_CONFIG_HTTP_CHECK_TIMEOUT_MAX = "Read timeout for HTTP checks cannot be higher than {value} seconds"
     const val APP_CONFIG_HTTP_CHECK_MAX_REDIRECTS_POSITIVE_OR_ZERO =
         "The maximum number of redirects to follow must be greater than or equal to 0"
+    const val CONNECTIVITY_CHECK_INTERVAL_MIN = "The connectivity check interval must be at least {value} seconds"
+    const val CONNECTIVITY_CHECK_TIMEOUT_MIN = "The connectivity check timeout must be at least {value} seconds"
+    const val CONNECTIVITY_CHECK_TARGETS_NOT_EMPTY = "At least one connectivity check target must be " +
+        "configured when the connectivity check is enabled"
+    const val CONNECTIVITY_CHECK_TARGET_FORMAT = "Every connectivity check target must be in 'host:port' " +
+        "format, with a port between ${Validation.MIN_PORT} and ${Validation.MAX_PORT}"
     const val VALID_HEADER_NAMES = "All header names must be valid HTTP tokens as defined by RFC 9110, containing " +
         "one or more letters, digits, or the following symbols: ! # $ % & ' * + - . ^ _ ` | ~"
     const val VALID_DNS_RECORD_MATCHERS = "Each DNS record matcher must have a non-blank value, and REGEX matchers " +

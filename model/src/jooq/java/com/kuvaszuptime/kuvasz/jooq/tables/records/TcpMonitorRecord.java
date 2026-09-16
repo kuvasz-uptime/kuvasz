@@ -233,6 +233,21 @@ public class TcpMonitorRecord extends UpdatableRecordImpl<TcpMonitorRecord> impl
         return (String) get(13);
     }
 
+    /**
+     * Setter for <code>kuvasz.tcp_monitor.ignore_connectivity_check</code>.
+     */
+    public TcpMonitorRecord setIgnoreConnectivityCheck(Boolean value) {
+        set(14, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.tcp_monitor.ignore_connectivity_check</code>.
+     */
+    public Boolean getIgnoreConnectivityCheck() {
+        return (Boolean) get(14);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -256,7 +271,7 @@ public class TcpMonitorRecord extends UpdatableRecordImpl<TcpMonitorRecord> impl
     /**
      * Create a detached, initialised TcpMonitorRecord
      */
-    public TcpMonitorRecord(Long id, String name, String host, Integer port, Integer uptimeCheckInterval, Integer timeoutMs, Integer latencyThresholdMs, Long failureCountThreshold, Boolean enabled, Boolean metricsHistoryEnabled, IntegrationID[] integrations, OffsetDateTime createdAt, OffsetDateTime updatedAt, String category) {
+    public TcpMonitorRecord(Long id, String name, String host, Integer port, Integer uptimeCheckInterval, Integer timeoutMs, Integer latencyThresholdMs, Long failureCountThreshold, Boolean enabled, Boolean metricsHistoryEnabled, IntegrationID[] integrations, OffsetDateTime createdAt, OffsetDateTime updatedAt, String category, Boolean ignoreConnectivityCheck) {
         super(TcpMonitor.TCP_MONITOR);
 
         setId(id);
@@ -273,6 +288,7 @@ public class TcpMonitorRecord extends UpdatableRecordImpl<TcpMonitorRecord> impl
         setCreatedAt(createdAt);
         setUpdatedAt(updatedAt);
         setCategory(category);
+        setIgnoreConnectivityCheck(ignoreConnectivityCheck);
         resetTouchedOnNotNull();
     }
 
@@ -297,6 +313,7 @@ public class TcpMonitorRecord extends UpdatableRecordImpl<TcpMonitorRecord> impl
             setCreatedAt(value.getCreatedAt());
             setUpdatedAt(value.getUpdatedAt());
             setCategory(value.getCategory());
+            setIgnoreConnectivityCheck(value.getIgnoreConnectivityCheck());
             resetTouchedOnNotNull();
         }
     }

@@ -64,6 +64,7 @@ public class HttpMonitor implements Serializable {
     private Boolean sensitiveUrl;
     private String category;
     private Boolean crossOriginHeaderPropagation;
+    private Boolean ignoreConnectivityCheck;
 
     public HttpMonitor() {}
 
@@ -94,6 +95,7 @@ public class HttpMonitor implements Serializable {
         this.sensitiveUrl = value.sensitiveUrl;
         this.category = value.category;
         this.crossOriginHeaderPropagation = value.crossOriginHeaderPropagation;
+        this.ignoreConnectivityCheck = value.ignoreConnectivityCheck;
     }
 
     public HttpMonitor(
@@ -122,7 +124,8 @@ public class HttpMonitor implements Serializable {
         Long failureCountThreshold,
         Boolean sensitiveUrl,
         String category,
-        Boolean crossOriginHeaderPropagation
+        Boolean crossOriginHeaderPropagation,
+        Boolean ignoreConnectivityCheck
     ) {
         this.id = id;
         this.name = name;
@@ -150,6 +153,7 @@ public class HttpMonitor implements Serializable {
         this.sensitiveUrl = sensitiveUrl;
         this.category = category;
         this.crossOriginHeaderPropagation = crossOriginHeaderPropagation;
+        this.ignoreConnectivityCheck = ignoreConnectivityCheck;
     }
 
     /**
@@ -552,6 +556,21 @@ public class HttpMonitor implements Serializable {
         return this;
     }
 
+    /**
+     * Getter for <code>kuvasz.http_monitor.ignore_connectivity_check</code>.
+     */
+    public Boolean getIgnoreConnectivityCheck() {
+        return this.ignoreConnectivityCheck;
+    }
+
+    /**
+     * Setter for <code>kuvasz.http_monitor.ignore_connectivity_check</code>.
+     */
+    public HttpMonitor setIgnoreConnectivityCheck(Boolean ignoreConnectivityCheck) {
+        this.ignoreConnectivityCheck = ignoreConnectivityCheck;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -717,6 +736,12 @@ public class HttpMonitor implements Serializable {
         }
         else if (!this.crossOriginHeaderPropagation.equals(other.crossOriginHeaderPropagation))
             return false;
+        if (this.ignoreConnectivityCheck == null) {
+            if (other.ignoreConnectivityCheck != null)
+                return false;
+        }
+        else if (!this.ignoreConnectivityCheck.equals(other.ignoreConnectivityCheck))
+            return false;
         return true;
     }
 
@@ -750,6 +775,7 @@ public class HttpMonitor implements Serializable {
         result = prime * result + ((this.sensitiveUrl == null) ? 0 : this.sensitiveUrl.hashCode());
         result = prime * result + ((this.category == null) ? 0 : this.category.hashCode());
         result = prime * result + ((this.crossOriginHeaderPropagation == null) ? 0 : this.crossOriginHeaderPropagation.hashCode());
+        result = prime * result + ((this.ignoreConnectivityCheck == null) ? 0 : this.ignoreConnectivityCheck.hashCode());
         return result;
     }
 
@@ -783,6 +809,7 @@ public class HttpMonitor implements Serializable {
         sb.append(", ").append(sensitiveUrl);
         sb.append(", ").append(category);
         sb.append(", ").append(crossOriginHeaderPropagation);
+        sb.append(", ").append(ignoreConnectivityCheck);
 
         sb.append(")");
         return sb.toString();

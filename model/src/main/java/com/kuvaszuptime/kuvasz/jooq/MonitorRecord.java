@@ -19,4 +19,6 @@ public interface MonitorRecord extends WithCategory {
     OffsetDateTime getUpdatedAt();
 
     Long getFailureCountThreshold();
+
+    Boolean getIgnoreConnectivityCheck();
 }
