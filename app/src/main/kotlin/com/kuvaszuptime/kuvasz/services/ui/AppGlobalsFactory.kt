@@ -8,6 +8,7 @@ import com.kuvaszuptime.kuvasz.config.DefaultStatusPageConfig
 import com.kuvaszuptime.kuvasz.models.handlers.type
 import com.kuvaszuptime.kuvasz.security.oidc.OIDC_PROVIDER_NAME
 import com.kuvaszuptime.kuvasz.services.VersionChecker
+import com.kuvaszuptime.kuvasz.services.connectivity.ConnectivityChecker
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.monitor.SharedMonitorActions
 import io.micronaut.context.annotation.Context
@@ -35,6 +36,7 @@ class AppGlobalsFactory {
         @Named(OIDC_PROVIDER_NAME) oidcClient: OpenIdClient?,
         // Only present when security is enabled; API key auth is considered enabled only if a key is configured
         apiKeyConfig: ApiKeyConfig?,
+        connectivityChecker: ConnectivityChecker?,
     ) = AppGlobals(
         editabilityState = AppGlobals.EditabilityState(
             areHttpMonitorsReadOnly = { appConfig.isHttpMonitorExternalWriteDisabled() },
@@ -61,6 +63,7 @@ class AppGlobalsFactory {
             .mapValues { (_, configs) -> configs.toSet() }
             .toMap(),
         versionInfo = { versionChecker.getVersionInfo() },
+        connectivityStatus = { connectivityChecker?.getStatus() },
         defaultStatusPageSettings = AppGlobals.DefaultStatusPageSettings(
             title = defaultStatusPageConfig.title,
             public = defaultStatusPageConfig.public,

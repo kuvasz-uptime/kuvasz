@@ -118,6 +118,19 @@ internal fun FlowContent.monitorUpsertModal(
                     }
                     fields(isReadOnlyMode)
 
+                    if (globals.connectivityStatus() != null) {
+                        div {
+                            classes(MB_4)
+                            testId("ignore-connectivity-check-toggle")
+                            toggleSwitch(
+                                propName = "ignoreConnectivityCheck",
+                                label = Messages.ignoreConnectivityCheckSwitchLabel(),
+                                description = Messages.ignoreConnectivityCheckSwitchDescription(),
+                                isDisabled = isReadOnlyMode,
+                            )
+                        }
+                    }
+
                     // Accordion for all the specific settings
                     val settingsAccordionId = "${typeUiConfig.slug}-monitor-settings-accordion"
                     accordion(id = settingsAccordionId) {

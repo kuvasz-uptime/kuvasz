@@ -230,3 +230,5 @@ status-pages:
 ---
 app-config:
   latency-data-retention-days: 30
+  connectivity-check:
+    enabled: true

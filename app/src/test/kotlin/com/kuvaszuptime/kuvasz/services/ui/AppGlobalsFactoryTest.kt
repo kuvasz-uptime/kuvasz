@@ -10,12 +10,16 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationMap
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.type
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.settings.ConnectivityState
+import com.kuvaszuptime.kuvasz.models.settings.ConnectivityStatus
 import com.kuvaszuptime.kuvasz.models.settings.VersionInfo
 import com.kuvaszuptime.kuvasz.services.VersionChecker
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.monitor.SharedMonitorActions
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.core.spec.style.BehaviorSpec
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.micronaut.security.oauth2.client.OpenIdClient
 import io.micronaut.security.utils.SecurityService
@@ -59,6 +63,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockkMonitorActions,
                 oidcClient = null,
                 apiKeyConfig = null,
+                connectivityChecker = null,
             )
 
             then("it should return the correctly hydrated view model") {
@@ -85,6 +90,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockkMonitorActions,
                 oidcClient = null,
                 apiKeyConfig = null,
+                connectivityChecker = null,
             )
 
             then("it should return the correctly hydrated view model") {
@@ -111,6 +117,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockkMonitorActions,
                 oidcClient = null,
                 apiKeyConfig = null,
+                connectivityChecker = null,
             )
 
             then("it should return the correctly hydrated view model") {
@@ -139,6 +146,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockkMonitorActions,
                 oidcClient = null,
                 apiKeyConfig = null,
+                connectivityChecker = null,
             )
 
             then("it should return the correctly hydrated view model") {
@@ -160,6 +168,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockkMonitorActions,
                 oidcClient = null,
                 apiKeyConfig = null,
+                connectivityChecker = null,
             )
             globals.editabilityState.areHttpMonitorsReadOnly() shouldBe false
             globals.editabilityState.areStatusPagesReadOnly() shouldBe false
@@ -179,6 +188,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockkMonitorActions,
                 oidcClient = null,
                 apiKeyConfig = null,
+                connectivityChecker = null,
             )
 
             then("it should return the correctly hydrated view model") {
@@ -210,6 +220,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockkMonitorActions,
                 oidcClient = null,
                 apiKeyConfig = null,
+                connectivityChecker = null,
             )
 
             then("it should return the correctly hydrated view model with integrations") {
@@ -236,6 +247,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                     mockkMonitorActions,
                     oidcClient = null,
                     apiKeyConfig = null,
+                    connectivityChecker = null,
                 )
                 globals.versionInfo() shouldBe VersionInfo(
                     installedVersion = BuildConfig.APP_VERSION,
@@ -255,6 +267,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockkMonitorActions,
                 oidcClient = null,
                 apiKeyConfig = null,
+                connectivityChecker = null,
             )
 
             then("it should return the correct default status page settings") {
@@ -273,6 +286,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockkMonitorActions,
                 oidcClient = null,
                 apiKeyConfig = null,
+                connectivityChecker = null,
             )
 
             then("it should return the correct list of enabled monitors") {
@@ -293,6 +307,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockkMonitorActions,
                 oidcClient = null,
                 apiKeyConfig = null,
+                connectivityChecker = null,
             )
 
             then("neither OIDC nor OIDC logout is enabled when the OIDC client bean is absent") {
@@ -314,6 +329,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockkMonitorActions,
                 oidcClient = oidcClient,
                 apiKeyConfig = null,
+                connectivityChecker = null,
             )
 
             then("both OIDC and OIDC logout are enabled") {
@@ -335,6 +351,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockkMonitorActions,
                 oidcClient = oidcClient,
                 apiKeyConfig = null,
+                connectivityChecker = null,
             )
 
             then("OIDC is enabled but OIDC logout is not") {
@@ -353,10 +370,57 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockkMonitorActions,
                 oidcClient = null,
                 apiKeyConfig = null,
+                connectivityChecker = null,
             )
 
             then("API key auth is reported as disabled") {
                 globals.isApiKeyAuthEnabled shouldBe false
+            }
+        }
+
+        `when`("the connectivity check is turned off") {
+            val globals = AppGlobalsFactory().appGlobals(
+                null,
+                AppConfig(),
+                emptyIntegrationRepository,
+                mockVersionChecker,
+                mockDefaultPageSettings,
+                mockkMonitorActions,
+                oidcClient = null,
+                apiKeyConfig = null,
+                connectivityChecker = null,
+            )
+
+            then("there is no connectivity status at all") {
+                globals.connectivityStatus().shouldBeNull()
+            }
+        }
+
+        `when`("the connectivity check is turned on") {
+            val status = ConnectivityStatus(
+                state = ConnectivityState.DOWN,
+                targets = listOf("1.1.1.1:53"),
+                intervalSeconds = 60,
+                timeoutSeconds = 5,
+                lastCheckedAt = null,
+                lastSuccessfulCheckAt = null,
+                downSince = null,
+                lastError = null,
+            )
+            val globals = AppGlobalsFactory().appGlobals(
+                null,
+                AppConfig(),
+                emptyIntegrationRepository,
+                mockVersionChecker,
+                mockDefaultPageSettings,
+                mockkMonitorActions,
+                oidcClient = null,
+                apiKeyConfig = null,
+                connectivityChecker = mockk { every { getStatus() } returns status },
+            )
+
+            then("the live status is exposed to the views") {
+                globals.connectivityStatus().shouldNotBeNull().areChecksSuspended shouldBe true
             }
         }
 
@@ -370,6 +434,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockkMonitorActions,
                 oidcClient = null,
                 apiKeyConfig = ApiKeyConfig().apply { apiKey = "some-non-blank-api-key" },
+                connectivityChecker = null,
             )
 
             then("API key auth is reported as enabled") {
@@ -387,6 +452,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockkMonitorActions,
                 oidcClient = null,
                 apiKeyConfig = ApiKeyConfig().apply { apiKey = null },
+                connectivityChecker = null,
             )
             val blankKeyGlobals = AppGlobalsFactory().appGlobals(
                 null,
@@ -397,6 +463,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockkMonitorActions,
                 oidcClient = null,
                 apiKeyConfig = ApiKeyConfig().apply { apiKey = "   " },
+                connectivityChecker = null,
             )
 
             then("API key auth is reported as disabled") {

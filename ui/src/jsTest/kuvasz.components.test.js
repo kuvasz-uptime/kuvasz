@@ -1180,10 +1180,16 @@ test('upsert creates a monitor and redirects to its page', async (t) => {
     assert.equal(requests[0].url, '/api/v2/icmp-monitors');
     assert.equal(requests[0].method, 'POST');
     assert.deepEqual(requests[0].body, {
-        name: 'ping', failureCountThreshold: 1, integrations: [], category: null, host: 'example.com',
+        name: 'ping', failureCountThreshold: 1, integrations: [], category: null,
+        ignoreConnectivityCheck: false, host: 'example.com',
         uptimeCheckInterval: 60, packetCount: 3, timeoutSeconds: 5, packetLossThreshold: 100,
         metricsHistoryEnabled: true, enabled: true,
     });
+    // The connectivity opt-out is a shared field of every monitor type, handled by the common form base
+    form.ignoreConnectivityCheck = true;
+    assert.equal(form.buildRequestBody().ignoreConnectivityCheck, true);
+    form.populateFrom({name: 'ping', host: 'example.com', ignoreConnectivityCheck: true});
+    assert.equal(form.ignoreConnectivityCheck, true);
     assert.equal(browser.location.href, '/icmp-monitors/42');
     assert.equal(form.isRequestLoading, false);
 });
