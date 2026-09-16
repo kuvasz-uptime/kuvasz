@@ -117,7 +117,7 @@ complexity:
   LongMethod:
     active: true
     allowedLines: 60
-    excludes: [ '**/com/kuvaszuptime/kuvasz/ui/**' ]
+    excludes: [ '**/com/kuvaszuptime/kuvasz/ui/**', '**/test/**' ]
   LongParameterList:
     active: false
     allowedFunctionParameters: 5

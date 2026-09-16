@@ -37,6 +37,8 @@ data class TcpMonitorDto(
     val updatedAt: OffsetDateTime,
     @param:Schema(description = MonitorDocs.CATEGORY, required = true, nullable = true)
     val category: String? = null,
+    @param:Schema(description = MonitorDocs.IGNORE_CONNECTIVITY_CHECK, required = true)
+    val ignoreConnectivityCheck: Boolean,
 ) {
     companion object {
         fun fromMonitorRecord(record: TcpMonitorRecord) = TcpMonitorDto(
@@ -54,6 +56,7 @@ data class TcpMonitorDto(
             createdAt = record.createdAt,
             updatedAt = record.updatedAt,
             category = record.category,
+            ignoreConnectivityCheck = record.ignoreConnectivityCheck,
         )
     }
 }

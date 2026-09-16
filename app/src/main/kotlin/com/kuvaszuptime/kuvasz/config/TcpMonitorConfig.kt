@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.config
 
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorDefaults
 import com.kuvaszuptime.kuvasz.models.monitor.tcp.TcpMonitorCreator
 import io.micronaut.context.annotation.EachProperty
@@ -39,4 +40,7 @@ interface TcpMonitorConfig : TcpMonitorCreator, MonitorConfig {
     override val metricsHistoryEnabled: Boolean
 
     override val category: String?
+
+    @get:Bindable(defaultValue = MonitorDefaults.IGNORE_CONNECTIVITY_CHECK.toString())
+    override val ignoreConnectivityCheck: Boolean
 }

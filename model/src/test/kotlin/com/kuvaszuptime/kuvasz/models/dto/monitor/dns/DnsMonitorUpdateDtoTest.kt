@@ -37,6 +37,7 @@ class DnsMonitorUpdateDtoTest(validator: DefaultValidator) : BehaviorSpec({
         integrations = null,
         metricsHistoryEnabled = true,
         category = null,
+        ignoreConnectivityCheck = false,
     )
 
     given("the validation setup of a DnsMonitorUpdateDto") {

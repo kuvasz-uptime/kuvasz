@@ -12,6 +12,7 @@ import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.ServiceError
 import com.kuvaszuptime.kuvasz.models.dto.importing.MonitorImportResultDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDefaults
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
@@ -247,6 +248,7 @@ class MonitorControllerTest(
                         firstMonitor.sensitiveUrl shouldBe httpMonitor.sensitiveUrl
                         firstMonitor.uptimeCheckInterval shouldBe httpMonitor.uptimeCheckInterval
                         firstMonitor.enabled shouldBe httpMonitor.enabled
+                        firstMonitor.ignoreConnectivityCheck shouldBe httpMonitor.ignoreConnectivityCheck
                         firstMonitor.sslCheckEnabled shouldBe httpMonitor.sslCheckEnabled
                         firstMonitor.requestMethod shouldBe httpMonitor.requestMethod
                         firstMonitor.latencyHistoryEnabled shouldBe httpMonitor.metricsHistoryEnabled
@@ -262,6 +264,7 @@ class MonitorControllerTest(
                         secondMonitor.sensitiveUrl shouldBe httpMonitor2.sensitiveUrl
                         secondMonitor.uptimeCheckInterval shouldBe httpMonitor2.uptimeCheckInterval
                         secondMonitor.enabled shouldBe httpMonitor2.enabled
+                        secondMonitor.ignoreConnectivityCheck shouldBe httpMonitor2.ignoreConnectivityCheck
                         secondMonitor.sslCheckEnabled shouldBe httpMonitor2.sslCheckEnabled
                         secondMonitor.requestMethod shouldBe httpMonitor2.requestMethod
                         secondMonitor.latencyHistoryEnabled shouldBe httpMonitor2.metricsHistoryEnabled
@@ -294,6 +297,7 @@ class MonitorControllerTest(
                         firstMonitor.gracePeriod shouldBe pushMonitor.gracePeriod
                         firstMonitor.clientSecret shouldBe pushMonitor.clientSecret
                         firstMonitor.enabled shouldBe pushMonitor.enabled
+                        firstMonitor.ignoreConnectivityCheck shouldBe pushMonitor.ignoreConnectivityCheck
                         firstMonitor.failureCountThreshold shouldBe pushMonitor.failureCountThreshold
                         firstMonitor.integrations shouldContainExactlyInAnyOrder setOf(
                             IntegrationID(IntegrationType.EMAIL, "Global-343"),
@@ -306,6 +310,7 @@ class MonitorControllerTest(
                         secondMonitor.gracePeriod shouldBe pushMonitor2.gracePeriod
                         secondMonitor.clientSecret shouldBe pushMonitor2.clientSecret
                         secondMonitor.enabled shouldBe pushMonitor2.enabled
+                        secondMonitor.ignoreConnectivityCheck shouldBe pushMonitor2.ignoreConnectivityCheck
                         secondMonitor.failureCountThreshold shouldBe pushMonitor2.failureCountThreshold
                         secondMonitor.integrations.shouldBeEmpty()
                     }
@@ -323,6 +328,7 @@ class MonitorControllerTest(
                         firstMonitor.packetLossThreshold shouldBe icmpMonitor.packetLossThreshold
                         firstMonitor.failureCountThreshold shouldBe icmpMonitor.failureCountThreshold
                         firstMonitor.enabled shouldBe icmpMonitor.enabled
+                        firstMonitor.ignoreConnectivityCheck shouldBe icmpMonitor.ignoreConnectivityCheck
                         firstMonitor.metricsHistoryEnabled shouldBe icmpMonitor.metricsHistoryEnabled
                         firstMonitor.integrations shouldContainExactlyInAnyOrder setOf(
                             IntegrationID(IntegrationType.SLACK, "global"),
@@ -338,6 +344,7 @@ class MonitorControllerTest(
                         secondMonitor.packetLossThreshold shouldBe icmpMonitor2.packetLossThreshold
                         secondMonitor.failureCountThreshold shouldBe icmpMonitor2.failureCountThreshold
                         secondMonitor.enabled shouldBe icmpMonitor2.enabled
+                        secondMonitor.ignoreConnectivityCheck shouldBe icmpMonitor2.ignoreConnectivityCheck
                         secondMonitor.metricsHistoryEnabled shouldBe icmpMonitor2.metricsHistoryEnabled
                         secondMonitor.integrations.shouldBeEmpty()
                     }
@@ -355,6 +362,7 @@ class MonitorControllerTest(
                         firstMonitor.latencyThresholdMs shouldBe tcpMonitor.latencyThresholdMs
                         firstMonitor.failureCountThreshold shouldBe tcpMonitor.failureCountThreshold
                         firstMonitor.enabled shouldBe tcpMonitor.enabled
+                        firstMonitor.ignoreConnectivityCheck shouldBe tcpMonitor.ignoreConnectivityCheck
                         firstMonitor.metricsHistoryEnabled shouldBe tcpMonitor.metricsHistoryEnabled
                         firstMonitor.integrations shouldContainExactlyInAnyOrder setOf(
                             IntegrationID(IntegrationType.SLACK, "global"),
@@ -370,6 +378,7 @@ class MonitorControllerTest(
                         secondMonitor.latencyThresholdMs shouldBe tcpMonitor2.latencyThresholdMs
                         secondMonitor.failureCountThreshold shouldBe tcpMonitor2.failureCountThreshold
                         secondMonitor.enabled shouldBe tcpMonitor2.enabled
+                        secondMonitor.ignoreConnectivityCheck shouldBe tcpMonitor2.ignoreConnectivityCheck
                         secondMonitor.metricsHistoryEnabled shouldBe tcpMonitor2.metricsHistoryEnabled
                         secondMonitor.integrations.shouldBeEmpty()
                     }
@@ -383,6 +392,7 @@ class MonitorControllerTest(
                         firstMonitor.host shouldBe dnsMonitor.host
                         firstMonitor.uptimeCheckInterval shouldBe dnsMonitor.uptimeCheckInterval
                         firstMonitor.enabled shouldBe dnsMonitor.enabled
+                        firstMonitor.ignoreConnectivityCheck shouldBe dnsMonitor.ignoreConnectivityCheck
                         firstMonitor.metricsHistoryEnabled shouldBe dnsMonitor.metricsHistoryEnabled
                         firstMonitor.integrations shouldContainExactlyInAnyOrder setOf(
                             IntegrationID(IntegrationType.SLACK, "global"),
@@ -404,6 +414,7 @@ class MonitorControllerTest(
                         secondMonitor.latencyThresholdMs shouldBe dnsMonitor2.latencyThresholdMs
                         secondMonitor.failureCountThreshold shouldBe dnsMonitor2.failureCountThreshold
                         secondMonitor.enabled shouldBe dnsMonitor2.enabled
+                        secondMonitor.ignoreConnectivityCheck shouldBe dnsMonitor2.ignoreConnectivityCheck
                         secondMonitor.metricsHistoryEnabled shouldBe dnsMonitor2.metricsHistoryEnabled
                         secondMonitor.integrations.shouldBeEmpty()
                     }
@@ -435,6 +446,62 @@ class MonitorControllerTest(
 
         given("MonitorController's importYamlMonitors() endpoint") {
 
+            `when`("a YAML file taken before ignoreConnectivityCheck existed is uploaded") {
+                // A backup from an older version simply doesn't carry the field at all, so it's stripped from an
+                // otherwise valid export here, instead of hand-writing the whole payload
+                val currentYaml = buildYamlImportContent(
+                    httpMonitors = listOf(
+                        HttpMonitorExportDto(
+                            name = "legacy-http",
+                            url = "https://example.com",
+                            sensitiveUrl = false,
+                            uptimeCheckInterval = 60,
+                            enabled = true,
+                            sslCheckEnabled = true,
+                            latencyHistoryEnabled = true,
+                            requestMethod = HttpMethod.GET,
+                            followRedirects = true,
+                            forceNoCache = true,
+                            sslExpiryThreshold = 30,
+                            failureCountThreshold = 1,
+                            integrations = emptySet(),
+                            expectedStatusCodes = emptySet(),
+                            responseTimeThresholdMillis = null,
+                            expectedKeyword = null,
+                            expectedKeywordCaseSensitive = false,
+                            expectedKeywordNegated = false,
+                            requestHeaders = emptyMap(),
+                            expectedHeaders = emptyMap(),
+                            requestBody = null,
+                            crossOriginHeaderPropagation = false,
+                            category = null,
+                            ignoreConnectivityCheck = false,
+                        )
+                    )
+                )
+                val legacyYaml = currentYaml.decodeToString()
+                    .lineSequence()
+                    .filterNot { it.contains("ignore-connectivity-check") }
+                    .joinToString("\n")
+                    .toByteArray()
+
+                val multipartBody = MultipartBody.builder()
+                    .addPart("file", "monitors.yml", MediaType.APPLICATION_YAML_TYPE, legacyYaml)
+                    .build()
+
+                val request = HttpRequest.POST("/api/v2/monitors/import/yaml?dryRun=false", multipartBody)
+                    .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                    .accept(MediaType.APPLICATION_JSON_TYPE)
+
+                then("it should import it, falling back to the default of the missing field") {
+                    val response = client.exchange(request, MonitorImportResultDto::class.java).awaitFirst()
+
+                    response.status shouldBe HttpStatus.OK
+                    httpMonitorRepository.findByName("legacy-http").shouldNotBeNull()
+                        .ignoreConnectivityCheck shouldBe MonitorDefaults.IGNORE_CONNECTIVITY_CHECK
+                }
+            }
+
             `when`("a valid YAML file is uploaded") {
                 val existingMonitor = createHttpMonitor(
                     httpMonitorRepository,
@@ -465,6 +532,8 @@ class MonitorControllerTest(
                             requestHeaders = emptyMap(),
                             expectedHeaders = emptyMap(),
                             requestBody = null,
+                            category = null,
+                            ignoreConnectivityCheck = false,
                         )
                     )
                 )
@@ -523,6 +592,8 @@ class MonitorControllerTest(
                             requestHeaders = emptyMap(),
                             expectedHeaders = emptyMap(),
                             requestBody = null,
+                            category = null,
+                            ignoreConnectivityCheck = false,
                         )
                     )
                 )
@@ -580,6 +651,8 @@ class MonitorControllerTest(
                             requestHeaders = emptyMap(),
                             expectedHeaders = emptyMap(),
                             requestBody = null,
+                            category = null,
+                            ignoreConnectivityCheck = false,
                         )
                     )
                 )
@@ -632,6 +705,8 @@ class MonitorControllerTest(
                             requestHeaders = emptyMap(),
                             expectedHeaders = emptyMap(),
                             requestBody = null,
+                            category = null,
+                            ignoreConnectivityCheck = false,
                         )
                     ),
                     pushMonitors = listOf(
@@ -643,6 +718,8 @@ class MonitorControllerTest(
                             enabled = true,
                             integrations = emptySet(),
                             failureCountThreshold = 1,
+                            category = null,
+                            ignoreConnectivityCheck = false,
                         )
                     ),
                     icmpMonitors = listOf(
@@ -657,6 +734,8 @@ class MonitorControllerTest(
                             enabled = true,
                             integrations = emptySet(),
                             metricsHistoryEnabled = true,
+                            category = null,
+                            ignoreConnectivityCheck = false,
                         )
                     ),
                     tcpMonitors = listOf(
@@ -671,6 +750,8 @@ class MonitorControllerTest(
                             enabled = true,
                             integrations = emptySet(),
                             metricsHistoryEnabled = true,
+                            category = null,
+                            ignoreConnectivityCheck = false,
                         )
                     ),
                     dnsMonitors = listOf(
@@ -691,6 +772,8 @@ class MonitorControllerTest(
                             enabled = true,
                             integrations = emptySet(),
                             metricsHistoryEnabled = true,
+                            category = null,
+                            ignoreConnectivityCheck = false,
                         )
                     ),
                 )
@@ -824,6 +907,8 @@ class MonitorControllerTest(
                             requestHeaders = emptyMap(),
                             expectedHeaders = emptyMap(),
                             requestBody = null,
+                            category = null,
+                            ignoreConnectivityCheck = false,
                         )
                     )
                 )
@@ -866,6 +951,8 @@ class MonitorControllerTest(
                             enabled = true,
                             integrations = emptySet(),
                             metricsHistoryEnabled = true,
+                            category = null,
+                            ignoreConnectivityCheck = false,
                         )
                     ),
                 )
@@ -915,6 +1002,8 @@ class MonitorControllerTest(
                             requestHeaders = emptyMap(),
                             expectedHeaders = emptyMap(),
                             requestBody = null,
+                            category = null,
+                            ignoreConnectivityCheck = false,
                         )
                     )
                 )

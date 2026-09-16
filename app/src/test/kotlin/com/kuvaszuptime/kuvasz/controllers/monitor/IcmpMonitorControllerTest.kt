@@ -331,6 +331,56 @@ class IcmpMonitorControllerTest(
                 }
             }
 
+            `when`("ignoreConnectivityCheck is set to true when creating a monitor") {
+                val monitorName = randomClientSecret()
+                val createDto = IcmpMonitorCreateDto(
+                    name = monitorName,
+                    host = "127.0.0.1",
+                    uptimeCheckInterval = 60,
+                    packetCount = IcmpMonitorDefaults.PACKET_COUNT,
+                    timeoutSeconds = IcmpMonitorDefaults.TIMEOUT_SECONDS,
+                    packetLossThreshold = IcmpMonitorDefaults.PACKET_LOSS_THRESHOLD,
+                    failureCountThreshold = IcmpMonitorDefaults.FAILURE_COUNT_THRESHOLD,
+                    enabled = true,
+                    integrations = null,
+                    ignoreConnectivityCheck = true,
+                )
+
+                val response = client.toBlocking().exchange(
+                    HttpRequest.POST("/api/v2/icmp-monitors/", createDto).header("X-Api-Key", "test"),
+                    String::class.java
+                )
+
+                then("it should create the monitor with ignoreConnectivityCheck=true and return 201") {
+                    response.status shouldBe HttpStatus.CREATED
+                    val createdMonitor = monitorRepository.findByName(monitorName)
+                    createdMonitor.shouldNotBeNull()
+                    createdMonitor.ignoreConnectivityCheck shouldBe true
+                }
+            }
+
+            `when`("ignoreConnectivityCheck is updated") {
+                val monitor = createIcmpMonitor(monitorRepository)
+                monitor.ignoreConnectivityCheck shouldBe false
+                val updateNode = mapper.createObjectNode().put("ignoreConnectivityCheck", true)
+
+                val response = client.toBlocking().exchange(
+                    HttpRequest.PATCH("/api/v2/icmp-monitors/${monitor.id}", updateNode).header("X-Api-Key", "test"),
+                    String::class.java
+                )
+
+                then("it should persist the new value and return 200") {
+                    response.status shouldBe HttpStatus.OK
+                    monitorRepository.findById(monitor.id, null).shouldNotBeNull()
+                        .ignoreConnectivityCheck shouldBe true
+                }
+
+                then("the details projection should expose the new value too") {
+                    monitorRepository.getMonitorWithDetails(monitor.id).shouldNotBeNull()
+                        .ignoreConnectivityCheck shouldBe true
+                }
+            }
+
             `when`("validation fails - blank host") {
                 val request = HttpRequest.POST(
                     "/api/v2/icmp-monitors/",

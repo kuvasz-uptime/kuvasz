@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.models.dto.monitor.http
 
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.http.expectedHeadersAsMap
 import com.kuvaszuptime.kuvasz.models.monitor.http.requestHeadersAsMap
@@ -32,6 +33,7 @@ data class HttpMonitorExportDto(
     val expectedHeaders: Map<String, String>,
     val requestBody: String?,
     val category: String? = null,
+    val ignoreConnectivityCheck: Boolean = MonitorDefaults.IGNORE_CONNECTIVITY_CHECK,
 ) {
     companion object {
         fun fromMonitorRecord(record: HttpMonitorRecord): HttpMonitorExportDto {
@@ -59,6 +61,7 @@ data class HttpMonitorExportDto(
                 expectedHeaders = record.expectedHeadersAsMap(),
                 requestBody = record.requestBody,
                 category = record.category,
+                ignoreConnectivityCheck = record.ignoreConnectivityCheck,
             )
         }
     }

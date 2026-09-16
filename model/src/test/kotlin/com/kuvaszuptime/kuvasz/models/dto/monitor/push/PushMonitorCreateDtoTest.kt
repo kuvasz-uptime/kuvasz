@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.models.dto.monitor.push
 
 import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.shouldHaveError
 import com.kuvaszuptime.kuvasz.models.shouldHaveSingleError
 import io.kotest.core.spec.style.BehaviorSpec
@@ -163,6 +164,14 @@ class PushMonitorCreateDtoDefaultsTest : BehaviorSpec({
             dto.integrations shouldBe emptyList()
             dto.failureCountThreshold shouldBe 1
             dto.category shouldBe null
+            dto.ignoreConnectivityCheck shouldBe MonitorDefaults.IGNORE_CONNECTIVITY_CHECK
+        }
+
+        then("the flag should be carried over to the record") {
+            dto.toMonitorRecord(emptySet()).ignoreConnectivityCheck shouldBe
+                MonitorDefaults.IGNORE_CONNECTIVITY_CHECK
+            dto.copy(ignoreConnectivityCheck = true).toMonitorRecord(emptySet())
+                .ignoreConnectivityCheck shouldBe true
         }
     }
 

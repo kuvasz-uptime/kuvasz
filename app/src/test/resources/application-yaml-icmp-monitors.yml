@@ -16,3 +16,4 @@ icmp-monitors:
     host: 10.0.0.1
     uptime-check-interval: 120
     enabled: true
+    ignore-connectivity-check: true

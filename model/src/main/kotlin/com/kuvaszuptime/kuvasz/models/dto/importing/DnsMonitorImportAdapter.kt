@@ -29,4 +29,5 @@ class DnsMonitorImportAdapter(dto: DnsMonitorExportDto) : DnsMonitorCreator {
     override val integrations: List<String> = dto.integrations.map { it.toString() }
     override val metricsHistoryEnabled: Boolean = dto.metricsHistoryEnabled
     override val category: String? = dto.category
+    override val ignoreConnectivityCheck: Boolean = dto.ignoreConnectivityCheck
 }

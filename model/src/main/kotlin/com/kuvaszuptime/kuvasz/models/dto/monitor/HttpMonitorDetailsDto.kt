@@ -74,9 +74,9 @@ data class HttpMonitorDetailsDto(
     @param:Schema(description = HttpMonitorDocs.EXPECTED_STATUS_CODES, required = true)
     val expectedStatusCodes: Set<Int>,
     @param:Schema(description = HttpMonitorDocs.RESPONSE_TIME_THRESHOLD, required = true, nullable = true)
-    val responseTimeThresholdMillis: Int? = null,
+    val responseTimeThresholdMillis: Int?,
     @param:Schema(description = HttpMonitorDocs.EXPECTED_KEYWORD, required = true, nullable = true)
-    val expectedKeyword: String? = null,
+    val expectedKeyword: String?,
     @param:Schema(description = HttpMonitorDocs.EXPECTED_KEYWORD_CASE_SENSITIVE, required = true)
     val expectedKeywordCaseSensitive: Boolean,
     @param:Schema(description = HttpMonitorDocs.EXPECTED_KEYWORD_NEGATED, required = true)
@@ -86,7 +86,7 @@ data class HttpMonitorDetailsDto(
     @param:Schema(description = HttpMonitorDocs.EXPECTED_HEADERS, required = true)
     val expectedHeaders: Map<String, String>,
     @param:Schema(description = HttpMonitorDocs.REQUEST_BODY, required = true, nullable = true)
-    val requestBody: String? = null,
+    val requestBody: String?,
     @param:Schema(description = MonitorDocs.STATUS_PAGES, required = true)
     override val statusPages: Set<String>,
     @param:Schema(description = MonitorDocs.MAINTENANCE_WINDOWS, required = true)
@@ -94,5 +94,7 @@ data class HttpMonitorDetailsDto(
     @param:Schema(description = MonitorDocs.UNDER_MAINTENANCE, required = true)
     override val inMaintenance: Boolean,
     @param:Schema(description = MonitorDocs.CATEGORY, required = true, nullable = true)
-    override val category: String? = null,
+    override val category: String?,
+    @param:Schema(description = MonitorDocs.IGNORE_CONNECTIVITY_CHECK, required = true)
+    override val ignoreConnectivityCheck: Boolean,
 ) : MonitorDetailsDto

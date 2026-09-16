@@ -24,7 +24,7 @@
 
 # Important commands
 
-- `./gradlew check` - runs all checks, including tests, code formatting, linting, etc. Needs to be executed before work is considered as done.
+- `./gradlew check` - runs all checks, including tests, code formatting, linting, etc. It takes ~10 minutes, so **while working, run only the tests affected by the given step** (e.g. `./gradlew :app:test --tests "com.kuvaszuptime.kuvasz.services.TcpCheckSchedulerTest"`), and keep the full run for the end of the work, or for the end of a bigger milestone.
 - `./gradlew detektAll` - runs only the static code analysis tool on all modules
 - `./gradlew migrateAndGenerate` - runs the database migrations and generates the jOOQ boilerplate code
 - `./gradlew validateI18n` - validates the i18n files, needs to be run after any change in the i18n files
@@ -42,3 +42,4 @@
 - Manual clearing/resetting of mocks should be avoided (unless it's really necessary), instead use
   `@MockkBean` and let the framework handle it
 - Controller endpoints that are eventually touching the database have to use the `@ExecuteOn(TaskExecutors.BLOCKING)` annotation
+- Never run two Gradle test invocations at the same time: the specs share hardcoded MockServer ports and a single Testcontainers database, so parallel runs interfere with each other and report misleading failures

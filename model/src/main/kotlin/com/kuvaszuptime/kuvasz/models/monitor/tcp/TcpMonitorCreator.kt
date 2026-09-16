@@ -58,4 +58,5 @@ interface TcpMonitorCreator : MonitorCreator<TcpMonitorRecord> {
             .setIntegrations(validatedIntegrations.toTypedArray())
             .setMetricsHistoryEnabled(metricsHistoryEnabled)
             .setCategory(normalizedCategory)
+            .setIgnoreConnectivityCheck(ignoreConnectivityCheck)
 }

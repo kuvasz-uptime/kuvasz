@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.DnsResponseCode
 import com.kuvaszuptime.kuvasz.jooq.enums.DnsTransport
 import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorDefaults
 import com.kuvaszuptime.kuvasz.testAppContext
 import com.kuvaszuptime.kuvasz.testutils.getBean
@@ -142,6 +143,7 @@ class DnsMonitorConfigDefaultValuesTest(applicationContext: ApplicationContext) 
                 monitorConfig.failureCountThreshold shouldBe DnsMonitorDefaults.FAILURE_COUNT_THRESHOLD
                 monitorConfig.metricsHistoryEnabled shouldBe DnsMonitorDefaults.METRICS_HISTORY_ENABLED
                 monitorConfig.integrations.shouldBeNull()
+                monitorConfig.ignoreConnectivityCheck shouldBe MonitorDefaults.IGNORE_CONNECTIVITY_CHECK
                 monitorConfig.resolverHost.shouldBeNull()
                 monitorConfig.resolverPort shouldBe DnsMonitorDefaults.RESOLVER_PORT
                 monitorConfig.transport shouldBe DnsTransport.UDP

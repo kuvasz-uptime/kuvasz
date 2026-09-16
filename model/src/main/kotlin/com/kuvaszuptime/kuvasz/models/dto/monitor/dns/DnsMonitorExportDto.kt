@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.models.dto.monitor.dns
 import com.kuvaszuptime.kuvasz.jooq.enums.DnsResponseCode
 import com.kuvaszuptime.kuvasz.jooq.enums.DnsTransport
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordMatcher
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
@@ -28,6 +29,7 @@ data class DnsMonitorExportDto(
     val integrations: Set<IntegrationID>,
     val metricsHistoryEnabled: Boolean,
     val category: String? = null,
+    val ignoreConnectivityCheck: Boolean = MonitorDefaults.IGNORE_CONNECTIVITY_CHECK,
 ) {
     companion object {
         fun fromMonitorRecord(record: DnsMonitorRecord): DnsMonitorExportDto {
@@ -49,6 +51,7 @@ data class DnsMonitorExportDto(
                 integrations = record.integrations.toSet(),
                 metricsHistoryEnabled = record.metricsHistoryEnabled,
                 category = record.category,
+                ignoreConnectivityCheck = record.ignoreConnectivityCheck,
             )
         }
     }

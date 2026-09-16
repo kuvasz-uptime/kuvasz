@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.models.dto.monitor.tcp
 
 import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMonitorRecord
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import io.micronaut.core.annotation.Introspected
 
@@ -17,6 +18,7 @@ data class TcpMonitorExportDto(
     val integrations: Set<IntegrationID>,
     val metricsHistoryEnabled: Boolean,
     val category: String? = null,
+    val ignoreConnectivityCheck: Boolean = MonitorDefaults.IGNORE_CONNECTIVITY_CHECK,
 ) {
     companion object {
         fun fromMonitorRecord(record: TcpMonitorRecord): TcpMonitorExportDto {
@@ -32,6 +34,7 @@ data class TcpMonitorExportDto(
                 integrations = record.integrations.toSet(),
                 metricsHistoryEnabled = record.metricsHistoryEnabled,
                 category = record.category,
+                ignoreConnectivityCheck = record.ignoreConnectivityCheck,
             )
         }
     }

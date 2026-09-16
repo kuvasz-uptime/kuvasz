@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.config
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorDefaults
 import com.kuvaszuptime.kuvasz.testAppContext
 import com.kuvaszuptime.kuvasz.testutils.getBean
@@ -120,6 +121,7 @@ class IcmpMonitorConfigDefaultValuesTest(applicationContext: ApplicationContext)
                 monitorConfig.failureCountThreshold shouldBe IcmpMonitorDefaults.FAILURE_COUNT_THRESHOLD
                 monitorConfig.metricsHistoryEnabled shouldBe IcmpMonitorDefaults.METRICS_HISTORY_ENABLED
                 monitorConfig.integrations.shouldBeNull()
+                monitorConfig.ignoreConnectivityCheck shouldBe MonitorDefaults.IGNORE_CONNECTIVITY_CHECK
             }
         }
     }

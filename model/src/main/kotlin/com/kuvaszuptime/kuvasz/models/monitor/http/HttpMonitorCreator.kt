@@ -96,4 +96,5 @@ interface HttpMonitorCreator : MonitorCreator<HttpMonitorRecord> {
             .setRequestBody(requestBody)
             .setFailureCountThreshold(failureCountThreshold)
             .setCategory(normalizedCategory)
+            .setIgnoreConnectivityCheck(ignoreConnectivityCheck)
 }

@@ -16,5 +16,7 @@ interface MonitorCreator<R : MonitorRecord> : WithCategory {
     @get:Size(max = Validation.MAX_CATEGORY_LENGTH, message = MonitorValidationMessages.CATEGORY_MAX_SIZE)
     override val category: String?
 
+    val ignoreConnectivityCheck: Boolean
+
     fun toMonitorRecord(validatedIntegrations: Set<IntegrationID>): R
 }

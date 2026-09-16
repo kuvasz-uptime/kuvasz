@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.config
 
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDefaults
 import com.kuvaszuptime.kuvasz.models.monitor.http.HttpMonitorCreator
 import io.micronaut.context.annotation.EachProperty
@@ -66,4 +67,7 @@ interface HttpMonitorConfig : HttpMonitorCreator, MonitorConfig {
     override val failureCountThreshold: Long
 
     override val category: String?
+
+    @get:Bindable(defaultValue = MonitorDefaults.IGNORE_CONNECTIVITY_CHECK.toString())
+    override val ignoreConnectivityCheck: Boolean
 }

@@ -117,6 +117,8 @@ class MonitorImporterTest(
                         requestHeaders = emptyMap(),
                         expectedHeaders = emptyMap(),
                         requestBody = null,
+                        category = null,
+                        ignoreConnectivityCheck = false,
                     )
                 )
 
@@ -158,6 +160,8 @@ class MonitorImporterTest(
                         requestHeaders = emptyMap(),
                         expectedHeaders = emptyMap(),
                         requestBody = null,
+                        category = null,
+                        ignoreConnectivityCheck = false,
                     )
                 )
 
@@ -196,6 +200,8 @@ class MonitorImporterTest(
                         requestHeaders = emptyMap(),
                         expectedHeaders = emptyMap(),
                         requestBody = null,
+                        category = null,
+                        ignoreConnectivityCheck = false,
                     )
                 )
 
@@ -233,6 +239,8 @@ class MonitorImporterTest(
                         enabled = true,
                         integrations = emptySet(),
                         metricsHistoryEnabled = true,
+                        category = null,
+                        ignoreConnectivityCheck = false,
                     )
                 )
 
@@ -275,6 +283,8 @@ class MonitorImporterTest(
                         requestHeaders = emptyMap(),
                         expectedHeaders = emptyMap(),
                         requestBody = null,
+                        category = null,
+                        ignoreConnectivityCheck = false,
                     )
                 )
 
@@ -643,6 +653,8 @@ class MonitorImporterTest(
             enabled = true,
             integrations = emptySet(),
             metricsHistoryEnabled = metricsHistoryEnabled,
+            category = null,
+            ignoreConnectivityCheck = false,
         )
     )
 
@@ -669,6 +681,8 @@ class MonitorImporterTest(
             requestHeaders = emptyMap(),
             expectedHeaders = emptyMap(),
             requestBody = null,
+            category = null,
+            ignoreConnectivityCheck = false,
         )
     )
 
@@ -684,6 +698,8 @@ class MonitorImporterTest(
             enabled = true,
             integrations = emptySet(),
             metricsHistoryEnabled = metricsHistoryEnabled,
+            category = null,
+            ignoreConnectivityCheck = false,
         )
     )
 
@@ -701,6 +717,8 @@ class MonitorImporterTest(
             enabled = true,
             integrations = emptySet(),
             failureCountThreshold = failureCountThreshold,
+            category = null,
+            ignoreConnectivityCheck = false,
         )
     )
 
@@ -716,6 +734,8 @@ class MonitorImporterTest(
             enabled = true,
             integrations = emptySet(),
             metricsHistoryEnabled = metricsHistoryEnabled,
+            category = null,
+            ignoreConnectivityCheck = false,
         )
     )
 }

@@ -30,4 +30,5 @@ class HttpMonitorImportAdapter(dto: HttpMonitorExportDto) : HttpMonitorCreator {
     override val expectedHeaders: Map<String, String> = dto.expectedHeaders
     override val requestBody: String? = dto.requestBody
     override val category: String? = dto.category
+    override val ignoreConnectivityCheck: Boolean = dto.ignoreConnectivityCheck
 }

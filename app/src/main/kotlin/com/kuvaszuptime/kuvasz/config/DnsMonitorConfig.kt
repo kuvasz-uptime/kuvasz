@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.config
 
 import com.kuvaszuptime.kuvasz.jooq.enums.DnsResponseCode
 import com.kuvaszuptime.kuvasz.jooq.enums.DnsTransport
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorDefaults
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsMonitorCreator
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordMatcher
@@ -63,4 +64,7 @@ interface DnsMonitorConfig : DnsMonitorCreator, MonitorConfig {
     override val metricsHistoryEnabled: Boolean
 
     override val category: String?
+
+    @get:Bindable(defaultValue = MonitorDefaults.IGNORE_CONNECTIVITY_CHECK.toString())
+    override val ignoreConnectivityCheck: Boolean
 }

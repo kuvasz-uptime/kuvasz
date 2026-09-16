@@ -80,4 +80,5 @@ interface DnsMonitorCreator : DnsResponseCodeMatchers, MonitorCreator<DnsMonitor
             .setIntegrations(validatedIntegrations.toTypedArray())
             .setMetricsHistoryEnabled(metricsHistoryEnabled)
             .setCategory(normalizedCategory)
+            .setIgnoreConnectivityCheck(ignoreConnectivityCheck)
 }

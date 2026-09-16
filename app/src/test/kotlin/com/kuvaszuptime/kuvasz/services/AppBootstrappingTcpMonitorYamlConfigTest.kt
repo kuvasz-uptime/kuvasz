@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMonitorRecord
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorDefaults
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
@@ -98,6 +99,7 @@ class AppBootstrappingTcpMonitorYamlConfigTest : StringSpec({
 
         monitorsInDb.forOne { secondMonitor ->
             secondMonitor.name shouldBe "test2"
+            secondMonitor.ignoreConnectivityCheck shouldBe MonitorDefaults.IGNORE_CONNECTIVITY_CHECK
             secondMonitor.host shouldBe "192.168.1.1"
             secondMonitor.port shouldBe 6379
             secondMonitor.uptimeCheckInterval shouldBe 60
@@ -114,6 +116,8 @@ class AppBootstrappingTcpMonitorYamlConfigTest : StringSpec({
 
         monitorsInDb.forOne { thirdMonitor ->
             thirdMonitor.name shouldBe "test3"
+            // Explicitly set in the YAML, as opposed to the other two
+            thirdMonitor.ignoreConnectivityCheck shouldBe true
             thirdMonitor.host shouldBe "10.0.0.1"
             thirdMonitor.port shouldBe 22
             thirdMonitor.uptimeCheckInterval shouldBe 120

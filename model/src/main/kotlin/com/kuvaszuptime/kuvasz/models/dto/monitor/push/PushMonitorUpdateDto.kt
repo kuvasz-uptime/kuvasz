@@ -52,4 +52,8 @@ data class PushMonitorUpdateDto(
     @get:Size(max = Validation.MAX_CATEGORY_LENGTH, message = MonitorValidationMessages.CATEGORY_MAX_SIZE)
     @param:Schema(description = MonitorDocs.CATEGORY, required = false, nullable = true)
     override val category: String?,
+
+    @get:NotNull
+    @param:Schema(description = MonitorDocs.IGNORE_CONNECTIVITY_CHECK, required = false, nullable = false)
+    val ignoreConnectivityCheck: Boolean?,
 ) : WithCategory
