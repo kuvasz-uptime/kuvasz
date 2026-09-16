@@ -8,7 +8,9 @@ import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.services.check.UptimeCheckLockRegistry
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpUptimeChecker
+import com.kuvaszuptime.kuvasz.services.connectivity.ConnectivityChecker
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowService
+import com.kuvaszuptime.kuvasz.testutils.ENABLED_CONNECTIVITY_CHECK
 import io.kotest.core.test.TestCase
 import io.kotest.engine.test.TestResult
 import io.kotest.matchers.booleans.shouldBeFalse
@@ -31,13 +33,14 @@ import kotlinx.coroutines.delay
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.milliseconds
 
-@MicronautTest(startApplication = false)
+@MicronautTest(startApplication = false, environments = [ENABLED_CONNECTIVITY_CHECK])
 class IcmpCheckSchedulerTest(
     private val checkScheduler: IcmpCheckScheduler,
     private val monitorRepository: IcmpMonitorRepository,
     private val uptimeChecker: IcmpUptimeChecker,
     private val uptimeCheckLockRegistry: UptimeCheckLockRegistry,
     private val maintenanceWindowService: MaintenanceWindowService,
+    private val connectivityChecker: ConnectivityChecker,
 ) : DatabaseBehaviorSpec() {
     init {
         given("the IcmpCheckScheduler service") {
@@ -130,6 +133,51 @@ class IcmpCheckSchedulerTest(
                     coVerify(atLeast = 1) { lockRegistryMock.tryAcquire(monitor.id) }
                     coVerify(inverse = true) { uptimeCheckerMock.check(any(), any()) }
                     coVerify(atLeast = 1) { lockRegistryMock.release(monitor.id) }
+                }
+            }
+
+            `when`("Kuvasz has no outbound connectivity") {
+                val monitor = createIcmpMonitor(monitorRepository, uptimeCheckInterval = 3)
+                val uptimeCheckerMock = getMock(uptimeChecker)
+                val lockRegistryMock = getMock(uptimeCheckLockRegistry)
+                coEvery { lockRegistryMock.tryAcquire(monitor.id) } returns true
+                coEvery { lockRegistryMock.release(monitor.id) } just Runs
+                val connectivityCheckerMock = getMock(connectivityChecker)
+                every { connectivityCheckerMock.isCheckSuppressedFor(any()) } returns true
+
+                checkScheduler.initialize()
+                delay(4000.milliseconds) // Wait for the check to be executed
+
+                then("it should skip the check, but still acquire and release the lock") {
+                    coVerify(atLeast = 1) { lockRegistryMock.tryAcquire(monitor.id) }
+                    coVerify(inverse = true) { uptimeCheckerMock.check(any(), any()) }
+                    coVerify(atLeast = 1) { lockRegistryMock.release(monitor.id) }
+
+                    // Skipping must not cancel anything: the check has to resume on its own once the
+                    // connectivity is back, without a restart
+                    with(checkScheduler.getScheduledUptimeChecks()[monitor.id].shouldNotBeNull()) {
+                        isCancelled.shouldBeFalse()
+                        isDone.shouldBeFalse()
+                    }
+                }
+            }
+
+            `when`("Kuvasz has no outbound connectivity, but the monitor opted out of the check") {
+                val monitor = createIcmpMonitor(monitorRepository, uptimeCheckInterval = 3)
+                val uptimeCheckerMock = getMock(uptimeChecker)
+                coEvery { uptimeCheckerMock.check(monitor, any()) } just Runs
+                val lockRegistryMock = getMock(uptimeCheckLockRegistry)
+                coEvery { lockRegistryMock.tryAcquire(monitor.id) } returns true
+                coEvery { lockRegistryMock.release(monitor.id) } just Runs
+                val connectivityCheckerMock = getMock(connectivityChecker)
+                // The opt-out is resolved by the checker itself, the scheduler just asks about this monitor
+                every { connectivityCheckerMock.isCheckSuppressedFor(monitor) } returns false
+
+                checkScheduler.initialize()
+                delay(4000.milliseconds) // Wait for the check to be executed
+
+                then("it should run the check anyway") {
+                    coVerify(atLeast = 1) { uptimeCheckerMock.check(monitor, any()) }
                 }
             }
 
@@ -228,5 +276,10 @@ class IcmpCheckSchedulerTest(
     @MockBean(MaintenanceWindowService::class)
     fun maintenanceWindowServiceMock(): MaintenanceWindowService = mockk {
         every { isUnderMaintenance(any(), any()) } returns false
+    }
+
+    @MockBean(ConnectivityChecker::class)
+    fun connectivityCheckerMock(): ConnectivityChecker = mockk(relaxed = true) {
+        every { isCheckSuppressedFor(any()) } returns false
     }
 }

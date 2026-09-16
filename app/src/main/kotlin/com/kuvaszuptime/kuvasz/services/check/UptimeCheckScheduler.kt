@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.jooq.SchedulableMonitorRecord
 import com.kuvaszuptime.kuvasz.models.SchedulingException
 import com.kuvaszuptime.kuvasz.models.monitor.monitorId
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
+import com.kuvaszuptime.kuvasz.services.connectivity.ConnectivityChecker
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowService
 import com.kuvaszuptime.kuvasz.util.toDurationOfSeconds
 import io.micronaut.scheduling.TaskScheduler
@@ -33,6 +34,7 @@ abstract class UptimeCheckScheduler<R : SchedulableMonitorRecord>(
     dispatcher: CoroutineDispatcher,
     private val lockRegistry: UptimeCheckLockRegistry,
     protected val maintenanceWindowService: MaintenanceWindowService,
+    protected val connectivityChecker: ConnectivityChecker?,
 ) : MonitorCheckScheduler, AutoCloseable {
 
     protected val logger: Logger = LoggerFactory.getLogger(javaClass)
@@ -162,15 +164,25 @@ abstract class UptimeCheckScheduler<R : SchedulableMonitorRecord>(
         if (!lockRegistry.tryAcquire(monitor.id)) return
 
         try {
-            // Skip the check entirely while the monitor is under maintenance
-            if (maintenanceWindowService.isUnderMaintenance(monitor.monitorId(), monitor.category)) {
-                logger.debug("Skipping $checkTypeLabel check for \"${monitor.name}\": it is under maintenance")
-                return
+            // A suppressed check is skipped entirely: nothing is recorded, and no event is emitted. The scheduled
+            // task itself stays alive, so the checks resume on their own once the reason is gone.
+            val skipReason = when {
+                // Otherwise a local network outage would mark every single monitor as DOWN at once
+                connectivityChecker?.isCheckSuppressedFor(monitor) == true -> "Kuvasz has no outbound connectivity"
+                maintenanceWindowService.isUnderMaintenance(monitor.monitorId(), monitor.category) ->
+                    "it is under maintenance"
+
+                else -> null
             }
-            runCheck(monitor) { checkedMonitor ->
-                // Re-applying the original check interval which acts like kind of a synchronization to
-                // minimize the chance of overlapping requests
-                if (checkedMonitor.enabled) reScheduleUptimeCheckForMonitor(checkedMonitor)
+
+            if (skipReason != null) {
+                logger.debug("Skipping $checkTypeLabel check for \"${monitor.name}\": $skipReason")
+            } else {
+                runCheck(monitor) { checkedMonitor ->
+                    // Re-applying the original check interval which acts like kind of a synchronization to
+                    // minimize the chance of overlapping requests
+                    if (checkedMonitor.enabled) reScheduleUptimeCheckForMonitor(checkedMonitor)
+                }
             }
         } catch (ex: Exception) {
             // Better to catch and swallow everything that wasn't caught before to prevent

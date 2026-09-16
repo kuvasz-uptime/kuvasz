@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.services.check.UptimeCheckLockRegistry
 import com.kuvaszuptime.kuvasz.services.check.UptimeCheckScheduler
+import com.kuvaszuptime.kuvasz.services.connectivity.ConnectivityChecker
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowService
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.TaskScheduler
@@ -20,12 +21,14 @@ class IcmpCheckScheduler(
     dispatcher: CoroutineDispatcher,
     lockRegistry: UptimeCheckLockRegistry,
     maintenanceWindowService: MaintenanceWindowService,
+    connectivityChecker: ConnectivityChecker?,
 ) : UptimeCheckScheduler<IcmpMonitorRecord>(
     taskScheduler,
     monitorRepository,
     dispatcher,
     lockRegistry,
     maintenanceWindowService,
+    connectivityChecker,
 ) {
     override val monitorType = MonitorType.ICMP
 
