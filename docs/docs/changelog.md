@@ -1,3 +1,17 @@
+## 4.5.0 <small>2026-09-17</small> { id="4.5.0" data-toc-label="4.5.0" }
+
+### Features
+
+**🔌 Connectivity check**
+
+When the host running _Kuvasz_ loses its own outbound network access — an ISP blip, a router reboot, a restarted _Docker_ network, a flapping VPN — every monitor fails at the very same moment, and you get an incident storm, a matching recovery storm and permanently polluted uptime percentages, all because of something that has nothing to do with the services you monitor.
+
+The new [**connectivity check**](features/connectivity-check.md) periodically dials a few well-known endpoints, and while **none of them** can be reached, it **suspends every check _Kuvasz_ initiates on its own** — no checks, no events, no alerts — exactly the way a [**maintenance window**](features/maintenance-windows.md) does.
+
+!!! warning "It's disabled by default"
+
+    _Kuvasz_ is often run on **egress-filtered or LAN-only networks**, where the default targets can never be reached, and enabling the feature there would make it **silently stop monitoring everything**. Turn it on deliberately with [`ENABLE_CONNECTIVITY_CHECK`](setup/configuration.md#connectivity-check), and adjust the [**targets**](setup/configuration.md#connectivity-check-targets) if your network filters outbound traffic.
+
 ## 4.4.0 <small>2026-09-15</small> { id="4.4.0" data-toc-label="4.4.0" }
 
 !!! question "Make your voice heard!"

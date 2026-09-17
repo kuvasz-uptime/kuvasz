@@ -20,6 +20,7 @@
       timeout-seconds: 5 # (5)!
       packet-loss-threshold: 100 # (6)!
       failure-count-threshold: 1 # (7)!
+      ignore-connectivity-check: false # (12)!
       enabled: true # (8)!
       metrics-history-enabled: true # (9)!
       integrations: # (10)!
@@ -38,6 +39,7 @@
       9. **Metrics history enabled**: Whether metrics history (latency, packet loss) is recorded for the monitor. Defaults to true.
       10. **Integrations**: A list of integrations to assign to the monitor. The format is `"{integration-type}:{integration-name}"`, where `integration-type` is the type of the integration (e.g. `email`, `slack`, etc.), and `integration-name` is the name of the integration as defined in the `integrations` section of your YAML file. Example: `email:my-email-integration`.
       11. **Category**: An optional, free-form category to group the monitor on the status pages (e.g. a product or service name).
+      12. **Ignore connectivity check**: Whether the monitor should keep being checked even while _Kuvasz_ considers its own outbound connectivity lost. Defaults to false.
 
 === "API (expert)"
 
@@ -162,6 +164,21 @@ If you're using YAML, or the API, the format is `"{type}:{name}"`, where `type` 
     You can add/keep **disabled integrations in the list**, but they will not be used for the monitor. This is useful if you want to enable them later without modifying the monitor's configuration.
 
     **Global integrations** can be explicitly added too, which is handy if you're about to **make them non-global later**, but you want to make sure that they will be assigned to certain monitors even after the change.
+
+### Ignore connectivity check
+
+<!-- md:version 4.5.0 -->
+<!-- md:default `false` -->
+<!-- md:type boolean -->
+<!-- md:yaml_prop `ignore-connectivity-check` -->
+
+Whether the monitor should be checked **even while the** [**connectivity check**](../features/connectivity-check.md) **considers _Kuvasz_ to be disconnected**. Defaults to false, which means the monitor is suspended together with all the others during an outage.
+
+Enable it for monitors that **don't depend on the outbound connectivity** of _Kuvasz_ at all — a service on the same LAN, in the same cluster, or on the very same host. Those keep working during an internet outage, so suspending them would only **hide a real failure** from you.
+
+!!!info
+
+    This flag has **no effect at all** when the [connectivity check](../setup/configuration.md#connectivity-check) is disabled, which is the default. You can set it freely regardless, so it's already in place if you decide to turn the feature on later.
 
 ## Common operations
 
