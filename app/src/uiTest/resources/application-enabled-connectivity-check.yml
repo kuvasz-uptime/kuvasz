@@ -1,0 +1,8 @@
+app-config:
+  connectivity-check:
+    enabled: true
+    # A port nothing is listening on, so the probe fails instantly instead of ever reaching out to the network
+    targets:
+      - 127.0.0.1:1
+    # The specs drive the state through the mocked checker, so no periodic probing is needed at all
+    interval-seconds: 3600

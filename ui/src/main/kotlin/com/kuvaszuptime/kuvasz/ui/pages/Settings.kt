@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.ui.pages
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.dto.settings.SettingsDto
+import com.kuvaszuptime.kuvasz.models.settings.ConnectivityState
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
@@ -11,6 +12,7 @@ import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
 import com.kuvaszuptime.kuvasz.ui.fragments.statuspage.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
+import com.kuvaszuptime.kuvasz.util.timeAgo
 import kotlinx.html.*
 
 private const val MONITOR_IMPORT_MODAL_ID = "monitor-import-modal"
@@ -220,6 +222,50 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                 div {
                     classes(DIVIDE_Y)
                     settingsToggle(label = Messages.enabled(), checked = settings.mcpServer.enabled)
+                }
+            }
+            // Connectivity check
+            settingsCard(
+                title = Messages.connectivityCheckSettings(),
+                icon = Icon.NETWORK,
+                id = "connectivity-check-settings",
+            ) {
+                div {
+                    classes(DIVIDE_Y)
+                    testId("connectivity-check-settings")
+                    val connectivityCheck = settings.connectivityCheck
+                    // Its absence is what "disabled" means, so there is nothing else to show then
+                    settingsToggle(label = Messages.enabled(), checked = connectivityCheck != null)
+                    connectivityCheck?.let { config ->
+                        settingsLabel(
+                            label = Messages.connectivityCheckState(),
+                            value = config.state.label(),
+                        )
+                        settingsLabel(
+                            label = Messages.connectivityCheckTargets(),
+                            value = config.targets.joinToString(", "),
+                        )
+                        settingsLabel(
+                            label = Messages.connectivityCheckInterval(),
+                            value = Messages.xSeconds(config.intervalSeconds.toString()),
+                        )
+                        settingsLabel(
+                            label = Messages.connectivityCheckTimeout(),
+                            value = Messages.xSeconds(config.timeoutSeconds.toString()),
+                        )
+                        config.lastCheckedAt?.let { lastCheckedAt ->
+                            settingsLabel(
+                                label = Messages.connectivityCheckLastCheckedAt(),
+                                value = lastCheckedAt.timeAgo(),
+                            )
+                        }
+                        config.downSince?.let {
+                            settingsLabel(label = Messages.connectivityCheckDownSince(), value = it.timeAgo())
+                        }
+                        config.lastError?.let {
+                            settingsLabel(label = Messages.connectivityCheckLastError(), value = it)
+                        }
+                    }
                 }
             }
             // Exporter settings
@@ -433,9 +479,11 @@ private fun FlowContent.oidcSetupUrl(
 private fun FlowContent.settingsCard(
     title: String,
     icon: Icon,
+    id: String? = null,
     content: FlowContent.() -> Unit,
 ) {
     div {
+        id?.let { this.id = id }
         classes(COL_12, COL_MD_6)
         div {
             classes(CARD)
@@ -625,4 +673,11 @@ private fun FlowContent.importDropdownItem(
             readOnlyBadge()
         }
     }
+}
+
+
+private fun ConnectivityState.label(): String = when (this) {
+    ConnectivityState.UP -> Messages.connectivityStateUp()
+    ConnectivityState.DOWN -> Messages.connectivityStateDown()
+    ConnectivityState.UNKNOWN -> Messages.connectivityStateUnknown()
 }

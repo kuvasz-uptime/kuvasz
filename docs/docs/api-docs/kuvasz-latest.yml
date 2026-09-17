@@ -2317,6 +2317,12 @@ components:
           description: The cumulated status of the monitors belonging to the category
           allOf:
           - $ref: "#/components/schemas/SystemStatus"
+    ConnectivityState:
+      type: string
+      enum:
+      - UNKNOWN
+      - UP
+      - DOWN
     DiscordNotificationConfigDto:
       required:
       - enabled
@@ -5934,6 +5940,12 @@ components:
           description: MCP server settings
           allOf:
           - $ref: "#/components/schemas/SettingsDto.McpServerSettingsDto"
+        connectivityCheck:
+          description: "The connectivity check's settings and live state, null when\
+            \ it is disabled"
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/SettingsDto.ConnectivityCheckSettingsDto"
         smtp:
           description: SMTP configuration for email notifications
           nullable: true
@@ -6050,6 +6062,50 @@ components:
         clientId:
           type: string
           description: The client ID registered with the OIDC provider
+    SettingsDto.ConnectivityCheckSettingsDto:
+      required:
+      - checksSuspended
+      - intervalSeconds
+      - state
+      - targets
+      - timeoutSeconds
+      type: object
+      properties:
+        targets:
+          type: array
+          description: The endpoints that are dialed to decide about the connectivity
+          items:
+            type: string
+        intervalSeconds:
+          type: integer
+          description: "How often the connectivity is probed, in seconds"
+          format: int64
+        timeoutSeconds:
+          type: integer
+          description: "The timeout of a single dial, in seconds"
+          format: int64
+        state:
+          description: The last known state of the outbound connectivity
+          allOf:
+          - $ref: "#/components/schemas/ConnectivityState"
+        checksSuspended:
+          type: boolean
+          description: Whether the checks Kuvasz initiates on its own are currently
+            suspended
+        lastCheckedAt:
+          type: string
+          description: When the connectivity was probed the last time
+          format: date-time
+          nullable: true
+        downSince:
+          type: string
+          description: Since when the connectivity is considered to be lost
+          format: date-time
+          nullable: true
+        lastError:
+          type: string
+          description: The error of the last failed dial
+          nullable: true
     SettingsDto.McpServerSettingsDto:
       required:
       - enabled

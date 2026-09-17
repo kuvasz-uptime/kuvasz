@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.security.ui.UnauthenticatedOnly
 import com.kuvaszuptime.kuvasz.security.ui.WebSecured
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.ui.fragments.dashboard.*
+import com.kuvaszuptime.kuvasz.ui.fragments.layout.*
 import com.kuvaszuptime.kuvasz.ui.pages.*
 import com.kuvaszuptime.kuvasz.util.UIDefaults
 import io.micronaut.http.MediaType
@@ -48,6 +49,11 @@ class WebUIController(
     @Produces(MediaType.TEXT_HTML)
     @ExecuteOn(TaskExecutors.BLOCKING)
     fun dashboardEmptyState() = if (sharedMonitorRepository.hasAnyMonitor()) "" else renderDashboardEmptyState()
+
+    @Get(CONNECTIVITY_BADGE_FRAGMENT_PATH)
+    @WebSecured
+    @Produces(MediaType.TEXT_HTML)
+    fun connectivityBadge() = renderConnectivityBadgeFragment(appGlobals.connectivityStatus())
 
     @Get(LOGIN_PATH)
     @UnauthenticatedOnly
