@@ -746,6 +746,98 @@ The **maximum number of redirects** an HTTP monitor with [follow redirects](../m
 
 _Kuvasz_ also detects [redirect loops](../management/http-monitors.md#follow-redirects), but a loop is only recognized when the very same URL is visited twice. A chain where every hop is a **different** URL is not a loop, so this limit is what keeps such a chain from going on indefinitely. Setting it to `0` means that **no redirect is followed at all**, but it does not silently turn the feature off: a monitor with [follow redirects](../management/http-monitors.md#follow-redirects) enabled goes **DOWN** on the very first `3xx` response, and its alerts fire accordingly.
 
+### Connectivity check
+
+<!-- md:version 4.5.0 -->
+<!-- md:default `false` -->
+<!-- md:type `boolean` -->
+
+=== "YAML"
+
+    ```yaml
+    app-config.connectivity-check.enabled: true
+    ```
+
+=== "ENV"
+
+    ```bash
+    ENABLE_CONNECTIVITY_CHECK=true
+    ```
+
+Enables the [**connectivity check**](../features/connectivity-check.md), which **suspends every check _Kuvasz_ initiates on its own** while the host it runs on has no outbound network access, so a local network outage doesn't mark all of your monitors DOWN at once.
+
+!!!warning
+
+    Do **not** enable it without adjusting the [targets](#connectivity-check-targets) if your network **filters outbound traffic**, or if _Kuvasz_ only has access to your LAN. If none of the targets can ever be reached, _Kuvasz_ will consider itself permanently disconnected and **stop monitoring everything**.
+
+### Connectivity check targets
+
+<!-- md:version 4.5.0 -->
+<!-- md:default `1.1.1.1:53,8.8.8.8:53` -->
+<!-- md:type `list` -->
+
+=== "YAML"
+
+    ```yaml
+    app-config.connectivity-check.targets:
+      - "1.1.1.1:53"
+      - "8.8.8.8:53"
+    ```
+
+=== "ENV"
+
+    ```bash
+    CONNECTIVITY_CHECK_TARGETS=1.1.1.1:53,8.8.8.8:53
+    ```
+
+The endpoints that are dialed to decide whether _Kuvasz_ has outbound connectivity. Every entry must be in a `host:port` format, where `host` is a hostname or an IP address, and `port` is between 1 and 65535.
+
+The targets are dialed one by one and **the first one that accepts the connection wins**, so a single reachable target is enough. Listing **at least two, on different providers** is therefore strongly recommended, otherwise a single unavailable endpoint would suspend your monitoring.
+
+Any TCP endpoint is a valid target, not only DNS servers, so on an isolated network you can just as well point it at your own gateway, or at any internal host that is **always** reachable while your network is healthy.
+
+### Connectivity check interval
+
+<!-- md:version 4.5.0 -->
+<!-- md:default `60` -->
+<!-- md:type `number` -->
+
+=== "YAML"
+
+    ```yaml
+    app-config.connectivity-check.interval-seconds: 60
+    ```
+
+=== "ENV"
+
+    ```bash
+    CONNECTIVITY_CHECK_INTERVAL_SECONDS=60
+    ```
+
+How often the connectivity is probed, in seconds. The **minimum value is 5 seconds**, and the interval is measured between the **starts** of consecutive probes. A probe is skipped if the previous one is still in progress, so the probes can never pile up.
+
+### Connectivity check timeout
+
+<!-- md:version 4.5.0 -->
+<!-- md:default `5` -->
+<!-- md:type `number` -->
+
+=== "YAML"
+
+    ```yaml
+    app-config.connectivity-check.timeout-seconds: 5
+    ```
+
+=== "ENV"
+
+    ```bash
+    CONNECTIVITY_CHECK_TIMEOUT_SECONDS=5
+    ```
+
+The timeout of a **single dial**, in seconds. The **minimum value is 1 second**.
+
+Keep in mind that this is a per-target limit, and that a failing probe is [retried twice before it's accepted](../features/connectivity-check.md#how-does-it-work), so a whole probe can take up to `3 × targets × timeout + 2s` while the connectivity is lost. With many targets and a generous timeout that can add up: the **startup** of _Kuvasz_ is also delayed by up to `targets × timeout` when it boots into an outage, because the connectivity state is primed before the monitors are scheduled.
+
 ## Full configuration example
 
 You can find the full configuration example below, which includes all the options currently available. You can use it as a starting point for your own configuration.
@@ -814,6 +906,13 @@ You can find the full configuration example below, which includes all the option
       check-updates: true
       http-check-timeout-seconds: 30
       http-check-max-redirects: 10
+      connectivity-check:
+        enabled: false
+        targets:
+          - "1.1.1.1:53"
+          - "8.8.8.8:53"
+        interval-seconds: 60
+        timeout-seconds: 5
     ---
     smtp-config:
       host: 'your.smtp.server'
@@ -852,6 +951,10 @@ You can find the full configuration example below, which includes all the option
     ENABLE_CHECK_UPDATES=true
     HTTP_CHECK_TIMEOUT_SECONDS=30
     HTTP_CHECK_MAX_REDIRECTS=10
+    ENABLE_CONNECTIVITY_CHECK=false
+    CONNECTIVITY_CHECK_TARGETS=1.1.1.1:53,8.8.8.8:53
+    CONNECTIVITY_CHECK_INTERVAL_SECONDS=60
+    CONNECTIVITY_CHECK_TIMEOUT_SECONDS=5
     ENABLE_MCP_SERVER=false
     TZ=UTC
     ENABLE_METRICS_EXPORT=true

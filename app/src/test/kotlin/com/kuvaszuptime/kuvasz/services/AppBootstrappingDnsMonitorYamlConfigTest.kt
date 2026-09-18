@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.jooq.enums.DnsResponseCode
 import com.kuvaszuptime.kuvasz.jooq.enums.DnsTransport
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorDefaults
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
@@ -100,6 +101,7 @@ class AppBootstrappingDnsMonitorYamlConfigTest : StringSpec({
 
         monitorsInDb.forOne { secondMonitor ->
             secondMonitor.name shouldBe "test2"
+            secondMonitor.ignoreConnectivityCheck shouldBe MonitorDefaults.IGNORE_CONNECTIVITY_CHECK
             secondMonitor.host shouldBe "kuvasz-uptime.dev"
             secondMonitor.uptimeCheckInterval shouldBe 60
             secondMonitor.enabled shouldBe DnsMonitorDefaults.MONITOR_ENABLED
@@ -115,6 +117,8 @@ class AppBootstrappingDnsMonitorYamlConfigTest : StringSpec({
 
         monitorsInDb.forOne { thirdMonitor ->
             thirdMonitor.name shouldBe "test3"
+            // Explicitly set in the YAML, as opposed to the other two
+            thirdMonitor.ignoreConnectivityCheck shouldBe true
             thirdMonitor.host shouldBe "mail.example.com"
             thirdMonitor.resolverHost shouldBe "1.1.1.1"
             thirdMonitor.resolverPort shouldBe 5353

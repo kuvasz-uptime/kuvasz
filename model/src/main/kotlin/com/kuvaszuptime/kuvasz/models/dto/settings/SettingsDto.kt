@@ -1,7 +1,10 @@
 package com.kuvaszuptime.kuvasz.models.dto.settings
 
+import com.kuvaszuptime.kuvasz.models.settings.ConnectivityState
+import com.kuvaszuptime.kuvasz.models.settings.ConnectivityStatus
 import io.micronaut.core.annotation.Introspected
 import io.swagger.v3.oas.annotations.media.Schema
+import java.time.OffsetDateTime
 
 @Introspected
 data class SettingsDto(
@@ -13,6 +16,12 @@ data class SettingsDto(
     val metricsExport: MetricsExportSettingsDto,
     @param:Schema(description = "MCP server settings", required = true)
     val mcpServer: McpServerSettingsDto,
+    @param:Schema(
+        description = "The connectivity check's settings and live state, null when it is disabled",
+        required = false,
+        nullable = true,
+    )
+    val connectivityCheck: ConnectivityCheckSettingsDto?,
     @param:Schema(description = "SMTP configuration for email notifications", required = false, nullable = true)
     val smtp: SmtpConfigDto?,
     val versionInfo: VersionInfoDto
@@ -172,4 +181,46 @@ data class SettingsDto(
         @param:Schema(description = "Whether the MCP server is enabled", required = true)
         val enabled: Boolean,
     )
+
+    @Introspected
+    data class ConnectivityCheckSettingsDto(
+        @param:Schema(description = "The endpoints that are dialed to decide about the connectivity", required = true)
+        val targets: List<String>,
+        @param:Schema(description = "How often the connectivity is probed, in seconds", required = true)
+        val intervalSeconds: Long,
+        @param:Schema(description = "The timeout of a single dial, in seconds", required = true)
+        val timeoutSeconds: Long,
+        @param:Schema(description = "The last known state of the outbound connectivity", required = true)
+        val state: ConnectivityState,
+        @param:Schema(
+            description = "Whether the checks Kuvasz initiates on its own are currently suspended",
+            required = true,
+        )
+        val checksSuspended: Boolean,
+        @param:Schema(
+            description = "When the connectivity was probed the last time", required = false,
+            nullable = true
+        )
+        val lastCheckedAt: OffsetDateTime?,
+        @param:Schema(
+            description = "Since when the connectivity is considered to be lost", required = false,
+            nullable = true
+        )
+        val downSince: OffsetDateTime?,
+        @param:Schema(description = "The error of the last failed dial", required = false, nullable = true)
+        val lastError: String?,
+    ) {
+        companion object {
+            fun fromStatus(status: ConnectivityStatus) = ConnectivityCheckSettingsDto(
+                targets = status.targets,
+                intervalSeconds = status.intervalSeconds,
+                timeoutSeconds = status.timeoutSeconds,
+                state = status.state,
+                checksSuspended = status.areChecksSuspended,
+                lastCheckedAt = status.lastCheckedAt,
+                downSince = status.downSince,
+                lastError = status.lastError,
+            )
+        }
+    }
 }

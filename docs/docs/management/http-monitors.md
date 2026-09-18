@@ -28,6 +28,7 @@
       force-no-cache: true # (9)!
       ssl-expiry-threshold: 30 # (10)!
       failure-count-threshold: 1 # (20)!
+      ignore-connectivity-check: false # (24)!
       expected-status-codes: # (12)!
         - 200
         - 201
@@ -69,6 +70,7 @@
     21. **Sensitive URL**: Whether the URL of the monitor is considered sensitive or not. If it's set to `true`, the URL will be masked in the metrics, logs and notifications/integrations.
     22. **Category**: An optional, free-form category to group the monitor on the status pages (e.g. a product or service name).
     23. **Cross-origin header propagation**: Whether the custom request headers should be sent to a redirect target whose origin (scheme, host and port) differs from the origin of the monitored URL. Defaults to false.
+    24. **Ignore connectivity check**: Whether the monitor should keep being checked even while _Kuvasz_ considers its own outbound connectivity lost. Defaults to false.
 
 === "API (expert)"
 
@@ -449,6 +451,21 @@ If you're using YAML, or the API, the format is `"{type}:{name}"`, where `type` 
     You can add/keep **disabled integrations in the list**, but they will not be used for the monitor. This is useful if you want to enable them later without modifying the monitor's configuration.
 
     **Global integrations** can be explicitly added too, which is handy if you're about to **make them non-global later**, but you want to make sure that they will be assigned to certain monitors even after the change.
+
+### Ignore connectivity check
+
+<!-- md:version 4.5.0 -->
+<!-- md:default `false` -->
+<!-- md:type boolean -->
+<!-- md:yaml_prop `ignore-connectivity-check` -->
+
+Whether the monitor should be checked **even while the** [**connectivity check**](../features/connectivity-check.md) **considers _Kuvasz_ to be disconnected**. Defaults to false, which means the monitor is suspended together with all the others during an outage.
+
+Enable it for monitors that **don't depend on the outbound connectivity** of _Kuvasz_ at all — a service on the same LAN, in the same cluster, or on the very same host. Those keep working during an internet outage, so suspending them would only **hide a real failure** from you.
+
+!!!info
+
+    This flag has **no effect at all** when the [connectivity check](../setup/configuration.md#connectivity-check) is disabled, which is the default. You can set it freely regardless, so it's already in place if you decide to turn the feature on later.
 
 ## Common operations
 

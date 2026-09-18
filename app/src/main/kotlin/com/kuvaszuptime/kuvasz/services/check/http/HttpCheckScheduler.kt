@@ -10,6 +10,7 @@ import com.kuvaszuptime.kuvasz.services.check.UptimeCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.getNextCheck
 import com.kuvaszuptime.kuvasz.services.check.gracefulCancel
 import com.kuvaszuptime.kuvasz.services.check.ssl.SSLChecker
+import com.kuvaszuptime.kuvasz.services.connectivity.ConnectivityChecker
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowService
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.TaskScheduler
@@ -34,12 +35,14 @@ class HttpCheckScheduler(
     dispatcher: CoroutineDispatcher,
     lockRegistry: UptimeCheckLockRegistry,
     maintenanceWindowService: MaintenanceWindowService,
+    connectivityChecker: ConnectivityChecker?,
 ) : UptimeCheckScheduler<HttpMonitorRecord>(
     taskScheduler,
     monitorRepository,
     dispatcher,
     lockRegistry,
     maintenanceWindowService,
+    connectivityChecker,
 ) {
     private val scheduledSSLChecks: ConcurrentHashMap<Long, ScheduledFuture<*>> = ConcurrentHashMap()
 
@@ -118,13 +121,21 @@ class HttpCheckScheduler(
     @Suppress("TooGenericExceptionCaught")
     internal fun runSSLCheck(monitor: HttpMonitorRecord) {
         try {
-            if (maintenanceWindowService.isUnderMaintenance(monitor.monitorId(), monitor.category)) {
-                // SSL checks only run once a day, so simply skipping them under maintenance could delay a check until
-                // the next day (or indefinitely for daily recurring maintenance). Instead, we re-schedule the check
-                // with a short initial delay, effectively retrying until the maintenance window is over.
+            // SSL checks only run once a day, so simply skipping them could delay a check until the next day (or
+            // indefinitely for daily recurring maintenance). Instead, we re-schedule the check with a short initial
+            // delay, effectively retrying until the reason to hold it back is gone.
+            val postponeReason = when {
+                connectivityChecker?.isCheckSuppressedFor(monitor) == true -> "Kuvasz has no outbound connectivity"
+                maintenanceWindowService.isUnderMaintenance(monitor.monitorId(), monitor.category) ->
+                    "it is under maintenance"
+
+                else -> null
+            }
+
+            if (postponeReason != null) {
                 logger.debug(
                     "Postponing SSL check for \"${monitor.name}\" by $SSL_CHECK_POSTPONE_MINUTES minutes: " +
-                        "it is under maintenance"
+                        postponeReason
                 )
                 scheduleSSLCheck(monitor, initialDelay = Duration.ofMinutes(SSL_CHECK_POSTPONE_MINUTES))
             } else {

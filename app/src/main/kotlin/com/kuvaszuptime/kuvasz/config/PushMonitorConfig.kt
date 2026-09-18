@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.config
 
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorDefaults
 import com.kuvaszuptime.kuvasz.models.monitor.push.PushMonitorCreator
 import io.micronaut.context.annotation.EachProperty
@@ -30,4 +31,7 @@ interface PushMonitorConfig : PushMonitorCreator, MonitorConfig {
     override val failureCountThreshold: Long
 
     override val category: String?
+
+    @get:Bindable(defaultValue = MonitorDefaults.IGNORE_CONNECTIVITY_CHECK.toString())
+    override val ignoreConnectivityCheck: Boolean
 }

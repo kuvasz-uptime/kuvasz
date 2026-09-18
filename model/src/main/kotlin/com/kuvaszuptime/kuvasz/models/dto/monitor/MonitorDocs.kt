@@ -29,4 +29,7 @@ object MonitorDocs {
     const val CATEGORY_FILTER =
         "Narrows the result to one monitor category. An empty value selects the monitors that have no category at " +
             "all, omitting the parameter selects every monitor."
+    const val IGNORE_CONNECTIVITY_CHECK =
+        "Whether the monitor should keep being checked even when Kuvasz believes that it has no outbound " +
+            "connectivity. Useful for monitors that target the local network, since those don't depend on it at all."
 }

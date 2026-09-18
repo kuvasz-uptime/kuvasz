@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.models.dto.monitor.http
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.shouldHaveSingleError
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -375,6 +376,14 @@ class HttpMonitorCreateDtoDefaultsTest : BehaviorSpec({
             dto.requestBody shouldBe null
             dto.failureCountThreshold shouldBe 1
             dto.category shouldBe null
+            dto.ignoreConnectivityCheck shouldBe MonitorDefaults.IGNORE_CONNECTIVITY_CHECK
+        }
+
+        then("the flag should be carried over to the record") {
+            dto.toMonitorRecord(emptySet()).ignoreConnectivityCheck shouldBe
+                MonitorDefaults.IGNORE_CONNECTIVITY_CHECK
+            dto.copy(ignoreConnectivityCheck = true).toMonitorRecord(emptySet())
+                .ignoreConnectivityCheck shouldBe true
         }
     }
 

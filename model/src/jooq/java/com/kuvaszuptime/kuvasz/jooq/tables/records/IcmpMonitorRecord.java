@@ -233,6 +233,21 @@ public class IcmpMonitorRecord extends UpdatableRecordImpl<IcmpMonitorRecord> im
         return (String) get(13);
     }
 
+    /**
+     * Setter for <code>kuvasz.icmp_monitor.ignore_connectivity_check</code>.
+     */
+    public IcmpMonitorRecord setIgnoreConnectivityCheck(Boolean value) {
+        set(14, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.icmp_monitor.ignore_connectivity_check</code>.
+     */
+    public Boolean getIgnoreConnectivityCheck() {
+        return (Boolean) get(14);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -256,7 +271,7 @@ public class IcmpMonitorRecord extends UpdatableRecordImpl<IcmpMonitorRecord> im
     /**
      * Create a detached, initialised IcmpMonitorRecord
      */
-    public IcmpMonitorRecord(Long id, String name, String host, Integer uptimeCheckInterval, Integer packetCount, Integer timeoutSeconds, Integer packetLossThreshold, Long failureCountThreshold, Boolean enabled, Boolean metricsHistoryEnabled, IntegrationID[] integrations, OffsetDateTime createdAt, OffsetDateTime updatedAt, String category) {
+    public IcmpMonitorRecord(Long id, String name, String host, Integer uptimeCheckInterval, Integer packetCount, Integer timeoutSeconds, Integer packetLossThreshold, Long failureCountThreshold, Boolean enabled, Boolean metricsHistoryEnabled, IntegrationID[] integrations, OffsetDateTime createdAt, OffsetDateTime updatedAt, String category, Boolean ignoreConnectivityCheck) {
         super(IcmpMonitor.ICMP_MONITOR);
 
         setId(id);
@@ -273,6 +288,7 @@ public class IcmpMonitorRecord extends UpdatableRecordImpl<IcmpMonitorRecord> im
         setCreatedAt(createdAt);
         setUpdatedAt(updatedAt);
         setCategory(category);
+        setIgnoreConnectivityCheck(ignoreConnectivityCheck);
         resetTouchedOnNotNull();
     }
 
@@ -297,6 +313,7 @@ public class IcmpMonitorRecord extends UpdatableRecordImpl<IcmpMonitorRecord> im
             setCreatedAt(value.getCreatedAt());
             setUpdatedAt(value.getUpdatedAt());
             setCategory(value.getCategory());
+            setIgnoreConnectivityCheck(value.getIgnoreConnectivityCheck());
             resetTouchedOnNotNull();
         }
     }

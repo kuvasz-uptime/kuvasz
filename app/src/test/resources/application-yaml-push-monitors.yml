@@ -14,3 +14,4 @@ push-monitors:
     heartbeat-interval: 120
     client-secret: somesecretsomesecretsomesecretsomesecretsomesecretsomesecretsomesecretsomesecretsomesecret3
     enabled: true
+    ignore-connectivity-check: true

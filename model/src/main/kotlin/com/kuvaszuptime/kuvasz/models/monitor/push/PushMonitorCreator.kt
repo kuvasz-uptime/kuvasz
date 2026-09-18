@@ -48,4 +48,5 @@ interface PushMonitorCreator : MonitorCreator<PushMonitorRecord> {
             .setIntegrations(validatedIntegrations.toTypedArray())
             .setFailureCountThreshold(failureCountThreshold)
             .setCategory(normalizedCategory)
+            .setIgnoreConnectivityCheck(ignoreConnectivityCheck)
 }

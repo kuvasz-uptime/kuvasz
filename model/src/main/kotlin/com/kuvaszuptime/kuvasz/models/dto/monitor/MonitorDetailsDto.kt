@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import java.time.OffsetDateTime
 
+@Suppress("ComplexInterface")
 sealed interface MonitorDetailsDto {
     val id: Long
     val name: String
@@ -16,6 +17,7 @@ sealed interface MonitorDetailsDto {
     val inMaintenance: Boolean
     val statusPages: Set<String>
     val category: String?
+    val ignoreConnectivityCheck: Boolean
 }
 
 fun MonitorDetailsDto.monitorType(): MonitorType = when (this) {

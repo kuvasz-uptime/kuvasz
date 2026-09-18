@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.config
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorDefaults
 import com.kuvaszuptime.kuvasz.testAppContext
 import com.kuvaszuptime.kuvasz.testutils.getBean
@@ -134,6 +135,7 @@ class PushMonitorConfigDefaultValuesTest(applicationContext: ApplicationContext)
                 monitorConfig.gracePeriod shouldBe PushMonitorDefaults.GRACE_PERIOD_SECONDS
                 monitorConfig.integrations shouldBe null
                 monitorConfig.failureCountThreshold shouldBe PushMonitorDefaults.FAILURE_COUNT_THRESHOLD
+                monitorConfig.ignoreConnectivityCheck shouldBe MonitorDefaults.IGNORE_CONNECTIVITY_CHECK
             }
         }
     }

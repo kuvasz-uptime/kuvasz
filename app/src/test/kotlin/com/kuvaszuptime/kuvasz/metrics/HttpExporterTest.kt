@@ -56,6 +56,8 @@ abstract class HttpExporterTest(env: String, body: BehaviorSpec.() -> Unit = {})
             requestHeaders = emptyMap(),
             expectedHeaders = emptyMap(),
             requestBody = null,
+            category = null,
+            ignoreConnectivityCheck = false,
         )
     )
 }

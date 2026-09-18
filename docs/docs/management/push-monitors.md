@@ -19,6 +19,7 @@
       heartbeat-interval: 10 # (2)!
       grace-period: 2 # (3)!
       failure-count-threshold: 3 # (7)!
+      ignore-connectivity-check: false # (9)!
       client-secret: "d6d5a85c-82c0-4bea-9926-c3eed32de32a" # (4)!
       enabled: true # (5)!
       integrations: # (6)!
@@ -34,6 +35,7 @@
       6. **Integrations**: A list of integrations to assign to the monitor. The format is `"{integration-type}:{integration-name}"`, where `integration-type` is the type of the integration (e.g. `email`, `slack`, etc.), and `integration-name` is the name of the integration as defined in the `integrations` section of your YAML file. Example: `email:my-email-integration`.
       7. **Failure count threshold**: The number of consecutive failures that should occur before the monitor is considered down. Defaults to 1.
       8. **Category**: An optional, free-form category to group the monitor on the status pages (e.g. a product or service name).
+      9. **Ignore connectivity check**: Whether the monitor should keep being checked even while _Kuvasz_ considers its own outbound connectivity lost. Defaults to false.
 
 === "API (expert)"
 
@@ -170,6 +172,21 @@ curl '[YOUR_HOST]/api/v2/push-monitors/heartbeats/[CLIENT_SECRET]/failure' \
 !!!tip
 
     You can also find these details in the [**API documentation**](https://api-docs.kuvasz-uptime.dev).
+
+### Ignore connectivity check
+
+<!-- md:version 4.5.0 -->
+<!-- md:default `false` -->
+<!-- md:type boolean -->
+<!-- md:yaml_prop `ignore-connectivity-check` -->
+
+Whether the monitor should be checked **even while the** [**connectivity check**](../features/connectivity-check.md) **considers _Kuvasz_ to be disconnected**. Defaults to false, which means the monitor is suspended together with all the others during an outage.
+
+Enable it for monitors that **don't depend on the outbound connectivity** of _Kuvasz_ at all — a service on the same LAN, in the same cluster, or on the very same host. Those keep working during an internet outage, so suspending them would only **hide a real failure** from you.
+
+!!!info
+
+    This flag has **no effect at all** when the [connectivity check](../setup/configuration.md#connectivity-check) is disabled, which is the default. You can set it freely regardless, so it's already in place if you decide to turn the feature on later.
 
 ## Common operations
 

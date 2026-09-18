@@ -9,7 +9,9 @@ import com.kuvaszuptime.kuvasz.services.check.UptimeCheckLockRegistry
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.http.HttpUptimeChecker
 import com.kuvaszuptime.kuvasz.services.check.ssl.SSLChecker
+import com.kuvaszuptime.kuvasz.services.connectivity.ConnectivityChecker
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowService
+import com.kuvaszuptime.kuvasz.testutils.ENABLED_CONNECTIVITY_CHECK
 import io.kotest.core.test.TestCase
 import io.kotest.engine.test.TestResult
 import io.kotest.matchers.booleans.shouldBeFalse
@@ -37,7 +39,7 @@ import java.time.Instant
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.milliseconds
 
-@MicronautTest(startApplication = false)
+@MicronautTest(startApplication = false, environments = [ENABLED_CONNECTIVITY_CHECK])
 class HttpCheckSchedulerTest(
     private val checkScheduler: HttpCheckScheduler,
     private val monitorRepository: HttpMonitorRepository,
@@ -45,6 +47,7 @@ class HttpCheckSchedulerTest(
     private val uptimeCheckLockRegistry: UptimeCheckLockRegistry,
     private val maintenanceWindowService: MaintenanceWindowService,
     private val sslChecker: SSLChecker,
+    private val connectivityChecker: ConnectivityChecker,
 ) : DatabaseBehaviorSpec() {
     init {
         given("the CheckScheduler service") {
@@ -160,6 +163,68 @@ class HttpCheckSchedulerTest(
                     coVerify(atLeast = 1) { lockRegistryMock.tryAcquire(monitor.id) }
                     coVerify(inverse = true) { uptimeCheckerMock.check(any(), any(), any(), any()) }
                     coVerify(atLeast = 1) { lockRegistryMock.release(monitor.id) }
+                }
+            }
+
+            `when`("Kuvasz has no outbound connectivity") {
+                val monitor = createHttpMonitor(monitorRepository, uptimeCheckInterval = 3)
+                val uptimeCheckerMock = getMock(uptimeChecker)
+                val lockRegistryMock = getMock(uptimeCheckLockRegistry)
+                coEvery { lockRegistryMock.tryAcquire(monitor.id) } returns true
+                coEvery { lockRegistryMock.release(monitor.id) } just Runs
+                val connectivityCheckerMock = getMock(connectivityChecker)
+                every { connectivityCheckerMock.isCheckSuppressedFor(any()) } returns true
+
+                checkScheduler.initialize()
+                delay(4000.milliseconds) // Wait for the check to be executed
+
+                then("it should skip the check, but still acquire and release the lock") {
+                    coVerify(atLeast = 1) { lockRegistryMock.tryAcquire(monitor.id) }
+                    coVerify(inverse = true) { uptimeCheckerMock.check(any(), any(), any(), any()) }
+                    coVerify(atLeast = 1) { lockRegistryMock.release(monitor.id) }
+
+                    // Skipping must not cancel anything: the check has to resume on its own once the
+                    // connectivity is back, without a restart
+                    with(checkScheduler.getScheduledUptimeChecks()[monitor.id].shouldNotBeNull()) {
+                        isCancelled.shouldBeFalse()
+                        isDone.shouldBeFalse()
+                    }
+                }
+            }
+
+            `when`("Kuvasz has no outbound connectivity, but the monitor opted out of the check") {
+                val monitor = createHttpMonitor(monitorRepository, uptimeCheckInterval = 3)
+                val uptimeCheckerMock = getMock(uptimeChecker)
+                coEvery { uptimeCheckerMock.check(monitor, any(), any(), any()) } just Runs
+                val lockRegistryMock = getMock(uptimeCheckLockRegistry)
+                coEvery { lockRegistryMock.tryAcquire(monitor.id) } returns true
+                coEvery { lockRegistryMock.release(monitor.id) } just Runs
+                val connectivityCheckerMock = getMock(connectivityChecker)
+                // The opt-out is resolved by the checker itself, the scheduler just asks about this monitor
+                every { connectivityCheckerMock.isCheckSuppressedFor(monitor) } returns false
+
+                checkScheduler.initialize()
+                delay(4000.milliseconds) // Wait for the check to be executed
+
+                then("it should run the check anyway") {
+                    coVerify(atLeast = 1) { uptimeCheckerMock.check(monitor, any(), any(), any()) }
+                }
+            }
+
+            `when`("an SSL check is executed while Kuvasz has no outbound connectivity") {
+                val monitor = createHttpMonitor(monitorRepository, sslCheckEnabled = true)
+                val sslCheckerMock = getMock(sslChecker)
+                val connectivityCheckerMock = getMock(connectivityChecker)
+                every { connectivityCheckerMock.isCheckSuppressedFor(monitor) } returns true
+
+                checkScheduler.runSSLCheck(monitor)
+
+                then("it should postpone the check by ~30 minutes instead of skipping it") {
+                    verify(inverse = true) { sslCheckerMock.check(any()) }
+                    with(checkScheduler.getScheduledSSLChecks()[monitor.id].shouldNotBeNull()) {
+                        // 30 minutes = 1800 seconds, allowing a small margin for scheduling overhead
+                        getDelay(TimeUnit.SECONDS) shouldBeInRange 1790L..1800L
+                    }
                 }
             }
 
@@ -371,6 +436,11 @@ class HttpCheckSchedulerTest(
     @MockBean(MaintenanceWindowService::class)
     fun maintenanceWindowServiceMock(): MaintenanceWindowService = mockk {
         every { isUnderMaintenance(any(), any()) } returns false
+    }
+
+    @MockBean(ConnectivityChecker::class)
+    fun connectivityCheckerMock(): ConnectivityChecker = mockk(relaxed = true) {
+        every { isCheckSuppressedFor(any()) } returns false
     }
 
     @MockBean(SSLChecker::class)

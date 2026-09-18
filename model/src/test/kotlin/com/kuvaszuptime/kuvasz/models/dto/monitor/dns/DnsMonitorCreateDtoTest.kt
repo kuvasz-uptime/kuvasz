@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.jooq.enums.DnsResponseCode
 import com.kuvaszuptime.kuvasz.jooq.enums.DnsTransport
 import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsMatchType
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordMatcher
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
@@ -310,6 +311,14 @@ class DnsMonitorCreateDtoDefaultsTest : BehaviorSpec({
             dto.metricsHistoryEnabled shouldBe DnsMonitorDefaults.METRICS_HISTORY_ENABLED
             dto.integrations shouldBe emptyList()
             dto.category shouldBe null
+            dto.ignoreConnectivityCheck shouldBe MonitorDefaults.IGNORE_CONNECTIVITY_CHECK
+        }
+
+        then("the flag should be carried over to the record") {
+            dto.toMonitorRecord(emptySet()).ignoreConnectivityCheck shouldBe
+                MonitorDefaults.IGNORE_CONNECTIVITY_CHECK
+            dto.copy(ignoreConnectivityCheck = true).toMonitorRecord(emptySet())
+                .ignoreConnectivityCheck shouldBe true
         }
     }
 

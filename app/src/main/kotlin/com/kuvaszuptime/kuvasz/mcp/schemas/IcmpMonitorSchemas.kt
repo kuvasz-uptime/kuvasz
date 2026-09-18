@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.dto.monitor.IcmpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorDefaults
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorDto
@@ -32,6 +33,7 @@ data class IcmpMonitorSchema(
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime,
     val category: String?,
+    val ignoreConnectivityCheck: Boolean,
 ) {
     companion object {
         fun fromDto(dto: IcmpMonitorDto) = IcmpMonitorSchema(
@@ -49,6 +51,7 @@ data class IcmpMonitorSchema(
             createdAt = dto.createdAt,
             updatedAt = dto.updatedAt,
             category = dto.category,
+            ignoreConnectivityCheck = dto.ignoreConnectivityCheck,
         )
     }
 }
@@ -70,6 +73,7 @@ data class IcmpMonitorDetailsSchema(
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime,
     val category: String?,
+    val ignoreConnectivityCheck: Boolean,
     val uptimeStatus: UptimeStatus?,
     val uptimeStatusStartedAt: OffsetDateTime?,
     val lastUptimeCheck: OffsetDateTime?,
@@ -95,6 +99,7 @@ data class IcmpMonitorDetailsSchema(
             createdAt = dto.createdAt,
             updatedAt = dto.updatedAt,
             category = dto.category,
+            ignoreConnectivityCheck = dto.ignoreConnectivityCheck,
             uptimeStatus = dto.uptimeStatus,
             uptimeStatusStartedAt = dto.uptimeStatusStartedAt,
             lastUptimeCheck = dto.lastUptimeCheck,
@@ -122,6 +127,7 @@ data class IcmpMonitorSummarySchema(
     val uptimeStatusStartedAt: OffsetDateTime?,
     val uptimeError: String?,
     val category: String?,
+    val ignoreConnectivityCheck: Boolean,
 ) {
     companion object {
         fun fromDto(dto: IcmpMonitorDetailsDto) = IcmpMonitorSummarySchema(
@@ -136,6 +142,7 @@ data class IcmpMonitorSummarySchema(
             uptimeStatusStartedAt = dto.uptimeStatusStartedAt,
             uptimeError = dto.uptimeError,
             category = dto.category,
+            ignoreConnectivityCheck = dto.ignoreConnectivityCheck,
         )
     }
 }
@@ -183,6 +190,7 @@ data class IcmpMonitorCreatorSchema(
     val packetLossThreshold: Int?,
     val failureCountThreshold: Long?,
     val category: String? = null,
+    val ignoreConnectivityCheck: Boolean?,
     val enabled: Boolean?,
     val integrations: List<String>?,
     val metricsHistoryEnabled: Boolean?,
@@ -196,6 +204,7 @@ data class IcmpMonitorCreatorSchema(
         packetLossThreshold = packetLossThreshold ?: IcmpMonitorDefaults.PACKET_LOSS_THRESHOLD,
         failureCountThreshold = failureCountThreshold ?: IcmpMonitorDefaults.FAILURE_COUNT_THRESHOLD,
         category = category,
+        ignoreConnectivityCheck = ignoreConnectivityCheck ?: MonitorDefaults.IGNORE_CONNECTIVITY_CHECK,
         enabled = enabled ?: IcmpMonitorDefaults.MONITOR_ENABLED,
         integrations = integrations.orEmpty(),
         metricsHistoryEnabled = metricsHistoryEnabled ?: IcmpMonitorDefaults.METRICS_HISTORY_ENABLED

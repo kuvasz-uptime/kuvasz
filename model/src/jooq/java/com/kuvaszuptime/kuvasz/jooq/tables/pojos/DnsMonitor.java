@@ -44,6 +44,7 @@ public class DnsMonitor implements Serializable {
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
     private String category;
+    private Boolean ignoreConnectivityCheck;
 
     public DnsMonitor() {}
 
@@ -68,6 +69,7 @@ public class DnsMonitor implements Serializable {
         this.createdAt = value.createdAt;
         this.updatedAt = value.updatedAt;
         this.category = value.category;
+        this.ignoreConnectivityCheck = value.ignoreConnectivityCheck;
     }
 
     public DnsMonitor(
@@ -90,7 +92,8 @@ public class DnsMonitor implements Serializable {
         IntegrationID[] integrations,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt,
-        String category
+        String category,
+        Boolean ignoreConnectivityCheck
     ) {
         this.id = id;
         this.name = name;
@@ -112,6 +115,7 @@ public class DnsMonitor implements Serializable {
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.category = category;
+        this.ignoreConnectivityCheck = ignoreConnectivityCheck;
     }
 
     /**
@@ -414,6 +418,21 @@ public class DnsMonitor implements Serializable {
         return this;
     }
 
+    /**
+     * Getter for <code>kuvasz.dns_monitor.ignore_connectivity_check</code>.
+     */
+    public Boolean getIgnoreConnectivityCheck() {
+        return this.ignoreConnectivityCheck;
+    }
+
+    /**
+     * Setter for <code>kuvasz.dns_monitor.ignore_connectivity_check</code>.
+     */
+    public DnsMonitor setIgnoreConnectivityCheck(Boolean ignoreConnectivityCheck) {
+        this.ignoreConnectivityCheck = ignoreConnectivityCheck;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -543,6 +562,12 @@ public class DnsMonitor implements Serializable {
         }
         else if (!this.category.equals(other.category))
             return false;
+        if (this.ignoreConnectivityCheck == null) {
+            if (other.ignoreConnectivityCheck != null)
+                return false;
+        }
+        else if (!this.ignoreConnectivityCheck.equals(other.ignoreConnectivityCheck))
+            return false;
         return true;
     }
 
@@ -570,6 +595,7 @@ public class DnsMonitor implements Serializable {
         result = prime * result + ((this.createdAt == null) ? 0 : this.createdAt.hashCode());
         result = prime * result + ((this.updatedAt == null) ? 0 : this.updatedAt.hashCode());
         result = prime * result + ((this.category == null) ? 0 : this.category.hashCode());
+        result = prime * result + ((this.ignoreConnectivityCheck == null) ? 0 : this.ignoreConnectivityCheck.hashCode());
         return result;
     }
 
@@ -597,6 +623,7 @@ public class DnsMonitor implements Serializable {
         sb.append(", ").append(createdAt);
         sb.append(", ").append(updatedAt);
         sb.append(", ").append(category);
+        sb.append(", ").append(ignoreConnectivityCheck);
 
         sb.append(")");
         return sb.toString();

@@ -2317,6 +2317,12 @@ components:
           description: The cumulated status of the monitors belonging to the category
           allOf:
           - $ref: "#/components/schemas/SystemStatus"
+    ConnectivityState:
+      type: string
+      enum:
+      - UNKNOWN
+      - UP
+      - DOWN
     DiscordNotificationConfigDto:
       required:
       - enabled
@@ -2517,6 +2523,12 @@ components:
             \ or service name), used to group monitors on the status pages"
           nullable: true
           x-size-message: "Monitor category must be at most {max} characters long"
+        ignoreConnectivityCheck:
+          type: boolean
+          description: "Whether the monitor should keep being checked even when Kuvasz\
+            \ believes that it has no outbound connectivity. Useful for monitors that\
+            \ target the local network, since those don't depend on it at all."
+          default: false
     DnsMonitorDetailsDto:
       required:
       - category
@@ -2529,6 +2541,7 @@ components:
       - failureCountThreshold
       - host
       - id
+      - ignoreConnectivityCheck
       - inMaintenance
       - integrations
       - lastUptimeCheck
@@ -2705,6 +2718,11 @@ components:
           description: "Optional, free-form category of the monitor (e.g. a product\
             \ or service name), used to group monitors on the status pages"
           nullable: true
+        ignoreConnectivityCheck:
+          type: boolean
+          description: "Whether the monitor should keep being checked even when Kuvasz\
+            \ believes that it has no outbound connectivity. Useful for monitors that\
+            \ target the local network, since those don't depend on it at all."
     DnsMonitorDto:
       required:
       - category
@@ -2716,6 +2734,7 @@ components:
       - failureCountThreshold
       - host
       - id
+      - ignoreConnectivityCheck
       - integrations
       - latencyThresholdMs
       - metricsHistoryEnabled
@@ -2837,6 +2856,11 @@ components:
           description: "Optional, free-form category of the monitor (e.g. a product\
             \ or service name), used to group monitors on the status pages"
           nullable: true
+        ignoreConnectivityCheck:
+          type: boolean
+          description: "Whether the monitor should keep being checked even when Kuvasz\
+            \ believes that it has no outbound connectivity. Useful for monitors that\
+            \ target the local network, since those don't depend on it at all."
     DnsMonitorStatsDto:
       required:
       - id
@@ -3005,6 +3029,12 @@ components:
             \ or service name), used to group monitors on the status pages"
           nullable: true
           x-size-message: "Monitor category must be at most {max} characters long"
+        ignoreConnectivityCheck:
+          type: boolean
+          description: "Whether the monitor should keep being checked even when Kuvasz\
+            \ believes that it has no outbound connectivity. Useful for monitors that\
+            \ target the local network, since those don't depend on it at all."
+          nullable: false
     DnsMonitoringStatsDto:
       required:
       - actual
@@ -3386,6 +3416,12 @@ components:
             \ or service name), used to group monitors on the status pages"
           nullable: true
           x-size-message: "Monitor category must be at most {max} characters long"
+        ignoreConnectivityCheck:
+          type: boolean
+          description: "Whether the monitor should keep being checked even when Kuvasz\
+            \ believes that it has no outbound connectivity. Useful for monitors that\
+            \ target the local network, since those don't depend on it at all."
+          default: false
     HttpMonitorDetailsDto:
       required:
       - category
@@ -3402,6 +3438,7 @@ components:
       - followRedirects
       - forceNoCache
       - id
+      - ignoreConnectivityCheck
       - inMaintenance
       - integrations
       - lastSSLCheck
@@ -3635,6 +3672,11 @@ components:
           description: "Optional, free-form category of the monitor (e.g. a product\
             \ or service name), used to group monitors on the status pages"
           nullable: true
+        ignoreConnectivityCheck:
+          type: boolean
+          description: "Whether the monitor should keep being checked even when Kuvasz\
+            \ believes that it has no outbound connectivity. Useful for monitors that\
+            \ target the local network, since those don't depend on it at all."
     HttpMonitorDto:
       required:
       - category
@@ -3650,6 +3692,7 @@ components:
       - followRedirects
       - forceNoCache
       - id
+      - ignoreConnectivityCheck
       - integrations
       - latencyHistoryEnabled
       - name
@@ -3791,6 +3834,11 @@ components:
           description: "Optional, free-form category of the monitor (e.g. a product\
             \ or service name), used to group monitors on the status pages"
           nullable: true
+        ignoreConnectivityCheck:
+          type: boolean
+          description: "Whether the monitor should keep being checked even when Kuvasz\
+            \ believes that it has no outbound connectivity. Useful for monitors that\
+            \ target the local network, since those don't depend on it at all."
     HttpMonitorStatsDto:
       required:
       - id
@@ -3978,6 +4026,12 @@ components:
             \ or service name), used to group monitors on the status pages"
           nullable: true
           x-size-message: "Monitor category must be at most {max} characters long"
+        ignoreConnectivityCheck:
+          type: boolean
+          description: "Whether the monitor should keep being checked even when Kuvasz\
+            \ believes that it has no outbound connectivity. Useful for monitors that\
+            \ target the local network, since those don't depend on it at all."
+          nullable: false
     HttpMonitoringStatsDto:
       required:
       - actual
@@ -4195,6 +4249,12 @@ components:
             \ or service name), used to group monitors on the status pages"
           nullable: true
           x-size-message: "Monitor category must be at most {max} characters long"
+        ignoreConnectivityCheck:
+          type: boolean
+          description: "Whether the monitor should keep being checked even when Kuvasz\
+            \ believes that it has no outbound connectivity. Useful for monitors that\
+            \ target the local network, since those don't depend on it at all."
+          default: false
     IcmpMonitorDetailsDto:
       required:
       - category
@@ -4204,6 +4264,7 @@ components:
       - failureCountThreshold
       - host
       - id
+      - ignoreConnectivityCheck
       - inMaintenance
       - integrations
       - lastUptimeCheck
@@ -4330,6 +4391,11 @@ components:
           description: "Optional, free-form category of the monitor (e.g. a product\
             \ or service name), used to group monitors on the status pages"
           nullable: true
+        ignoreConnectivityCheck:
+          type: boolean
+          description: "Whether the monitor should keep being checked even when Kuvasz\
+            \ believes that it has no outbound connectivity. Useful for monitors that\
+            \ target the local network, since those don't depend on it at all."
     IcmpMonitorDto:
       required:
       - category
@@ -4338,6 +4404,7 @@ components:
       - failureCountThreshold
       - host
       - id
+      - ignoreConnectivityCheck
       - integrations
       - metricsHistoryEnabled
       - name
@@ -4409,6 +4476,11 @@ components:
           description: "Optional, free-form category of the monitor (e.g. a product\
             \ or service name), used to group monitors on the status pages"
           nullable: true
+        ignoreConnectivityCheck:
+          type: boolean
+          description: "Whether the monitor should keep being checked even when Kuvasz\
+            \ believes that it has no outbound connectivity. Useful for monitors that\
+            \ target the local network, since those don't depend on it at all."
     IcmpMonitorStatsDto:
       required:
       - id
@@ -4536,6 +4608,12 @@ components:
             \ or service name), used to group monitors on the status pages"
           nullable: true
           x-size-message: "Monitor category must be at most {max} characters long"
+        ignoreConnectivityCheck:
+          type: boolean
+          description: "Whether the monitor should keep being checked even when Kuvasz\
+            \ believes that it has no outbound connectivity. Useful for monitors that\
+            \ target the local network, since those don't depend on it at all."
+          nullable: false
     IcmpMonitoringStatsDto:
       required:
       - actual
@@ -5358,6 +5436,12 @@ components:
             \ or service name), used to group monitors on the status pages"
           nullable: true
           x-size-message: "Monitor category must be at most {max} characters long"
+        ignoreConnectivityCheck:
+          type: boolean
+          description: "Whether the monitor should keep being checked even when Kuvasz\
+            \ believes that it has no outbound connectivity. Useful for monitors that\
+            \ target the local network, since those don't depend on it at all."
+          default: false
     PushMonitorDetailsDto:
       required:
       - category
@@ -5369,6 +5453,7 @@ components:
       - gracePeriod
       - heartbeatInterval
       - id
+      - ignoreConnectivityCheck
       - inMaintenance
       - integrations
       - lastHeartbeat
@@ -5486,6 +5571,11 @@ components:
           description: "Optional, free-form category of the monitor (e.g. a product\
             \ or service name), used to group monitors on the status pages"
           nullable: true
+        ignoreConnectivityCheck:
+          type: boolean
+          description: "Whether the monitor should keep being checked even when Kuvasz\
+            \ believes that it has no outbound connectivity. Useful for monitors that\
+            \ target the local network, since those don't depend on it at all."
     PushMonitorDto:
       required:
       - category
@@ -5496,6 +5586,7 @@ components:
       - gracePeriod
       - heartbeatInterval
       - id
+      - ignoreConnectivityCheck
       - integrations
       - lastHeartbeat
       - name
@@ -5558,6 +5649,11 @@ components:
           description: "Optional, free-form category of the monitor (e.g. a product\
             \ or service name), used to group monitors on the status pages"
           nullable: true
+        ignoreConnectivityCheck:
+          type: boolean
+          description: "Whether the monitor should keep being checked even when Kuvasz\
+            \ believes that it has no outbound connectivity. Useful for monitors that\
+            \ target the local network, since those don't depend on it at all."
     PushMonitorFailureDetailsDto:
       type: object
       properties:
@@ -5644,6 +5740,12 @@ components:
             \ or service name), used to group monitors on the status pages"
           nullable: true
           x-size-message: "Monitor category must be at most {max} characters long"
+        ignoreConnectivityCheck:
+          type: boolean
+          description: "Whether the monitor should keep being checked even when Kuvasz\
+            \ believes that it has no outbound connectivity. Useful for monitors that\
+            \ target the local network, since those don't depend on it at all."
+          nullable: false
     PushMonitoringStatsDto:
       required:
       - actual
@@ -5838,6 +5940,12 @@ components:
           description: MCP server settings
           allOf:
           - $ref: "#/components/schemas/SettingsDto.McpServerSettingsDto"
+        connectivityCheck:
+          description: "The connectivity check's settings and live state, null when\
+            \ it is disabled"
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/SettingsDto.ConnectivityCheckSettingsDto"
         smtp:
           description: SMTP configuration for email notifications
           nullable: true
@@ -5954,6 +6062,50 @@ components:
         clientId:
           type: string
           description: The client ID registered with the OIDC provider
+    SettingsDto.ConnectivityCheckSettingsDto:
+      required:
+      - checksSuspended
+      - intervalSeconds
+      - state
+      - targets
+      - timeoutSeconds
+      type: object
+      properties:
+        targets:
+          type: array
+          description: The endpoints that are dialed to decide about the connectivity
+          items:
+            type: string
+        intervalSeconds:
+          type: integer
+          description: "How often the connectivity is probed, in seconds"
+          format: int64
+        timeoutSeconds:
+          type: integer
+          description: "The timeout of a single dial, in seconds"
+          format: int64
+        state:
+          description: The last known state of the outbound connectivity
+          allOf:
+          - $ref: "#/components/schemas/ConnectivityState"
+        checksSuspended:
+          type: boolean
+          description: Whether the checks Kuvasz initiates on its own are currently
+            suspended
+        lastCheckedAt:
+          type: string
+          description: When the connectivity was probed the last time
+          format: date-time
+          nullable: true
+        downSince:
+          type: string
+          description: Since when the connectivity is considered to be lost
+          format: date-time
+          nullable: true
+        lastError:
+          type: string
+          description: The error of the last failed dial
+          nullable: true
     SettingsDto.McpServerSettingsDto:
       required:
       - enabled
@@ -6760,6 +6912,12 @@ components:
             \ or service name), used to group monitors on the status pages"
           nullable: true
           x-size-message: "Monitor category must be at most {max} characters long"
+        ignoreConnectivityCheck:
+          type: boolean
+          description: "Whether the monitor should keep being checked even when Kuvasz\
+            \ believes that it has no outbound connectivity. Useful for monitors that\
+            \ target the local network, since those don't depend on it at all."
+          default: false
     TcpMonitorDetailsDto:
       required:
       - category
@@ -6769,6 +6927,7 @@ components:
       - failureCountThreshold
       - host
       - id
+      - ignoreConnectivityCheck
       - inMaintenance
       - integrations
       - lastUptimeCheck
@@ -6896,6 +7055,11 @@ components:
           description: "Optional, free-form category of the monitor (e.g. a product\
             \ or service name), used to group monitors on the status pages"
           nullable: true
+        ignoreConnectivityCheck:
+          type: boolean
+          description: "Whether the monitor should keep being checked even when Kuvasz\
+            \ believes that it has no outbound connectivity. Useful for monitors that\
+            \ target the local network, since those don't depend on it at all."
     TcpMonitorDto:
       required:
       - category
@@ -6904,6 +7068,7 @@ components:
       - failureCountThreshold
       - host
       - id
+      - ignoreConnectivityCheck
       - integrations
       - latencyThresholdMs
       - metricsHistoryEnabled
@@ -6976,6 +7141,11 @@ components:
           description: "Optional, free-form category of the monitor (e.g. a product\
             \ or service name), used to group monitors on the status pages"
           nullable: true
+        ignoreConnectivityCheck:
+          type: boolean
+          description: "Whether the monitor should keep being checked even when Kuvasz\
+            \ believes that it has no outbound connectivity. Useful for monitors that\
+            \ target the local network, since those don't depend on it at all."
     TcpMonitorStatsDto:
       required:
       - id
@@ -7093,6 +7263,12 @@ components:
             \ or service name), used to group monitors on the status pages"
           nullable: true
           x-size-message: "Monitor category must be at most {max} characters long"
+        ignoreConnectivityCheck:
+          type: boolean
+          description: "Whether the monitor should keep being checked even when Kuvasz\
+            \ believes that it has no outbound connectivity. Useful for monitors that\
+            \ target the local network, since those don't depend on it at all."
+          nullable: false
     TcpMonitoringStatsDto:
       required:
       - actual

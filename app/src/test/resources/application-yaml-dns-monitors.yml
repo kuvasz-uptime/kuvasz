@@ -27,3 +27,4 @@ dns-monitors:
     drift-record-types:
       - NS
       - MX
+    ignore-connectivity-check: true

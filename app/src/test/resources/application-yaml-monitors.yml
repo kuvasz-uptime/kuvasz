@@ -27,3 +27,4 @@ http-monitors:
     latency-history-enabled: true
     force-no-cache: false
     follow-redirects: true
+    ignore-connectivity-check: true

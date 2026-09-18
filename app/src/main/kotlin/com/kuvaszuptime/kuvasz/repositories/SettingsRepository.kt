@@ -79,6 +79,8 @@ class SettingsRepository(
             },
             metricsExport = metricsExportSettingsDto(),
             mcpServer = SettingsDto.McpServerSettingsDto(enabled = mcpServerEnabled),
+            connectivityCheck = appGlobals.connectivityStatus()
+                ?.let { SettingsDto.ConnectivityCheckSettingsDto.fromStatus(it) },
             versionInfo = VersionInfoDto.fromVersionInfo(versionChecker.getVersionInfo()),
         )
 

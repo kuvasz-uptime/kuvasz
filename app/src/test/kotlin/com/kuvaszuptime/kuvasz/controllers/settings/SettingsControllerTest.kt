@@ -3,11 +3,17 @@ package com.kuvaszuptime.kuvasz.controllers.settings
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.models.dto.settings.SettingsDto
+import com.kuvaszuptime.kuvasz.models.settings.ConnectivityState
+import com.kuvaszuptime.kuvasz.models.settings.ConnectivityStatus
 import com.kuvaszuptime.kuvasz.models.settings.VersionInfo
 import com.kuvaszuptime.kuvasz.services.VersionChecker
+import com.kuvaszuptime.kuvasz.services.connectivity.ConnectivityChecker
+import com.kuvaszuptime.kuvasz.testutils.ENABLED_CONNECTIVITY_CHECK
 import com.kuvaszuptime.kuvasz.testutils.SMTPTest
+import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.matchers.ints.shouldBeGreaterThan
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldNotBeEmpty
@@ -119,6 +125,7 @@ class SettingsControllerTest(
                 with(result.mcpServer) {
                     enabled shouldBe true
                 }
+                result.connectivityCheck.shouldBeNull()
                 with(result.versionInfo) {
                     installedVersion shouldBe appGlobals.appVersion
                     latestVersion shouldBe "123.456.789"
@@ -165,3 +172,44 @@ class SettingsControllerOidcTest(
         }
     }
 })
+
+@MicronautTest(environments = [ENABLED_CONNECTIVITY_CHECK])
+class SettingsControllerConnectivityCheckTest(
+    settingsClient: SettingsClient,
+    connectivityChecker: ConnectivityChecker,
+) : DatabaseBehaviorSpec({
+
+    given("the SettingsController with an enabled connectivity check") {
+
+        `when`("the getSettings method is called") {
+
+            every { getMock(connectivityChecker).getStatus() } returns ConnectivityStatus(
+                state = ConnectivityState.DOWN,
+                targets = listOf("127.0.0.1:1"),
+                intervalSeconds = 3600,
+                timeoutSeconds = 5,
+                lastCheckedAt = getCurrentTimestamp(),
+                lastSuccessfulCheckAt = null,
+                downSince = getCurrentTimestamp(),
+                lastError = "127.0.0.1:1 (Connection refused)",
+            )
+            val result = settingsClient.getSettings()
+
+            then("it should expose the connectivity check settings along with its live state") {
+                with(result.connectivityCheck.shouldNotBeNull()) {
+                    state shouldBe ConnectivityState.DOWN
+                    checksSuspended shouldBe true
+                    targets shouldBe listOf("127.0.0.1:1")
+                    intervalSeconds shouldBe 3600
+                    timeoutSeconds shouldBe 5
+                    lastCheckedAt.shouldNotBeNull()
+                    downSince.shouldNotBeNull()
+                    lastError shouldBe "127.0.0.1:1 (Connection refused)"
+                }
+            }
+        }
+    }
+}) {
+    @MockBean(ConnectivityChecker::class)
+    fun connectivityChecker(): ConnectivityChecker = mockk()
+}

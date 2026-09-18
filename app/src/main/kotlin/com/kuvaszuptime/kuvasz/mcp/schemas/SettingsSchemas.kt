@@ -12,11 +12,37 @@ import io.micronaut.jsonschema.JsonSchema
 data class AppSettingsSchema(
     val app: ApplicationSettingsSchema,
     val versionInfo: VersionInfoSchema,
+    val connectivityCheck: ConnectivityCheckSchema?,
 ) {
     companion object {
         fun fromDto(dto: SettingsDto) = AppSettingsSchema(
             app = ApplicationSettingsSchema.fromDto(dto.app),
             versionInfo = VersionInfoSchema.fromDto(dto.versionInfo),
+            connectivityCheck = dto.connectivityCheck?.let { ConnectivityCheckSchema.fromDto(it) },
+        )
+    }
+}
+
+@Introspected
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class ConnectivityCheckSchema(
+    val state: String,
+    val checksSuspended: Boolean,
+    val targets: List<String>,
+    val intervalSeconds: Long,
+    val timeoutSeconds: Long,
+    val downSince: String?,
+    val lastError: String?,
+) {
+    companion object {
+        fun fromDto(dto: SettingsDto.ConnectivityCheckSettingsDto) = ConnectivityCheckSchema(
+            state = dto.state.name,
+            checksSuspended = dto.checksSuspended,
+            targets = dto.targets,
+            intervalSeconds = dto.intervalSeconds,
+            timeoutSeconds = dto.timeoutSeconds,
+            downSince = dto.downSince?.toString(),
+            lastError = dto.lastError,
         )
     }
 }

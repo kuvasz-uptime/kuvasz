@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.models.dto.monitor.icmp
 
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import io.micronaut.core.annotation.Introspected
 
@@ -17,6 +18,7 @@ data class IcmpMonitorExportDto(
     val integrations: Set<IntegrationID>,
     val metricsHistoryEnabled: Boolean,
     val category: String? = null,
+    val ignoreConnectivityCheck: Boolean = MonitorDefaults.IGNORE_CONNECTIVITY_CHECK,
 ) {
     companion object {
         fun fromMonitorRecord(record: IcmpMonitorRecord): IcmpMonitorExportDto {
@@ -32,6 +34,7 @@ data class IcmpMonitorExportDto(
                 integrations = record.integrations.toSet(),
                 metricsHistoryEnabled = record.metricsHistoryEnabled,
                 category = record.category,
+                ignoreConnectivityCheck = record.ignoreConnectivityCheck,
             )
         }
     }

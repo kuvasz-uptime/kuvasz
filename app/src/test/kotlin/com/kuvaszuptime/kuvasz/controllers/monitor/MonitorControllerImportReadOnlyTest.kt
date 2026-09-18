@@ -235,6 +235,8 @@ class MonitorControllerImportReadOnlyTest(
         requestHeaders = emptyMap(),
         expectedHeaders = emptyMap(),
         requestBody = null,
+        category = null,
+        ignoreConnectivityCheck = false,
     )
 
     private fun pushMonitor(name: String) = PushMonitorExportDto(
@@ -245,6 +247,8 @@ class MonitorControllerImportReadOnlyTest(
         enabled = true,
         integrations = emptySet(),
         failureCountThreshold = 1,
+        category = null,
+        ignoreConnectivityCheck = false,
     )
 
     private fun icmpMonitor(name: String) = IcmpMonitorExportDto(
@@ -258,6 +262,8 @@ class MonitorControllerImportReadOnlyTest(
         enabled = true,
         integrations = emptySet(),
         metricsHistoryEnabled = true,
+        category = null,
+        ignoreConnectivityCheck = false,
     )
 
     private fun tcpMonitor(name: String) = TcpMonitorExportDto(
@@ -271,6 +277,8 @@ class MonitorControllerImportReadOnlyTest(
         enabled = true,
         integrations = emptySet(),
         metricsHistoryEnabled = true,
+        category = null,
+        ignoreConnectivityCheck = false,
     )
 
     private fun dnsMonitor(name: String) = DnsMonitorExportDto(
@@ -290,6 +298,8 @@ class MonitorControllerImportReadOnlyTest(
         enabled = true,
         integrations = emptySet(),
         metricsHistoryEnabled = true,
+        category = null,
+        ignoreConnectivityCheck = false,
     )
 
     private fun buildYamlImportContent(

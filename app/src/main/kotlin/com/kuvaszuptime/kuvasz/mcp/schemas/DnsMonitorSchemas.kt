@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.jooq.enums.DnsTransport
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.dto.monitor.DnsMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorDefaults
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorDto
@@ -43,6 +44,7 @@ data class DnsMonitorSchema(
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime,
     val category: String?,
+    val ignoreConnectivityCheck: Boolean,
 ) {
     companion object {
         fun fromDto(dto: DnsMonitorDto) = DnsMonitorSchema(
@@ -66,6 +68,7 @@ data class DnsMonitorSchema(
             createdAt = dto.createdAt,
             updatedAt = dto.updatedAt,
             category = dto.category,
+            ignoreConnectivityCheck = dto.ignoreConnectivityCheck,
         )
     }
 }
@@ -93,6 +96,7 @@ data class DnsMonitorDetailsSchema(
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime,
     val category: String?,
+    val ignoreConnectivityCheck: Boolean,
     val uptimeStatus: UptimeStatus?,
     val uptimeStatusStartedAt: OffsetDateTime?,
     val lastUptimeCheck: OffsetDateTime?,
@@ -124,6 +128,7 @@ data class DnsMonitorDetailsSchema(
             createdAt = dto.createdAt,
             updatedAt = dto.updatedAt,
             category = dto.category,
+            ignoreConnectivityCheck = dto.ignoreConnectivityCheck,
             uptimeStatus = dto.uptimeStatus,
             uptimeStatusStartedAt = dto.uptimeStatusStartedAt,
             lastUptimeCheck = dto.lastUptimeCheck,
@@ -152,6 +157,7 @@ data class DnsMonitorSummarySchema(
     val uptimeStatusStartedAt: OffsetDateTime?,
     val uptimeError: String?,
     val category: String?,
+    val ignoreConnectivityCheck: Boolean,
 ) {
     companion object {
         fun fromDto(dto: DnsMonitorDetailsDto) = DnsMonitorSummarySchema(
@@ -167,6 +173,7 @@ data class DnsMonitorSummarySchema(
             uptimeStatusStartedAt = dto.uptimeStatusStartedAt,
             uptimeError = dto.uptimeError,
             category = dto.category,
+            ignoreConnectivityCheck = dto.ignoreConnectivityCheck,
         )
     }
 }
@@ -220,6 +227,7 @@ data class DnsMonitorCreatorSchema(
     val latencyThresholdMs: Int?,
     val failureCountThreshold: Long?,
     val category: String? = null,
+    val ignoreConnectivityCheck: Boolean?,
     val enabled: Boolean?,
     val integrations: List<String>?,
     val metricsHistoryEnabled: Boolean?,
@@ -239,6 +247,7 @@ data class DnsMonitorCreatorSchema(
         latencyThresholdMs = latencyThresholdMs,
         failureCountThreshold = failureCountThreshold ?: DnsMonitorDefaults.FAILURE_COUNT_THRESHOLD,
         category = category,
+        ignoreConnectivityCheck = ignoreConnectivityCheck ?: MonitorDefaults.IGNORE_CONNECTIVITY_CHECK,
         enabled = enabled ?: DnsMonitorDefaults.MONITOR_ENABLED,
         integrations = integrations.orEmpty(),
         metricsHistoryEnabled = metricsHistoryEnabled ?: DnsMonitorDefaults.METRICS_HISTORY_ENABLED,

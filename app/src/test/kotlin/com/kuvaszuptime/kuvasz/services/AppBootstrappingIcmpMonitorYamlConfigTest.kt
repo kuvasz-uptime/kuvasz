@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorDefaults
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
@@ -98,6 +99,7 @@ class AppBootstrappingIcmpMonitorYamlConfigTest : StringSpec({
 
         monitorsInDb.forOne { secondMonitor ->
             secondMonitor.name shouldBe "test2"
+            secondMonitor.ignoreConnectivityCheck shouldBe MonitorDefaults.IGNORE_CONNECTIVITY_CHECK
             secondMonitor.host shouldBe "192.168.1.1"
             secondMonitor.uptimeCheckInterval shouldBe 60
             secondMonitor.enabled shouldBe IcmpMonitorDefaults.MONITOR_ENABLED
@@ -114,6 +116,8 @@ class AppBootstrappingIcmpMonitorYamlConfigTest : StringSpec({
 
         monitorsInDb.forOne { thirdMonitor ->
             thirdMonitor.name shouldBe "test3"
+            // Explicitly set in the YAML, as opposed to the other two
+            thirdMonitor.ignoreConnectivityCheck shouldBe true
             thirdMonitor.host shouldBe "10.0.0.1"
             thirdMonitor.uptimeCheckInterval shouldBe 120
             thirdMonitor.enabled shouldBe true

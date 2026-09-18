@@ -33,6 +33,8 @@ data class PushMonitorDto(
     val failureCountThreshold: Long,
     @param:Schema(description = MonitorDocs.CATEGORY, required = true, nullable = true)
     val category: String? = null,
+    @param:Schema(description = MonitorDocs.IGNORE_CONNECTIVITY_CHECK, required = true)
+    val ignoreConnectivityCheck: Boolean,
 ) {
     companion object {
         fun fromMonitorRecord(record: PushMonitorRecord) =
@@ -49,6 +51,7 @@ data class PushMonitorDto(
                 updatedAt = record.updatedAt,
                 failureCountThreshold = record.failureCountThreshold,
                 category = record.category,
+            ignoreConnectivityCheck = record.ignoreConnectivityCheck,
             )
     }
 }

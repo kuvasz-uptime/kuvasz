@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.config
 
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorDefaults
 import com.kuvaszuptime.kuvasz.models.monitor.icmp.IcmpMonitorCreator
 import io.micronaut.context.annotation.EachProperty
@@ -40,4 +41,7 @@ interface IcmpMonitorConfig : IcmpMonitorCreator, MonitorConfig {
     override val metricsHistoryEnabled: Boolean
 
     override val category: String?
+
+    @get:Bindable(defaultValue = MonitorDefaults.IGNORE_CONNECTIVITY_CHECK.toString())
+    override val ignoreConnectivityCheck: Boolean
 }

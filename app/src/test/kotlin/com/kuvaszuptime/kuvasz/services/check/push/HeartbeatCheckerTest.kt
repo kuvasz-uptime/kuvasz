@@ -15,6 +15,7 @@ import com.kuvaszuptime.kuvasz.repositories.PendingFailureRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
+import com.kuvaszuptime.kuvasz.services.connectivity.ConnectivityChecker
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowService
 import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
@@ -48,6 +49,9 @@ class HeartbeatCheckerTest(
         val maintenanceWindowServiceMock = mockk<MaintenanceWindowService> {
             every { isUnderMaintenance(any(), any()) } returns false
         }
+        val connectivityCheckerMock = mockk<ConnectivityChecker> {
+            every { isCheckSuppressedFor(any()) } returns false
+        }
         val heartbeatChecker = HeartbeatChecker(
             dslCtx = dslContext,
             eventDispatcher = dispatcher,
@@ -56,6 +60,7 @@ class HeartbeatCheckerTest(
             databaseEventHandler = mockDbEventHandler,
             pendingFailureRepository = mockPendingFailureRepo,
             maintenanceWindowService = maintenanceWindowServiceMock,
+            connectivityChecker = connectivityCheckerMock,
         )
         val checkerWithRealRepos = HeartbeatChecker(
             dslCtx = dslContext,
@@ -65,6 +70,7 @@ class HeartbeatCheckerTest(
             databaseEventHandler = mockDbEventHandler,
             pendingFailureRepository = pendingFailureRepository,
             maintenanceWindowService = maintenanceWindowServiceMock,
+            connectivityChecker = connectivityCheckerMock,
         )
 
         fun pendingFailureCountOf(monitorId: Long): Long? = dslContext
@@ -272,6 +278,44 @@ class HeartbeatCheckerTest(
                     verify(exactly = 0) {
                         mockDbEventHandler.handleUptimeMonitorEvent(
                             match<PushMonitorDownEvent> { it.monitor == maintainedMonitor }
+                        )
+                    }
+                }
+            }
+
+            `when`("Kuvasz has no outbound connectivity while a heartbeat is missed") {
+                val testSubscriber = TestSubscriber<PushUptimeMonitorEvent>()
+                dispatcher.subscribeToPushMonitorEvents { it.forwardToSubscriber(testSubscriber) }
+
+                val suppressedMonitor = PushMonitorRecord().apply {
+                    id = 20
+                    name = "suppressed"
+                    failureCountThreshold = 1
+                }
+                // A monitor that opted out of the connectivity check, e.g. because its client is on the LAN
+                val optedOutMonitor = PushMonitorRecord().apply {
+                    id = 21
+                    name = "opted-out"
+                    failureCountThreshold = 1
+                    ignoreConnectivityCheck = true
+                }
+                every { monitorRepoMock.fetchWithMissedHeartbeats(any()) } returns listOf(
+                    suppressedMonitor,
+                    optedOutMonitor,
+                )
+                every { uptimeEventRepoMock.getPreviousEventByMonitorId(any(), any()) } returns null
+                every { connectivityCheckerMock.isCheckSuppressedFor(suppressedMonitor) } returns true
+                every { connectivityCheckerMock.isCheckSuppressedFor(optedOutMonitor) } returns false
+
+                heartbeatChecker.checkHeartbeats()
+
+                then("only the monitor that opted out of the connectivity check is marked as down") {
+                    val events = testSubscriber.awaitCount(1).values()
+                    events.size shouldBe 1
+                    events.single().monitor shouldBe optedOutMonitor
+                    verify(exactly = 0) {
+                        mockDbEventHandler.handleUptimeMonitorEvent(
+                            match<PushMonitorDownEvent> { it.monitor == suppressedMonitor }
                         )
                     }
                 }

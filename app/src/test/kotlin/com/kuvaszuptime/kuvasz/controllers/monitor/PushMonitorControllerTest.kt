@@ -1864,6 +1864,49 @@ class PushMonitorControllerTest(
                 }
             }
 
+            `when`("ignoreConnectivityCheck is set to true when creating a monitor") {
+                val monitorName = randomClientSecret()
+                val createDto = PushMonitorCreateDto(
+                    name = monitorName,
+                    heartbeatInterval = 60,
+                    clientSecret = randomClientSecret(),
+                    ignoreConnectivityCheck = true,
+                )
+
+                val response = client.toBlocking().exchange(
+                    HttpRequest.POST("/api/v2/push-monitors/", createDto).header("X-Api-Key", "test"),
+                    String::class.java
+                )
+
+                then("it should create the monitor with ignoreConnectivityCheck=true and return 201") {
+                    response.status shouldBe HttpStatus.CREATED
+                    monitorRepository.findByName(monitorName).shouldNotBeNull()
+                        .ignoreConnectivityCheck shouldBe true
+                }
+            }
+
+            `when`("ignoreConnectivityCheck is updated") {
+                val monitor = createPushMonitor(monitorRepository)
+                monitor.ignoreConnectivityCheck shouldBe false
+                val updateNode = mapper.createObjectNode().put("ignoreConnectivityCheck", true)
+
+                val response = client.toBlocking().exchange(
+                    HttpRequest.PATCH("/api/v2/push-monitors/${monitor.id}", updateNode).header("X-Api-Key", "test"),
+                    String::class.java
+                )
+
+                then("it should persist the new value and return 200") {
+                    response.status shouldBe HttpStatus.OK
+                    monitorRepository.findById(monitor.id, null).shouldNotBeNull()
+                        .ignoreConnectivityCheck shouldBe true
+                }
+
+                then("the details projection should expose the new value too") {
+                    monitorRepository.getMonitorWithDetails(monitor.id).shouldNotBeNull()
+                        .ignoreConnectivityCheck shouldBe true
+                }
+            }
+
             `when`("it is not part of the update at all") {
                 val monitor = createPushMonitor(monitorRepository, category = "Old category")
                 monitorClient.updateMonitor(monitor.id, mapper.createObjectNode().put("enabled", false))

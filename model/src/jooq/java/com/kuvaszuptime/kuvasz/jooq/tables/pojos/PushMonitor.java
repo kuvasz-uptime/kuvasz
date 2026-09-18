@@ -31,6 +31,7 @@ public class PushMonitor implements Serializable {
     private OffsetDateTime updatedAt;
     private Long failureCountThreshold;
     private String category;
+    private Boolean ignoreConnectivityCheck;
 
     public PushMonitor() {}
 
@@ -47,6 +48,7 @@ public class PushMonitor implements Serializable {
         this.updatedAt = value.updatedAt;
         this.failureCountThreshold = value.failureCountThreshold;
         this.category = value.category;
+        this.ignoreConnectivityCheck = value.ignoreConnectivityCheck;
     }
 
     public PushMonitor(
@@ -61,7 +63,8 @@ public class PushMonitor implements Serializable {
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt,
         Long failureCountThreshold,
-        String category
+        String category,
+        Boolean ignoreConnectivityCheck
     ) {
         this.id = id;
         this.name = name;
@@ -75,6 +78,7 @@ public class PushMonitor implements Serializable {
         this.updatedAt = updatedAt;
         this.failureCountThreshold = failureCountThreshold;
         this.category = category;
+        this.ignoreConnectivityCheck = ignoreConnectivityCheck;
     }
 
     /**
@@ -257,6 +261,21 @@ public class PushMonitor implements Serializable {
         return this;
     }
 
+    /**
+     * Getter for <code>kuvasz.push_monitor.ignore_connectivity_check</code>.
+     */
+    public Boolean getIgnoreConnectivityCheck() {
+        return this.ignoreConnectivityCheck;
+    }
+
+    /**
+     * Setter for <code>kuvasz.push_monitor.ignore_connectivity_check</code>.
+     */
+    public PushMonitor setIgnoreConnectivityCheck(Boolean ignoreConnectivityCheck) {
+        this.ignoreConnectivityCheck = ignoreConnectivityCheck;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -338,6 +357,12 @@ public class PushMonitor implements Serializable {
         }
         else if (!this.category.equals(other.category))
             return false;
+        if (this.ignoreConnectivityCheck == null) {
+            if (other.ignoreConnectivityCheck != null)
+                return false;
+        }
+        else if (!this.ignoreConnectivityCheck.equals(other.ignoreConnectivityCheck))
+            return false;
         return true;
     }
 
@@ -357,6 +382,7 @@ public class PushMonitor implements Serializable {
         result = prime * result + ((this.updatedAt == null) ? 0 : this.updatedAt.hashCode());
         result = prime * result + ((this.failureCountThreshold == null) ? 0 : this.failureCountThreshold.hashCode());
         result = prime * result + ((this.category == null) ? 0 : this.category.hashCode());
+        result = prime * result + ((this.ignoreConnectivityCheck == null) ? 0 : this.ignoreConnectivityCheck.hashCode());
         return result;
     }
 
@@ -376,6 +402,7 @@ public class PushMonitor implements Serializable {
         sb.append(", ").append(updatedAt);
         sb.append(", ").append(failureCountThreshold);
         sb.append(", ").append(category);
+        sb.append(", ").append(ignoreConnectivityCheck);
 
         sb.append(")");
         return sb.toString();

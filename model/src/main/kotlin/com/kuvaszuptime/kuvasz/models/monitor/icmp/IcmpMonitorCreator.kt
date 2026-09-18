@@ -66,4 +66,5 @@ interface IcmpMonitorCreator : MonitorCreator<IcmpMonitorRecord> {
             .setIntegrations(validatedIntegrations.toTypedArray())
             .setMetricsHistoryEnabled(metricsHistoryEnabled)
             .setCategory(normalizedCategory)
+            .setIgnoreConnectivityCheck(ignoreConnectivityCheck)
 }

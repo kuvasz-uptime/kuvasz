@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.services
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorDefaults
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
@@ -85,6 +86,7 @@ class AppBootstrappingPushMonitorYamlConfigTest : StringSpec({
 
         monitorsInDb.forOne { secondMonitor ->
             secondMonitor.name shouldBe "test2"
+            secondMonitor.ignoreConnectivityCheck shouldBe MonitorDefaults.IGNORE_CONNECTIVITY_CHECK
             secondMonitor.heartbeatInterval shouldBe 60
             secondMonitor.gracePeriod shouldBe 0
             secondMonitor.enabled shouldBe PushMonitorDefaults.MONITOR_ENABLED
@@ -96,6 +98,8 @@ class AppBootstrappingPushMonitorYamlConfigTest : StringSpec({
 
         monitorsInDb.forOne { thirdMonitor ->
             thirdMonitor.name shouldBe "test3"
+            // Explicitly set in the YAML, as opposed to the other two
+            thirdMonitor.ignoreConnectivityCheck shouldBe true
             thirdMonitor.heartbeatInterval shouldBe 120
             thirdMonitor.gracePeriod shouldBe 0
             thirdMonitor.enabled shouldBe true

@@ -16,6 +16,7 @@ import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
@@ -75,6 +76,7 @@ class HttpMonitorToolsTest(
                     val details = response.structuredContentAs<HttpMonitorDetailsSchema>().shouldNotBeNull()
                     details.id shouldBe monitor.id
                     details.name shouldBe monitor.name
+                    details.ignoreConnectivityCheck shouldBe monitor.ignoreConnectivityCheck
                     details.integrations shouldHaveSingleElement "slack:test_implicitly_enabled"
                     details.crossOriginHeaderPropagation shouldBe true
 
@@ -136,8 +138,31 @@ class HttpMonitorToolsTest(
                         enabled shouldBe true
                         crossOriginHeaderPropagation shouldBe false
 
+                        ignoreConnectivityCheck shouldBe MonitorDefaults.IGNORE_CONNECTIVITY_CHECK
+
                         response.contentAs<HttpMonitorSchema>() shouldBe this
                     }
+                }
+            }
+
+            `when`("create-http-monitor is called with ignoreConnectivityCheck set") {
+                val response = callToolWithMcpClient(
+                    CREATE_HTTP_MONITOR,
+                    mapOf(
+                        "name" to "mcp-created-monitor-ignoring-connectivity",
+                        "url" to "https://example.org",
+                        "uptimeCheckInterval" to 60,
+                        "ignoreConnectivityCheck" to true,
+                    )
+                )
+
+                then("the created monitor should keep being checked without outbound connectivity") {
+                    response.isError shouldBe false
+
+                    response.structuredContentAs<HttpMonitorSchema>().shouldNotBeNull()
+                        .ignoreConnectivityCheck shouldBe true
+                    httpMonitorRepository.findByName("mcp-created-monitor-ignoring-connectivity").shouldNotBeNull()
+                        .ignoreConnectivityCheck shouldBe true
                 }
             }
 

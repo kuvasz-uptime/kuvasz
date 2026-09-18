@@ -172,6 +172,11 @@ public class DnsMonitor extends TableImpl<DnsMonitorRecord> {
      */
     public final TableField<DnsMonitorRecord, String> CATEGORY = createField(DSL.name("category"), SQLDataType.CLOB, this, "");
 
+    /**
+     * The column <code>kuvasz.dns_monitor.ignore_connectivity_check</code>.
+     */
+    public final TableField<DnsMonitorRecord, Boolean> IGNORE_CONNECTIVITY_CHECK = createField(DSL.name("ignore_connectivity_check"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("false"), SQLDataType.BOOLEAN)), this, "");
+
     private DnsMonitor(Name alias, Table<DnsMonitorRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }

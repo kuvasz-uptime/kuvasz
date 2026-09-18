@@ -34,6 +34,7 @@
       timeout-ms: 5000 # (11)!
       latency-threshold-ms: 1000 # (12)!
       failure-count-threshold: 1 # (13)!
+      ignore-connectivity-check: false # (18)!
       enabled: true # (14)!
       metrics-history-enabled: true # (15)!
       integrations: # (16)!
@@ -58,6 +59,7 @@
       15. **Metrics history enabled**: Whether metrics history (resolution latency) is recorded for the monitor. Defaults to true.
       16. **Integrations**: A list of integrations to assign to the monitor. The format is `"{integration-type}:{integration-name}"`, where `integration-type` is the type of the integration (e.g. `email`, `slack`, etc.), and `integration-name` is the name of the integration as defined in the `integrations` section of your YAML file. Example: `email:my-email-integration`.
       17. **Category**: An optional, free-form category to group the monitor on the status pages (e.g. a product or service name).
+      18. **Ignore connectivity check**: Whether the monitor should keep being checked even while _Kuvasz_ considers its own outbound connectivity lost. Defaults to false.
 
 === "API (expert)"
 
@@ -441,6 +443,21 @@ The **record types drift detection watches**. Ignored unless [drift detection](#
 Each named type that isn't already covered by your matchers **adds one query per check**. These extra lookups are **not counted** towards the measured latency or the [latency threshold](#latency-threshold), and if one of them fails, only the drift comparison is skipped for that round - the up/down evaluation is unaffected.
 
 They do, however, draw from the check's [timeout budget](#timeout), and they run **after** the assertion queries. A watch list wide enough to exhaust what the assertions left over doesn't slow the check down or endanger its status - it simply means the round ends without a drift comparison. If you see drift notifications go quiet on a monitor with many watched types, raise the timeout.
+
+### Ignore connectivity check
+
+<!-- md:version 4.5.0 -->
+<!-- md:default `false` -->
+<!-- md:type boolean -->
+<!-- md:yaml_prop `ignore-connectivity-check` -->
+
+Whether the monitor should be checked **even while the** [**connectivity check**](../features/connectivity-check.md) **considers _Kuvasz_ to be disconnected**. Defaults to false, which means the monitor is suspended together with all the others during an outage.
+
+Enable it for monitors that **don't depend on the outbound connectivity** of _Kuvasz_ at all — a service on the same LAN, in the same cluster, or on the very same host. Those keep working during an internet outage, so suspending them would only **hide a real failure** from you.
+
+!!!info
+
+    This flag has **no effect at all** when the [connectivity check](../setup/configuration.md#connectivity-check) is disabled, which is the default. You can set it freely regardless, so it's already in place if you decide to turn the feature on later.
 
 ## Common operations
 

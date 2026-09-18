@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.models.dto.monitor.icmp
 
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDocs
 import com.kuvaszuptime.kuvasz.models.monitor.icmp.IcmpMonitorCreator
 import io.micronaut.core.annotation.Introspected
@@ -52,4 +53,10 @@ data class IcmpMonitorCreateDto(
     override val metricsHistoryEnabled: Boolean = IcmpMonitorDefaults.METRICS_HISTORY_ENABLED,
     @param:Schema(description = MonitorDocs.CATEGORY, required = false, nullable = true)
     override val category: String? = null,
+    @param:Schema(
+        description = MonitorDocs.IGNORE_CONNECTIVITY_CHECK,
+        required = false,
+        defaultValue = MonitorDefaults.IGNORE_CONNECTIVITY_CHECK.toString(),
+    )
+    override val ignoreConnectivityCheck: Boolean = MonitorDefaults.IGNORE_CONNECTIVITY_CHECK,
 ) : IcmpMonitorCreator

@@ -14,6 +14,8 @@ import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckRequestConfigurator
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.http.HttpUptimeChecker
+import com.kuvaszuptime.kuvasz.services.connectivity.ConnectivityChecker
+import com.kuvaszuptime.kuvasz.testutils.ENABLED_CONNECTIVITY_CHECK
 import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
 import com.kuvaszuptime.kuvasz.testutils.shouldBeUriOf
 import io.kotest.inspectors.forAll
@@ -23,7 +25,11 @@ import io.kotest.matchers.string.shouldStartWith
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.MediaType
+import io.micronaut.test.annotation.MockBean
+import io.micronaut.test.extensions.kotest5.MicronautKotest5Extension.getMock
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
+import io.mockk.every
+import io.mockk.mockk
 import io.reactivex.rxjava3.subscribers.TestSubscriber
 import kotlinx.coroutines.delay
 import org.mockserver.client.MockServerClient
@@ -38,12 +44,13 @@ import org.mockserver.verify.VerificationTimes
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.milliseconds
 
-@MicronautTest(startApplication = false)
+@MicronautTest(startApplication = false, environments = [ENABLED_CONNECTIVITY_CHECK])
 class UptimeCheckerE2ETest(
     uptimeChecker: HttpUptimeChecker,
     private val monitorRepository: HttpMonitorRepository,
     private val eventDispatcher: EventDispatcher,
     private val checkScheduler: HttpCheckScheduler,
+    private val connectivityChecker: ConnectivityChecker,
 ) : DatabaseBehaviorSpec() {
     init {
         lateinit var mockServer: ClientAndServer
@@ -1648,7 +1655,55 @@ class UptimeCheckerE2ETest(
                     mockServer.verify(request, VerificationTimes.atLeast(1))
                 }
             }
+
+            `when`("Kuvasz loses its outbound connectivity and then regains it") {
+                val monitor = createHttpMonitor(
+                    repository = monitorRepository,
+                    url = "$mockServerUrl/connectivity-path",
+                    requestMethod = HttpMethod.GET,
+                    uptimeCheckInterval = 1,
+                )
+                val subscriber = TestSubscriber<HttpMonitorUpEvent>()
+                eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(subscriber) }
+
+                val request = getRequest("/connectivity-path")
+                mockServer.`when`(request).respond(
+                    response().withStatusCode(HttpStatus.OK.code)
+                )
+
+                // The whole cycle has to be driven here, because the stubbing of a mocked bean doesn't survive
+                // until the `then` blocks
+                val connectivityCheckerMock = getMock(connectivityChecker)
+                every { connectivityCheckerMock.isCheckSuppressedFor(any()) } returns true
+
+                checkScheduler.initialize()
+
+                // While Kuvasz is considered to be offline, the scheduled checks are skipped entirely
+                delay(2500.milliseconds)
+                val requestsWhileSuppressed = mockServer.retrieveRecordedRequests(request).size
+                val eventsWhileSuppressed = subscriber.values().size
+
+                // The connectivity is restored, without re-scheduling or restarting anything
+                every { connectivityCheckerMock.isCheckSuppressedFor(any()) } returns false
+                val eventAfterRecovery = subscriber.awaitCount(1).values().first()
+
+                then("nothing reaches the target while the connectivity is lost") {
+                    requestsWhileSuppressed shouldBe 0
+                    eventsWhileSuppressed shouldBe 0
+                }
+
+                then("the checks resume on their own once the connectivity is back") {
+                    eventAfterRecovery.status shouldBe HttpStatus.OK
+                    eventAfterRecovery.monitor.id shouldBe monitor.id
+                    mockServer.verify(request, VerificationTimes.atLeast(1))
+                }
+            }
         }
+    }
+
+    @MockBean(ConnectivityChecker::class)
+    fun connectivityCheckerMock(): ConnectivityChecker = mockk(relaxed = true) {
+        every { isCheckSuppressedFor(any()) } returns false
     }
 }
 

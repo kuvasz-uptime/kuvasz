@@ -18,3 +18,4 @@ tcp-monitors:
     port: 22
     uptime-check-interval: 120
     enabled: true
+    ignore-connectivity-check: true

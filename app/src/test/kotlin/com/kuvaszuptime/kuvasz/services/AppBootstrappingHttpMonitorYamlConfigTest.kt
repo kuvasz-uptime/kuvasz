@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.services
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDefaults
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
@@ -109,6 +110,7 @@ class AppBootstrappingHttpMonitorYamlConfigTest : StringSpec({
 
         monitorsInDb.forOne { secondMonitor ->
             secondMonitor.name shouldBe "test2"
+            secondMonitor.ignoreConnectivityCheck shouldBe MonitorDefaults.IGNORE_CONNECTIVITY_CHECK
             secondMonitor.url shouldBe "http://example.org"
             secondMonitor.uptimeCheckInterval shouldBe 60
             secondMonitor.enabled shouldBe HttpMonitorDefaults.MONITOR_ENABLED
@@ -127,6 +129,8 @@ class AppBootstrappingHttpMonitorYamlConfigTest : StringSpec({
 
         monitorsInDb.forOne { thirdMonitor ->
             thirdMonitor.name shouldBe "test3"
+            // Explicitly set in the YAML, as opposed to the other two
+            thirdMonitor.ignoreConnectivityCheck shouldBe true
             thirdMonitor.url shouldBe "http://example.net"
             thirdMonitor.uptimeCheckInterval shouldBe 120
             thirdMonitor.enabled shouldBe true

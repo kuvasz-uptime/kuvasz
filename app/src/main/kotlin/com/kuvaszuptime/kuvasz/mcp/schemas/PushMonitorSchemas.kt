@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.mcp.schemas
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.dto.Validation
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.dto.monitor.PushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorDefaults
@@ -32,6 +33,7 @@ data class PushMonitorSchema(
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime,
     val category: String?,
+    val ignoreConnectivityCheck: Boolean,
     val failureCountThreshold: Long,
 ) {
     companion object {
@@ -47,6 +49,7 @@ data class PushMonitorSchema(
             createdAt = dto.createdAt,
             updatedAt = dto.updatedAt,
             category = dto.category,
+            ignoreConnectivityCheck = dto.ignoreConnectivityCheck,
             failureCountThreshold = dto.failureCountThreshold,
         )
     }
@@ -65,6 +68,7 @@ data class PushMonitorDetailsSchema(
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime,
     val category: String?,
+    val ignoreConnectivityCheck: Boolean,
     val uptimeStatus: UptimeStatus?,
     val uptimeStatusStartedAt: OffsetDateTime?,
     val lastUptimeCheck: OffsetDateTime?,
@@ -88,6 +92,7 @@ data class PushMonitorDetailsSchema(
             createdAt = dto.createdAt,
             updatedAt = dto.updatedAt,
             category = dto.category,
+            ignoreConnectivityCheck = dto.ignoreConnectivityCheck,
             uptimeStatus = dto.uptimeStatus,
             uptimeStatusStartedAt = dto.uptimeStatusStartedAt,
             lastUptimeCheck = dto.lastUptimeCheck,
@@ -117,6 +122,7 @@ data class PushMonitorSummarySchema(
     val uptimeStatusStartedAt: OffsetDateTime?,
     val uptimeError: String?,
     val category: String?,
+    val ignoreConnectivityCheck: Boolean,
 ) {
     companion object {
         fun fromDto(dto: PushMonitorDetailsDto) = PushMonitorSummarySchema(
@@ -131,6 +137,7 @@ data class PushMonitorSummarySchema(
             uptimeStatusStartedAt = dto.uptimeStatusStartedAt,
             uptimeError = dto.uptimeError,
             category = dto.category,
+            ignoreConnectivityCheck = dto.ignoreConnectivityCheck,
         )
     }
 }
@@ -158,6 +165,7 @@ data class PushMonitorCreatorSchema(
     @get:Positive
     val failureCountThreshold: Long?,
     val category: String? = null,
+    val ignoreConnectivityCheck: Boolean?,
 ) {
     fun toDto() = PushMonitorCreateDto(
         name = name,
@@ -168,6 +176,7 @@ data class PushMonitorCreatorSchema(
         clientSecret = clientSecret,
         failureCountThreshold = failureCountThreshold ?: PushMonitorDefaults.FAILURE_COUNT_THRESHOLD,
         category = category,
+        ignoreConnectivityCheck = ignoreConnectivityCheck ?: MonitorDefaults.IGNORE_CONNECTIVITY_CHECK,
     )
 }
 

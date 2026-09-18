@@ -14,4 +14,5 @@ class PushMonitorImportAdapter(dto: PushMonitorExportDto) : PushMonitorCreator {
     override val integrations: List<String> = dto.integrations.map { it.toString() }
     override val failureCountThreshold: Long = dto.failureCountThreshold
     override val category: String? = dto.category
+    override val ignoreConnectivityCheck: Boolean = dto.ignoreConnectivityCheck
 }

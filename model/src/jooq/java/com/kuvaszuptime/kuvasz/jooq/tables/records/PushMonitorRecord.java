@@ -202,6 +202,21 @@ public class PushMonitorRecord extends UpdatableRecordImpl<PushMonitorRecord> im
         return (String) get(11);
     }
 
+    /**
+     * Setter for <code>kuvasz.push_monitor.ignore_connectivity_check</code>.
+     */
+    public PushMonitorRecord setIgnoreConnectivityCheck(Boolean value) {
+        set(12, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.push_monitor.ignore_connectivity_check</code>.
+     */
+    public Boolean getIgnoreConnectivityCheck() {
+        return (Boolean) get(12);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -225,7 +240,7 @@ public class PushMonitorRecord extends UpdatableRecordImpl<PushMonitorRecord> im
     /**
      * Create a detached, initialised PushMonitorRecord
      */
-    public PushMonitorRecord(Long id, String name, Long heartbeatInterval, Long gracePeriod, OffsetDateTime lastHeartbeat, Boolean enabled, String clientSecret, IntegrationID[] integrations, OffsetDateTime createdAt, OffsetDateTime updatedAt, Long failureCountThreshold, String category) {
+    public PushMonitorRecord(Long id, String name, Long heartbeatInterval, Long gracePeriod, OffsetDateTime lastHeartbeat, Boolean enabled, String clientSecret, IntegrationID[] integrations, OffsetDateTime createdAt, OffsetDateTime updatedAt, Long failureCountThreshold, String category, Boolean ignoreConnectivityCheck) {
         super(PushMonitor.PUSH_MONITOR);
 
         setId(id);
@@ -240,6 +255,7 @@ public class PushMonitorRecord extends UpdatableRecordImpl<PushMonitorRecord> im
         setUpdatedAt(updatedAt);
         setFailureCountThreshold(failureCountThreshold);
         setCategory(category);
+        setIgnoreConnectivityCheck(ignoreConnectivityCheck);
         resetTouchedOnNotNull();
     }
 
@@ -262,6 +278,7 @@ public class PushMonitorRecord extends UpdatableRecordImpl<PushMonitorRecord> im
             setUpdatedAt(value.getUpdatedAt());
             setFailureCountThreshold(value.getFailureCountThreshold());
             setCategory(value.getCategory());
+            setIgnoreConnectivityCheck(value.getIgnoreConnectivityCheck());
             resetTouchedOnNotNull();
         }
     }

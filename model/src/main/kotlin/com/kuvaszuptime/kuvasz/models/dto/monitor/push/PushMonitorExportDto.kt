@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.models.dto.monitor.push
 
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import io.micronaut.core.annotation.Introspected
 
@@ -14,6 +15,7 @@ data class PushMonitorExportDto(
     val integrations: Set<IntegrationID>,
     val failureCountThreshold: Long,
     val category: String? = null,
+    val ignoreConnectivityCheck: Boolean = MonitorDefaults.IGNORE_CONNECTIVITY_CHECK,
 ) {
     companion object {
         fun fromMonitorRecord(record: PushMonitorRecord): PushMonitorExportDto {
@@ -26,6 +28,7 @@ data class PushMonitorExportDto(
                 integrations = record.integrations.toSet(),
                 failureCountThreshold = record.failureCountThreshold,
                 category = record.category,
+                ignoreConnectivityCheck = record.ignoreConnectivityCheck,
             )
         }
     }

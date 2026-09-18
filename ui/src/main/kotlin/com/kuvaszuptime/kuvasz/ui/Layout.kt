@@ -50,6 +50,7 @@ internal fun withLayout(
                                 isAuthenticated = globals.isAuthenticated(),
                                 navbarMenuId = navbarMenuId,
                                 versionInfo = globals.versionInfo(),
+                                connectivityStatus = globals.connectivityStatus(),
                             )
                             // Navigation - only if logged in
                             if (globals.isAuthenticated()) {

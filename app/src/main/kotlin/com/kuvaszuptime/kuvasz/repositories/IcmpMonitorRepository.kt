@@ -121,6 +121,7 @@ class IcmpMonitorRepository(
                 .set(ICMP_MONITOR.INTEGRATIONS, updatedMonitor.integrations)
                 .set(ICMP_MONITOR.METRICS_HISTORY_ENABLED, updatedMonitor.metricsHistoryEnabled)
                 .set(ICMP_MONITOR.CATEGORY, updatedMonitor.normalizedCategory)
+                .set(ICMP_MONITOR.IGNORE_CONNECTIVITY_CHECK, updatedMonitor.ignoreConnectivityCheck)
                 .set(ICMP_MONITOR.UPDATED_AT, getCurrentTimestamp())
                 .where(ICMP_MONITOR.ID.eq(updatedMonitor.id))
                 .returning(ICMP_MONITOR.asterisk())
@@ -169,6 +170,8 @@ class IcmpMonitorRepository(
             ICMP_MONITOR.ID.`as`(IcmpMonitorDetailsDto::id.name),
             ICMP_MONITOR.NAME.`as`(IcmpMonitorDetailsDto::name.name),
             ICMP_MONITOR.CATEGORY.`as`(IcmpMonitorDetailsDto::category.name),
+            ICMP_MONITOR.IGNORE_CONNECTIVITY_CHECK
+                .`as`(IcmpMonitorDetailsDto::ignoreConnectivityCheck.name),
             ICMP_MONITOR.HOST.`as`(IcmpMonitorDetailsDto::host.name),
             ICMP_MONITOR.UPTIME_CHECK_INTERVAL.`as`(IcmpMonitorDetailsDto::uptimeCheckInterval.name),
             ICMP_MONITOR.PACKET_COUNT.`as`(IcmpMonitorDetailsDto::packetCount.name),

@@ -103,6 +103,7 @@ nav:
       - DNS monitoring: features/dns-monitoring.md
       - Status pages: features/status-pages.md
       - Maintenance windows: features/maintenance-windows.md
+      - Connectivity check: features/connectivity-check.md
       - Notifications: features/notifications.md
       - MCP server: features/mcp-server.md
       - Web UI: features/ui.md

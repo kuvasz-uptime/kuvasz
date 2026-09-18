@@ -51,5 +51,7 @@ data class PushMonitorDetailsDto(
     @param:Schema(description = MonitorDocs.UNDER_MAINTENANCE, required = true)
     override val inMaintenance: Boolean,
     @param:Schema(description = MonitorDocs.CATEGORY, required = true, nullable = true)
-    override val category: String? = null,
+    override val category: String?,
+    @param:Schema(description = MonitorDocs.IGNORE_CONNECTIVITY_CHECK, required = true)
+    override val ignoreConnectivityCheck: Boolean,
 ) : MonitorDetailsDto

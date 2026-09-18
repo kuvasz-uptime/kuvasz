@@ -930,6 +930,7 @@ const monitorForm = ({api, pagePath, monitor, errorMessages, categorySelectId, i
         this.failureCountThreshold = source?.failureCountThreshold || 1;
         this.integrations = source?.integrations || [];
         this.category = source?.category || null;
+        this.ignoreConnectivityCheck = source?.ignoreConnectivityCheck ?? false;
         resetCategorySelect(categorySelectId, this.category);
         this.populateTypeFields(source);
         this.errors = {};
@@ -987,6 +988,7 @@ const monitorForm = ({api, pagePath, monitor, errorMessages, categorySelectId, i
             failureCountThreshold: this.failureCountThreshold,
             integrations: this.integrations,
             category: sanitizeTextInput(this.category),
+            ignoreConnectivityCheck: this.ignoreConnectivityCheck,
             ...this.typeRequestBody(),
             ...(this.isUpdate ? {} : {enabled: true}),
         };
