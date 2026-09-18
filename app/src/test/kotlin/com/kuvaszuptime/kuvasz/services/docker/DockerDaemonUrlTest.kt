@@ -109,6 +109,50 @@ class DockerDaemonUrlTest : BehaviorSpec({
             }
         }
 
+        `when`("its host name has an underscore, like a Compose service name") {
+            val address = DockerDaemonUrl.parse("tcp://docker_proxy:2375", tls = null)
+
+            then("it should still be parsed, although java.net.URI does not consider it a host name") {
+                address shouldBe DockerDaemonAddress.Tcp(
+                    host = "docker_proxy",
+                    port = DEFAULT_PLAIN_PORT,
+                    secure = false,
+                    tls = null,
+                )
+            }
+        }
+
+        `when`("its host name has an underscore and there is no port") {
+            val address = DockerDaemonUrl.parse("https://docker_proxy", tls = null)
+
+            then("it should fall back to the default port of the scheme") {
+                address.shouldBeInstanceOf<DockerDaemonAddress.Tcp>()
+                address.host shouldBe "docker_proxy"
+                address.port shouldBe DEFAULT_TLS_PORT
+            }
+        }
+
+        `when`("its port is out of range") {
+            val exception = shouldThrow<DockerHostConfigException> {
+                DockerDaemonUrl.parse("tcp://10.0.0.5:99999", tls = null)
+            }
+
+            then("it should be rejected at startup rather than failing every check") {
+                exception.message shouldContain "has an invalid port [99999]"
+                exception.message shouldContain "Expected one between 1 and 65535"
+            }
+        }
+
+        `when`("its underscored host name comes with port 0") {
+            val exception = shouldThrow<DockerHostConfigException> {
+                DockerDaemonUrl.parse("tcp://docker_proxy:0", tls = null)
+            }
+
+            then("the lenient parsing should be range-checked too") {
+                exception.message shouldContain "has an invalid port [0]"
+            }
+        }
+
         `when`("its port is not numeric, so the authority cannot be parsed into a host") {
             val exception = shouldThrow<DockerHostConfigException> {
                 DockerDaemonUrl.parse("tcp://10.0.0.5:not-a-port", tls = null)
@@ -180,8 +224,9 @@ class DockerDaemonUrlTest : BehaviorSpec({
                 DockerDaemonUrl.parse("ftp://10.0.0.5", tls = null)
             }
 
-            then("it should be rejected") {
+            then("it should be rejected, listing every supported scheme") {
                 exception.message shouldContain "unsupported scheme [ftp]"
+                exception.message shouldContain "Expected one of: [unix://, tcp://, http://, https://]"
             }
         }
 
