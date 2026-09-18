@@ -1,4 +1,4 @@
-## 4.5.0 <small>2026-09-17</small> { id="4.5.0" data-toc-label="4.5.0" }
+## 4.5.0 <small>unreleased</small> { id="4.5.0" data-toc-label="4.5.0" }
 
 ### Features
 
