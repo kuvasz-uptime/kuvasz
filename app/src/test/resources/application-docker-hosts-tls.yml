@@ -1,0 +1,16 @@
+docker-hosts:
+  - name: "mtls"
+    url: "tcp://10.0.0.5:2376"
+    tls:
+      ca: "${docker-test-tls-dir}/ca.pem"
+      cert: "${docker-test-tls-dir}/cert.pem"
+      key: "${docker-test-tls-dir}/key.pem"
+  - name: "ca-only"
+    url: "tcp://10.0.0.6"
+    tls:
+      ca: "${docker-test-tls-dir}/ca.pem"
+  - name: "client-cert-only"
+    url: "https://10.0.0.7"
+    tls:
+      cert: "${docker-test-tls-dir}/cert.pem"
+      key: "${docker-test-tls-dir}/key.pem"

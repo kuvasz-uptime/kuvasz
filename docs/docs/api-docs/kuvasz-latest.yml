@@ -18,6 +18,7 @@ tags:
 - name: DNS monitors
 - name: Incidents
 - name: Integrations
+- name: Docker hosts
 - name: Maintenance windows
 - name: Status pages
 - name: Settings
@@ -296,6 +297,24 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/DnsUptimeEventDto"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/docker-hosts:
+    get:
+      tags:
+      - Docker hosts
+      summary: Returns all the configured Docker hosts
+      operationId: getDockerHosts
+      responses:
+        "200":
+          description: The list of configured Docker hosts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DockerHost"
       security:
       - apiKey: []
       - bearerAuth: []
@@ -3142,6 +3161,24 @@ components:
           type: string
           description: The timestamp when the uptime event was updated
           format: date-time
+    DockerHost:
+      required:
+      - name
+      - url
+      type: object
+      properties:
+        name:
+          type: string
+          description: "The unique name of the Docker host, referenced by Docker monitors"
+          example: vps-1
+        url:
+          type: string
+          description: The URL of the Docker daemon
+          example: tcp://10.0.0.5:2376
+        tlsEnabled:
+          type: boolean
+          description: Whether the connection to the daemon is TLS encrypted
+      description: "A Docker daemon Kuvasz can reach, configured via YAML"
     EmailNotificationConfigDto:
       required:
       - enabled

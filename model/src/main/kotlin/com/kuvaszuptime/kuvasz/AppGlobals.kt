@@ -22,6 +22,7 @@ data class AppGlobals(
     val configuredIntegrations: IntegrationMap,
     val enabledIntegrations: IntegrationMap,
     val configuredIntegrationsByType: Map<IntegrationType, Set<IntegrationConfig>>,
+    val configuredDockerHosts: List<String>,
     val editabilityState: EditabilityState,
     val versionInfo: () -> VersionInfo,
     val connectivityStatus: () -> ConnectivityStatus?,

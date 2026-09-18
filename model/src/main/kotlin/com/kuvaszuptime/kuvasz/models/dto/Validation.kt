@@ -69,6 +69,11 @@ object IntegrationValidationMessages {
     const val WEBHOOK_URL_NOT_BLANK = "Webhook integration URL must not be blank"
 }
 
+object DockerHostValidationMessages {
+    const val NAME_NOT_BLANK = "The name of a Docker host cannot be blank"
+    const val URL_NOT_BLANK = "The URL of a Docker host cannot be blank"
+}
+
 object MonitorValidationMessages {
     const val NAME_NOT_BLANK = "Monitor name must not be blank"
     const val CATEGORY_MAX_SIZE = "Monitor category must be at most {max} characters long"
