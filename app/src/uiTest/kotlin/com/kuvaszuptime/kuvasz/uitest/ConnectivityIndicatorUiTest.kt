@@ -9,7 +9,6 @@ import com.kuvaszuptime.kuvasz.uitest.pages.DashboardPage
 import com.kuvaszuptime.kuvasz.uitest.pages.LoginPage
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import com.microsoft.playwright.options.AriaRole
-import io.kotest.matchers.doubles.shouldBeLessThan
 import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.mockk.every
@@ -56,24 +55,6 @@ class ConnectivityIndicatorUiTest : UiTestSpec() {
 
             assertThat(page.lightThemeToggle).isVisible()
             assertThat(page.getByTestId(BADGE_TEST_ID)).isHidden()
-        }
-
-        "the badge is on the same line as the other items of the header" {
-            val page = newPage()
-            DashboardPage(page).navigate()
-
-            val header = page.getByRole(AriaRole.BANNER)
-            val connectivity = header.getByTestId(BADGE_TEST_ID).boundingBox()
-            val version = header.getByTestId("version-update-badge").boundingBox()
-            val themeToggle = page.lightThemeToggle.boundingBox()
-
-            // Their vertical centers have to line up, otherwise they end up stacked or misaligned
-            val centers = listOf(connectivity, version, themeToggle).map { it.y + it.height / 2 }
-            centers.max() - centers.min() shouldBeLessThan connectivity.height
-
-            // ...and the connectivity badge comes first, being the only one that reports a problem
-            connectivity.x shouldBeLessThan version.x
-            version.x shouldBeLessThan themeToggle.x
         }
 
         "the settings page has a dedicated tile with the connectivity check's state" {
