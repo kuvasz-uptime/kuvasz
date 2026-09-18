@@ -23,11 +23,14 @@ private fun readableTempFile(prefix: String): Path =
 
 class DockerHostRegistryTest : BehaviorSpec({
 
+    val tlsDir = Files.createTempDirectory("docker-tls").also { it.toFile().deleteOnExit() }
+    val pki = TestPki.generate(tlsDir)
+
     given("a valid docker-hosts configuration") {
 
-        val ca = readableTempFile("ca")
-        val cert = readableTempFile("cert")
-        val key = readableTempFile("key")
+        val ca = pki.caPem
+        val cert = pki.clientCertPem
+        val key = pki.clientKeyPem
 
         val ctx = testAppContext(
             mapOf(
@@ -84,10 +87,6 @@ class DockerHostRegistryTest : BehaviorSpec({
 
     given("a docker-hosts configuration defined in YAML with TLS blocks") {
 
-        val tlsDir = Files.createTempDirectory("docker-tls").also { it.toFile().deleteOnExit() }
-        listOf("ca.pem", "cert.pem", "key.pem").forEach {
-            Files.createFile(tlsDir.resolve(it)).toFile().deleteOnExit()
-        }
         val registry = testAppContext(mapOf(DOCKER_TLS_DIR_PROPERTY to tlsDir.toString()), DOCKER_HOSTS_TLS)
             .getBean<DockerHostRegistry>()
 
@@ -251,7 +250,7 @@ class DockerHostRegistryTest : BehaviorSpec({
                     "docker-hosts" to listOf(
                         mapOf(
                             "name" to "vps-1", "url" to "tcp://10.0.0.5:2376", "tls" to mapOf(
-                                "ca" to readableTempFile("ca").toString(),
+                                "ca" to pki.caPem.toString(),
                             )
                         ),
                     )

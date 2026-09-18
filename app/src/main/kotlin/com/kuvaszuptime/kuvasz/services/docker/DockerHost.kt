@@ -52,6 +52,8 @@ internal object DockerDaemonUrl {
 
     private const val DEFAULT_PLAIN_PORT = 2375
     private const val DEFAULT_TLS_PORT = 2376
+    private const val MIN_PORT = 1
+    private const val MAX_PORT = 65_535
 
     private const val TLS_CA = "ca"
     private const val TLS_CERT = "cert"
@@ -62,7 +64,11 @@ internal object DockerDaemonUrl {
     private const val HTTP_SCHEME = "http"
     private const val HTTPS_SCHEME = "https"
 
-    private val SUPPORTED_SCHEMES = listOf(UNIX_SCHEME, TCP_SCHEME, HTTPS_SCHEME, HTTPS_SCHEME).map { "$it://" }
+    private val SUPPORTED_SCHEMES = listOf(UNIX_SCHEME, TCP_SCHEME, HTTP_SCHEME, HTTPS_SCHEME).map { "$it://" }
+
+    // java.net.URI leaves the host empty for a name that is not an RFC 2396 hostname, which rules out underscores,
+    // although a Compose service name like docker_proxy is a perfectly resolvable host on a Docker network
+    private val UNDERSCORED_AUTHORITY = Regex("([A-Za-z0-9._-]+)(?::([0-9]{1,5}))?")
 
     fun parse(url: String, tls: DockerTlsMaterial?): DockerDaemonAddress {
         val uri = url.toUri()
@@ -125,12 +131,27 @@ internal object DockerDaemonUrl {
     }
 
     private fun parseTcp(uri: URI, secure: Boolean, tls: DockerTlsMaterial?): DockerDaemonAddress.Tcp {
-        val host = uri.host
+        val (host, explicitPort) = uri.hostAndPort()
         if (host.isNullOrBlank()) {
             throw DockerHostConfigException("[$uri] does not contain a host name.")
         }
-        val port = uri.port.takeIf { it != -1 } ?: if (secure) DEFAULT_TLS_PORT else DEFAULT_PLAIN_PORT
+        val port = explicitPort.takeIf { it != -1 } ?: if (secure) DEFAULT_TLS_PORT else DEFAULT_PLAIN_PORT
+        // Neither java.net.URI nor the lenient authority check range-checks the port, which would otherwise only
+        // surface at the first check
+        if (port !in MIN_PORT..MAX_PORT) {
+            throw DockerHostConfigException(
+                "[$uri] has an invalid port [$port]. Expected one between $MIN_PORT and $MAX_PORT."
+            )
+        }
         return DockerDaemonAddress.Tcp(host = host, port = port, secure = secure, tls = tls)
+    }
+
+    private fun URI.hostAndPort(): Pair<String?, Int> {
+        if (host != null) return host to port
+        return authority?.let(UNDERSCORED_AUTHORITY::matchEntire)
+            ?.destructured
+            ?.let { (name, portDigits) -> name to (portDigits.toIntOrNull() ?: -1) }
+            ?: (null to -1)
     }
 
     /**
