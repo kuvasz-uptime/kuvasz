@@ -3,6 +3,8 @@ package com.kuvaszuptime.kuvasz.handlers
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
@@ -73,6 +75,8 @@ private fun UptimeMonitorEvent.toIntegrationEventType() = when (this) {
     is TcpMonitorUpEvent -> IntegrationEventType.TCP_UP
     is DnsMonitorDownEvent -> IntegrationEventType.DNS_DOWN
     is DnsMonitorUpEvent -> IntegrationEventType.DNS_UP
+    is DockerMonitorDownEvent -> IntegrationEventType.DOCKER_DOWN
+    is DockerMonitorUpEvent -> IntegrationEventType.DOCKER_UP
 }
 
 private fun SSLMonitorEvent.toIntegrationEventType() = when (this) {

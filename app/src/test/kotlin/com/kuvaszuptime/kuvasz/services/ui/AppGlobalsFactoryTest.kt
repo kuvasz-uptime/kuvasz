@@ -77,6 +77,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 globals.editabilityState.areStatusPagesReadOnly() shouldBe false
                 globals.editabilityState.arePushMonitorsReadOnly() shouldBe false
                 globals.editabilityState.areMaintenanceWindowsReadOnly() shouldBe false
+                globals.editabilityState.areDockerMonitorsReadOnly() shouldBe false
             }
         }
 
@@ -105,6 +106,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 globals.editabilityState.areStatusPagesReadOnly() shouldBe false
                 globals.editabilityState.arePushMonitorsReadOnly() shouldBe false
                 globals.editabilityState.areMaintenanceWindowsReadOnly() shouldBe false
+                globals.editabilityState.areDockerMonitorsReadOnly() shouldBe false
             }
         }
 
@@ -133,6 +135,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 globals.editabilityState.areStatusPagesReadOnly() shouldBe false
                 globals.editabilityState.arePushMonitorsReadOnly() shouldBe false
                 globals.editabilityState.areMaintenanceWindowsReadOnly() shouldBe false
+                globals.editabilityState.areDockerMonitorsReadOnly() shouldBe false
             }
         }
 
@@ -142,6 +145,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
             appConfig.disablePushMonitorExternalWrite()
             appConfig.disableStatusPageExternalWrite()
             appConfig.disableMaintenanceWindowExternalWrite()
+            appConfig.disableDockerMonitorExternalWrite()
             val globals = AppGlobalsFactory().appGlobals(
                 null,
                 appConfig,
@@ -160,6 +164,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 globals.editabilityState.areStatusPagesReadOnly() shouldBe true
                 globals.editabilityState.arePushMonitorsReadOnly() shouldBe true
                 globals.editabilityState.areMaintenanceWindowsReadOnly() shouldBe true
+                globals.editabilityState.areDockerMonitorsReadOnly() shouldBe true
             }
         }
 

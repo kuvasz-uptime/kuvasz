@@ -4,11 +4,13 @@ import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.monitor.InvalidMonitorIdException
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.dns.monitorId
+import com.kuvaszuptime.kuvasz.models.monitor.docker.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.http.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.icmp.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.push.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.tcp.monitorId
 import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.DockerMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
@@ -22,6 +24,7 @@ class MonitorIdValidator(
     private val icmpMonitorRepository: IcmpMonitorRepository,
     private val tcpMonitorRepository: TcpMonitorRepository,
     private val dnsMonitorRepository: DnsMonitorRepository,
+    private val dockerMonitorRepository: DockerMonitorRepository,
 ) {
 
     private fun MonitorID.checkIfConfigured(): MonitorID? =
@@ -31,6 +34,7 @@ class MonitorIdValidator(
             MonitorType.ICMP -> icmpMonitorRepository.findByName(name)?.monitorId()
             MonitorType.TCP -> tcpMonitorRepository.findByName(name)?.monitorId()
             MonitorType.DNS -> dnsMonitorRepository.findByName(name)?.monitorId()
+            MonitorType.DOCKER -> dockerMonitorRepository.findByName(name)?.monitorId()
         }
 
     /**

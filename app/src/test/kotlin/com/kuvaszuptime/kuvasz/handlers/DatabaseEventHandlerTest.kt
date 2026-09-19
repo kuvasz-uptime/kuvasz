@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
+import com.kuvaszuptime.kuvasz.mocks.createDockerMonitor
 import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
@@ -17,10 +18,14 @@ import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.TcpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.TcpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
 import com.kuvaszuptime.kuvasz.repositories.DnsUptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.DockerMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.DockerUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
@@ -58,10 +63,12 @@ class DatabaseEventHandlerTest(
     icmpUptimeEventRepository: IcmpUptimeEventRepository,
     tcpUptimeEventRepository: TcpUptimeEventRepository,
     dnsUptimeEventRepository: DnsUptimeEventRepository,
+    dockerUptimeEventRepository: DockerUptimeEventRepository,
     httpMonitorRepository: HttpMonitorRepository,
     pushMonitorRepository: PushMonitorRepository,
     icmpMonitorRepository: IcmpMonitorRepository,
     tcpMonitorRepository: TcpMonitorRepository,
+    dockerMonitorRepository: DockerMonitorRepository,
     sslEventRepository: SSLEventRepository,
     dslContext: DSLContext,
 ) : DatabaseBehaviorSpec() {
@@ -71,6 +78,7 @@ class DatabaseEventHandlerTest(
         val icmpUptimeEventRepositorySpy = spyk(icmpUptimeEventRepository)
         val tcpUptimeEventRepositorySpy = spyk(tcpUptimeEventRepository)
         val dnsUptimeEventRepositorySpy = spyk(dnsUptimeEventRepository)
+        val dockerUptimeEventRepositorySpy = spyk(dockerUptimeEventRepository)
         val sslEventRepositorySpy = spyk(sslEventRepository)
         val dbEventHandler = DatabaseEventHandler(
             httpUptimeEventRepositorySpy,
@@ -78,6 +86,7 @@ class DatabaseEventHandlerTest(
             icmpUptimeEventRepositorySpy,
             tcpUptimeEventRepositorySpy,
             dnsUptimeEventRepositorySpy,
+            dockerUptimeEventRepositorySpy,
             sslEventRepositorySpy,
             dslContext,
         )
@@ -896,6 +905,195 @@ class DatabaseEventHandlerTest(
 
                     verifyOrder {
                         tcpUptimeEventRepositorySpy.updateEvent(firstUptimeRecord.id, any())
+                    }
+
+                    uptimeRecords.shouldHaveSize(1).forOne { event ->
+                        event.status shouldBe UptimeStatus.DOWN
+                        event.endedAt.shouldBeNull()
+                        event.updatedAt shouldBeAfter firstUptimeRecord.updatedAt
+                        event.error shouldBe "Reason: second error"
+                    }
+                }
+            }
+        }
+
+        given("the DatabaseEventHandler - DOCKER UPTIME events") {
+            `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
+                val monitor = createDockerMonitor(dockerMonitorRepository)
+                val event = DockerMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                )
+
+                dbEventHandler.handleUptimeMonitorEvent(event)
+
+                then("it should insert a new UptimeEvent record with status UP") {
+                    val expectedUptimeRecord = dockerUptimeEventRepository.fetchByMonitorId(event.monitor.id).single()
+
+                    verify(exactly = 1) { dockerUptimeEventRepositorySpy.insertFromMonitorEvent(event, null) }
+                    verify(exactly = 0) { dockerUptimeEventRepositorySpy.endEventById(any(), any(), any()) }
+
+                    expectedUptimeRecord.status shouldBe UptimeStatus.UP
+                    expectedUptimeRecord.startedAt shouldBe event.dispatchedAt
+                    expectedUptimeRecord.endedAt shouldBe null
+                    expectedUptimeRecord.updatedAt shouldBe event.dispatchedAt
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
+                val monitor = createDockerMonitor(dockerMonitorRepository)
+                val event = DockerMonitorDownEvent(
+                    monitor = monitor,
+                    error = "The container exited (137)",
+                    previousEvent = null,
+                )
+                dbEventHandler.handleUptimeMonitorEvent(event)
+
+                then("it should insert a new UptimeEvent record with status DOWN") {
+                    val expectedUptimeRecord = dockerUptimeEventRepository.fetchByMonitorId(event.monitor.id).single()
+
+                    verify(exactly = 1) { dockerUptimeEventRepositorySpy.insertFromMonitorEvent(event, null) }
+                    verify(exactly = 0) { dockerUptimeEventRepositorySpy.endEventById(any(), any(), any()) }
+
+                    expectedUptimeRecord.status shouldBe UptimeStatus.DOWN
+                    expectedUptimeRecord.startedAt shouldBe event.dispatchedAt
+                    expectedUptimeRecord.endedAt shouldBe null
+                    expectedUptimeRecord.updatedAt shouldBe event.dispatchedAt
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with the same status") {
+                val monitor = createDockerMonitor(dockerMonitorRepository)
+                val firstEvent = DockerMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                )
+                dbEventHandler.handleUptimeMonitorEvent(firstEvent)
+                val firstUptimeRecord = dockerUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = DockerMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord,
+                    latencyInMs = 8,
+                )
+                dbEventHandler.handleUptimeMonitorEvent(secondEvent)
+
+                then("it should not insert a new UptimeEvent record") {
+                    val expectedUptimeRecord = dockerUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                    verify(exactly = 1) { dockerUptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any()) }
+                    verify(exactly = 0) { dockerUptimeEventRepositorySpy.endEventById(any(), any(), any()) }
+
+                    expectedUptimeRecord.status shouldBe UptimeStatus.UP
+                    expectedUptimeRecord.endedAt shouldBe null
+                    expectedUptimeRecord.updatedAt shouldBe secondEvent.dispatchedAt
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with different status") {
+                val monitor = createDockerMonitor(dockerMonitorRepository)
+                val firstEvent = DockerMonitorDownEvent(
+                    monitor = monitor,
+                    error = "The container exited (137)",
+                    previousEvent = null,
+                )
+                dbEventHandler.handleUptimeMonitorEvent(firstEvent)
+                val firstUptimeRecord = dockerUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = DockerMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord,
+                    latencyInMs = 5,
+                )
+                dbEventHandler.handleUptimeMonitorEvent(secondEvent)
+
+                then("it should create a new UptimeEvent and end the previous one") {
+                    val uptimeRecords = dockerUptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.id }
+
+                    verifyOrder {
+                        dockerUptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any())
+                        dockerUptimeEventRepositorySpy.endEventById(
+                            eventId = firstUptimeRecord.id,
+                            endedAt = secondEvent.dispatchedAt,
+                            ctx = any()
+                        )
+                        dockerUptimeEventRepositorySpy.insertFromMonitorEvent(secondEvent, any())
+                    }
+
+                    uptimeRecords[0].status shouldBe UptimeStatus.DOWN
+                    uptimeRecords[0].endedAt shouldBe secondEvent.dispatchedAt
+                    uptimeRecords[0].updatedAt shouldBe secondEvent.dispatchedAt
+                    uptimeRecords[1].status shouldBe UptimeStatus.UP
+                    uptimeRecords[1].endedAt shouldBe null
+                    uptimeRecords[1].updatedAt shouldBe secondEvent.dispatchedAt
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with different status") {
+                val monitor = createDockerMonitor(dockerMonitorRepository)
+                val firstEvent = DockerMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                )
+                dbEventHandler.handleUptimeMonitorEvent(firstEvent)
+                val firstUptimeRecord = dockerUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = DockerMonitorDownEvent(
+                    monitor = monitor,
+                    error = "The container exited (137)",
+                    previousEvent = firstUptimeRecord,
+                )
+                dbEventHandler.handleUptimeMonitorEvent(secondEvent)
+
+                then("it should create a new UptimeEvent record and end the previous one") {
+                    val uptimeRecords = dockerUptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.id }
+
+                    verifyOrder {
+                        dockerUptimeEventRepositorySpy.insertFromMonitorEvent(firstEvent, any())
+                        dockerUptimeEventRepositorySpy.endEventById(
+                            eventId = firstUptimeRecord.id,
+                            endedAt = secondEvent.dispatchedAt,
+                            ctx = any()
+                        )
+                        dockerUptimeEventRepositorySpy.insertFromMonitorEvent(secondEvent, any())
+                    }
+
+                    uptimeRecords[0].status shouldBe UptimeStatus.UP
+                    uptimeRecords[0].endedAt shouldBe secondEvent.dispatchedAt
+                    uptimeRecords[0].updatedAt shouldBe secondEvent.dispatchedAt
+                    uptimeRecords[1].status shouldBe UptimeStatus.DOWN
+                    uptimeRecords[1].endedAt shouldBe null
+                    uptimeRecords[1].updatedAt shouldBe secondEvent.dispatchedAt
+                    uptimeRecords[1].error shouldBe "Reason: The container exited (137)"
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with the same status") {
+                val monitor = createDockerMonitor(dockerMonitorRepository)
+                val firstEvent = DockerMonitorDownEvent(
+                    monitor = monitor,
+                    error = "first error",
+                    previousEvent = null,
+                )
+                dbEventHandler.handleUptimeMonitorEvent(firstEvent)
+                val firstUptimeRecord = dockerUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                delay(1000.milliseconds)
+
+                val secondEvent = DockerMonitorDownEvent(
+                    monitor = monitor,
+                    error = "second error",
+                    previousEvent = firstUptimeRecord,
+                )
+                dbEventHandler.handleUptimeMonitorEvent(secondEvent)
+
+                then("it should update the updatedAt timestamp on the previous event") {
+                    val uptimeRecords = dockerUptimeEventRepository.fetchByMonitorId(monitor.id)
+
+                    verifyOrder {
+                        dockerUptimeEventRepositorySpy.updateEvent(firstUptimeRecord.id, any())
                     }
 
                     uptimeRecords.shouldHaveSize(1).forOne { event ->
