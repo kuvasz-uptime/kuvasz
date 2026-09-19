@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.repositories
 
 import com.kuvaszuptime.kuvasz.jooq.MonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.DnsMonitor.DNS_MONITOR
+import com.kuvaszuptime.kuvasz.jooq.tables.DockerMonitor.DOCKER_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HTTP_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.IcmpMonitor.ICMP_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor.PUSH_MONITOR
@@ -55,10 +56,16 @@ class SharedMonitorRepository(private val dslContext: DSLContext) {
                     .where(DNS_MONITOR.ID.eq(monitorId.id))
                     .fetchOne()
             }
+
+            MonitorType.DOCKER -> {
+                ctx.selectFrom(DOCKER_MONITOR)
+                    .where(DOCKER_MONITOR.ID.eq(monitorId.id))
+                    .fetchOne()
+            }
         } as R?
 
     companion object {
         private val MONITOR_TABLES: List<Table<*>> =
-            listOf(HTTP_MONITOR, PUSH_MONITOR, ICMP_MONITOR, TCP_MONITOR, DNS_MONITOR)
+            listOf(HTTP_MONITOR, PUSH_MONITOR, ICMP_MONITOR, TCP_MONITOR, DNS_MONITOR, DOCKER_MONITOR)
     }
 }

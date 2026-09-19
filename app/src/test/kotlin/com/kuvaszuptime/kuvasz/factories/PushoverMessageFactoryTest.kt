@@ -3,6 +3,8 @@ package com.kuvaszuptime.kuvasz.factories
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.DockerMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.DockerUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.MaintenanceWindowRecord
@@ -13,6 +15,8 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
@@ -200,6 +204,8 @@ class PushoverMessageFactoryTest(
         val icmpMonitor = IcmpMonitorRecord().setId(3333).setName("test_icmp_monitor").setHost("example.com")
         val tcpMonitor = TcpMonitorRecord().setId(4444).setName("test_tcp_monitor").setHost("example.com")
         val dnsMonitor = DnsMonitorRecord().setId(5555).setName("test_dns_monitor").setHost("example.com")
+        val dockerMonitor = DockerMonitorRecord().setId(7777).setName("test_docker_monitor")
+            .setDockerHost("vps-1").setContainer("my-app")
         val pushMonitor = PushMonitorRecord().setId(6666).setName("test_push_monitor")
 
         should("carry the latency and the packet loss of an ICMP event") {
@@ -230,6 +236,28 @@ class PushoverMessageFactoryTest(
                 emptyList()
             factory.fromUptimeEvent(PushMonitorDownEvent(pushMonitor, "push error", null)).detailLines() shouldBe
                 emptyList()
+        }
+
+        // The Docker API latency times the daemon, not the container, so it is the one type whose up event carries
+        // no latency line at all
+        should("omit the API latency of a Docker event") {
+            factory.fromUptimeEvent(DockerMonitorUpEvent(dockerMonitor, null, 300)).detailLines() shouldBe emptyList()
+        }
+
+        should("not surface the error of a Docker down event either") {
+            factory
+                .fromUptimeEvent(DockerMonitorDownEvent(dockerMonitor, "The container exited (137)", null))
+                .detailLines() shouldBe emptyList()
+        }
+
+        should("carry the duration of the previous, ended event of a Docker monitor") {
+            val previousDockerEvent = DockerUptimeEventRecord()
+                .setStatus(UptimeStatus.DOWN)
+                .setStartedAt(getCurrentTimestamp().minusMinutes(30))
+            val event = DockerMonitorUpEvent(dockerMonitor, previousDockerEvent, 300)
+            val duration = previousDockerEvent.startedAt.diffToDuration(event.dispatchedAt).toDurationString()
+
+            factory.fromUptimeEvent(event).detailLines() shouldBe listOf("Was down for $duration")
         }
 
         should("carry the duration of the previous, ended event") {

@@ -46,6 +46,7 @@ class AppGlobalsFactory {
             areIcmpMonitorsReadOnly = { appConfig.isIcmpMonitorExternalWriteDisabled() },
             areTcpMonitorsReadOnly = { appConfig.isTcpMonitorExternalWriteDisabled() },
             areDnsMonitorsReadOnly = { appConfig.isDnsMonitorExternalWriteDisabled() },
+            areDockerMonitorsReadOnly = { appConfig.isDockerMonitorExternalWriteDisabled() },
             areStatusPagesReadOnly = { appConfig.isStatusPageExternalWriteDisabled() },
             areMaintenanceWindowsReadOnly = { appConfig.isMaintenanceWindowExternalWriteDisabled() },
         ),

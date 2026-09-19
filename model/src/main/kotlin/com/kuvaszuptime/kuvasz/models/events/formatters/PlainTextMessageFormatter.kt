@@ -2,6 +2,8 @@ package com.kuvaszuptime.kuvasz.models.events.formatters
 
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
@@ -34,6 +36,8 @@ object PlainTextMessageFormatter : TextMessageFormatter {
             is TcpMonitorDownEvent -> event.toParts()
             is DnsMonitorUpEvent -> event.toParts()
             is DnsMonitorDownEvent -> event.toParts()
+            is DockerMonitorUpEvent -> event.toParts()
+            is DockerMonitorDownEvent -> event.toParts()
         }
 
         return messageParts.assemble()
@@ -61,6 +65,12 @@ object PlainTextMessageFormatter : TextMessageFormatter {
         toStructuredMessage().run { listOfNotNull(summary, latency, previousDownTime) }
 
     private fun TcpMonitorDownEvent.toParts() =
+        toStructuredMessage().run { listOfNotNull(summary, error, previousUpTime) }
+
+    private fun DockerMonitorUpEvent.toParts() =
+        toStructuredMessage().run { listOfNotNull(summary, previousDownTime) }
+
+    private fun DockerMonitorDownEvent.toParts() =
         toStructuredMessage().run { listOfNotNull(summary, error, previousUpTime) }
 
     private fun DnsMonitorUpEvent.toParts() =

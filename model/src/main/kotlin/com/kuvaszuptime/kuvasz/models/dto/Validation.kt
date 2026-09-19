@@ -116,6 +116,8 @@ object MonitorValidationMessages {
     const val RESOLVER_PORT_NOT_NULL = "Resolver port must not be null"
     const val RESOLVER_PORT_MIN = "Resolver port must be at least {value}"
     const val RESOLVER_PORT_MAX = "Resolver port must be at most {value}"
+    const val DOCKER_HOST_NOT_BLANK = "Docker host must not be blank"
+    const val CONTAINER_NOT_BLANK = "Container must not be blank"
     const val DNS_RESPONSE_CODE_REQUIRES_NO_MATCHERS =
         "Record matchers must be empty when the expected response code is not NOERROR, because you cannot assert " +
             "on the records of a name you expect not to resolve"

@@ -42,6 +42,7 @@ data class AppGlobals(
         val areIcmpMonitorsReadOnly: () -> Boolean,
         val areTcpMonitorsReadOnly: () -> Boolean,
         val areDnsMonitorsReadOnly: () -> Boolean,
+        val areDockerMonitorsReadOnly: () -> Boolean,
         val areStatusPagesReadOnly: () -> Boolean,
         val areMaintenanceWindowsReadOnly: () -> Boolean,
     ) {
@@ -51,6 +52,7 @@ data class AppGlobals(
             MonitorType.ICMP -> areIcmpMonitorsReadOnly()
             MonitorType.TCP -> areTcpMonitorsReadOnly()
             MonitorType.DNS -> areDnsMonitorsReadOnly()
+            MonitorType.DOCKER -> areDockerMonitorsReadOnly()
         }
 
         fun areAllMonitorsReadOnly(): Boolean = MonitorType.entries.all { areMonitorsReadOnly(it) }

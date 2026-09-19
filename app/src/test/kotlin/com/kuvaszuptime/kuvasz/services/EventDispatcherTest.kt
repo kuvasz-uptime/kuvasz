@@ -4,6 +4,7 @@ package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.mocks.createDnsMonitor
+import com.kuvaszuptime.kuvasz.mocks.createDockerMonitor
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
@@ -12,6 +13,8 @@ import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
@@ -35,6 +38,7 @@ import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.DockerMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
@@ -50,6 +54,7 @@ class EventDispatcherTest(
     private val pushMonitorRepository: PushMonitorRepository,
     private val icmpMonitorRepository: IcmpMonitorRepository,
     private val tcpMonitorRepository: TcpMonitorRepository,
+    private val dockerMonitorRepository: DockerMonitorRepository,
     private val dnsMonitorRepository: DnsMonitorRepository,
 ) : DatabaseBehaviorSpec() {
 
@@ -116,6 +121,7 @@ class EventDispatcherTest(
                 val icmpMonitor = createIcmpMonitor(icmpMonitorRepository)
                 val tcpMonitor = createTcpMonitor(tcpMonitorRepository)
                 val dnsMonitor = createDnsMonitor(dnsMonitorRepository)
+                val dockerMonitor = createDockerMonitor(dockerMonitorRepository)
 
                 val events = listOf(
                     HttpMonitorUpEvent(httpMonitor, HttpStatus.OK, latency = 100, previousEvent = null),
@@ -138,6 +144,12 @@ class EventDispatcherTest(
                     TcpMonitorDownEvent(tcpMonitor, error = "tcp error", previousEvent = null),
                     DnsMonitorUpEvent(dnsMonitor, previousEvent = null, latencyInMs = 5),
                     DnsMonitorDownEvent(dnsMonitor, error = "dns error", previousEvent = null),
+                    DockerMonitorUpEvent(dockerMonitor, previousEvent = null, latencyInMs = 5),
+                    DockerMonitorDownEvent(
+                        dockerMonitor,
+                        error = "The container exited (137)",
+                        previousEvent = null,
+                    ),
                 )
                 events.forEach { dispatcher.dispatch(it) }
 

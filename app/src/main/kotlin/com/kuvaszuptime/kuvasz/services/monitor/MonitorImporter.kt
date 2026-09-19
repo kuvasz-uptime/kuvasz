@@ -181,7 +181,7 @@ class MonitorImporter(
 
     private fun rescheduleChecksFor(monitorType: MonitorType) {
         when (monitorType) {
-            MonitorType.HTTP_SSL, MonitorType.TCP, MonitorType.ICMP, MonitorType.DNS -> {
+            MonitorType.HTTP_SSL, MonitorType.TCP, MonitorType.ICMP, MonitorType.DNS, MonitorType.DOCKER -> {
                 checkSchedulers.first { it.monitorType == monitorType }.run {
                     removeAllChecks()
                     initialize()
