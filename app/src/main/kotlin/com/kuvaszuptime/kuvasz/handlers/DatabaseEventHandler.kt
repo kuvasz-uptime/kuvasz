@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.jooq.UptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.events.DnsUptimeMonitorEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.PushUptimeMonitorEvent
@@ -9,6 +10,7 @@ import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.TcpUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.repositories.DnsUptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.DockerUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
@@ -25,6 +27,7 @@ class DatabaseEventHandler(
     private val icmpUptimeEventRepository: IcmpUptimeEventRepository,
     private val tcpUptimeEventRepository: TcpUptimeEventRepository,
     private val dnsUptimeEventRepository: DnsUptimeEventRepository,
+    private val dockerUptimeEventRepository: DockerUptimeEventRepository,
     private val sslEventRepository: SSLEventRepository,
     private val dslContext: DSLContext,
 ) {
@@ -98,6 +101,11 @@ class DatabaseEventHandler(
                 endedAt = currentEvent.dispatchedAt,
                 ctx = txCtx,
             )
+            is DockerUptimeMonitorEvent -> dockerUptimeEventRepository.endEventById(
+                eventId = previousEvent.id,
+                endedAt = currentEvent.dispatchedAt,
+                ctx = txCtx,
+            )
         }
 
     private fun insertUptimeEvent(currentEvent: UptimeMonitorEvent, txCtx: DSLContext? = null) =
@@ -107,6 +115,7 @@ class DatabaseEventHandler(
             is IcmpUptimeMonitorEvent -> icmpUptimeEventRepository.insertFromMonitorEvent(currentEvent, txCtx)
             is TcpUptimeMonitorEvent -> tcpUptimeEventRepository.insertFromMonitorEvent(currentEvent, txCtx)
             is DnsUptimeMonitorEvent -> dnsUptimeEventRepository.insertFromMonitorEvent(currentEvent, txCtx)
+            is DockerUptimeMonitorEvent -> dockerUptimeEventRepository.insertFromMonitorEvent(currentEvent, txCtx)
         }
 
     private fun updateEvent(currentEvent: UptimeMonitorEvent, previousEvent: UptimeEventRecord) =
@@ -116,6 +125,7 @@ class DatabaseEventHandler(
             is IcmpUptimeMonitorEvent -> icmpUptimeEventRepository.updateEvent(previousEvent.id, currentEvent)
             is TcpUptimeMonitorEvent -> tcpUptimeEventRepository.updateEvent(previousEvent.id, currentEvent)
             is DnsUptimeMonitorEvent -> dnsUptimeEventRepository.updateEvent(previousEvent.id, currentEvent)
+            is DockerUptimeMonitorEvent -> dockerUptimeEventRepository.updateEvent(previousEvent.id, currentEvent)
         }
 
     fun handleSSLMonitorEvent(currentEvent: SSLMonitorEvent) {

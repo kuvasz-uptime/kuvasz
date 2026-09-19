@@ -45,6 +45,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
         Tag(name = OpenApiTags.DNS_MONITORS),
         Tag(name = OpenApiTags.INCIDENTS),
         Tag(name = OpenApiTags.INTEGRATIONS),
+        Tag(name = OpenApiTags.DOCKER_HOSTS),
         Tag(name = OpenApiTags.MAINTENANCE_WINDOWS),
         Tag(name = OpenApiTags.STATUS_PAGES),
         Tag(name = OpenApiTags.SETTINGS),

@@ -3,6 +3,8 @@ package com.kuvaszuptime.kuvasz.services
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
@@ -44,6 +46,8 @@ class EventDispatcher {
     private val tcpDownEvents = serializedSubject<TcpMonitorDownEvent>()
     private val dnsUpEvents = serializedSubject<DnsMonitorUpEvent>()
     private val dnsDownEvents = serializedSubject<DnsMonitorDownEvent>()
+    private val dockerUpEvents = serializedSubject<DockerMonitorUpEvent>()
+    private val dockerDownEvents = serializedSubject<DockerMonitorDownEvent>()
     private val httpRedirectEvents = serializedSubject<HttpRedirectEvent>()
     private val dnsRecordsChangedEvents = serializedSubject<DnsRecordsChangedEvent>()
     private val sslValidEvents = serializedSubject<SSLValidEvent>()
@@ -55,13 +59,16 @@ class EventDispatcher {
 
     fun dispatch(event: MonitorEvent<*>) =
         when (event) {
-            is HttpMonitorUpEvent -> httpUpEvents.onNext(event)
-            is HttpMonitorDownEvent -> httpDownEvents.onNext(event)
+            is UptimeMonitorEvent -> dispatchUptimeEvent(event)
+            is SSLMonitorEvent -> dispatchSSLEvent(event)
             is HttpRedirectEvent -> httpRedirectEvents.onNext(event)
             is DnsRecordsChangedEvent -> dnsRecordsChangedEvents.onNext(event)
-            is SSLValidEvent -> sslValidEvents.onNext(event)
-            is SSLInvalidEvent -> sslInvalidEvents.onNext(event)
-            is SSLWillExpireEvent -> sslWillExpireEvents.onNext(event)
+        }
+
+    private fun dispatchUptimeEvent(event: UptimeMonitorEvent) =
+        when (event) {
+            is HttpMonitorUpEvent -> httpUpEvents.onNext(event)
+            is HttpMonitorDownEvent -> httpDownEvents.onNext(event)
             is PushMonitorDownEvent, is PushMonitorUpEvent -> pushUptimeEvents.onNext(event)
             is IcmpMonitorUpEvent -> icmpUpEvents.onNext(event)
             is IcmpMonitorDownEvent -> icmpDownEvents.onNext(event)
@@ -69,6 +76,15 @@ class EventDispatcher {
             is TcpMonitorDownEvent -> tcpDownEvents.onNext(event)
             is DnsMonitorUpEvent -> dnsUpEvents.onNext(event)
             is DnsMonitorDownEvent -> dnsDownEvents.onNext(event)
+            is DockerMonitorUpEvent -> dockerUpEvents.onNext(event)
+            is DockerMonitorDownEvent -> dockerDownEvents.onNext(event)
+        }
+
+    private fun dispatchSSLEvent(event: SSLMonitorEvent) =
+        when (event) {
+            is SSLValidEvent -> sslValidEvents.onNext(event)
+            is SSLInvalidEvent -> sslInvalidEvents.onNext(event)
+            is SSLWillExpireEvent -> sslWillExpireEvents.onNext(event)
         }
 
     fun dispatch(event: MonitorLifecycleEvent) {
@@ -118,6 +134,12 @@ class EventDispatcher {
     fun subscribeToDnsMonitorDownEvents(consumer: (DnsMonitorDownEvent) -> Unit): Disposable =
         dnsDownEvents.safeSubscribeOnIo(consumer)
 
+    fun subscribeToDockerMonitorUpEvents(consumer: (DockerMonitorUpEvent) -> Unit): Disposable =
+        dockerUpEvents.safeSubscribeOnIo(consumer)
+
+    fun subscribeToDockerMonitorDownEvents(consumer: (DockerMonitorDownEvent) -> Unit): Disposable =
+        dockerDownEvents.safeSubscribeOnIo(consumer)
+
     fun subscribeToHttpRedirectEvents(consumer: (HttpRedirectEvent) -> Unit): Disposable =
         httpRedirectEvents.safeSubscribeOnIo(consumer)
 
@@ -153,6 +175,8 @@ class EventDispatcher {
             subscribeToTcpMonitorDownEvents(consumer),
             subscribeToDnsMonitorUpEvents(consumer),
             subscribeToDnsMonitorDownEvents(consumer),
+            subscribeToDockerMonitorUpEvents(consumer),
+            subscribeToDockerMonitorDownEvents(consumer),
         )
 
     fun subscribeToSSLMonitorEvents(consumer: (SSLMonitorEvent) -> Unit): Disposable =

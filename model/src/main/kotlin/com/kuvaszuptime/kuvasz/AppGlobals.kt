@@ -22,6 +22,7 @@ data class AppGlobals(
     val configuredIntegrations: IntegrationMap,
     val enabledIntegrations: IntegrationMap,
     val configuredIntegrationsByType: Map<IntegrationType, Set<IntegrationConfig>>,
+    val configuredDockerHosts: List<String>,
     val editabilityState: EditabilityState,
     val versionInfo: () -> VersionInfo,
     val connectivityStatus: () -> ConnectivityStatus?,
@@ -41,6 +42,7 @@ data class AppGlobals(
         val areIcmpMonitorsReadOnly: () -> Boolean,
         val areTcpMonitorsReadOnly: () -> Boolean,
         val areDnsMonitorsReadOnly: () -> Boolean,
+        val areDockerMonitorsReadOnly: () -> Boolean,
         val areStatusPagesReadOnly: () -> Boolean,
         val areMaintenanceWindowsReadOnly: () -> Boolean,
     ) {
@@ -50,6 +52,7 @@ data class AppGlobals(
             MonitorType.ICMP -> areIcmpMonitorsReadOnly()
             MonitorType.TCP -> areTcpMonitorsReadOnly()
             MonitorType.DNS -> areDnsMonitorsReadOnly()
+            MonitorType.DOCKER -> areDockerMonitorsReadOnly()
         }
 
         fun areAllMonitorsReadOnly(): Boolean = MonitorType.entries.all { areMonitorsReadOnly(it) }

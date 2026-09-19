@@ -10,4 +10,5 @@ enum class IncidentType {
     ICMP,
     TCP,
     DNS,
+    DOCKER,
 }

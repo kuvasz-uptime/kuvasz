@@ -17,6 +17,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent.SSL_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.StatusPage.STATUS_PAGE
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMetricsLogRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.DockerMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
@@ -43,6 +44,7 @@ import com.kuvaszuptime.kuvasz.models.monitor.dns.toJsonNode
 import com.kuvaszuptime.kuvasz.models.monitor.http.toJsonNode
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.CertificateInfo
 import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.DockerMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
@@ -331,6 +333,34 @@ fun createTcpMonitor(
         .setUptimeCheckInterval(uptimeCheckInterval)
         .setTimeoutMs(timeoutMs)
         .setLatencyThresholdMs(latencyThresholdMs)
+        .setFailureCountThreshold(failureCountThreshold)
+        .setEnabled(enabled)
+        .setCreatedAt(getCurrentTimestamp())
+        .setIntegrations(integrations.toTypedArray())
+        .setMetricsHistoryEnabled(metricsHistoryEnabled)
+        .setCategory(category)
+    return repository.returningInsert(monitor)
+}
+
+fun createDockerMonitor(
+    repository: DockerMonitorRepository,
+    enabled: Boolean = true,
+    dockerHost: String = "local",
+    container: String = "my-app",
+    monitorName: String = randomClientSecret(),
+    uptimeCheckInterval: Int = 60,
+    timeoutMs: Int = 5000,
+    failureCountThreshold: Long = 1L,
+    integrations: List<IntegrationID> = emptyList(),
+    metricsHistoryEnabled: Boolean = true,
+    category: String? = null,
+): DockerMonitorRecord {
+    val monitor = DockerMonitorRecord()
+        .setName(monitorName)
+        .setDockerHost(dockerHost)
+        .setContainer(container)
+        .setUptimeCheckInterval(uptimeCheckInterval)
+        .setTimeoutMs(timeoutMs)
         .setFailureCountThreshold(failureCountThreshold)
         .setEnabled(enabled)
         .setCreatedAt(getCurrentTimestamp())

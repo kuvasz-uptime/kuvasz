@@ -4,6 +4,8 @@ import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsUptimeEventRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.DockerMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.DockerUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
@@ -15,6 +17,8 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
@@ -34,6 +38,8 @@ import com.kuvaszuptime.kuvasz.util.toDurationString
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.micronaut.http.HttpStatus
+
+private const val DOCKER_ERROR = "The container exited (137)"
 
 class SlackTextFormatterTest : BehaviorSpec(
     {
@@ -312,6 +318,85 @@ class SlackTextFormatterTest : BehaviorSpec(
                         previousEvent.startedAt.diffToDuration(event.dispatchedAt).toDurationString()
                     val expectedMessage =
                         "🚨 *Your monitor \"test_tcp_monitor\" is DOWN*\nWas up for $expectedDurationString"
+                    formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+        }
+
+        given("toFormattedMessage(event: UptimeMonitorEvent) - Docker") {
+
+            val dockerMonitor = DockerMonitorRecord()
+                .setId(5555L)
+                .setName("test_docker_monitor")
+                .setDockerHost("vps-1")
+                .setContainer("my-app")
+
+            // The latency of a Docker check times the daemon, not the container, so unlike every other type it is
+            // deliberately left out of the message
+            `when`("it gets a DockerMonitorUpEvent without a previousEvent") {
+                val event = DockerMonitorUpEvent(dockerMonitor, null, 300)
+
+                then("it should return the correct message, without the API latency") {
+                    val expectedMessage = "✅ *Your monitor \"test_docker_monitor\" is UP*"
+                    formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+
+            `when`("it gets a DockerMonitorUpEvent with a previousEvent with the same status") {
+                val previousEvent = DockerUptimeEventRecord().setStatus(UptimeStatus.UP)
+                val event = DockerMonitorUpEvent(dockerMonitor, previousEvent, 300)
+
+                then("it should return the correct message") {
+                    val expectedMessage = "✅ *Your monitor \"test_docker_monitor\" is UP*"
+                    formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+
+            `when`("it gets a DockerMonitorUpEvent with a previousEvent with different status") {
+                val previousStartedAt = getCurrentTimestamp().minusMinutes(30)
+                val previousEvent =
+                    DockerUptimeEventRecord().setStatus(UptimeStatus.DOWN).setStartedAt(previousStartedAt)
+                val event = DockerMonitorUpEvent(dockerMonitor, previousEvent, 300)
+
+                then("it should return the correct message") {
+                    val expectedDurationString =
+                        previousEvent.startedAt.diffToDuration(event.dispatchedAt).toDurationString()
+                    val expectedMessage = "✅ *Your monitor \"test_docker_monitor\" is UP*\n" +
+                            "Was down for $expectedDurationString"
+                    formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+
+            `when`("it gets a DockerMonitorDownEvent without a previousEvent") {
+                val event = DockerMonitorDownEvent(dockerMonitor, DOCKER_ERROR, null)
+
+                then("it should return the correct message") {
+                    val expectedMessage = "🚨 *Your monitor \"test_docker_monitor\" is DOWN*"
+                    formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+
+            `when`("it gets a DockerMonitorDownEvent with a previousEvent with the same status") {
+                val previousEvent = DockerUptimeEventRecord().setStatus(UptimeStatus.DOWN)
+                val event = DockerMonitorDownEvent(dockerMonitor, DOCKER_ERROR, previousEvent)
+
+                then("it should return the correct message") {
+                    val expectedMessage = "🚨 *Your monitor \"test_docker_monitor\" is DOWN*"
+                    formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+
+            `when`("it gets a DockerMonitorDownEvent with a previousEvent with different status") {
+                val previousStartedAt = getCurrentTimestamp().minusMinutes(30)
+                val previousEvent =
+                    DockerUptimeEventRecord().setStatus(UptimeStatus.UP).setStartedAt(previousStartedAt)
+                val event = DockerMonitorDownEvent(dockerMonitor, DOCKER_ERROR, previousEvent)
+
+                then("it should return the correct message") {
+                    val expectedDurationString =
+                        previousEvent.startedAt.diffToDuration(event.dispatchedAt).toDurationString()
+                    val expectedMessage = "🚨 *Your monitor \"test_docker_monitor\" is DOWN*\n" +
+                            "Was up for $expectedDurationString"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
                 }
             }

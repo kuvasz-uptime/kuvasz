@@ -1,0 +1,65 @@
+package com.kuvaszuptime.kuvasz.models.dto.monitor.docker
+
+import com.kuvaszuptime.kuvasz.models.dto.MonitorValidationMessages
+import com.kuvaszuptime.kuvasz.models.dto.Validation
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDocs
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.monitor.WithCategory
+import io.micronaut.core.annotation.Introspected
+import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.Max
+import jakarta.validation.constraints.Min
+import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Positive
+import jakarta.validation.constraints.Size
+
+@Introspected
+data class DockerMonitorUpdateDto(
+    @param:Schema(description = MonitorDocs.NAME, required = false, nullable = false)
+    @get:NotBlank(message = MonitorValidationMessages.NAME_NOT_BLANK)
+    val name: String?,
+
+    @param:Schema(description = DockerMonitorDocs.DOCKER_HOST, required = false, nullable = false)
+    @get:NotBlank(message = MonitorValidationMessages.DOCKER_HOST_NOT_BLANK)
+    val dockerHost: String?,
+
+    @param:Schema(description = DockerMonitorDocs.CONTAINER, required = false, nullable = false)
+    @get:NotBlank(message = MonitorValidationMessages.CONTAINER_NOT_BLANK)
+    val container: String?,
+
+    @param:Schema(description = MonitorDocs.UPTIME_CHECK_INTERVAL, required = false, nullable = false)
+    @get:NotNull(message = MonitorValidationMessages.UPTIME_CHECK_INTERVAL_NOT_NULL)
+    @get:Min(Validation.MIN_UPTIME_CHECK_INTERVAL, message = MonitorValidationMessages.UPTIME_CHECK_INTERVAL_MIN)
+    val uptimeCheckInterval: Int?,
+
+    @param:Schema(description = DockerMonitorDocs.TIMEOUT_MS, required = false, nullable = false)
+    @get:NotNull(message = MonitorValidationMessages.TIMEOUT_MILLIS_NOT_NULL)
+    @get:Min(Validation.MIN_TIMEOUT_MILLIS, message = MonitorValidationMessages.TIMEOUT_MILLIS_MIN)
+    @get:Max(Validation.MAX_TIMEOUT_MILLIS, message = MonitorValidationMessages.TIMEOUT_MILLIS_MAX)
+    val timeoutMs: Int?,
+
+    @param:Schema(description = MonitorDocs.FAILURE_COUNT_THRESHOLD, required = false, nullable = false)
+    @get:NotNull
+    @get:Positive(message = MonitorValidationMessages.FAILURE_COUNT_THRESHOLD_POSITIVE)
+    val failureCountThreshold: Long?,
+
+    @param:Schema(description = MonitorDocs.ENABLED, required = false, nullable = false)
+    @get:NotNull
+    val enabled: Boolean?,
+
+    @param:Schema(description = MonitorDocs.INTEGRATIONS, required = false, nullable = true)
+    val integrations: Set<IntegrationID>?,
+
+    @get:NotNull
+    @param:Schema(description = DockerMonitorDocs.METRICS_HISTORY_ENABLED, required = false, nullable = false)
+    val metricsHistoryEnabled: Boolean?,
+
+    @get:Size(max = Validation.MAX_CATEGORY_LENGTH, message = MonitorValidationMessages.CATEGORY_MAX_SIZE)
+    @param:Schema(description = MonitorDocs.CATEGORY, required = false, nullable = true)
+    override val category: String?,
+
+    @get:NotNull
+    @param:Schema(description = MonitorDocs.IGNORE_CONNECTIVITY_CHECK, required = false, nullable = false)
+    val ignoreConnectivityCheck: Boolean?,
+) : WithCategory
