@@ -92,7 +92,7 @@ services:
       - "8080:8080" # (9)!
     environment:
       TZ: 'UTC' # (5)!
-      DATABASE_HOST: kuvaszdb # (1)!
+      DATABASE_HOST: kuvasz-db # (1)!
       DATABASE_USER: kuvasz # (2)!
       DATABASE_PASSWORD: YourSuperSecretDbPassword # (6)!
       ADMIN_USER: YourSuperSecretUsername # change it
