@@ -1,7 +1,7 @@
 services:
   kuvasz-db:
     image: pgautoupgrade/pgautoupgrade:18-alpine
-    container_name: kuvaszdb
+    restart: unless-stopped
     environment:
       POSTGRES_USER: kuvasz
       POSTGRES_PASSWORD: YourSuperSecretDbPassword # change it!
@@ -14,13 +14,13 @@ services:
       - kuvasz-db-data:/var/lib/postgresql
   kuvasz:
     image: kuvaszmonitoring/kuvasz:latest
+    restart: unless-stopped
     # platform: linux/arm64 #
-    container_name: kuvasz
     ports:
       - "8080:8080"
     environment:
       TZ: 'UTC'
-      DATABASE_HOST: kuvaszdb
+      DATABASE_HOST: kuvasz-db
       DATABASE_USER: kuvasz
       DATABASE_PASSWORD: YourSuperSecretDbPassword
       ADMIN_USER: YourSuperSecretUsername # change it
@@ -32,6 +32,7 @@ services:
       interval: 60s
       start_period: 30s
     depends_on:
-      - kuvasz-db
+      kuvasz-db:
+        condition: service_healthy
 volumes:
   kuvasz-db-data:

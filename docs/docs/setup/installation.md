@@ -73,7 +73,7 @@ Create a file called `docker-compose.yml` in the same directory where you create
 services:
   kuvasz-db: # (7)!
     image: pgautoupgrade/pgautoupgrade:18-alpine
-    container_name: kuvaszdb
+    restart: unless-stopped
     environment:
       POSTGRES_USER: kuvasz
       POSTGRES_PASSWORD: YourSuperSecretDbPassword # change it!
@@ -86,13 +86,13 @@ services:
       - kuvasz-db-data:/var/lib/postgresql
   kuvasz:
     image: kuvaszmonitoring/kuvasz:latest
+    restart: unless-stopped
     # platform: linux/arm64 # (8)
-    container_name: kuvasz
     ports:
       - "8080:8080" # (9)!
     environment:
       TZ: 'UTC' # (5)!
-      DATABASE_HOST: kuvaszdb # (1)!
+      DATABASE_HOST: kuvasz-db # (1)!
       DATABASE_USER: kuvasz # (2)!
       DATABASE_PASSWORD: YourSuperSecretDbPassword # (6)!
       ADMIN_USER: YourSuperSecretUsername # change it
@@ -104,12 +104,13 @@ services:
       interval: 60s
       start_period: 30s
     depends_on:
-      - kuvasz-db
+      kuvasz-db:
+        condition: service_healthy
 volumes:
   kuvasz-db-data:
 ```
 
-1. Use the container name from the PostgreSQL service above 
+1. Use the service name from the PostgreSQL service above 
 2. Use the same user and password as in the PostgreSQL service above
 3. Make sure your config file is readable and the mount path is correct (`/config/kuvasz.yml`)
 4. Optional, but recommended, use your own timezone
