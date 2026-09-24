@@ -106,7 +106,6 @@ services:
     depends_on:
       kuvasz-db:
         condition: service_healthy
-        restart: true
 volumes:
   kuvasz-db-data:
 ```
