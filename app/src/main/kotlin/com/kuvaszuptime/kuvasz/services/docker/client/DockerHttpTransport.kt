@@ -16,4 +16,5 @@ interface DockerHttpTransport {
 data class DockerHttpResponse(
     val statusCode: Int,
     val body: String,
+    val headers: Map<String, String> = emptyMap(),
 )

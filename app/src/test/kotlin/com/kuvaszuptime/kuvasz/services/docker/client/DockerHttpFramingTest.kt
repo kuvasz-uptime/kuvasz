@@ -47,6 +47,15 @@ class DockerHttpFramingTest : BehaviorSpec({
         }
     }
 
+    given("a response whose headers the caller reads") {
+
+        val (_, response) = exchange("HTTP/1.1 200 OK\r\nApi-Version: 1.55\r\nContent-Length: 2\r\n\r\nOK")
+
+        then("they should be handed over by their lowercased name, since header names are case-insensitive") {
+            response.headers["api-version"] shouldBe "1.55"
+        }
+    }
+
     given("a chunked response") {
 
         val (_, response) = exchange(

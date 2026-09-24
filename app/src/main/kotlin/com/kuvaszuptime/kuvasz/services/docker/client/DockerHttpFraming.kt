@@ -35,7 +35,7 @@ internal object DockerHttpFraming {
         val input = BufferedInputStream(connection.input)
         val statusCode = readStatusCode(input)
         val headers = readHeaders(input)
-        return DockerHttpResponse(statusCode = statusCode, body = readBody(input, headers))
+        return DockerHttpResponse(statusCode = statusCode, body = readBody(input, headers), headers = headers)
     }
 
     private fun StringBuilder.appendHeader(header: String, value: String) {

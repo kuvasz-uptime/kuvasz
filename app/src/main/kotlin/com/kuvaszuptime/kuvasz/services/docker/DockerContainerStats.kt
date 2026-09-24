@@ -3,12 +3,12 @@ package com.kuvaszuptime.kuvasz.services.docker
 /**
  * Which cgroup hierarchy the container's host runs, together with the key that holds its page cache.
  *
- * It is never asked for: `SystemInfo.CgroupVersion` only exists from API v1.41 and every call here is pinned to
- * v1.40, so the stats payload itself has to settle it. That is no loss, because the only thing the version changes
- * for a resource sample is which key holds the page cache that comes off the raw memory usage - and the payload
- * answers exactly that question. A v1 host reports both its own counters and the `total_`-prefixed sums over the
- * subtree, a v2 host only ever reports the unprefixed keys, so the prefixed one is what tells the two apart, and it
- * has to be looked for first.
+ * It is never asked for: `SystemInfo.CgroupVersion` only exists from API v1.41 and an Engine 19.03 daemon is
+ * spoken to on v1.40, so the stats payload itself has to settle it. That is no loss, because the only thing the
+ * version changes for a resource sample is which key holds the page cache that comes off the raw memory usage - and
+ * the payload answers exactly that question. A v1 host reports both its own counters and the `total_`-prefixed sums
+ * over the subtree, a v2 host only ever reports the unprefixed keys, so the prefixed one is what tells the two apart,
+ * and it has to be looked for first.
  */
 enum class DockerCgroupVersion(val inactiveFileKey: String) {
     V1("total_inactive_file"),

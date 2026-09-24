@@ -26,14 +26,15 @@ private val LOCAL_HOST = DockerHost(
 
 private const val TIMEOUT_MS = 5_000
 
-private class FakeTransport(private val handler: () -> DockerHttpResponse) : DockerHttpTransport {
-    var lastPath: String? = null
+private class FakeTransport(private val handler: (path: String) -> DockerHttpResponse) : DockerHttpTransport {
+    val paths = mutableListOf<String>()
+    val lastPath: String? get() = paths.lastOrNull()
     var lastTimeoutMs: Int? = null
 
     override fun get(host: DockerHost, path: String, timeoutMs: Int): DockerHttpResponse {
-        lastPath = path
+        paths += path
         lastTimeoutMs = timeoutMs
-        return handler()
+        return handler(path)
     }
 }
 
@@ -46,6 +47,23 @@ private fun clientFailingWith(exception: Throwable): DockerApiClient =
     DockerApiClient(FakeTransport { throw exception })
 
 private fun inspectBody(state: String) = """{"Id":"abc123","Name":"/my-app","State":$state}"""
+
+private val RUNNING_BODY = inspectBody("""{"Status":"running","ExitCode":0,"OOMKilled":false}""")
+
+private fun pingResponse(apiVersion: String?) =
+    DockerHttpResponse(200, "OK", listOfNotNull(apiVersion?.let { "api-version" to it }).toMap())
+
+/**
+ * A daemon that reports [apiVersion] on `/_ping` and answers every versioned call with [answer], so a spec can tell
+ * the ping and the call apart by path.
+ */
+private fun negotiatingClient(
+    apiVersion: String?,
+    answer: (path: String) -> DockerHttpResponse = { DockerHttpResponse(200, RUNNING_BODY) },
+): Pair<DockerApiClient, FakeTransport> {
+    val transport = FakeTransport { path -> if (path == "/_ping") pingResponse(apiVersion) else answer(path) }
+    return DockerApiClient(transport) to transport
+}
 
 // `online_cpus` sits beside the usage block, `percpu_usage` inside it - the two places a CPU count can come from
 private fun cpuNode(totalUsage: Long, systemUsage: Long, onlineCpus: String, perCpu: String) =
@@ -69,7 +87,7 @@ private const val CGROUP_V1_MEMORY = """{"usage":52428800,"max_usage":60000000,"
 private const val CGROUP_V2_MEMORY = """{"usage":52428800,"limit":2097152000,
     "stats":{"anon":41943040,"file":10485760,"inactive_file":8388608,"active_file":2097152}}"""
 
-// Captured from Engine 29.8.0 on a cgroup v2 host over the pinned `/v1.40/` path, with a busy loop saturating one of
+// Captured from Engine 29.8.0 on a cgroup v2 host over the `/v1.40/` path, with a busy loop saturating one of
 // the container's two cores. Trimmed to the fields the parser reads; note there is no `total_inactive_file` and no
 // `percpu_usage`, which is what a v2 host looks like.
 private const val LIVE_CGROUP_V2_SAMPLE = """{
@@ -102,7 +120,7 @@ class DockerApiClientTest : BehaviorSpec({
                 result.latencyMs shouldBeGreaterThanOrEqual 0
             }
 
-            then("the inspect endpoint should have been called on the pinned API version, with the monitor's timeout") {
+            then("the inspect endpoint should have been called on the negotiated version, with the monitor's timeout") {
                 transport.lastPath shouldBe "/v1.40/containers/my-app/json"
                 transport.lastTimeoutMs shouldBe TIMEOUT_MS
             }
@@ -162,7 +180,7 @@ class DockerApiClientTest : BehaviorSpec({
             }
         }
 
-        `when`("the daemon reports a status outside the pinned version's vocabulary") {
+        `when`("the daemon reports a status outside the supported versions' vocabulary") {
             val (client, _) = clientReturning(200, inspectBody("""{"Status":"hibernating"}"""))
             val result = client.inspectContainer(LOCAL_HOST, "my-app", TIMEOUT_MS)
 
@@ -172,7 +190,7 @@ class DockerApiClientTest : BehaviorSpec({
             }
         }
 
-        `when`("a running container reports a health status outside the pinned version's vocabulary") {
+        `when`("a running container reports a health status outside the supported versions' vocabulary") {
             val (client, _) = clientReturning(
                 200,
                 inspectBody("""{"Status":"running","Health":{"Status":"dozing"}}"""),
@@ -250,7 +268,7 @@ class DockerApiClientTest : BehaviorSpec({
             }
         }
 
-        `when`("the daemon no longer supports the pinned API version") {
+        `when`("the daemon no longer supports the negotiated API version") {
             val tooOld = "client version 1.40 is too old. Minimum supported API version is 1.44, please upgrade your " +
                 "client to a newer version"
             val (client, _) = clientReturning(400, """{"message":"$tooOld"}""")
@@ -314,7 +332,7 @@ class DockerApiClientTest : BehaviorSpec({
             val (client, transport) = clientReturning(200, statsBody(CGROUP_V1_MEMORY))
             val result = client.containerStats(LOCAL_HOST, "my-app", TIMEOUT_MS)
 
-            then("the version should be read off the payload, since the pinned API version cannot be asked for it") {
+            then("the version should be read off the payload, since the oldest supported version cannot be asked") {
                 result.shouldBeInstanceOf<DockerStatsResult.Measured>()
                 result.stats.cgroupVersion shouldBe DockerCgroupVersion.V1
             }
@@ -777,6 +795,159 @@ class DockerApiClientTest : BehaviorSpec({
 
                 result.shouldBeInstanceOf<DockerContainerListing.Unavailable>()
                 Thread.interrupted() shouldBe true
+            }
+        }
+    }
+
+    given("a daemon whose API version has to be negotiated") {
+
+        `when`("it speaks a newer version than the client uses") {
+            val (client, transport) = negotiatingClient("1.55")
+            client.inspectContainer(LOCAL_HOST, "my-app", TIMEOUT_MS)
+
+            then("it should be pinged first, and called on the newest version the client uses") {
+                transport.paths shouldBe listOf("/_ping", "/v1.44/containers/my-app/json")
+            }
+        }
+
+        `when`("it speaks a version between the oldest supported and the newest used") {
+            val (client, transport) = negotiatingClient("1.41")
+            client.inspectContainer(LOCAL_HOST, "my-app", TIMEOUT_MS)
+
+            then("its own version should be used") {
+                transport.lastPath shouldBe "/v1.41/containers/my-app/json"
+            }
+        }
+
+        // Compared as numbers: as text, 1.9 would sort after 1.40
+        `when`("it speaks a version older than the oldest supported") {
+            val (client, transport) = negotiatingClient("1.9")
+            client.inspectContainer(LOCAL_HOST, "my-app", TIMEOUT_MS)
+
+            then("the oldest supported version should be used, for the daemon to reject with its own explanation") {
+                transport.lastPath shouldBe "/v1.40/containers/my-app/json"
+            }
+        }
+
+        `when`("it does not tell its version") {
+            val (client, transport) = negotiatingClient(apiVersion = null)
+            client.inspectContainer(LOCAL_HOST, "my-app", TIMEOUT_MS)
+
+            then("the oldest supported version should be used") {
+                transport.lastPath shouldBe "/v1.40/containers/my-app/json"
+            }
+        }
+
+        `when`("it tells a version that cannot be parsed") {
+            val (client, transport) = negotiatingClient("latest")
+            client.inspectContainer(LOCAL_HOST, "my-app", TIMEOUT_MS)
+
+            then("the oldest supported version should be used") {
+                transport.lastPath shouldBe "/v1.40/containers/my-app/json"
+            }
+        }
+
+        // A socket proxy that does not allow the ping answers it this way
+        `when`("the ping is rejected") {
+            val transport = FakeTransport { path ->
+                if (path == "/_ping") DockerHttpResponse(403, "Forbidden") else DockerHttpResponse(200, RUNNING_BODY)
+            }
+            val client = DockerApiClient(transport)
+            val result = client.inspectContainer(LOCAL_HOST, "my-app", TIMEOUT_MS)
+            client.inspectContainer(LOCAL_HOST, "my-app", TIMEOUT_MS)
+
+            then("the oldest supported version should be used and settled, not asked for on every check") {
+                result.shouldBeInstanceOf<DockerInspectResult.Inspected>()
+                transport.paths shouldBe listOf(
+                    "/_ping",
+                    "/v1.40/containers/my-app/json",
+                    "/v1.40/containers/my-app/json",
+                )
+            }
+        }
+
+        `when`("every endpoint is called several times") {
+            val (client, transport) = negotiatingClient("1.44") { path ->
+                DockerHttpResponse(200, if (path.endsWith("?all=true")) "[]" else RUNNING_BODY)
+            }
+            client.inspectContainer(LOCAL_HOST, "my-app", TIMEOUT_MS)
+            client.containerStats(LOCAL_HOST, "my-app", TIMEOUT_MS)
+            client.listContainers(LOCAL_HOST, TIMEOUT_MS)
+
+            then("the version should be negotiated only once per host, and used by all of them") {
+                transport.paths shouldBe listOf(
+                    "/_ping",
+                    "/v1.44/containers/my-app/json",
+                    "/v1.44/containers/my-app/stats?stream=false",
+                    "/v1.44/containers/json?all=true",
+                )
+            }
+        }
+
+        `when`("the ping cannot reach the daemon") {
+            var reachable = false
+            val transport = FakeTransport { path ->
+                when {
+                    !reachable -> throw IOException("connection refused")
+                    path == "/_ping" -> pingResponse("1.44")
+                    else -> DockerHttpResponse(200, RUNNING_BODY)
+                }
+            }
+            val client = DockerApiClient(transport)
+            val unreachable = client.inspectContainer(LOCAL_HOST, "my-app", TIMEOUT_MS)
+            reachable = true
+            val inspected = client.inspectContainer(LOCAL_HOST, "my-app", TIMEOUT_MS)
+
+            then("the check should report the daemon unreachable") {
+                unreachable.shouldBeInstanceOf<DockerInspectResult.Unreachable>()
+                unreachable.error shouldBe "connection refused"
+            }
+
+            then("nothing should be settled, so the next check negotiates again") {
+                inspected.shouldBeInstanceOf<DockerInspectResult.Inspected>()
+                transport.paths shouldBe listOf("/_ping", "/_ping", "/v1.44/containers/my-app/json")
+            }
+        }
+
+        `when`("the daemon is swapped for one that no longer accepts the settled version") {
+            var daemonVersion = "1.44"
+            val transport = FakeTransport { path ->
+                when {
+                    path == "/_ping" -> pingResponse(daemonVersion)
+                    path.startsWith("/v$daemonVersion/") || daemonVersion == "1.44" ->
+                        DockerHttpResponse(200, RUNNING_BODY)
+
+                    else -> DockerHttpResponse(400, """{"message":"client version 1.44 is too new"}""")
+                }
+            }
+            val client = DockerApiClient(transport)
+            client.inspectContainer(LOCAL_HOST, "my-app", TIMEOUT_MS)
+            daemonVersion = "1.43"
+            val result = client.inspectContainer(LOCAL_HOST, "my-app", TIMEOUT_MS)
+
+            then("the version should be negotiated again and the call retried, instead of taking the monitor down") {
+                result.shouldBeInstanceOf<DockerInspectResult.Inspected>()
+                transport.paths shouldBe listOf(
+                    "/_ping",
+                    "/v1.44/containers/my-app/json",
+                    "/v1.44/containers/my-app/json",
+                    "/_ping",
+                    "/v1.43/containers/my-app/json",
+                )
+            }
+        }
+
+        `when`("a freshly negotiated version is rejected") {
+            val tooOld = "client version 1.40 is too old. Minimum supported API version is 1.44"
+            val (client, transport) = negotiatingClient("1.9") {
+                DockerHttpResponse(400, """{"message":"$tooOld"}""")
+            }
+            val result = client.inspectContainer(LOCAL_HOST, "my-app", TIMEOUT_MS)
+
+            then("it should not be retried, and the daemon's explanation should be surfaced") {
+                result.shouldBeInstanceOf<DockerInspectResult.DaemonError>()
+                result.message shouldBe tooOld
+                transport.paths shouldBe listOf("/_ping", "/v1.40/containers/my-app/json")
             }
         }
     }

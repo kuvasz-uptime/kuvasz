@@ -14,7 +14,7 @@ import tools.jackson.module.kotlin.readValue
  * reads, memory straight from `PrivateWorkingSet` - which is out of scope here: a Windows container has no cgroup,
  * so the version heuristic finds nothing to read and the sample is reported unavailable rather than guessed at.
  *
- * The formulas are the pinned v1.40 spec's own, with one deliberate departure on the memory side. The spec
+ * The formulas are the v1.40 spec's own, with one deliberate departure on the memory side. The spec
  * subtracts `stats.cache` on a cgroup v1 host, and that was correct for the engine it describes: the docker cli
  * computed it that way "on Docker 19.03 and older", which is exactly the engine that shipped API v1.40. It has since
  * changed, and does not vary by API version, because it lives in the cli rather than in the daemon's response.

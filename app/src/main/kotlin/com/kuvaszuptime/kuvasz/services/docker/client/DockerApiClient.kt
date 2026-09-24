@@ -20,34 +20,70 @@ import tools.jackson.module.kotlin.readValue
 import java.io.IOException
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * The Engine API endpoints the checker needs, on top of a [DockerHttpTransport]: the container inspection every
  * check runs, and the resource sampling that only monitors with a metrics history ask for. Both are read-only GETs,
  * which is the reason no Docker client library is pulled in for them.
  *
- * Every call is pinned to [API_VERSION]: calling the API without a version prefix is deprecated, and 1.40 (Engine
- * 19.03) is both the oldest version Docker still supports and the minimum current daemons accept. Every field read
- * here already exists in it, and pinning keeps the response format the same no matter how new the daemon is.
+ * Every call carries an explicit API version, because calling the API without one is deprecated. No single version is
+ * accepted by every supported daemon, so it is negotiated per host through `/_ping` the way Docker's own client does
+ * it, and kept between [DockerApiVersion.OLDEST_SUPPORTED] and [DockerApiVersion.NEWEST_USED], which read the same.
  */
 @Singleton
 @Requires(bean = DockerHostConfig::class)
 class DockerApiClient(private val transport: DockerHttpTransport) {
 
     private companion object {
-        const val API_VERSION = "v1.40"
-        const val LIST_PATH = "/$API_VERSION/containers/json?all=true"
+        const val PING_PATH = "/_ping"
+        const val API_VERSION_HEADER = "api-version"
+        const val LIST_PATH = "/containers/json?all=true"
     }
+
+    private val negotiatedVersions = ConcurrentHashMap<String, DockerApiVersion>()
 
     private val objectMapper = jacksonMapperBuilder()
         .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
         .build()
 
-    fun inspectContainer(host: DockerHost, container: String, timeoutMs: Int): DockerInspectResult {
-        val start = System.nanoTime()
-        return callDaemon(DockerInspectResult::Unreachable) {
-            transport.get(host, inspectPath(container), timeoutMs).toInspectResult(elapsedMsSince(start))
+    fun inspectContainer(host: DockerHost, container: String, timeoutMs: Int): DockerInspectResult =
+        callDaemon(DockerInspectResult::Unreachable) {
+            val (response, latencyMs) = getVersioned(host, inspectPath(container), timeoutMs)
+            response.toInspectResult(latencyMs)
         }
+
+    /**
+     * Calls [path] on the version negotiated with the host, pinging it first when there is none yet. The latency is
+     * that of the call itself, so a check that happens to negotiate does not report the ping as the daemon's slowness.
+     *
+     * A cached version goes stale if the daemon is swapped for one that no longer accepts it, which it answers with a
+     * 400, so that is re-negotiated and retried once instead of taking the monitor down until the next check. Each
+     * exchange gets the whole timeout, since a ping happens once per host and not once per check.
+     */
+    private fun getVersioned(host: DockerHost, path: String, timeoutMs: Int): TimedResponse {
+        val cachedVersion = negotiatedVersions[host.name]
+        val response = timedGet(host, (cachedVersion ?: negotiate(host, timeoutMs)).pathPrefix + path, timeoutMs)
+        if (cachedVersion == null || response.response.statusCode != HttpStatus.BAD_REQUEST.code) {
+            return response
+        }
+        negotiatedVersions.remove(host.name, cachedVersion)
+        return timedGet(host, negotiate(host, timeoutMs).pathPrefix + path, timeoutMs)
+    }
+
+    private fun timedGet(host: DockerHost, path: String, timeoutMs: Int): TimedResponse {
+        val start = System.nanoTime()
+        return TimedResponse(transport.get(host, path, timeoutMs), elapsedMsSince(start))
+    }
+
+    /**
+     * Whatever the daemon answers is settled for good, a proxy that does not allow `/_ping` included, which falls back
+     * to the oldest supported version. Only a daemon that could not be reached at all is asked again next time.
+     */
+    private fun negotiate(host: DockerHost, timeoutMs: Int): DockerApiVersion {
+        val ping = transport.get(host, PING_PATH, timeoutMs)
+        val daemonVersion = DockerApiVersion.parse(ping.headers[API_VERSION_HEADER])
+        return DockerApiVersion.negotiate(daemonVersion).also { negotiatedVersions[host.name] = it }
     }
 
     /**
@@ -67,16 +103,16 @@ class DockerApiClient(private val transport: DockerHttpTransport) {
     /**
      * A single resource sample of a container, taken without opening the endpoint's stream.
      *
-     * `stream=false` is the only way to ask for one on the pinned version, since `one-shot` arrived in v1.41, and it
-     * is the better one anyway: the daemon answers after a second collection cycle, so `precpu_stats` is populated
-     * and the CPU percentage follows from that one response instead of from state kept between checks. The cost is
-     * that the call blocks for the daemon's collection interval (a second, give or take), which comes out of the
-     * monitor's timeout budget - and which makes this round-trip useless as a latency signal, unlike the
+     * `stream=false` is the only way to ask for one on the oldest supported version, since `one-shot` arrived in
+     * v1.41, and it is the better one anyway: the daemon answers after a second collection cycle, so `precpu_stats` is
+     * populated and the CPU percentage follows from that one response instead of from state kept between checks. The
+     * cost is that the call blocks for the daemon's collection interval (a second, give or take), which comes out of
+     * the monitor's timeout budget - and which makes this round-trip useless as a latency signal, unlike the
      * inspection's.
      */
     fun containerStats(host: DockerHost, container: String, timeoutMs: Int): DockerStatsResult =
         callDaemon(DockerStatsResult::Unavailable) {
-            transport.get(host, statsPath(container), timeoutMs).toStatsResult()
+            getVersioned(host, statsPath(container), timeoutMs).response.toStatsResult()
         }
 
     /**
@@ -88,7 +124,7 @@ class DockerApiClient(private val transport: DockerHttpTransport) {
      */
     fun listContainers(host: DockerHost, timeoutMs: Int): DockerContainerListing =
         callDaemon(DockerContainerListing::Unavailable) {
-            transport.get(host, LIST_PATH, timeoutMs).toListing()
+            getVersioned(host, LIST_PATH, timeoutMs).response.toListing()
         }
 
     private fun DockerHttpResponse.toListing(): DockerContainerListing =
@@ -144,7 +180,7 @@ class DockerApiClient(private val transport: DockerHttpTransport) {
         }
 
     /**
-     * Returns null for anything the pinned API version does not describe - a missing `State`, or a status outside its
+     * Returns null for anything the supported API versions do not describe - a missing `State`, or a status outside its
      * documented vocabulary - which the caller reports as an unparseable response.
      */
     private fun parseState(body: String): DockerContainerState? {
@@ -186,7 +222,7 @@ class DockerApiClient(private val transport: DockerHttpTransport) {
      */
     private fun containerPath(container: String): String {
         val encoded = URLEncoder.encode(container.removePrefix("/"), StandardCharsets.UTF_8).replace("+", "%20")
-        return "/$API_VERSION/containers/$encoded"
+        return "/containers/$encoded"
     }
 
     private fun inspectPath(container: String): String = "${containerPath(container)}/json"
@@ -194,6 +230,8 @@ class DockerApiClient(private val transport: DockerHttpTransport) {
     private fun statsPath(container: String): String = "${containerPath(container)}/stats?stream=false"
 
     private fun Throwable.describe(): String = message?.takeIf { it.isNotBlank() } ?: javaClass.simpleName
+
+    private data class TimedResponse(val response: DockerHttpResponse, val latencyMs: Int)
 
     private data class InspectResponse(@param:JsonProperty("State") val state: StateNode?)
 
