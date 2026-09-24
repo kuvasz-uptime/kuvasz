@@ -1,0 +1,7 @@
+docker-monitors:
+  - name: test1
+    docker-host: local
+    container: my-app
+    uptime-check-interval: 60
+    integrations:
+      - slack:non-existing

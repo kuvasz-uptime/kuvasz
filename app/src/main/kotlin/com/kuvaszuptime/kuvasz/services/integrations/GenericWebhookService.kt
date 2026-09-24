@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.factories.WebhookMessageFactory
 import com.kuvaszuptime.kuvasz.handlers.toIntegrationEventType
 import com.kuvaszuptime.kuvasz.jooq.MonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.DockerMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMonitorRecord
@@ -11,6 +12,8 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
@@ -120,6 +123,14 @@ class GenericWebhookService(
     }
 
     @Suppress("MagicNumber")
+    private val testDockerMonitorRecord = DockerMonitorRecord().apply {
+        id = 6
+        name = "Test monitor"
+        dockerHost = "local"
+        container = "test-container"
+    }
+
+    @Suppress("MagicNumber")
     val testEvents: List<MonitorEvent<out MonitorRecord>> = listOf(
         HttpMonitorDownEvent(
             monitor = testHttpMonitorRecord,
@@ -193,6 +204,16 @@ class GenericWebhookService(
             monitor = testDnsMonitorRecord,
             previousRecords = mapOf(DnsRecordType.A to listOf("192.0.2.1")),
             currentRecords = mapOf(DnsRecordType.A to listOf("192.0.2.2")),
+        ),
+        DockerMonitorDownEvent(
+            monitor = testDockerMonitorRecord,
+            error = "The container exited (137)",
+            previousEvent = null,
+        ),
+        DockerMonitorUpEvent(
+            monitor = testDockerMonitorRecord,
+            previousEvent = null,
+            latencyInMs = 8,
         ),
     )
 

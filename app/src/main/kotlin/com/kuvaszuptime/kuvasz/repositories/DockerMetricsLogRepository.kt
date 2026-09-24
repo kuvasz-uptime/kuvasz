@@ -8,6 +8,7 @@ import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import java.math.RoundingMode
+import java.time.Duration
 
 @Singleton
 class DockerMetricsLogRepository(dslContext: DSLContext) :
@@ -47,6 +48,24 @@ class DockerMetricsLogRepository(dslContext: DSLContext) :
             )
             .execute()
     }
+
+    /**
+     * The API latency is kept out of [DockerMetricsLogDto], because it measures the daemon and not the container,
+     * so the metrics exporter reads the column straight instead of going through the DTO.
+     */
+    fun fetchLastLatencyByMonitorId(monitorId: Long): Int? = dslContext
+        .select(DOCKER_METRICS_LOG.LATENCY_MS)
+        .from(DOCKER_METRICS_LOG)
+        .where(DOCKER_METRICS_LOG.MONITOR_ID.eq(monitorId))
+        .orderBy(DOCKER_METRICS_LOG.CREATED_AT.desc(), DOCKER_METRICS_LOG.ID.desc())
+        .limit(1)
+        .fetchOne(DOCKER_METRICS_LOG.LATENCY_MS)
+
+    fun getCpuUsageMetrics(monitorId: Long, period: Duration): CpuUsageMetricResult? =
+        aggregate(DOCKER_METRICS_LOG.CPU_USAGE_PERCENT, monitorId, period, CpuUsageMetricResult::class.java)
+
+    fun getMemoryUsageMetrics(monitorId: Long, period: Duration): MemoryUsageMetricResult? =
+        aggregate(DOCKER_METRICS_LOG.MEMORY_USAGE_BYTES, monitorId, period, MemoryUsageMetricResult::class.java)
 
     override fun DSLContext.logDtoSelect(monitorId: Long) =
         select(

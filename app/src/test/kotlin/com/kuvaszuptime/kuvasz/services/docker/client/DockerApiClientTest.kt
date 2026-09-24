@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.services.docker.client
 
 import com.kuvaszuptime.kuvasz.services.docker.DockerCgroupVersion
+import com.kuvaszuptime.kuvasz.services.docker.DockerContainerListing
 import com.kuvaszuptime.kuvasz.services.docker.DockerContainerStatus
 import com.kuvaszuptime.kuvasz.services.docker.DockerDaemonAddress
 import com.kuvaszuptime.kuvasz.services.docker.DockerHealthStatus
@@ -8,6 +9,7 @@ import com.kuvaszuptime.kuvasz.services.docker.DockerHost
 import com.kuvaszuptime.kuvasz.services.docker.DockerInspectResult
 import com.kuvaszuptime.kuvasz.services.docker.DockerStatsResult
 import io.kotest.core.spec.style.BehaviorSpec
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.doubles.plusOrMinus
 import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.nulls.shouldBeNull
@@ -652,6 +654,128 @@ class DockerApiClientTest : BehaviorSpec({
                     .containerStats(LOCAL_HOST, "my-app", TIMEOUT_MS)
 
                 result.shouldBeInstanceOf<DockerStatsResult.Unavailable>()
+                Thread.interrupted() shouldBe true
+            }
+        }
+    }
+
+    given("a daemon that answers a container listing") {
+
+        `when`("it reports containers") {
+            val (client, transport) = clientReturning(
+                200,
+                """
+                [
+                  {"Id": "abc123", "Names": ["/my-app"], "Image": "nginx:alpine", "State": "running"},
+                  {"Id": "def456", "Names": ["/worker", "/worker-alias"], "Image": "busybox", "State": "exited"}
+                ]
+                """.trimIndent(),
+            )
+
+            val result = client.listContainers(LOCAL_HOST, TIMEOUT_MS)
+
+            then("it should ask for the stopped ones too, since a monitor may watch one") {
+                transport.lastPath shouldBe "/v1.40/containers/json?all=true"
+            }
+
+            then("it should report them with the leading slash stripped from the name") {
+                result.shouldBeInstanceOf<DockerContainerListing.Listed>()
+                result.containers.map { it.name } shouldBe listOf("my-app", "worker")
+            }
+
+            then("it should carry the id, the image and the state of each") {
+                result.shouldBeInstanceOf<DockerContainerListing.Listed>()
+                val first = result.containers.first()
+                first.id shouldBe "abc123"
+                first.image shouldBe "nginx:alpine"
+                first.state shouldBe "running"
+            }
+
+            // The API allows several names per container and the first is the one the daemon itself shows
+            then("it should take only the first name of a container that has more") {
+                result.shouldBeInstanceOf<DockerContainerListing.Listed>()
+                result.containers.last().name shouldBe "worker"
+            }
+        }
+
+        `when`("the daemon reports no container at all") {
+            val (client, _) = clientReturning(200, "[]")
+
+            then("it should report an empty listing rather than a failure") {
+                val result = client.listContainers(LOCAL_HOST, TIMEOUT_MS)
+
+                result.shouldBeInstanceOf<DockerContainerListing.Listed>()
+                result.containers.shouldBeEmpty()
+            }
+        }
+
+        `when`("an entry carries no usable name") {
+            val (client, _) = clientReturning(
+                200,
+                """[{"Id": "abc123", "Names": []}, {"Id": "def456", "Names": ["/named"]}]""",
+            )
+
+            then("it should drop that entry and keep the rest") {
+                val result = client.listContainers(LOCAL_HOST, TIMEOUT_MS)
+
+                result.shouldBeInstanceOf<DockerContainerListing.Listed>()
+                result.containers.map { it.name } shouldBe listOf("named")
+            }
+        }
+
+        `when`("an entry carries no id") {
+            val (client, _) = clientReturning(200, """[{"Names": ["/nameless"]}]""")
+
+            then("it should drop it, because a monitor could not reference it") {
+                val result = client.listContainers(LOCAL_HOST, TIMEOUT_MS)
+
+                result.shouldBeInstanceOf<DockerContainerListing.Listed>()
+                result.containers.shouldBeEmpty()
+            }
+        }
+    }
+
+    given("a daemon that cannot produce a listing") {
+
+        // A socket proxy that only allows the inspect endpoint answers this way
+        `when`("it rejects the request") {
+            val (client, _) = clientReturning(403, """{"message": "access denied"}""")
+
+            then("it should be unavailable, carrying the status and the message") {
+                val result = client.listContainers(LOCAL_HOST, TIMEOUT_MS)
+
+                result.shouldBeInstanceOf<DockerContainerListing.Unavailable>()
+                result.reason shouldBe "the daemon answered 403: access denied"
+            }
+        }
+
+        `when`("it answers something unparseable") {
+            val (client, _) = clientReturning(200, "not json at all")
+
+            then("it should be unavailable") {
+                val result = client.listContainers(LOCAL_HOST, TIMEOUT_MS)
+
+                result.shouldBeInstanceOf<DockerContainerListing.Unavailable>()
+                result.reason shouldBe "the response could not be parsed"
+            }
+        }
+
+        `when`("it cannot be reached") {
+            val result = clientFailingWith(IOException("connection refused"))
+                .listContainers(LOCAL_HOST, TIMEOUT_MS)
+
+            then("it should be unavailable, carrying the transport's reason") {
+                result.shouldBeInstanceOf<DockerContainerListing.Unavailable>()
+                result.reason shouldBe "connection refused"
+            }
+        }
+
+        `when`("the listing is interrupted") {
+            then("it should be unavailable and the interrupt flag restored") {
+                val result = clientFailingWith(InterruptedException("interrupted"))
+                    .listContainers(LOCAL_HOST, TIMEOUT_MS)
+
+                result.shouldBeInstanceOf<DockerContainerListing.Unavailable>()
                 Thread.interrupted() shouldBe true
             }
         }

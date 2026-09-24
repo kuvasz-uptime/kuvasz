@@ -6,6 +6,7 @@ object OpenApiTags {
     const val TCP_MONITORS = "TCP monitors"
     const val DNS_MONITORS = "DNS monitors"
     const val DOCKER_HOSTS = "Docker hosts"
+    const val DOCKER_MONITORS = "Docker monitors"
     const val INCIDENTS = "Incidents"
     const val INTEGRATIONS = "Integrations"
     const val MAINTENANCE_WINDOWS = "Maintenance windows"

@@ -292,6 +292,7 @@ class HttpUptimeStatusExporterTest : HttpExporterTest("enabled-metrics-uptime-st
                     icmpMonitorConfigs = emptyList(),
                     tcpMonitorConfigs = emptyList(),
                     dnsMonitorConfigs = emptyList(),
+                    dockerMonitorConfigs = emptyList(),
                     dryRun = false,
                 )
 

@@ -1,0 +1,5 @@
+docker-monitors:
+  - name: ''
+    docker-host: local
+    container: my-app
+    uptime-check-interval: 60

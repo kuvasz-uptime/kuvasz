@@ -2,6 +2,8 @@ package com.kuvaszuptime.kuvasz.services.docker.client
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.kuvaszuptime.kuvasz.config.DockerHostConfig
+import com.kuvaszuptime.kuvasz.services.docker.DockerContainer
+import com.kuvaszuptime.kuvasz.services.docker.DockerContainerListing
 import com.kuvaszuptime.kuvasz.services.docker.DockerContainerState
 import com.kuvaszuptime.kuvasz.services.docker.DockerContainerStatus
 import com.kuvaszuptime.kuvasz.services.docker.DockerHealthStatus
@@ -34,6 +36,7 @@ class DockerApiClient(private val transport: DockerHttpTransport) {
 
     private companion object {
         const val API_VERSION = "v1.40"
+        const val LIST_PATH = "/$API_VERSION/containers/json?all=true"
     }
 
     private val objectMapper = jacksonMapperBuilder()
@@ -42,15 +45,24 @@ class DockerApiClient(private val transport: DockerHttpTransport) {
 
     fun inspectContainer(host: DockerHost, container: String, timeoutMs: Int): DockerInspectResult {
         val start = System.nanoTime()
-        return try {
+        return callDaemon(DockerInspectResult::Unreachable) {
             transport.get(host, inspectPath(container), timeoutMs).toInspectResult(elapsedMsSince(start))
-        } catch (ex: InterruptedException) {
-            Thread.currentThread().interrupt()
-            DockerInspectResult.Unreachable(ex.describe())
-        } catch (ex: IOException) {
-            DockerInspectResult.Unreachable(ex.describe())
         }
     }
+
+    /**
+     * The three endpoints differ only in what they return and in how they name a failure to reach the daemon, so
+     * the interruption handling - which has to restore the flag the exception cleared - lives here once.
+     */
+    private fun <T> callDaemon(onUnreachable: (String) -> T, call: () -> T): T =
+        try {
+            call()
+        } catch (ex: InterruptedException) {
+            Thread.currentThread().interrupt()
+            onUnreachable(ex.describe())
+        } catch (ex: IOException) {
+            onUnreachable(ex.describe())
+        }
 
     /**
      * A single resource sample of a container, taken without opening the endpoint's stream.
@@ -63,14 +75,48 @@ class DockerApiClient(private val transport: DockerHttpTransport) {
      * inspection's.
      */
     fun containerStats(host: DockerHost, container: String, timeoutMs: Int): DockerStatsResult =
-        try {
+        callDaemon(DockerStatsResult::Unavailable) {
             transport.get(host, statsPath(container), timeoutMs).toStatsResult()
-        } catch (ex: InterruptedException) {
-            Thread.currentThread().interrupt()
-            DockerStatsResult.Unavailable(ex.describe())
-        } catch (ex: IOException) {
-            DockerStatsResult.Unavailable(ex.describe())
         }
+
+    /**
+     * Every container the daemon knows about, stopped ones included, which is what the UI offers to pick from.
+     *
+     * Unlike the other two calls this one is not part of a check: it backs the container picker of the upsert form,
+     * so a daemon that cannot be reached or a proxy that only allows the inspect endpoint is not an error worth
+     * failing on, only an empty list the operator can type past.
+     */
+    fun listContainers(host: DockerHost, timeoutMs: Int): DockerContainerListing =
+        callDaemon(DockerContainerListing::Unavailable) {
+            transport.get(host, LIST_PATH, timeoutMs).toListing()
+        }
+
+    private fun DockerHttpResponse.toListing(): DockerContainerListing =
+        if (statusCode == HttpStatus.OK.code) {
+            runCatching { objectMapper.readValue<List<ContainerSummaryNode>>(body) }
+                .getOrNull()
+                ?.let { nodes -> DockerContainerListing.Listed(nodes.mapNotNull { it.toContainer() }) }
+                ?: DockerContainerListing.Unavailable("the response could not be parsed")
+        } else {
+            DockerContainerListing.Unavailable(
+                listOfNotNull("the daemon answered $statusCode", parseErrorMessage(body)).joinToString(": "),
+            )
+        }
+
+    /**
+     * The API reports names with a leading slash and allows several per container; the first is the one the daemon
+     * itself shows, so that is what a monitor should reference. A container with no name at all is not offerable.
+     */
+    private fun ContainerSummaryNode.toContainer(): DockerContainer? {
+        val containerId = id?.takeIf { it.isNotBlank() }
+        val name = names.orEmpty().firstOrNull()?.removePrefix("/")?.takeIf { it.isNotBlank() }
+
+        return if (containerId != null && name != null) {
+            DockerContainer(name = name, id = containerId, image = image, state = state)
+        } else {
+            null
+        }
+    }
 
     private fun DockerHttpResponse.toInspectResult(latencyMs: Int): DockerInspectResult = when (statusCode) {
         HttpStatus.OK.code -> parseState(body)
@@ -165,6 +211,17 @@ class DockerApiClient(private val transport: DockerHttpTransport) {
     private data class HealthNode(
         @param:JsonProperty("Status") val status: String?,
         @param:JsonProperty("FailingStreak") val failingStreak: Int?,
+    )
+
+    private data class ContainerSummaryNode(
+        @param:JsonProperty("Id")
+        val id: String?,
+        @param:JsonProperty("Names")
+        val names: List<String>?,
+        @param:JsonProperty("Image")
+        val image: String?,
+        @param:JsonProperty("State")
+        val state: String?,
     )
 
     private data class DaemonErrorResponse(@param:JsonProperty("message") val message: String?)

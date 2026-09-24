@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DockerMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DockerUptimeEventRecord
 import com.kuvaszuptime.kuvasz.util.toDurationString
+import java.math.BigDecimal
 
 sealed class DockerUptimeMonitorEvent : UptimeMonitorEvent() {
     abstract override val previousEvent: DockerUptimeEventRecord?
@@ -13,11 +14,18 @@ sealed class DockerUptimeMonitorEvent : UptimeMonitorEvent() {
 /**
  * [latencyInMs] is the round-trip to the Docker daemon, not anything about the container, so unlike the other types
  * it is only recorded for the metrics history and deliberately kept out of the notification.
+ *
+ * [cpuUsagePercent] and [memoryUsageBytes] are the container's own resource sample, present only when the monitor
+ * keeps a metrics history and the container was running. They ride along for the same reason as the latency: the
+ * metrics exporters are driven by these events, and sampling twice would cost another second of the daemon's
+ * collection cycle.
  */
 data class DockerMonitorUpEvent(
     override val monitor: DockerMonitorRecord,
     override val previousEvent: DockerUptimeEventRecord?,
     val latencyInMs: Int?,
+    val cpuUsagePercent: BigDecimal? = null,
+    val memoryUsageBytes: Long? = null,
 ) : DockerUptimeMonitorEvent() {
 
     override val uptimeStatus = UptimeStatus.UP

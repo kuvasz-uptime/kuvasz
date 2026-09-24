@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.config.DnsMonitorConfig
 import com.kuvaszuptime.kuvasz.config.HttpMonitorConfig
 import com.kuvaszuptime.kuvasz.config.IcmpMonitorConfig
 import com.kuvaszuptime.kuvasz.config.PushMonitorConfig
+import com.kuvaszuptime.kuvasz.config.DockerMonitorConfig
 import com.kuvaszuptime.kuvasz.config.TcpMonitorConfig
 import com.kuvaszuptime.kuvasz.controllers.API_V2_PREFIX
 import com.kuvaszuptime.kuvasz.models.ServiceError
@@ -16,21 +17,25 @@ import com.kuvaszuptime.kuvasz.models.dto.importing.IcmpMonitorImportAdapter
 import com.kuvaszuptime.kuvasz.models.dto.importing.MonitorImportDto
 import com.kuvaszuptime.kuvasz.models.dto.importing.MonitorImportResultDto
 import com.kuvaszuptime.kuvasz.models.dto.importing.PushMonitorImportAdapter
+import com.kuvaszuptime.kuvasz.models.dto.importing.DockerMonitorImportAdapter
 import com.kuvaszuptime.kuvasz.models.dto.importing.TcpMonitorImportAdapter
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorExportDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.docker.DockerMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsMonitorCreator
 import com.kuvaszuptime.kuvasz.models.monitor.http.HttpMonitorCreator
 import com.kuvaszuptime.kuvasz.models.monitor.icmp.IcmpMonitorCreator
 import com.kuvaszuptime.kuvasz.models.monitor.push.PushMonitorCreator
+import com.kuvaszuptime.kuvasz.models.monitor.docker.DockerMonitorCreator
 import com.kuvaszuptime.kuvasz.models.monitor.tcp.TcpMonitorCreator
 import com.kuvaszuptime.kuvasz.services.check.dns.DnsMonitorActions
 import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorActions
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpMonitorActions
 import com.kuvaszuptime.kuvasz.services.check.push.PushMonitorActions
+import com.kuvaszuptime.kuvasz.services.check.docker.DockerMonitorActions
 import com.kuvaszuptime.kuvasz.services.check.tcp.TcpMonitorActions
 import com.kuvaszuptime.kuvasz.services.export.ExportHandler
 import com.kuvaszuptime.kuvasz.services.monitor.MonitorImporter
@@ -71,6 +76,7 @@ class MonitorController(
     private val pushMonitorActions: PushMonitorActions,
     private val icmpMonitorActions: IcmpMonitorActions,
     private val tcpMonitorActions: TcpMonitorActions,
+    private val dockerMonitorActions: DockerMonitorActions,
     private val dnsMonitorActions: DnsMonitorActions,
     private val exportHandler: ExportHandler,
     private val monitorImporter: MonitorImporter,
@@ -98,6 +104,9 @@ class MonitorController(
                 to icmpMonitorActions.getIcmpMonitorsExport().map { IcmpMonitorExportDto.fromMonitorRecord(it) },
             TcpMonitorConfig.CONFIG_PREFIX
                 to tcpMonitorActions.getTcpMonitorsExport().map { TcpMonitorExportDto.fromMonitorRecord(it) },
+            DockerMonitorConfig.CONFIG_PREFIX
+                to dockerMonitorActions.getDockerMonitorsExport()
+                    .map { DockerMonitorExportDto.fromMonitorRecord(it) },
             DnsMonitorConfig.CONFIG_PREFIX
                 to dnsMonitorActions.getDnsMonitorsExport().map { DnsMonitorExportDto.fromMonitorRecord(it) },
         )
@@ -148,6 +157,10 @@ class MonitorController(
             ?.takeUnless { appConfig.isDnsMonitorExternalWriteDisabled() }
             ?.map { validator.validated(DnsMonitorImportAdapter(it)) }
             .orEmpty()
+        val dockerMonitors: List<DockerMonitorCreator> = importDto.dockerMonitors
+            ?.takeUnless { appConfig.isDockerMonitorExternalWriteDisabled() }
+            ?.map { validator.validated(DockerMonitorImportAdapter(it)) }
+            .orEmpty()
 
         val perTypeResults = monitorImporter.batchImportMonitors(
             httpMonitors,
@@ -155,6 +168,7 @@ class MonitorController(
             icmpMonitors,
             tcpMonitors,
             dnsMonitors,
+            dockerMonitors,
             dryRun,
         )
 

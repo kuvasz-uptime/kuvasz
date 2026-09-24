@@ -63,8 +63,8 @@ data class MemoryUsageStatsDto(
 data class CpuUsageStatsDto(
     @param:Schema(description = "The average CPU usage of the container", required = true)
     val averageCpuUsagePercentage: BigDecimal?,
-    @param:Schema(description = "The minimum average CPU usage of the container", required = true)
+    @param:Schema(description = "The minimum CPU usage of the container", required = true)
     val minCpuUsagePercentage: BigDecimal?,
-    @param:Schema(description = "The maximum average CPU usage of the container", required = true)
+    @param:Schema(description = "The maximum CPU usage of the container", required = true)
     val maxCpuUsagePercentage: BigDecimal?,
 )

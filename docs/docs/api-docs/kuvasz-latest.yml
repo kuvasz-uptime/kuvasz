@@ -16,6 +16,7 @@ tags:
 - name: ICMP monitors
 - name: TCP monitors
 - name: DNS monitors
+- name: Docker monitors
 - name: Incidents
 - name: Integrations
 - name: Docker hosts
@@ -318,12 +319,289 @@ paths:
       security:
       - apiKey: []
       - bearerAuth: []
+  /api/v2/docker-monitors:
+    get:
+      tags:
+      - Docker monitors
+      summary: Get all monitors with their details
+      operationId: getMonitorsWithDetails_1
+      parameters:
+      - name: enabled
+        in: query
+        explode: false
+        schema:
+          type: boolean
+          nullable: true
+      - name: uptimeStatus
+        in: query
+        explode: false
+        schema:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/UptimeStatus"
+      - name: category
+        in: query
+        description: "Narrows the result to one monitor category. An empty value selects\
+          \ the monitors that have no category at all, omitting the parameter selects\
+          \ every monitor."
+        explode: false
+        schema:
+          type: string
+          nullable: true
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DockerMonitorDetailsDto"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+    post:
+      tags:
+      - Docker monitors
+      summary: Create a monitor
+      operationId: createMonitor_1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DockerMonitorCreateDto"
+        required: true
+      responses:
+        "201":
+          description: Successful creation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DockerMonitorDto"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "Docker monitors are in read-only mode, because they are loaded\
+            \ from a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/docker-monitors/stats:
+    get:
+      tags:
+      - Docker monitors
+      summary: "Get the overall, cumulative stats of all monitors"
+      operationId: getMonitoringStats_1
+      parameters:
+      - name: period
+        in: query
+        explode: false
+        schema:
+          type: string
+          description: "An ISO-8601 Duration string, default P7D"
+          nullable: true
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DockerMonitoringStatsDto"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/docker-monitors/{monitorId}:
+    get:
+      tags:
+      - Docker monitors
+      summary: Get a monitor's details
+      operationId: getMonitorDetails_1
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DockerMonitorDetailsDto"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+    delete:
+      tags:
+      - Docker monitors
+      summary: Delete a monitor by ID
+      operationId: deleteMonitor_1
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "204":
+          description: Successful deletion
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "Docker monitors are in read-only mode, because they are loaded\
+            \ from a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+    patch:
+      tags:
+      - Docker monitors
+      summary: Update a monitor by ID
+      description: Updates the monitor with the given ID. Only fields that are present
+        in the request body will be updated. Fields not present in the request body
+        will remain unchanged.
+      operationId: updateMonitor_1
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DockerMonitorUpdateDto"
+        required: true
+      responses:
+        "200":
+          description: Successful update
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DockerMonitorDto"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: "Docker monitors are in read-only mode, because they are loaded\
+            \ from a YAML config file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/docker-monitors/{monitorId}/stats:
+    get:
+      tags:
+      - Docker monitors
+      summary: Get the stats of the given monitor
+      operationId: getMonitorStats_1
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: period
+        in: query
+        explode: false
+        schema:
+          type: string
+          description: "An ISO-8601 Duration string, default P1D"
+          nullable: true
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DockerMonitorStatsDto"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/docker-monitors/{monitorId}/uptime-events:
+    get:
+      tags:
+      - Docker monitors
+      summary: Get the uptime events of the given monitor
+      operationId: getUptimeEvents_1
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DockerUptimeEventDto"
+      security:
+      - apiKey: []
+      - bearerAuth: []
   /api/v2/http-monitors:
     get:
       tags:
       - HTTP monitors
       summary: Get all monitors with their details
-      operationId: getMonitorsWithDetails_1
+      operationId: getMonitorsWithDetails_2
       parameters:
       - name: enabled
         in: query
@@ -378,7 +656,7 @@ paths:
       tags:
       - HTTP monitors
       summary: Create a monitor
-      operationId: createMonitor_1
+      operationId: createMonitor_2
       requestBody:
         content:
           application/json:
@@ -413,7 +691,7 @@ paths:
       tags:
       - HTTP monitors
       summary: "Get the overall, cumulative stats of all monitors"
-      operationId: getMonitoringStats_1
+      operationId: getMonitoringStats_2
       parameters:
       - name: period
         in: query
@@ -437,7 +715,7 @@ paths:
       tags:
       - HTTP monitors
       summary: Get a monitor's details
-      operationId: getMonitorDetails_1
+      operationId: getMonitorDetails_2
       parameters:
       - name: monitorId
         in: path
@@ -465,7 +743,7 @@ paths:
       tags:
       - HTTP monitors
       summary: Delete a monitor by ID
-      operationId: deleteMonitor_1
+      operationId: deleteMonitor_2
       parameters:
       - name: monitorId
         in: path
@@ -505,7 +783,7 @@ paths:
       description: Updates the monitor with the given ID. Only fields that are present
         in the request body will be updated. Fields not present in the request body
         will remain unchanged.
-      operationId: updateMonitor_1
+      operationId: updateMonitor_2
       parameters:
       - name: monitorId
         in: path
@@ -578,7 +856,7 @@ paths:
       tags:
       - HTTP monitors
       summary: Get the stats of the given monitor
-      operationId: getMonitorStats_1
+      operationId: getMonitorStats_2
       parameters:
       - name: monitorId
         in: path
@@ -614,7 +892,7 @@ paths:
       tags:
       - HTTP monitors
       summary: Get the uptime events of the given monitor
-      operationId: getUptimeEvents_1
+      operationId: getUptimeEvents_2
       parameters:
       - name: monitorId
         in: path
@@ -639,7 +917,7 @@ paths:
       tags:
       - ICMP monitors
       summary: Get all monitors with their details
-      operationId: getMonitorsWithDetails_2
+      operationId: getMonitorsWithDetails_3
       parameters:
       - name: enabled
         in: query
@@ -680,7 +958,7 @@ paths:
       tags:
       - ICMP monitors
       summary: Create a monitor
-      operationId: createMonitor_2
+      operationId: createMonitor_3
       requestBody:
         content:
           application/json:
@@ -715,7 +993,7 @@ paths:
       tags:
       - ICMP monitors
       summary: "Get the overall, cumulative stats of all monitors"
-      operationId: getMonitoringStats_2
+      operationId: getMonitoringStats_3
       parameters:
       - name: period
         in: query
@@ -739,7 +1017,7 @@ paths:
       tags:
       - ICMP monitors
       summary: Get a monitor's details
-      operationId: getMonitorDetails_2
+      operationId: getMonitorDetails_3
       parameters:
       - name: monitorId
         in: path
@@ -767,7 +1045,7 @@ paths:
       tags:
       - ICMP monitors
       summary: Delete a monitor by ID
-      operationId: deleteMonitor_2
+      operationId: deleteMonitor_3
       parameters:
       - name: monitorId
         in: path
@@ -807,7 +1085,7 @@ paths:
       description: Updates the monitor with the given ID. Only fields that are present
         in the request body will be updated. Fields not present in the request body
         will remain unchanged.
-      operationId: updateMonitor_2
+      operationId: updateMonitor_3
       parameters:
       - name: monitorId
         in: path
@@ -855,7 +1133,7 @@ paths:
       tags:
       - ICMP monitors
       summary: Get the stats of the given monitor
-      operationId: getMonitorStats_2
+      operationId: getMonitorStats_3
       parameters:
       - name: monitorId
         in: path
@@ -891,7 +1169,7 @@ paths:
       tags:
       - ICMP monitors
       summary: Get the uptime events of the given monitor
-      operationId: getUptimeEvents_2
+      operationId: getUptimeEvents_3
       parameters:
       - name: monitorId
         in: path
@@ -1297,7 +1575,7 @@ paths:
       tags:
       - Push monitors
       summary: Get all monitors with their details
-      operationId: getMonitorsWithDetails_3
+      operationId: getMonitorsWithDetails_4
       parameters:
       - name: enabled
         in: query
@@ -1338,7 +1616,7 @@ paths:
       tags:
       - Push monitors
       summary: Create a monitor
-      operationId: createMonitor_3
+      operationId: createMonitor_4
       requestBody:
         content:
           application/json:
@@ -1437,7 +1715,7 @@ paths:
       tags:
       - Push monitors
       summary: "Get the overall, cumulative stats of all monitors"
-      operationId: getMonitoringStats_3
+      operationId: getMonitoringStats_4
       parameters:
       - name: period
         in: query
@@ -1461,7 +1739,7 @@ paths:
       tags:
       - Push monitors
       summary: Get a monitor's details
-      operationId: getMonitorDetails_3
+      operationId: getMonitorDetails_4
       parameters:
       - name: monitorId
         in: path
@@ -1489,7 +1767,7 @@ paths:
       tags:
       - Push monitors
       summary: Delete a monitor by ID
-      operationId: deleteMonitor_3
+      operationId: deleteMonitor_4
       parameters:
       - name: monitorId
         in: path
@@ -1529,7 +1807,7 @@ paths:
       description: Updates the monitor with the given ID. Only fields that are present
         in the request body will be updated. Fields not present in the request body
         will remain unchanged.
-      operationId: updateMonitor_3
+      operationId: updateMonitor_4
       parameters:
       - name: monitorId
         in: path
@@ -1577,7 +1855,7 @@ paths:
       tags:
       - Push monitors
       summary: Get the stats of the given monitor
-      operationId: getMonitorStats_3
+      operationId: getMonitorStats_4
       parameters:
       - name: monitorId
         in: path
@@ -1613,7 +1891,7 @@ paths:
       tags:
       - Push monitors
       summary: Get the uptime events of the given monitor
-      operationId: getUptimeEvents_3
+      operationId: getUptimeEvents_4
       parameters:
       - name: monitorId
         in: path
@@ -1923,7 +2201,7 @@ paths:
       tags:
       - TCP monitors
       summary: Get all monitors with their details
-      operationId: getMonitorsWithDetails_4
+      operationId: getMonitorsWithDetails_5
       parameters:
       - name: enabled
         in: query
@@ -1964,7 +2242,7 @@ paths:
       tags:
       - TCP monitors
       summary: Create a monitor
-      operationId: createMonitor_4
+      operationId: createMonitor_5
       requestBody:
         content:
           application/json:
@@ -1999,7 +2277,7 @@ paths:
       tags:
       - TCP monitors
       summary: "Get the overall, cumulative stats of all monitors"
-      operationId: getMonitoringStats_4
+      operationId: getMonitoringStats_5
       parameters:
       - name: period
         in: query
@@ -2023,7 +2301,7 @@ paths:
       tags:
       - TCP monitors
       summary: Get a monitor's details
-      operationId: getMonitorDetails_4
+      operationId: getMonitorDetails_5
       parameters:
       - name: monitorId
         in: path
@@ -2051,7 +2329,7 @@ paths:
       tags:
       - TCP monitors
       summary: Delete a monitor by ID
-      operationId: deleteMonitor_4
+      operationId: deleteMonitor_5
       parameters:
       - name: monitorId
         in: path
@@ -2091,7 +2369,7 @@ paths:
       description: Updates the monitor with the given ID. Only fields that are present
         in the request body will be updated. Fields not present in the request body
         will remain unchanged.
-      operationId: updateMonitor_4
+      operationId: updateMonitor_5
       parameters:
       - name: monitorId
         in: path
@@ -2139,7 +2417,7 @@ paths:
       tags:
       - TCP monitors
       summary: Get the stats of the given monitor
-      operationId: getMonitorStats_4
+      operationId: getMonitorStats_5
       parameters:
       - name: monitorId
         in: path
@@ -2175,7 +2453,7 @@ paths:
       tags:
       - TCP monitors
       summary: Get the uptime events of the given monitor
-      operationId: getUptimeEvents_4
+      operationId: getUptimeEvents_5
       parameters:
       - name: monitorId
         in: path
@@ -2342,6 +2620,25 @@ components:
       - UNKNOWN
       - UP
       - DOWN
+    CpuUsageStatsDto:
+      required:
+      - averageCpuUsagePercentage
+      - maxCpuUsagePercentage
+      - minCpuUsagePercentage
+      type: object
+      properties:
+        averageCpuUsagePercentage:
+          type: number
+          description: The average CPU usage of the container
+          nullable: true
+        minCpuUsagePercentage:
+          type: number
+          description: The minimum CPU usage of the container
+          nullable: true
+        maxCpuUsagePercentage:
+          type: number
+          description: The maximum CPU usage of the container
+          nullable: true
     DiscordNotificationConfigDto:
       required:
       - enabled
@@ -3179,6 +3476,525 @@ components:
           type: boolean
           description: Whether the connection to the daemon is TLS encrypted
       description: "A Docker daemon Kuvasz can reach, configured via YAML"
+    DockerMetricsLogDto:
+      required:
+      - cpuUsagePercent
+      - createdAt
+      - id
+      - memoryLimitBytes
+      - memoryUsageBytes
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the metrics log
+          format: int64
+        cpuUsagePercent:
+          type: number
+          description: "The CPU usage of the container in percent, null if the daemon\
+            \ reported no usable sample"
+          nullable: true
+        memoryUsageBytes:
+          type: integer
+          description: "The memory usage of the container in bytes, null if the daemon\
+            \ reported no usable sample"
+          format: int64
+          nullable: true
+        memoryLimitBytes:
+          type: integer
+          description: "The memory limit of the container in bytes, null if the daemon\
+            \ reported no usable sample"
+          format: int64
+          nullable: true
+        createdAt:
+          type: string
+          description: The timestamp when the metrics were recorded
+          format: date-time
+    DockerMonitorCreateDto:
+      required:
+      - container
+      - dockerHost
+      - name
+      - uptimeCheckInterval
+      type: object
+      properties:
+        name:
+          minLength: 1
+          type: string
+          description: "Unique name for the monitor, e.g., 'My Server Monitor'"
+          x-size-message: Monitor name must not be blank
+        dockerHost:
+          minLength: 1
+          type: string
+          description: The name of the configured Docker host the container runs on
+          x-size-message: Docker host must not be blank
+        container:
+          minLength: 1
+          type: string
+          description: The name or ID of the container to inspect
+          x-size-message: Container must not be blank
+        uptimeCheckInterval:
+          minimum: 5
+          type: integer
+          description: The interval in seconds at which the monitor will be checked
+          format: int32
+          x-minimum-message: "Uptime check interval must be at least {value} seconds"
+          x-not-null-message: Uptime check interval must not be null
+        timeoutMs:
+          maximum: 30000
+          minimum: 1
+          type: integer
+          description: The Docker API request timeout in milliseconds (1-30000)
+          format: int32
+          default: 5000
+          x-maximum-message: "Timeout must be at most {value} milliseconds"
+          x-minimum-message: "Timeout must be at least {value} millisecond(s)"
+          x-not-null-message: Timeout must not be null
+        failureCountThreshold:
+          minimum: 0
+          exclusiveMinimum: true
+          type: integer
+          description: The threshold for consecutive failures before the monitor is
+            marked as DOWN
+          format: int64
+          default: 1
+          x-minimum-message: Failure count threshold must be greater than 0
+          x-not-null-message: Failure count threshold must not be null
+        enabled:
+          type: boolean
+          description: "Whether the monitor is enabled. If false, the monitor will\
+            \ not perform checks."
+          default: true
+        integrations:
+          type: array
+          description: "List of integrations explicitly assigned to the monitor, e.g.\
+            \ \"email:my-email-notification\""
+          nullable: true
+          items:
+            type: string
+        metricsHistoryEnabled:
+          type: boolean
+          description: "Whether metrics history is enabled for the monitor. Beyond\
+            \ recording the history, it also turns on the CPU and memory sampling\
+            \ of the container, which costs an extra Docker API call on every check."
+          default: false
+        category:
+          maxLength: 100
+          type: string
+          description: "Optional, free-form category of the monitor (e.g. a product\
+            \ or service name), used to group monitors on the status pages"
+          nullable: true
+          x-size-message: "Monitor category must be at most {max} characters long"
+        ignoreConnectivityCheck:
+          type: boolean
+          description: "Whether the monitor should keep being checked even when Kuvasz\
+            \ believes that it has no outbound connectivity. Useful for monitors that\
+            \ target the local network, since those don't depend on it at all."
+          default: true
+    DockerMonitorDetailsDto:
+      required:
+      - category
+      - container
+      - createdAt
+      - dockerHost
+      - effectiveIntegrations
+      - enabled
+      - failureCountThreshold
+      - id
+      - ignoreConnectivityCheck
+      - inMaintenance
+      - integrations
+      - lastUptimeCheck
+      - maintenanceWindows
+      - metricsHistoryEnabled
+      - name
+      - nextUptimeCheck
+      - statusPages
+      - timeoutMs
+      - updatedAt
+      - uptimeCheckInterval
+      - uptimeError
+      - uptimeStatus
+      - uptimeStatusStartedAt
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the monitor
+          format: int64
+        name:
+          type: string
+          description: "Unique name for the monitor, e.g., 'My Server Monitor'"
+        dockerHost:
+          type: string
+          description: The name of the configured Docker host the container runs on
+        container:
+          type: string
+          description: The name or ID of the container to inspect
+        uptimeCheckInterval:
+          type: integer
+          description: The interval in seconds at which the monitor will be checked
+          format: int32
+        timeoutMs:
+          type: integer
+          description: The Docker API request timeout in milliseconds (1-30000)
+          format: int32
+        failureCountThreshold:
+          type: integer
+          description: The threshold for consecutive failures before the monitor is
+            marked as DOWN
+          format: int64
+        metricsHistoryEnabled:
+          type: boolean
+          description: "Whether metrics history is enabled for the monitor. Beyond\
+            \ recording the history, it also turns on the CPU and memory sampling\
+            \ of the container, which costs an extra Docker API call on every check."
+        enabled:
+          type: boolean
+          description: "Whether the monitor is enabled. If false, the monitor will\
+            \ not perform checks."
+        createdAt:
+          type: string
+          description: The creation timestamp of the monitor
+          format: date-time
+        updatedAt:
+          type: string
+          description: The last updated timestamp of the monitor
+          format: date-time
+        uptimeStatus:
+          description: "The current uptime status of the monitor. If it's null, no\
+            \ check has completed yet."
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/UptimeStatus"
+        uptimeStatusStartedAt:
+          type: string
+          description: The timestamp when the uptime status was last changed
+          format: date-time
+          nullable: true
+        lastUptimeCheck:
+          type: string
+          description: The timestamp when the last uptime check was performed
+          format: date-time
+          nullable: true
+        nextUptimeCheck:
+          type: string
+          description: The timestamp when the next uptime check is scheduled
+          format: date-time
+          nullable: true
+        uptimeError:
+          type: string
+          description: The error message if the last uptime check failed
+          nullable: true
+        integrations:
+          type: array
+          description: "List of integrations explicitly assigned to the monitor, e.g.\
+            \ \"email:my-email-notification\""
+          items:
+            type: string
+            description: "A unique identifier for an integration, formatted as 'type:name'."
+            example: email:my-email-integration
+        effectiveIntegrations:
+          type: array
+          description: "List of integrations that are effective for the monitor, including\
+            \ global integrations"
+          items:
+            $ref: "#/components/schemas/IntegrationDetailsDto"
+        statusPages:
+          type: array
+          description: List of slugs of the status pages the monitor is explicitly
+            assigned to
+          items:
+            type: string
+        maintenanceWindows:
+          type: array
+          description: "List of enabled maintenance windows affecting the monitor,\
+            \ including their current activity status"
+          items:
+            $ref: "#/components/schemas/MaintenanceWindowDetailsDto"
+        inMaintenance:
+          type: boolean
+          description: Whether the monitor is currently affected by an active maintenance
+            window
+        category:
+          type: string
+          description: "Optional, free-form category of the monitor (e.g. a product\
+            \ or service name), used to group monitors on the status pages"
+          nullable: true
+        ignoreConnectivityCheck:
+          type: boolean
+          description: "Whether the monitor should keep being checked even when Kuvasz\
+            \ believes that it has no outbound connectivity. Useful for monitors that\
+            \ target the local network, since those don't depend on it at all."
+    DockerMonitorDto:
+      required:
+      - category
+      - container
+      - createdAt
+      - dockerHost
+      - enabled
+      - failureCountThreshold
+      - id
+      - ignoreConnectivityCheck
+      - integrations
+      - metricsHistoryEnabled
+      - name
+      - timeoutMs
+      - updatedAt
+      - uptimeCheckInterval
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the monitor
+          format: int64
+        name:
+          type: string
+          description: "Unique name for the monitor, e.g., 'My Server Monitor'"
+        dockerHost:
+          type: string
+          description: The name of the configured Docker host the container runs on
+        container:
+          type: string
+          description: The name or ID of the container to inspect
+        uptimeCheckInterval:
+          type: integer
+          description: The interval in seconds at which the monitor will be checked
+          format: int32
+        timeoutMs:
+          type: integer
+          description: The Docker API request timeout in milliseconds (1-30000)
+          format: int32
+        failureCountThreshold:
+          type: integer
+          description: The threshold for consecutive failures before the monitor is
+            marked as DOWN
+          format: int64
+        metricsHistoryEnabled:
+          type: boolean
+          description: "Whether metrics history is enabled for the monitor. Beyond\
+            \ recording the history, it also turns on the CPU and memory sampling\
+            \ of the container, which costs an extra Docker API call on every check."
+        enabled:
+          type: boolean
+          description: "Whether the monitor is enabled. If false, the monitor will\
+            \ not perform checks."
+        integrations:
+          type: array
+          description: "List of integrations explicitly assigned to the monitor, e.g.\
+            \ \"email:my-email-notification\""
+          items:
+            type: string
+            description: "A unique identifier for an integration, formatted as 'type:name'."
+            example: email:my-email-integration
+        createdAt:
+          type: string
+          description: The creation timestamp of the monitor
+          format: date-time
+        updatedAt:
+          type: string
+          description: The last updated timestamp of the monitor
+          format: date-time
+        category:
+          type: string
+          description: "Optional, free-form category of the monitor (e.g. a product\
+            \ or service name), used to group monitors on the status pages"
+          nullable: true
+        ignoreConnectivityCheck:
+          type: boolean
+          description: "Whether the monitor should keep being checked even when Kuvasz\
+            \ believes that it has no outbound connectivity. Useful for monitors that\
+            \ target the local network, since those don't depend on it at all."
+    DockerMonitorStatsDto:
+      required:
+      - cpuStats
+      - id
+      - memoryStats
+      - metricsHistoryEnabled
+      - metricsLogs
+      - uptimeHistory
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the monitor
+          format: int64
+        metricsHistoryEnabled:
+          type: boolean
+          description: "Whether metrics history is enabled for the monitor. Beyond\
+            \ recording the history, it also turns on the CPU and memory sampling\
+            \ of the container, which costs an extra Docker API call on every check."
+        uptimeHistory:
+          description: Uptime related statistics of the monitor in the given period
+          allOf:
+          - $ref: "#/components/schemas/HistoricalUptimeStatsDto"
+        cpuStats:
+          description: CPU usage related statistics of the monitor in the given period
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/CpuUsageStatsDto"
+        memoryStats:
+          description: Memory usage related statistics of the monitor in the given
+            period
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/MemoryUsageStatsDto"
+        metricsLogs:
+          type: array
+          description: All the metrics logs recorded for the monitor in the given
+            period
+          items:
+            $ref: "#/components/schemas/DockerMetricsLogDto"
+    DockerMonitorUpdateDto:
+      type: object
+      properties:
+        name:
+          minLength: 1
+          type: string
+          description: "Unique name for the monitor, e.g., 'My Server Monitor'"
+          nullable: false
+          x-size-message: Monitor name must not be blank
+        dockerHost:
+          minLength: 1
+          type: string
+          description: The name of the configured Docker host the container runs on
+          nullable: false
+          x-size-message: Docker host must not be blank
+        container:
+          minLength: 1
+          type: string
+          description: The name or ID of the container to inspect
+          nullable: false
+          x-size-message: Container must not be blank
+        uptimeCheckInterval:
+          minimum: 5
+          type: integer
+          description: The interval in seconds at which the monitor will be checked
+          format: int32
+          nullable: false
+          x-minimum-message: "Uptime check interval must be at least {value} seconds"
+          x-not-null-message: Uptime check interval must not be null
+        timeoutMs:
+          maximum: 30000
+          minimum: 1
+          type: integer
+          description: The Docker API request timeout in milliseconds (1-30000)
+          format: int32
+          nullable: false
+          x-maximum-message: "Timeout must be at most {value} milliseconds"
+          x-minimum-message: "Timeout must be at least {value} millisecond(s)"
+          x-not-null-message: Timeout must not be null
+        failureCountThreshold:
+          minimum: 0
+          exclusiveMinimum: true
+          type: integer
+          description: The threshold for consecutive failures before the monitor is
+            marked as DOWN
+          format: int64
+          nullable: false
+          x-minimum-message: Failure count threshold must be greater than 0
+        enabled:
+          type: boolean
+          description: "Whether the monitor is enabled. If false, the monitor will\
+            \ not perform checks."
+          nullable: false
+        integrations:
+          type: array
+          description: "List of integrations explicitly assigned to the monitor, e.g.\
+            \ \"email:my-email-notification\""
+          nullable: true
+          items:
+            type: string
+            description: "A unique identifier for an integration, formatted as 'type:name'."
+            example: email:my-email-integration
+        metricsHistoryEnabled:
+          type: boolean
+          description: "Whether metrics history is enabled for the monitor. Beyond\
+            \ recording the history, it also turns on the CPU and memory sampling\
+            \ of the container, which costs an extra Docker API call on every check."
+          nullable: false
+        category:
+          maxLength: 100
+          type: string
+          description: "Optional, free-form category of the monitor (e.g. a product\
+            \ or service name), used to group monitors on the status pages"
+          nullable: true
+          x-size-message: "Monitor category must be at most {max} characters long"
+        ignoreConnectivityCheck:
+          type: boolean
+          description: "Whether the monitor should keep being checked even when Kuvasz\
+            \ believes that it has no outbound connectivity. Useful for monitors that\
+            \ target the local network, since those don't depend on it at all."
+          nullable: false
+    DockerMonitoringStatsDto:
+      required:
+      - actual
+      - history
+      type: object
+      properties:
+        actual:
+          description: The actual monitoring statistics for the current state of the
+            monitors.
+          allOf:
+          - $ref: "#/components/schemas/DockerMonitoringStatsDto.ActualMonitoringStats"
+        history:
+          description: "The historical monitoring statistics, summarizing incidents\
+            \ and uptime ratios over time."
+          allOf:
+          - $ref: "#/components/schemas/DockerMonitoringStatsDto.HistoricalMonitoringStats"
+    DockerMonitoringStatsDto.ActualMonitoringStats:
+      required:
+      - uptimeStats
+      type: object
+      properties:
+        uptimeStats:
+          description: Statistics about the current state of uptime for all monitors.
+          allOf:
+          - $ref: "#/components/schemas/ActualUptimeStats"
+    DockerMonitoringStatsDto.HistoricalMonitoringStats:
+      required:
+      - uptimeStats
+      type: object
+      properties:
+        uptimeStats:
+          description: Statistics about the historical uptime of all monitors.
+          allOf:
+          - $ref: "#/components/schemas/HistoricalUptimeStatsDto"
+    DockerUptimeEventDto:
+      required:
+      - endedAt
+      - error
+      - id
+      - startedAt
+      - status
+      - updatedAt
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the uptime event
+          format: int64
+        status:
+          description: The status of the uptime event
+          allOf:
+          - $ref: "#/components/schemas/UptimeStatus"
+        error:
+          type: string
+          description: "The error that occurred during the uptime check, if any"
+          nullable: true
+        startedAt:
+          type: string
+          description: The timestamp when the uptime event started
+          format: date-time
+        endedAt:
+          type: string
+          description: "The timestamp when the uptime event ended, if applicable"
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          description: The timestamp when the uptime event was updated
+          format: date-time
     EmailNotificationConfigDto:
       required:
       - enabled
@@ -5233,6 +6049,28 @@ components:
             type: string
             description: "A unique identifier for an integration, formatted as 'type:name'."
             example: email:my-email-integration
+    MemoryUsageStatsDto:
+      required:
+      - averageMemoryUsageBytes
+      - maxMemoryUsageBytes
+      - minMemoryUsageBytes
+      type: object
+      properties:
+        averageMemoryUsageBytes:
+          type: integer
+          description: The average memory usage of the container in bytes
+          format: int64
+          nullable: true
+        minMemoryUsageBytes:
+          type: integer
+          description: The minimum memory usage of the container in bytes
+          format: int64
+          nullable: true
+        maxMemoryUsageBytes:
+          type: integer
+          description: The maximum memory usage of the container in bytes
+          format: int64
+          nullable: true
     MonitorImportResultDto:
       required:
       - dryRun
@@ -6043,6 +6881,7 @@ components:
     SettingsDto.AppSettingsDto.EditabilityStateDto:
       required:
       - areDnsMonitorsReadOnly
+      - areDockerMonitorsReadOnly
       - areHttpMonitorsReadOnly
       - areIcmpMonitorsReadOnly
       - areMaintenanceWindowsReadOnly
@@ -6069,6 +6908,9 @@ components:
         areDnsMonitorsReadOnly:
           type: boolean
           description: Whether the DNS monitors are in read-only mode
+        areDockerMonitorsReadOnly:
+          type: boolean
+          description: Whether the Docker monitors are in read-only mode
         areMaintenanceWindowsReadOnly:
           type: boolean
           description: Whether the maintenance windows are in read-only mode
@@ -6220,6 +7062,10 @@ components:
       required:
       - dnsLatestLatency
       - dnsUptimeStatus
+      - dockerLatestCpuUsage
+      - dockerLatestLatency
+      - dockerLatestMemoryUsage
+      - dockerUptimeStatus
       - httpLatestLatency
       - httpUptimeStatus
       - icmpLatestLatency
@@ -6268,6 +7114,18 @@ components:
         dnsLatestLatency:
           type: boolean
           description: Whether DNS latest latency exporter is enabled
+        dockerUptimeStatus:
+          type: boolean
+          description: Whether Docker monitor status exporter is enabled
+        dockerLatestLatency:
+          type: boolean
+          description: Whether Docker API latency exporter is enabled
+        dockerLatestCpuUsage:
+          type: boolean
+          description: Whether Docker container CPU usage exporter is enabled
+        dockerLatestMemoryUsage:
+          type: boolean
+          description: Whether Docker container memory usage exporter is enabled
     SettingsDto.SmtpConfigDto:
       required:
       - host
@@ -6473,6 +7331,39 @@ components:
             going to start within the next 24 hours for at least one of its monitors
           items:
             $ref: "#/components/schemas/StatusPageMaintenanceWindowDto"
+    StatusPageDockerMonitorDetailsDto:
+      required:
+      - inMaintenance
+      - name
+      - type
+      - uptimeStatusHistory
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        lastCheck:
+          type: string
+          format: date-time
+          nullable: true
+        uptimeRatio:
+          type: number
+          format: double
+          nullable: true
+        uptimeStatus:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/UptimeStatus"
+        uptimeStatusHistory:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatusHistoryDto"
+        inMaintenance:
+          type: boolean
+        category:
+          type: string
+          nullable: true
     StatusPageDto:
       required:
       - categories
@@ -6707,6 +7598,7 @@ components:
       - $ref: "#/components/schemas/StatusPageHttpMonitorDetailsDto"
       - $ref: "#/components/schemas/StatusPageIcmpMonitorDetailsDto"
       - $ref: "#/components/schemas/StatusPageTcpMonitorDetailsDto"
+      - $ref: "#/components/schemas/StatusPageDockerMonitorDetailsDto"
     StatusPagePushMonitorDetailsDto:
       required:
       - inMaintenance

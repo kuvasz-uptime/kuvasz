@@ -86,7 +86,7 @@ class GenericWebhookServiceTest(
                 result.message shouldBe Messages.successfulTestResultMessage()
 
                 val genericMessages = mutableListOf<GenericWebhookMessage>()
-                verify(exactly = 14) {
+                verify(exactly = 16) {
                     mockClient.sendMessage(
                         httpMethod = WebhookHttpMethod.POST,
                         url = URI(webhookUrl),
@@ -109,6 +109,8 @@ class GenericWebhookServiceTest(
                     IntegrationEventType.DNS_DOWN,
                     IntegrationEventType.DNS_UP,
                     IntegrationEventType.DNS_RECORDS_CHANGED,
+                    IntegrationEventType.DOCKER_DOWN,
+                    IntegrationEventType.DOCKER_UP,
                 )
 
                 genericMessages.map { it.eventDetails } shouldContainExactly expectedEventDetails
@@ -160,7 +162,7 @@ class GenericWebhookServiceTest(
                 result.message shouldBe Messages.successfulTestResultMessage()
 
                 val genericMessages = mutableListOf<GenericWebhookMessage>()
-                verify(exactly = 12) {
+                verify(exactly = 14) {
                     mockClient.sendMessage(
                         httpMethod = WebhookHttpMethod.POST,
                         url = URI(webhookUrl),
@@ -181,6 +183,8 @@ class GenericWebhookServiceTest(
                     IntegrationEventType.DNS_DOWN,
                     IntegrationEventType.DNS_UP,
                     IntegrationEventType.DNS_RECORDS_CHANGED,
+                    IntegrationEventType.DOCKER_DOWN,
+                    IntegrationEventType.DOCKER_UP,
                 )
 
                 genericMessages.forAll { message ->
@@ -319,7 +323,7 @@ class GenericWebhookServiceTest(
                 result.message shouldBe Messages.successfulTestResultMessage()
 
                 val templatedMessages = mutableListOf<String>()
-                verify(exactly = 14) {
+                verify(exactly = 16) {
                     mockClient.sendMessage(
                         httpMethod = WebhookHttpMethod.POST,
                         url = URI(webhookUrl),
@@ -342,6 +346,8 @@ class GenericWebhookServiceTest(
                     "Event type: DNS_DOWN",
                     "Event type: DNS_UP",
                     "Event type: DNS_RECORDS_CHANGED",
+                    "Event type: DOCKER_DOWN",
+                    "Event type: DOCKER_UP",
                 )
             }
         }
@@ -368,7 +374,7 @@ class GenericWebhookServiceTest(
                 result.message shouldBe Messages.successfulTestResultMessage()
 
                 val templatedMessages = mutableListOf<String>()
-                verify(exactly = 12) {
+                verify(exactly = 14) {
                     mockClient.sendMessage(
                         httpMethod = WebhookHttpMethod.POST,
                         url = URI(webhookUrl),
@@ -389,6 +395,8 @@ class GenericWebhookServiceTest(
                     "Event type: DNS_DOWN",
                     "Event type: DNS_UP",
                     "Event type: DNS_RECORDS_CHANGED",
+                    "Event type: DOCKER_DOWN",
+                    "Event type: DOCKER_UP",
                 )
             }
         }
@@ -521,7 +529,7 @@ class GenericWebhookServiceTest(
 
             then("it should send all messages via PUT") {
                 result.success shouldBe true
-                verify(exactly = 14) {
+                verify(exactly = 16) {
                     mockClient.sendMessage(
                         httpMethod = WebhookHttpMethod.PUT,
                         url = URI(webhookUrl),
@@ -548,7 +556,7 @@ class GenericWebhookServiceTest(
 
             then("it should send all messages via PATCH") {
                 result.success shouldBe true
-                verify(exactly = 14) {
+                verify(exactly = 16) {
                     mockClient.sendMessage(
                         httpMethod = WebhookHttpMethod.PATCH,
                         url = URI(webhookUrl),
@@ -578,7 +586,7 @@ class GenericWebhookServiceTest(
 
             then("it should send all templated messages via PUT") {
                 result.success shouldBe true
-                verify(exactly = 14) {
+                verify(exactly = 16) {
                     mockClient.sendMessage(
                         httpMethod = WebhookHttpMethod.PUT,
                         url = URI(webhookUrl),
@@ -608,7 +616,7 @@ class GenericWebhookServiceTest(
 
             then("it should send all templated messages via PATCH") {
                 result.success shouldBe true
-                verify(exactly = 14) {
+                verify(exactly = 16) {
                     mockClient.sendMessage(
                         httpMethod = WebhookHttpMethod.PATCH,
                         url = URI(webhookUrl),
@@ -635,7 +643,7 @@ class GenericWebhookServiceTest(
 
             then("it should send all messages via GET") {
                 result.success shouldBe true
-                verify(exactly = 14) {
+                verify(exactly = 16) {
                     mockClient.sendMessage(
                         httpMethod = WebhookHttpMethod.GET,
                         url = URI(webhookUrl),
@@ -665,7 +673,7 @@ class GenericWebhookServiceTest(
 
             then("it should send all templated messages via GET") {
                 result.success shouldBe true
-                verify(exactly = 14) {
+                verify(exactly = 16) {
                     mockClient.sendMessage(
                         httpMethod = WebhookHttpMethod.GET,
                         url = URI(webhookUrl),
