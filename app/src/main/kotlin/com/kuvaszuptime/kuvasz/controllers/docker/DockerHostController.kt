@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.OpenApiTags
 import com.kuvaszuptime.kuvasz.controllers.API_V2_PREFIX
 import com.kuvaszuptime.kuvasz.models.dto.docker.DockerHostDto
 import com.kuvaszuptime.kuvasz.services.docker.DockerHostRegistry
+import com.kuvaszuptime.kuvasz.services.docker.client.DockerApiClient
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller
 import io.micronaut.validation.Validated
@@ -23,6 +24,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 )
 class DockerHostController(
     private val dockerHostRegistry: DockerHostRegistry?,
+    private val dockerApiClient: DockerApiClient?,
 ) : DockerHostOperations {
 
     @ApiResponses(
@@ -31,6 +33,5 @@ class DockerHostController(
             description = "The list of configured Docker hosts",
         ),
     )
-    override fun getDockerHosts(): List<DockerHostDto> =
-        dockerHostRegistry?.getConfiguredHostDtos().orEmpty().sortedBy { it.name }
+    override fun getDockerHosts(): List<DockerHostDto> = dockerHostRegistry?.getHostDtos(dockerApiClient).orEmpty()
 }

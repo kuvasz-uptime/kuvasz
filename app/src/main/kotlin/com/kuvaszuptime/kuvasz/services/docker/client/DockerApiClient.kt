@@ -47,6 +47,8 @@ class DockerApiClient(private val transport: DockerHttpTransport) {
         .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
         .build()
 
+    fun negotiatedVersions(): Map<String, String> = negotiatedVersions.mapValues { (_, version) -> version.toString() }
+
     fun inspectContainer(host: DockerHost, container: String, timeoutMs: Int): DockerInspectResult =
         callDaemon(DockerInspectResult::Unreachable) {
             val (response, latencyMs) = getVersioned(host, inspectPath(container), timeoutMs)

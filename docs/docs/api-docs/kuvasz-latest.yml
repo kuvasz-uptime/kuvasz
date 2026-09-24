@@ -3460,6 +3460,7 @@ components:
           format: date-time
     DockerHost:
       required:
+      - authMethod
       - name
       - url
       type: object
@@ -3475,7 +3476,32 @@ components:
         tlsEnabled:
           type: boolean
           description: Whether the connection to the daemon is TLS encrypted
+        authMethod:
+          description: How Kuvasz is authenticated to the daemon
+          allOf:
+          - $ref: "#/components/schemas/DockerHostAuthMethod"
+        apiVersion:
+          type: string
+          description: "The Engine API version negotiated with the daemon, null until\
+            \ Kuvasz has talked to it"
+          nullable: true
+          example: "1.44"
       description: "A Docker daemon Kuvasz can reach, configured via YAML"
+    DockerHostAuthMethod:
+      type: string
+      description: How Kuvasz is authenticated to a Docker daemon
+      enum:
+      - UNIX_SOCKET
+      - NONE
+      - TLS
+      - MUTUAL_TLS
+      x-enum-descriptions:
+      - "A local unix socket, guarded by the permissions of the socket file"
+      - "Plaintext TCP, the daemon does not authenticate the client"
+      - "TLS without a client certificate, so the daemon does not authenticate the\
+        \ client"
+      - "TLS with a client certificate, which the daemon authenticates the client\
+        \ by"
     DockerMetricsLogDto:
       required:
       - cpuUsagePercent

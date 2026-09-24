@@ -12,4 +12,11 @@ data class DockerHostDto(
     val url: String,
     @param:Schema(description = "Whether the connection to the daemon is TLS encrypted")
     val tlsEnabled: Boolean,
+    @param:Schema(description = "How Kuvasz is authenticated to the daemon")
+    val authMethod: DockerHostAuthMethod,
+    @param:Schema(
+        description = "The Engine API version negotiated with the daemon, null until Kuvasz has talked to it",
+        example = "1.44",
+    )
+    val apiVersion: String?,
 )

@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.services.docker
 
+import com.kuvaszuptime.kuvasz.models.dto.docker.DockerHostAuthMethod
 import java.net.URI
 import java.net.URISyntaxException
 import java.nio.file.Files
@@ -44,6 +45,15 @@ data class DockerHost(
     val address: DockerDaemonAddress,
 ) {
     val tlsEnabled: Boolean = address is DockerDaemonAddress.Tcp && address.secure
+
+    val authMethod: DockerHostAuthMethod = when (address) {
+        is DockerDaemonAddress.UnixSocket -> DockerHostAuthMethod.UNIX_SOCKET
+        is DockerDaemonAddress.Tcp -> when {
+            !address.secure -> DockerHostAuthMethod.NONE
+            address.tls?.clientCert != null -> DockerHostAuthMethod.MUTUAL_TLS
+            else -> DockerHostAuthMethod.TLS
+        }
+    }
 }
 
 class DockerHostConfigException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)

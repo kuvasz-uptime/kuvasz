@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.services.docker
 
 import com.kuvaszuptime.kuvasz.config.DockerHostConfig
 import com.kuvaszuptime.kuvasz.models.dto.docker.DockerHostDto
+import com.kuvaszuptime.kuvasz.services.docker.client.DockerApiClient
 import com.kuvaszuptime.kuvasz.util.loggerFor
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Requires
@@ -32,9 +33,16 @@ class DockerHostRegistry(private val hostConfigs: List<DockerHostConfig>) {
 
     operator fun get(name: String): DockerHost? = configuredHosts[name]
 
-    fun getConfiguredHostDtos(): List<DockerHostDto> = configuredHosts.values.map { host ->
-        DockerHostDto(name = host.name, url = host.url, tlsEnabled = host.tlsEnabled)
-    }
+    fun getConfiguredHostDtos(negotiatedApiVersions: Map<String, String>): List<DockerHostDto> =
+        configuredHosts.values.map { host ->
+            DockerHostDto(
+                name = host.name,
+                url = host.url,
+                tlsEnabled = host.tlsEnabled,
+                authMethod = host.authMethod,
+                apiVersion = negotiatedApiVersions[host.name],
+            )
+        }.sortedBy { it.name }
 
     @PostConstruct
     fun init() {
@@ -49,4 +57,7 @@ class DockerHostRegistry(private val hostConfigs: List<DockerHostConfig>) {
     } catch (ex: DockerHostConfigException) {
         throw DockerHostConfigException("Invalid configuration for Docker host [$name]: ${ex.message}", ex)
     }
+
+    fun getHostDtos(apiClient: DockerApiClient?): List<DockerHostDto> =
+        getConfiguredHostDtos(apiClient?.negotiatedVersions().orEmpty())
 }

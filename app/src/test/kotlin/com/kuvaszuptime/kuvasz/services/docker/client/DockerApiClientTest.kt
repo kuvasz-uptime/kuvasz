@@ -874,6 +874,10 @@ class DockerApiClientTest : BehaviorSpec({
             client.containerStats(LOCAL_HOST, "my-app", TIMEOUT_MS)
             client.listContainers(LOCAL_HOST, TIMEOUT_MS)
 
+            then("the negotiated version should be exposed under the host's name") {
+                client.negotiatedVersions() shouldBe mapOf("local" to "1.44")
+            }
+
             then("the version should be negotiated only once per host, and used by all of them") {
                 transport.paths shouldBe listOf(
                     "/_ping",
@@ -895,6 +899,7 @@ class DockerApiClientTest : BehaviorSpec({
             }
             val client = DockerApiClient(transport)
             val unreachable = client.inspectContainer(LOCAL_HOST, "my-app", TIMEOUT_MS)
+            val versionsWhileUnreachable = client.negotiatedVersions()
             reachable = true
             val inspected = client.inspectContainer(LOCAL_HOST, "my-app", TIMEOUT_MS)
 
@@ -904,6 +909,7 @@ class DockerApiClientTest : BehaviorSpec({
             }
 
             then("nothing should be settled, so the next check negotiates again") {
+                versionsWhileUnreachable shouldBe emptyMap()
                 inspected.shouldBeInstanceOf<DockerInspectResult.Inspected>()
                 transport.paths shouldBe listOf("/_ping", "/_ping", "/v1.44/containers/my-app/json")
             }

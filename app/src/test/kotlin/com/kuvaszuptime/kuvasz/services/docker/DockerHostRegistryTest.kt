@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.services.docker
 
 import com.kuvaszuptime.kuvasz.models.dto.DockerHostValidationMessages
+import com.kuvaszuptime.kuvasz.models.dto.docker.DockerHostAuthMethod
 import com.kuvaszuptime.kuvasz.models.dto.docker.DockerHostDto
 import com.kuvaszuptime.kuvasz.testAppContext
 import com.kuvaszuptime.kuvasz.testutils.DOCKER_HOSTS_TLS
@@ -76,11 +77,30 @@ class DockerHostRegistryTest : BehaviorSpec({
                 registry["nope"].shouldBeNull()
             }
 
-            then("the DTOs should expose the TLS flag but never the certificate paths") {
-                registry.getConfiguredHostDtos().sortedBy { it.name } shouldContainExactly listOf(
-                    DockerHostDto(name = "local", url = "unix:///var/run/docker.sock", tlsEnabled = false),
-                    DockerHostDto(name = "vps-1", url = "tcp://10.0.0.5:2376", tlsEnabled = true),
+            then("the DTOs should expose the TLS flag but never the certificate paths, sorted by name") {
+                registry.getConfiguredHostDtos(emptyMap()) shouldContainExactly listOf(
+                    DockerHostDto(
+                        name = "local",
+                        url = "unix:///var/run/docker.sock",
+                        tlsEnabled = false,
+                        authMethod = DockerHostAuthMethod.UNIX_SOCKET,
+                        apiVersion = null,
+                    ),
+                    DockerHostDto(
+                        name = "vps-1",
+                        url = "tcp://10.0.0.5:2376",
+                        tlsEnabled = true,
+                        authMethod = DockerHostAuthMethod.MUTUAL_TLS,
+                        apiVersion = null,
+                    ),
                 )
+            }
+
+            // A version is only known once the client has talked to the host, and only for configured hosts
+            then("the DTOs should carry the API versions negotiated so far") {
+                val dtos = registry.getConfiguredHostDtos(mapOf("vps-1" to "1.44", "removed" to "1.40"))
+
+                dtos.map { it.name to it.apiVersion } shouldContainExactly listOf("local" to null, "vps-1" to "1.44")
             }
         }
     }
@@ -92,6 +112,10 @@ class DockerHostRegistryTest : BehaviorSpec({
 
         `when`("a host configures the full mTLS material") {
             val address = registry["mtls"]?.address
+
+            then("it should authenticate with the client certificate") {
+                registry["mtls"]?.authMethod shouldBe DockerHostAuthMethod.MUTUAL_TLS
+            }
 
             then("every path should be bound from the nested YAML block") {
                 address.shouldBeInstanceOf<DockerDaemonAddress.Tcp>()
@@ -110,6 +134,10 @@ class DockerHostRegistryTest : BehaviorSpec({
         `when`("a host configures only a CA") {
             val address = registry["ca-only"]?.address
 
+            then("it should be encrypted, but not authenticate the client") {
+                registry["ca-only"]?.authMethod shouldBe DockerHostAuthMethod.TLS
+            }
+
             then("it should be secure without a client certificate, on the default TLS port") {
                 address.shouldBeInstanceOf<DockerDaemonAddress.Tcp>()
                 address.port shouldBe 2376
@@ -120,6 +148,10 @@ class DockerHostRegistryTest : BehaviorSpec({
 
         `when`("a host configures only a client certificate") {
             val address = registry["client-cert-only"]?.address
+
+            then("it should still authenticate with the client certificate") {
+                registry["client-cert-only"]?.authMethod shouldBe DockerHostAuthMethod.MUTUAL_TLS
+            }
 
             then("it should present the certificate and rely on the system trust store") {
                 address.shouldBeInstanceOf<DockerDaemonAddress.Tcp>()
