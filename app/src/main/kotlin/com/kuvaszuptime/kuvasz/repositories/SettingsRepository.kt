@@ -100,6 +100,10 @@ class SettingsRepository(
             tcpLatestLatency = exportConfig.tcpLatestLatency,
             dnsUptimeStatus = exportConfig.dnsUptimeStatus,
             dnsLatestLatency = exportConfig.dnsLatestLatency,
+            dockerUptimeStatus = exportConfig.dockerUptimeStatus,
+            dockerLatestLatency = exportConfig.dockerLatestLatency,
+            dockerLatestCpuUsage = exportConfig.dockerLatestCpuUsage,
+            dockerLatestMemoryUsage = exportConfig.dockerLatestMemoryUsage,
         ),
         exporters = SettingsDto.MetricsExportSettingsDto.ExporterSettingsDto(
             prometheus = SettingsDto.MetricsExportSettingsDto.ExporterSettingsDto.PrometheusSettingsDto(

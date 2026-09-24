@@ -80,6 +80,10 @@ metrics-exports:
   tcp-latest-latency: true
   dns-uptime-status: true
   dns-latest-latency: true
+  docker-uptime-status: true
+  docker-latest-memory-usage: true
+  docker-latest-cpu-usage: true
+  docker-latest-latency: true
 ---
 http-monitors:
   - name: "Tralala #!: j[ő"
