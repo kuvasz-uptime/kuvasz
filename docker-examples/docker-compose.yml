@@ -30,6 +30,8 @@ services:
       interval: 60s
       start_period: 30s
     depends_on:
-      - kuvasz-db
+      kuvasz-db:
+        condition: service_healthy
+        restart: true
 volumes:
   kuvasz-db-data:

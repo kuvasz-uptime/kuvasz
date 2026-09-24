@@ -102,12 +102,14 @@ services:
       interval: 60s
       start_period: 30s
     depends_on:
-      - kuvasz-db
+      kuvasz-db:
+        condition: service_healthy
+        restart: true
 volumes:
   kuvasz-db-data:
 ```
 
-1. Use the container name from the PostgreSQL service above 
+1. Use the service name from the PostgreSQL service above 
 2. Use the same user and password as in the PostgreSQL service above
 3. Make sure your config file is readable and the mount path is correct (`/config/kuvasz.yml`)
 4. Optional, but recommended, use your own timezone
