@@ -81,6 +81,7 @@ data class EditabilityStateSchema(
     val areIcmpMonitorsReadOnly: Boolean,
     val areTcpMonitorsReadOnly: Boolean,
     val areDnsMonitorsReadOnly: Boolean,
+    val areDockerMonitorsReadOnly: Boolean,
     val areStatusPagesReadOnly: Boolean,
     val areMaintenanceWindowsReadOnly: Boolean,
 ) {
@@ -91,6 +92,7 @@ data class EditabilityStateSchema(
             areIcmpMonitorsReadOnly = dto.areIcmpMonitorsReadOnly,
             areTcpMonitorsReadOnly = dto.areTcpMonitorsReadOnly,
             areDnsMonitorsReadOnly = dto.areDnsMonitorsReadOnly,
+            areDockerMonitorsReadOnly = dto.areDockerMonitorsReadOnly,
             areStatusPagesReadOnly = dto.areStatusPagesReadOnly,
             areMaintenanceWindowsReadOnly = dto.areMaintenanceWindowsReadOnly,
         )
