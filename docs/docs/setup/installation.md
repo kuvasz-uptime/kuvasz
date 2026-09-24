@@ -73,7 +73,6 @@ Create a file called `docker-compose.yml` in the same directory where you create
 services:
   kuvasz-db: # (7)!
     image: pgautoupgrade/pgautoupgrade:18-alpine
-    container_name: kuvaszdb
     environment:
       POSTGRES_USER: kuvasz
       POSTGRES_PASSWORD: YourSuperSecretDbPassword # change it!
@@ -87,7 +86,6 @@ services:
   kuvasz:
     image: kuvaszmonitoring/kuvasz:latest
     # platform: linux/arm64 # (8)
-    container_name: kuvasz
     ports:
       - "8080:8080" # (9)!
     environment:
