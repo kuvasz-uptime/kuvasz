@@ -127,6 +127,21 @@ public class DockerUptimeEventRecord extends UpdatableRecordImpl<DockerUptimeEve
         return (OffsetDateTime) get(6);
     }
 
+    /**
+     * Setter for <code>kuvasz.docker_uptime_event.image</code>.
+     */
+    public DockerUptimeEventRecord setImage(String value) {
+        set(7, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.docker_uptime_event.image</code>.
+     */
+    public String getImage() {
+        return (String) get(7);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -150,7 +165,7 @@ public class DockerUptimeEventRecord extends UpdatableRecordImpl<DockerUptimeEve
     /**
      * Create a detached, initialised DockerUptimeEventRecord
      */
-    public DockerUptimeEventRecord(Long id, Long monitorId, UptimeStatus status, String error, OffsetDateTime startedAt, OffsetDateTime endedAt, OffsetDateTime updatedAt) {
+    public DockerUptimeEventRecord(Long id, Long monitorId, UptimeStatus status, String error, OffsetDateTime startedAt, OffsetDateTime endedAt, OffsetDateTime updatedAt, String image) {
         super(DockerUptimeEvent.DOCKER_UPTIME_EVENT);
 
         setId(id);
@@ -160,6 +175,7 @@ public class DockerUptimeEventRecord extends UpdatableRecordImpl<DockerUptimeEve
         setStartedAt(startedAt);
         setEndedAt(endedAt);
         setUpdatedAt(updatedAt);
+        setImage(image);
         resetTouchedOnNotNull();
     }
 
@@ -177,6 +193,7 @@ public class DockerUptimeEventRecord extends UpdatableRecordImpl<DockerUptimeEve
             setStartedAt(value.getStartedAt());
             setEndedAt(value.getEndedAt());
             setUpdatedAt(value.getUpdatedAt());
+            setImage(value.getImage());
             resetTouchedOnNotNull();
         }
     }

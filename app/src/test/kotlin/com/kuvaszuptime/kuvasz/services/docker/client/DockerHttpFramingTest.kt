@@ -11,17 +11,17 @@ import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.nio.charset.StandardCharsets
 
-private const val LIMIT_BYTES = 1 shl 20
+private const val LIMIT_BYTES = 1024 * 1024
 
 /** Runs one exchange against a canned response, returning the request that was sent along with the parsed response. */
-private fun exchange(response: String): Pair<String, DockerHttpResponse> {
+private fun exchange(response: String, maxBodyBytes: Int = LIMIT_BYTES): Pair<String, DockerHttpResponse> {
     val sent = ByteArrayOutputStream()
     val connection = DockerConnection(
         input = ByteArrayInputStream(response.toByteArray(StandardCharsets.UTF_8)),
         output = sent,
         resource = {},
     )
-    val parsed = DockerHttpFraming.exchange(connection, "/containers/x/json", hostHeader = "localhost")
+    val parsed = DockerHttpFraming.exchange(connection, "/containers/x/json", hostHeader = "localhost", maxBodyBytes)
     return sent.toString(StandardCharsets.US_ASCII) to parsed
 }
 
@@ -142,6 +142,39 @@ class DockerHttpFramingTest : BehaviorSpec({
             }
 
             then("it should still be rejected") {
+                exception.message shouldContain "exceeds the $LIMIT_BYTES byte limit"
+            }
+        }
+    }
+
+    given("a caller that allows a larger body than the default limit") {
+        val limit = LIMIT_BYTES * 2
+
+        `when`("the body is over the default limit, but within the one asked for") {
+            val body = "a".repeat(LIMIT_BYTES + 1)
+            val (_, response) = exchange("HTTP/1.1 200 OK\r\nContent-Length: ${body.length}\r\n\r\n$body", limit)
+
+            then("it should be read in full") {
+                response.body.length shouldBe LIMIT_BYTES + 1
+            }
+        }
+
+        `when`("the body is over the one asked for, too") {
+            val exception = shouldThrow<IOException> {
+                exchange("HTTP/1.1 200 OK\r\n\r\n" + "a".repeat(limit + 1), limit)
+            }
+
+            then("it should be rejected, naming that limit") {
+                exception.message shouldContain "exceeds the $limit byte limit"
+            }
+        }
+
+        `when`("its header section runs past the default limit") {
+            val exception = shouldThrow<IOException> {
+                exchange("HTTP/1.1 200 OK\r\n" + "X-Pad: ${"a".repeat(1_000)}\r\n".repeat(1_100) + "\r\n", limit)
+            }
+
+            then("it should still be rejected, since only the body is allowed to grow") {
                 exception.message shouldContain "exceeds the $LIMIT_BYTES byte limit"
             }
         }

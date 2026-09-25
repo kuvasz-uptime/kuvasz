@@ -6,10 +6,8 @@ object DockerMonitorDefaults {
     const val FAILURE_COUNT_THRESHOLD = 1L
     const val METRICS_HISTORY_ENABLED = false
 
-    /**
-     * Deviates from [com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults.IGNORE_CONNECTIVITY_CHECK]: a
-     * container reached over a local socket does not care whether Kuvasz itself has internet access, and suppressing
-     * its checks during an outage would hide real failures. Operators watching a remote daemon can flip it.
-     */
+    // Deviates from MonitorDefaults.IGNORE_CONNECTIVITY_CHECK: a container reached over a local socket does not care
+    // whether Kuvasz itself has internet access, and suppressing its checks during an outage would hide real
+    // failures. Operators watching a remote daemon can flip it.
     const val IGNORE_CONNECTIVITY_CHECK = true
 }

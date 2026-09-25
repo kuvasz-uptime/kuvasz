@@ -5,6 +5,8 @@ import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createDnsMonitor
 import com.kuvaszuptime.kuvasz.mocks.createDnsUptimeEventRecord
+import com.kuvaszuptime.kuvasz.mocks.createDockerMonitor
+import com.kuvaszuptime.kuvasz.mocks.createDockerUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createHttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
@@ -32,6 +34,7 @@ class IncidentRepositoryTest(
     icmpMonitorRepository: IcmpMonitorRepository,
     tcpMonitorRepository: TcpMonitorRepository,
     dnsMonitorRepository: DnsMonitorRepository,
+    dockerMonitorRepository: DockerMonitorRepository,
     incidentRepository: IncidentRepository
 ) : DatabaseBehaviorSpec() {
     init {
@@ -1355,6 +1358,50 @@ class IncidentRepositoryTest(
                         openMonitor2.status shouldBe IncidentStatus.ONGOING
                         openMonitor2.incidentType shouldBe IncidentType.DNS
                     }
+                }
+            }
+        }
+
+        given("the incidents of a Docker monitor") {
+
+            `when`("the image of the container is known") {
+
+                then("it should be appended to the error as a detail") {
+                    val monitor = createDockerMonitor(dockerMonitorRepository)
+                    createDockerUptimeEventRecord(
+                        dslContext,
+                        monitorId = monitor.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp(),
+                        endedAt = null,
+                        error = "The container exited (137)",
+                        image = "nginx:1.27",
+                    )
+
+                    incidentRepository.getIncidents(monitorId = monitor.id, includeResolved = true)
+                        .shouldHaveSize(1)
+                        .first()
+                        .details shouldBe "The container exited (137) · Image: nginx:1.27"
+                }
+            }
+
+            `when`("the image of the container is unknown") {
+
+                then("the details should be the error alone") {
+                    val monitor = createDockerMonitor(dockerMonitorRepository)
+                    createDockerUptimeEventRecord(
+                        dslContext,
+                        monitorId = monitor.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp(),
+                        endedAt = null,
+                        error = "The Docker host \"local\" cannot be reached: connection refused",
+                    )
+
+                    incidentRepository.getIncidents(monitorId = monitor.id, includeResolved = true)
+                        .shouldHaveSize(1)
+                        .first()
+                        .details shouldBe "The Docker host \"local\" cannot be reached: connection refused"
                 }
             }
         }

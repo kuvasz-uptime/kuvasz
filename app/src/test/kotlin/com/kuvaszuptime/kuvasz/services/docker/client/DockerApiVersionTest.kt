@@ -42,9 +42,12 @@ class DockerApiVersionTest : StringSpec({
             row(DockerApiVersion(1, 41), DockerApiVersion(1, 41)),
             row(DockerApiVersion(1, 40), DockerApiVersion(1, 40)),
             row(DockerApiVersion(1, 24), DockerApiVersion.OLDEST_SUPPORTED),
-            row(null, DockerApiVersion.OLDEST_SUPPORTED),
         ) { daemonVersion, expected ->
             DockerApiVersion.negotiate(daemonVersion) shouldBe expected
         }
+    }
+
+    "a daemon that does not tell its version is tried with both ends of the range, the oldest first" {
+        DockerApiVersion.FALLBACKS shouldBe listOf(DockerApiVersion.OLDEST_SUPPORTED, DockerApiVersion.NEWEST_USED)
     }
 })

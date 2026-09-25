@@ -140,13 +140,8 @@ abstract class MonitorMetricsLogRepository<R : Record, D : Any>(
      */
     private fun <N : Number> Field<BigDecimal>.asMeasurementOf(measurement: TableField<R, N>): Field<N> =
         if (measurement.type == BigDecimal::class.java) {
-            round(this, DECIMAL_SCALE).coerce(measurement.dataType)
+            round(this, measurement.dataType.scale()).coerce(measurement.dataType)
         } else {
             round(this).cast(measurement.dataType)
         }
-
-    private companion object {
-        /** Matches the scale the fractional metrics log columns are declared with. */
-        const val DECIMAL_SCALE = 2
-    }
 }

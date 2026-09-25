@@ -31,6 +31,7 @@ class DockerUptimeEventRepository(private val dslContext: DSLContext) : UptimeEv
             .setStatus(event.uptimeStatus)
             .setStartedAt(event.dispatchedAt)
             .setUpdatedAt(event.dispatchedAt)
+            .setImage(event.image)
 
         if (event is DockerMonitorDownEvent) {
             eventToInsert.error = event.getPersistableError()
@@ -84,6 +85,7 @@ class DockerUptimeEventRepository(private val dslContext: DSLContext) : UptimeEv
     fun updateEvent(eventId: Long, newEvent: DockerUptimeMonitorEvent) = dslContext
         .update(DOCKER_UPTIME_EVENT)
         .set(DOCKER_UPTIME_EVENT.UPDATED_AT, newEvent.dispatchedAt)
+        .set(DOCKER_UPTIME_EVENT.IMAGE, newEvent.image)
         .apply {
             if (newEvent is DockerMonitorDownEvent) {
                 set(DOCKER_UPTIME_EVENT.ERROR, newEvent.getPersistableError())
@@ -98,6 +100,7 @@ class DockerUptimeEventRepository(private val dslContext: DSLContext) : UptimeEv
             DOCKER_UPTIME_EVENT.ID.`as`(DockerUptimeEventDto::id.name),
             DOCKER_UPTIME_EVENT.STATUS.`as`(DockerUptimeEventDto::status.name),
             DOCKER_UPTIME_EVENT.ERROR.`as`(DockerUptimeEventDto::error.name),
+            DOCKER_UPTIME_EVENT.IMAGE.`as`(DockerUptimeEventDto::image.name),
             DOCKER_UPTIME_EVENT.STARTED_AT.`as`(DockerUptimeEventDto::startedAt.name),
             DOCKER_UPTIME_EVENT.ENDED_AT.`as`(DockerUptimeEventDto::endedAt.name),
             DOCKER_UPTIME_EVENT.UPDATED_AT.`as`(DockerUptimeEventDto::updatedAt.name),

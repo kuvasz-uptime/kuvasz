@@ -1,5 +1,9 @@
 package com.kuvaszuptime.kuvasz.services.docker
 
+import com.kuvaszuptime.kuvasz.repositories.DockerMetricsLogRepository
+import java.math.BigDecimal
+import java.math.RoundingMode
+
 /**
  * Which cgroup hierarchy the container's host runs, together with the key that holds its page cache.
  *
@@ -29,6 +33,11 @@ data class DockerContainerStats(
     val memoryUsageBytes: Long?,
     val memoryLimitBytes: Long?,
 )
+
+val DockerContainerStats.cpuUsagePercentDecimal: BigDecimal?
+    get() = cpuUsagePercent
+        ?.toBigDecimal()
+        ?.setScale(DockerMetricsLogRepository.CPU_USAGE_PERCENT_SCALE, RoundingMode.HALF_UP)
 
 /**
  * The outcome of a single resource sampling.

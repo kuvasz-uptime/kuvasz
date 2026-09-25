@@ -25,6 +25,7 @@ public class DockerUptimeEvent implements Serializable {
     private OffsetDateTime startedAt;
     private OffsetDateTime endedAt;
     private OffsetDateTime updatedAt;
+    private String image;
 
     public DockerUptimeEvent() {}
 
@@ -36,6 +37,7 @@ public class DockerUptimeEvent implements Serializable {
         this.startedAt = value.startedAt;
         this.endedAt = value.endedAt;
         this.updatedAt = value.updatedAt;
+        this.image = value.image;
     }
 
     public DockerUptimeEvent(
@@ -45,7 +47,8 @@ public class DockerUptimeEvent implements Serializable {
         String error,
         OffsetDateTime startedAt,
         OffsetDateTime endedAt,
-        OffsetDateTime updatedAt
+        OffsetDateTime updatedAt,
+        String image
     ) {
         this.id = id;
         this.monitorId = monitorId;
@@ -54,6 +57,7 @@ public class DockerUptimeEvent implements Serializable {
         this.startedAt = startedAt;
         this.endedAt = endedAt;
         this.updatedAt = updatedAt;
+        this.image = image;
     }
 
     /**
@@ -161,6 +165,21 @@ public class DockerUptimeEvent implements Serializable {
         return this;
     }
 
+    /**
+     * Getter for <code>kuvasz.docker_uptime_event.image</code>.
+     */
+    public String getImage() {
+        return this.image;
+    }
+
+    /**
+     * Setter for <code>kuvasz.docker_uptime_event.image</code>.
+     */
+    public DockerUptimeEvent setImage(String image) {
+        this.image = image;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -212,6 +231,12 @@ public class DockerUptimeEvent implements Serializable {
         }
         else if (!this.updatedAt.equals(other.updatedAt))
             return false;
+        if (this.image == null) {
+            if (other.image != null)
+                return false;
+        }
+        else if (!this.image.equals(other.image))
+            return false;
         return true;
     }
 
@@ -226,6 +251,7 @@ public class DockerUptimeEvent implements Serializable {
         result = prime * result + ((this.startedAt == null) ? 0 : this.startedAt.hashCode());
         result = prime * result + ((this.endedAt == null) ? 0 : this.endedAt.hashCode());
         result = prime * result + ((this.updatedAt == null) ? 0 : this.updatedAt.hashCode());
+        result = prime * result + ((this.image == null) ? 0 : this.image.hashCode());
         return result;
     }
 
@@ -240,6 +266,7 @@ public class DockerUptimeEvent implements Serializable {
         sb.append(", ").append(startedAt);
         sb.append(", ").append(endedAt);
         sb.append(", ").append(updatedAt);
+        sb.append(", ").append(image);
 
         sb.append(")");
         return sb.toString();

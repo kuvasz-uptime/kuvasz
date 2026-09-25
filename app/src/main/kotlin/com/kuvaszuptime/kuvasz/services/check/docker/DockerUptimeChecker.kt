@@ -16,9 +16,9 @@ import com.kuvaszuptime.kuvasz.services.docker.DockerHost
 import com.kuvaszuptime.kuvasz.services.docker.DockerHostRegistry
 import com.kuvaszuptime.kuvasz.services.docker.DockerStatsResult
 import com.kuvaszuptime.kuvasz.services.docker.client.DockerApiClient
+import com.kuvaszuptime.kuvasz.services.docker.cpuUsagePercentDecimal
 import com.kuvaszuptime.kuvasz.util.loggerFor
 import jakarta.inject.Singleton
-import java.math.RoundingMode
 
 @Singleton
 class DockerUptimeChecker(
@@ -55,8 +55,8 @@ class DockerUptimeChecker(
             recordMetrics(monitor, outcome, stats)
 
             when (outcome) {
-                is DockerCheckOutcome.Up -> reportUp(monitor, outcome.latencyMs, stats)
-                is DockerCheckOutcome.Down -> reportDown(monitor, outcome.error, outcome.latencyMs)
+                is DockerCheckOutcome.Up -> reportUp(monitor, outcome, stats)
+                is DockerCheckOutcome.Down -> reportDown(monitor, outcome.error, outcome.latencyMs, outcome.image)
             }
         }
 
@@ -107,12 +107,13 @@ class DockerUptimeChecker(
         }
     }
 
-    private fun reportUp(monitor: DockerMonitorRecord, latencyMs: Int?, stats: DockerContainerStats?) {
+    private fun reportUp(monitor: DockerMonitorRecord, outcome: DockerCheckOutcome.Up, stats: DockerContainerStats?) {
         val event = DockerMonitorUpEvent(
             monitor = monitor,
             previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(monitor.id),
-            latencyInMs = latencyMs,
-            cpuUsagePercent = stats?.cpuUsagePercent?.toBigDecimal()?.setScale(CPU_PERCENT_SCALE, RoundingMode.HALF_UP),
+            latencyInMs = outcome.latencyMs,
+            image = outcome.image,
+            cpuUsagePercent = stats?.cpuUsagePercentDecimal,
             memoryUsageBytes = stats?.memoryUsageBytes,
         )
         pendingFailureRepository.deleteByMonitorId(monitor.id)
@@ -120,12 +121,13 @@ class DockerUptimeChecker(
         eventDispatcher.dispatch(event)
     }
 
-    private fun reportDown(monitor: DockerMonitorRecord, error: String, latencyMs: Int?) {
+    private fun reportDown(monitor: DockerMonitorRecord, error: String, latencyMs: Int?, image: String? = null) {
         val event = DockerMonitorDownEvent(
             monitor = monitor,
             error = error,
             previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(monitor.id),
             latencyInMs = latencyMs,
+            image = image,
         )
         if (event.isDownNow(pendingFailureRepository)) {
             databaseEventHandler.handleUptimeMonitorEvent(event)
@@ -135,8 +137,5 @@ class DockerUptimeChecker(
 
     companion object {
         private val logger = loggerFor<DockerUptimeChecker>()
-
-        /** Matches the scale the metrics log column is declared with. */
-        private const val CPU_PERCENT_SCALE = 2
     }
 }

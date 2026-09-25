@@ -3628,6 +3628,7 @@ components:
       - failureCountThreshold
       - id
       - ignoreConnectivityCheck
+      - image
       - inMaintenance
       - integrations
       - lastUptimeCheck
@@ -3657,6 +3658,11 @@ components:
         container:
           type: string
           description: The name or ID of the container to inspect
+        image:
+          type: string
+          description: "The image the container was created from, as the latest check\
+            \ reported it. Null if the container could not be inspected"
+          nullable: true
         uptimeCheckInterval:
           type: integer
           description: The interval in seconds at which the monitor will be checked
@@ -3991,6 +3997,7 @@ components:
       - endedAt
       - error
       - id
+      - image
       - startedAt
       - status
       - updatedAt
@@ -4007,6 +4014,11 @@ components:
         error:
           type: string
           description: "The error that occurred during the uptime check, if any"
+          nullable: true
+        image:
+          type: string
+          description: "The image the container was created from, as last reported\
+            \ during the event. Null if the container could not be inspected"
           nullable: true
         startedAt:
           type: string

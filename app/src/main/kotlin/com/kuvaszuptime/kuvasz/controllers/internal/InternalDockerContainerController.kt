@@ -47,10 +47,8 @@ class InternalDockerContainerController(
     companion object {
         private val logger = loggerFor<InternalDockerContainerController>()
 
-        /**
-         * The picker is opened by a person waiting on it, so this is its own budget rather than any monitor's
-         * configured timeout: the listing is not tied to a single monitor, and several may name the same host.
-         */
+        // The picker is opened by a person waiting on it, so this is its own budget rather than any monitor's
+        // configured timeout: the listing is not tied to a single monitor, and several may name the same host.
         private const val LIST_TIMEOUT_MS = 5_000
     }
 }

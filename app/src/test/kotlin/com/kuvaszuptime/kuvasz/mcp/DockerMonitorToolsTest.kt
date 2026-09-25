@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.mcp
 
 import com.kuvaszuptime.kuvasz.config.AppConfig
+import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.CREATE_DOCKER_MONITOR
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.DELETE_DOCKER_MONITOR
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_DOCKER_MONITOR_DETAILS
@@ -14,6 +15,7 @@ import com.kuvaszuptime.kuvasz.mcp.schemas.DockerMonitorSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.DockerMonitorStatsSchema
 import com.kuvaszuptime.kuvasz.mocks.createDockerMetricsLogRecord
 import com.kuvaszuptime.kuvasz.mocks.createDockerMonitor
+import com.kuvaszuptime.kuvasz.mocks.createDockerUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.models.MonitorType
@@ -22,6 +24,7 @@ import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.DockerMonitorRepository
 import com.kuvaszuptime.kuvasz.testutils.shouldHaveError
 import com.kuvaszuptime.kuvasz.testutils.shouldHaveInputValidationError
+import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldBeNull
@@ -45,13 +48,23 @@ class DockerMonitorToolsTest(
 
             `when`("list-docker-monitors is called with monitors in the DB") {
                 val monitor = createDockerMonitor(dockerMonitorRepository)
+                createDockerUptimeEventRecord(
+                    dslContext,
+                    monitorId = monitor.id,
+                    startedAt = getCurrentTimestamp(),
+                    endedAt = null,
+                    image = "nginx:1.27",
+                )
                 val response = callToolWithMcpClient(LIST_DOCKER_MONITORS)
 
                 then("it should return the list in both structured and text content") {
                     response.isError shouldBe false
 
                     val monitorList = response.structuredContentAs<DockerMonitorListSchema>().shouldNotBeNull()
-                    monitorList.monitors.forOne { it.name shouldBe monitor.name }
+                    monitorList.monitors.forOne { listed ->
+                        listed.name shouldBe monitor.name
+                        listed.image shouldBe "nginx:1.27"
+                    }
 
                     response.contentAs<DockerMonitorListSchema>() shouldBe monitorList
                 }
@@ -62,6 +75,15 @@ class DockerMonitorToolsTest(
 
             `when`("get-docker-monitor-details is called with a valid ID") {
                 val monitor = createDockerMonitor(dockerMonitorRepository)
+                createDockerUptimeEventRecord(
+                    dslContext,
+                    monitorId = monitor.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = getCurrentTimestamp(),
+                    endedAt = null,
+                    error = "The container exited (1)",
+                    image = "nginx:1.27",
+                )
                 val response = callToolWithMcpClient(GET_DOCKER_MONITOR_DETAILS, mapOf("monitorId" to monitor.id))
 
                 then("it should return the details in both structured and text content") {
@@ -73,6 +95,7 @@ class DockerMonitorToolsTest(
                     details.ignoreConnectivityCheck shouldBe monitor.ignoreConnectivityCheck
                     details.dockerHost shouldBe monitor.dockerHost
                     details.container shouldBe monitor.container
+                    details.image shouldBe "nginx:1.27"
 
                     response.contentAs<DockerMonitorDetailsSchema>() shouldBe details
                 }

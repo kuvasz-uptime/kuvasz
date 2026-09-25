@@ -38,9 +38,11 @@ class SocketDockerHttpTransport(
     // the unix channel and stay stuck on a TCP or TLS socket.
     private val executor: ExecutorService = Executors.newVirtualThreadPerTaskExecutor()
 
-    override fun get(host: DockerHost, path: String, timeoutMs: Int): DockerHttpResponse {
+    override fun get(host: DockerHost, path: String, timeoutMs: Int, maxBodyBytes: Int): DockerHttpResponse {
         val future = executor.submit<DockerHttpResponse> {
-            connectionFactory.open(host, timeoutMs).use { DockerHttpFraming.exchange(it, path, host.hostHeader) }
+            connectionFactory.open(host, timeoutMs).use {
+                DockerHttpFraming.exchange(it, path, host.hostHeader, maxBodyBytes)
+            }
         }
         return try {
             future.get(timeoutMs.toLong(), TimeUnit.MILLISECONDS)

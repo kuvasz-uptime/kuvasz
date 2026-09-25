@@ -18,9 +18,15 @@ sealed interface DockerCheckOutcome {
 
     val latencyMs: Int?
 
-    data class Up(override val latencyMs: Int?) : DockerCheckOutcome
+    val image: String?
 
-    data class Down(val error: String, override val latencyMs: Int?) : DockerCheckOutcome
+    data class Up(override val latencyMs: Int?, override val image: String? = null) : DockerCheckOutcome
+
+    data class Down(
+        val error: String,
+        override val latencyMs: Int?,
+        override val image: String? = null,
+    ) : DockerCheckOutcome
 }
 
 /**
@@ -59,18 +65,20 @@ fun DockerInspectResult.toCheckOutcome(dockerHost: String, container: String): D
 private fun DockerContainerState.toCheckOutcome(latencyMs: Int): DockerCheckOutcome = when (status) {
     // A healthcheck only runs while the container does, so this is the only status where health can overrule it
     DockerContainerStatus.RUNNING -> if (health == DockerHealthStatus.UNHEALTHY) {
-        DockerCheckOutcome.Down(unhealthyReason(), latencyMs)
+        down(unhealthyReason(), latencyMs)
     } else {
-        DockerCheckOutcome.Up(latencyMs)
+        DockerCheckOutcome.Up(latencyMs, image)
     }
 
-    DockerContainerStatus.EXITED -> DockerCheckOutcome.Down(exitedReason(), latencyMs)
-    DockerContainerStatus.CREATED -> DockerCheckOutcome.Down(Messages.dockerStatusCreated(), latencyMs)
-    DockerContainerStatus.PAUSED -> DockerCheckOutcome.Down(Messages.dockerStatusPaused(), latencyMs)
-    DockerContainerStatus.RESTARTING -> DockerCheckOutcome.Down(Messages.dockerStatusRestarting(), latencyMs)
-    DockerContainerStatus.REMOVING -> DockerCheckOutcome.Down(Messages.dockerStatusRemoving(), latencyMs)
-    DockerContainerStatus.DEAD -> DockerCheckOutcome.Down(Messages.dockerStatusDead(), latencyMs)
+    DockerContainerStatus.EXITED -> down(exitedReason(), latencyMs)
+    DockerContainerStatus.CREATED -> down(Messages.dockerStatusCreated(), latencyMs)
+    DockerContainerStatus.PAUSED -> down(Messages.dockerStatusPaused(), latencyMs)
+    DockerContainerStatus.RESTARTING -> down(Messages.dockerStatusRestarting(), latencyMs)
+    DockerContainerStatus.REMOVING -> down(Messages.dockerStatusRemoving(), latencyMs)
+    DockerContainerStatus.DEAD -> down(Messages.dockerStatusDead(), latencyMs)
 }
+
+private fun DockerContainerState.down(error: String, latencyMs: Int) = DockerCheckOutcome.Down(error, latencyMs, image)
 
 /**
  * The streak is only worth reporting above one: the first failure already flips the daemon's verdict to unhealthy,

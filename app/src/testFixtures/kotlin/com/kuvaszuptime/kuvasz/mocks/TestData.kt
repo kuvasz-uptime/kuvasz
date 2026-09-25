@@ -502,6 +502,7 @@ fun createDockerUptimeEventRecord(
     endedAt: OffsetDateTime?,
     error: String? = null,
     updatedAt: OffsetDateTime? = null,
+    image: String? = null,
 ) = dslContext
     .insertInto(DOCKER_UPTIME_EVENT)
     .set(
@@ -512,6 +513,7 @@ fun createDockerUptimeEventRecord(
             .setUpdatedAt(updatedAt ?: endedAt ?: startedAt)
             .setEndedAt(endedAt)
             .setError(error)
+            .setImage(image)
     )
     .returning(DOCKER_UPTIME_EVENT.asterisk())
     .fetchOneOrThrow<DockerUptimeEventRecord>()

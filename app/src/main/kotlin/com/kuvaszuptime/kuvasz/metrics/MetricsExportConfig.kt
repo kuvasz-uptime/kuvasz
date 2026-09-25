@@ -50,10 +50,8 @@ interface MetricsExportConfig {
     @get:Bindable(defaultValue = "false")
     val dockerUptimeStatus: Boolean
 
-    /**
-     * The round-trip to the Docker daemon, which is an operational signal about the daemon rather than a
-     * measurement of the container. It is exported but deliberately not charted on the UI.
-     */
+    // The round-trip to the Docker daemon, which is an operational signal about the daemon rather than a
+    // measurement of the container. It is exported but deliberately not charted on the UI.
     @get:Bindable(defaultValue = "false")
     val dockerLatestLatency: Boolean
 

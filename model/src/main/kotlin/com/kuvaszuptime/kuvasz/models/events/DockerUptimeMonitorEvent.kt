@@ -9,6 +9,7 @@ import java.math.BigDecimal
 
 sealed class DockerUptimeMonitorEvent : UptimeMonitorEvent() {
     abstract override val previousEvent: DockerUptimeEventRecord?
+    abstract val image: String?
 }
 
 /**
@@ -19,6 +20,8 @@ sealed class DockerUptimeMonitorEvent : UptimeMonitorEvent() {
  * [cpuUsagePercent] and [memoryUsageBytes] are the container's own resource sample, present only when the monitor
  * keeps a metrics history and the container was running. They ride along for their exporters too, since sampling
  * twice would cost another second of the daemon's collection cycle.
+ *
+ * [image] is the image the container was created from, unknown when the container could not be inspected.
  */
 data class DockerMonitorUpEvent(
     override val monitor: DockerMonitorRecord,
@@ -26,6 +29,7 @@ data class DockerMonitorUpEvent(
     val latencyInMs: Int?,
     val cpuUsagePercent: BigDecimal? = null,
     val memoryUsageBytes: Long? = null,
+    override val image: String? = null,
 ) : DockerUptimeMonitorEvent() {
 
     override val uptimeStatus = UptimeStatus.UP
@@ -41,6 +45,7 @@ data class DockerMonitorDownEvent(
     val error: String,
     override val previousEvent: DockerUptimeEventRecord?,
     val latencyInMs: Int? = null,
+    override val image: String? = null,
 ) : DockerUptimeMonitorEvent() {
 
     override val uptimeStatus = UptimeStatus.DOWN

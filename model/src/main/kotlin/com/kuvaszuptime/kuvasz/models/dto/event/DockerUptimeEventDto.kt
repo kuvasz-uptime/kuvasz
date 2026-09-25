@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.models.dto.event
 
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.models.dto.monitor.docker.DockerMonitorDocs
 import io.micronaut.core.annotation.Introspected
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.OffsetDateTime
@@ -13,6 +14,8 @@ data class DockerUptimeEventDto(
     val status: UptimeStatus,
     @param:Schema(description = UptimeEventDocs.ERROR, required = true, nullable = true)
     val error: String?,
+    @param:Schema(description = DockerMonitorDocs.EVENT_IMAGE, required = true, nullable = true)
+    val image: String?,
     @param:Schema(description = UptimeEventDocs.STARTED_AT, required = true)
     val startedAt: OffsetDateTime,
     @param:Schema(description = UptimeEventDocs.ENDED_AT, required = true, nullable = true)

@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.repositories
 
+import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.Tables.SSL_EVENT
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
@@ -228,7 +229,15 @@ class IncidentRepository(private val dslContext: DSLContext) {
             DSL.inline(IncidentType.DOCKER.name).`as`(IncidentDto::incidentType.name),
             DSL.`when`(DOCKER_UPTIME_EVENT.ENDED_AT.isNull, IncidentStatus.ONGOING.name)
                 .otherwise(IncidentStatus.RESOLVED.name).`as`(IncidentDto::status.name),
-            DOCKER_UPTIME_EVENT.ERROR.`as`(IncidentDto::details.name),
+            DSL.`when`(DOCKER_UPTIME_EVENT.IMAGE.isNull, DOCKER_UPTIME_EVENT.ERROR)
+                .otherwise(
+                    DSL.concat(
+                        DOCKER_UPTIME_EVENT.ERROR,
+                        DSL.inline(" · ${Messages.dockerImageLabel()}: "),
+                        DOCKER_UPTIME_EVENT.IMAGE,
+                    )
+                )
+                .`as`(IncidentDto::details.name),
             DOCKER_UPTIME_EVENT.STARTED_AT.`as`(IncidentDto::startedAt.name),
             DOCKER_UPTIME_EVENT.ENDED_AT.`as`(IncidentDto::endedAt.name),
             DOCKER_UPTIME_EVENT.UPDATED_AT.`as`(IncidentDto::updatedAt.name),

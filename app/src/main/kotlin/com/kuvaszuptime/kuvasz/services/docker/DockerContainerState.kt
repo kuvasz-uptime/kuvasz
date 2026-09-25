@@ -53,6 +53,7 @@ data class DockerContainerState(
     val exitCode: Int?,
     val oomKilled: Boolean,
     val failingStreak: Int?,
+    val image: String? = null,
 )
 
 /**

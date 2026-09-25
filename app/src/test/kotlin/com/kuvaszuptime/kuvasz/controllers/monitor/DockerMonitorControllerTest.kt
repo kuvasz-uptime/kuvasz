@@ -106,6 +106,7 @@ class DockerMonitorControllerTest(
                     startedAt = now,
                     status = UptimeStatus.UP,
                     endedAt = null,
+                    image = "nginx:1.27",
                 )
 
                 val response = monitorClient.getMonitorsWithDetails(
@@ -127,6 +128,7 @@ class DockerMonitorControllerTest(
                     item.metricsHistoryEnabled shouldBe true
                     item.enabled shouldBe monitor.enabled
                     item.uptimeStatus shouldBe UptimeStatus.UP
+                    item.image shouldBe "nginx:1.27"
                 }
             }
 
@@ -815,6 +817,7 @@ class DockerMonitorControllerTest(
                     startedAt = now.minusSeconds(60),
                     status = UptimeStatus.DOWN,
                     endedAt = now,
+                    image = "nginx:1.26",
                 )
                 createDockerUptimeEventRecord(
                     dslContext,
@@ -822,14 +825,17 @@ class DockerMonitorControllerTest(
                     startedAt = now,
                     status = UptimeStatus.UP,
                     endedAt = null,
+                    image = "nginx:1.27",
                 )
 
                 val events = monitorClient.getUptimeEvents(monitor.id)
 
-                then("it should return events in descending order") {
+                then("it should return events in descending order, each with its own image") {
                     events shouldHaveSize 2
                     events.first().status shouldBe UptimeStatus.UP
+                    events.first().image shouldBe "nginx:1.27"
                     events.last().status shouldBe UptimeStatus.DOWN
+                    events.last().image shouldBe "nginx:1.26"
                 }
             }
 

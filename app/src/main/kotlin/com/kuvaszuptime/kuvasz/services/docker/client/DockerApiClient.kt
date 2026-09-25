@@ -39,6 +39,10 @@ class DockerApiClient(private val transport: DockerHttpTransport) {
         const val PING_PATH = "/_ping"
         const val API_VERSION_HEADER = "api-version"
         const val LIST_PATH = "/containers/json?all=true"
+
+        // Every container adds its labels, mounts and networks to the listing, a few kilobytes each, so this still
+        // fits a couple of thousand containers
+        const val LIST_MAX_BODY_BYTES = 4 * 1024 * 1024
     }
 
     private val negotiatedVersions = ConcurrentHashMap<String, DockerApiVersion>()
@@ -60,33 +64,57 @@ class DockerApiClient(private val transport: DockerHttpTransport) {
      * that of the call itself, so a check that happens to negotiate does not report the ping as the daemon's slowness.
      *
      * A cached version goes stale if the daemon is swapped for one that no longer accepts it, which it answers with a
-     * 400, so that is re-negotiated and retried once instead of taking the monitor down until the next check. Each
+     * 400, so that is re-negotiated and retried instead of taking the monitor down until the next check. Each
      * exchange gets the whole timeout, since a ping happens once per host and not once per check.
      */
-    private fun getVersioned(host: DockerHost, path: String, timeoutMs: Int): TimedResponse {
+    private fun getVersioned(
+        host: DockerHost,
+        path: String,
+        timeoutMs: Int,
+        maxBodyBytes: Int = DockerHttpFraming.MAX_BODY_BYTES,
+    ): TimedResponse {
+        val get = { version: DockerApiVersion -> timedGet(host, version.pathPrefix + path, timeoutMs, maxBodyBytes) }
         val cachedVersion = negotiatedVersions[host.name]
-        val response = timedGet(host, (cachedVersion ?: negotiate(host, timeoutMs)).pathPrefix + path, timeoutMs)
-        if (cachedVersion == null || response.response.statusCode != HttpStatus.BAD_REQUEST.code) {
-            return response
-        }
-        negotiatedVersions.remove(host.name, cachedVersion)
-        return timedGet(host, negotiate(host, timeoutMs).pathPrefix + path, timeoutMs)
-    }
+        val cachedResponse = cachedVersion?.let(get)
+        if (cachedResponse != null && !cachedResponse.rejectsVersion) return cachedResponse
 
-    private fun timedGet(host: DockerHost, path: String, timeoutMs: Int): TimedResponse {
-        val start = System.nanoTime()
-        return TimedResponse(transport.get(host, path, timeoutMs), elapsedMsSince(start))
+        cachedVersion?.let { negotiatedVersions.remove(host.name, it) }
+        val daemonVersion = pingVersion(host, timeoutMs)
+        return if (daemonVersion != null) {
+            // Whatever the daemon answers on its own version is settled for good
+            get(DockerApiVersion.negotiate(daemonVersion).also { negotiatedVersions[host.name] = it })
+        } else {
+            guessVersion(host, get, rejected = cachedVersion)
+        }
     }
 
     /**
-     * Whatever the daemon answers is settled for good, a proxy that does not allow `/_ping` included, which falls back
-     * to the oldest supported version. Only a daemon that could not be reached at all is asked again next time.
+     * A daemon that does not tell its version - typically behind a proxy that does not allow `/_ping` - is tried with
+     * each of [DockerApiVersion.FALLBACKS] but the one it has just rejected, and only a version it accepted is settled.
      */
-    private fun negotiate(host: DockerHost, timeoutMs: Int): DockerApiVersion {
-        val ping = transport.get(host, PING_PATH, timeoutMs)
-        val daemonVersion = DockerApiVersion.parse(ping.headers[API_VERSION_HEADER])
-        return DockerApiVersion.negotiate(daemonVersion).also { negotiatedVersions[host.name] = it }
+    private fun guessVersion(
+        host: DockerHost,
+        get: (DockerApiVersion) -> TimedResponse,
+        rejected: DockerApiVersion?,
+    ): TimedResponse {
+        lateinit var response: TimedResponse
+        for (guess in DockerApiVersion.FALLBACKS.filterNot { it == rejected }) {
+            response = get(guess)
+            if (!response.rejectsVersion) {
+                negotiatedVersions[host.name] = guess
+                return response
+            }
+        }
+        return response
     }
+
+    private fun timedGet(host: DockerHost, path: String, timeoutMs: Int, maxBodyBytes: Int): TimedResponse {
+        val start = System.nanoTime()
+        return TimedResponse(transport.get(host, path, timeoutMs, maxBodyBytes), elapsedMsSince(start))
+    }
+
+    private fun pingVersion(host: DockerHost, timeoutMs: Int): DockerApiVersion? =
+        DockerApiVersion.parse(transport.get(host, PING_PATH, timeoutMs).headers[API_VERSION_HEADER])
 
     /**
      * The three endpoints differ only in what they return and in how they name a failure to reach the daemon, so
@@ -126,7 +154,7 @@ class DockerApiClient(private val transport: DockerHttpTransport) {
      */
     fun listContainers(host: DockerHost, timeoutMs: Int): DockerContainerListing =
         callDaemon(DockerContainerListing::Unavailable) {
-            getVersioned(host, LIST_PATH, timeoutMs).response.toListing()
+            getVersioned(host, LIST_PATH, timeoutMs, LIST_MAX_BODY_BYTES).response.toListing()
         }
 
     private fun DockerHttpResponse.toListing(): DockerContainerListing =
@@ -186,7 +214,8 @@ class DockerApiClient(private val transport: DockerHttpTransport) {
      * documented vocabulary - which the caller reports as an unparseable response.
      */
     private fun parseState(body: String): DockerContainerState? {
-        val state = runCatching { objectMapper.readValue<InspectResponse>(body) }.getOrNull()?.state ?: return null
+        val inspected = runCatching { objectMapper.readValue<InspectResponse>(body) }.getOrNull()
+        val state = inspected?.state ?: return null
         val status = DockerContainerStatus.fromIdentifier(state.status)
 
         // Healthchecks only run while a container is running, but the daemon keeps reporting the last result after it
@@ -206,6 +235,7 @@ class DockerApiClient(private val transport: DockerHttpTransport) {
                 exitCode = state.exitCode,
                 oomKilled = state.oomKilled == true,
                 failingStreak = health?.failingStreak,
+                image = inspected.config?.image?.takeIf { it.isNotBlank() },
             )
         } else {
             null
@@ -233,9 +263,19 @@ class DockerApiClient(private val transport: DockerHttpTransport) {
 
     private fun Throwable.describe(): String = message?.takeIf { it.isNotBlank() } ?: javaClass.simpleName
 
-    private data class TimedResponse(val response: DockerHttpResponse, val latencyMs: Int)
+    private data class TimedResponse(val response: DockerHttpResponse, val latencyMs: Int) {
+        // How a daemon answers a version it does not speak
+        val rejectsVersion: Boolean get() = response.statusCode == HttpStatus.BAD_REQUEST.code
+    }
 
-    private data class InspectResponse(@param:JsonProperty("State") val state: StateNode?)
+    private data class InspectResponse(
+        @param:JsonProperty("State")
+        val state: StateNode?,
+        @param:JsonProperty("Config")
+        val config: ConfigNode?,
+    )
+
+    private data class ConfigNode(@param:JsonProperty("Image") val image: String?)
 
     private data class StateNode(
         @param:JsonProperty("Status")

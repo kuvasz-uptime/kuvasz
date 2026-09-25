@@ -55,6 +55,7 @@ CREATE TABLE docker_uptime_event
     started_at timestamptz DEFAULT now() NOT NULL,
     ended_at   timestamptz               NULL,
     updated_at timestamptz               NOT NULL,
+    image      text                      NULL,
     CONSTRAINT docker_uptime_event_key UNIQUE (monitor_id, status, ended_at)
 );
 CREATE INDEX docker_uptime_event_ended_at_idx ON docker_uptime_event USING btree (ended_at);

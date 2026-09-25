@@ -188,6 +188,7 @@ class DockerMonitorRepository(
             latestUptimeEventSelect.field(DOCKER_UPTIME_EVENT.UPDATED_AT)!!
                 .`as`(DockerMonitorDetailsDto::lastUptimeCheck.name),
             latestUptimeEventSelect.field(DOCKER_UPTIME_EVENT.ERROR)!!.`as`(DockerMonitorDetailsDto::uptimeError.name),
+            latestUptimeEventSelect.field(DOCKER_UPTIME_EVENT.IMAGE)!!.`as`(DockerMonitorDetailsDto::image.name),
             DSL.array(arrayOf<String>()).`as`(DockerMonitorDetailsDto::effectiveIntegrations.name),
             DOCKER_MONITOR.INTEGRATIONS.`as`(DockerMonitorDetailsDto::integrations.name),
             DSL.coalesce(statusPagesSubselect.field("slugs"), DSL.array(arrayOf<String>()))

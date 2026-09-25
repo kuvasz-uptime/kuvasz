@@ -30,10 +30,12 @@ private class FakeTransport(private val handler: (path: String) -> DockerHttpRes
     val paths = mutableListOf<String>()
     val lastPath: String? get() = paths.lastOrNull()
     var lastTimeoutMs: Int? = null
+    val maxBodyBytesByPath = mutableMapOf<String, Int>()
 
-    override fun get(host: DockerHost, path: String, timeoutMs: Int): DockerHttpResponse {
+    override fun get(host: DockerHost, path: String, timeoutMs: Int, maxBodyBytes: Int): DockerHttpResponse {
         paths += path
         lastTimeoutMs = timeoutMs
+        maxBodyBytesByPath[path] = maxBodyBytes
         return handler(path)
     }
 }
@@ -100,6 +102,29 @@ class DockerApiClientTest : BehaviorSpec({
 
     given("a daemon that answers a container inspection") {
 
+        `when`("the container reports the image it was created from") {
+            val (client, _) = clientReturning(
+                200,
+                """{"Id":"abc123","State":{"Status":"running"},"Config":{"Image":"nginx:1.27","Hostname":"abc123"}}""",
+            )
+            val result = client.inspectContainer(LOCAL_HOST, "my-app", TIMEOUT_MS)
+
+            then("the image should be read off the config") {
+                result.shouldBeInstanceOf<DockerInspectResult.Inspected>()
+                result.state.image shouldBe "nginx:1.27"
+            }
+        }
+
+        `when`("the container reports a blank image") {
+            val (client, _) = clientReturning(200, """{"State":{"Status":"running"},"Config":{"Image":" "}}""")
+            val result = client.inspectContainer(LOCAL_HOST, "my-app", TIMEOUT_MS)
+
+            then("the image should be unknown") {
+                result.shouldBeInstanceOf<DockerInspectResult.Inspected>()
+                result.state.image.shouldBeNull()
+            }
+        }
+
         `when`("the container is running and healthy") {
             val (client, transport) = clientReturning(
                 200,
@@ -117,6 +142,7 @@ class DockerApiClientTest : BehaviorSpec({
                 result.state.exitCode shouldBe 0
                 result.state.oomKilled shouldBe false
                 result.state.failingStreak shouldBe 0
+                result.state.image.shouldBeNull()
                 result.latencyMs shouldBeGreaterThanOrEqual 0
             }
 
@@ -696,6 +722,12 @@ class DockerApiClientTest : BehaviorSpec({
                 transport.lastPath shouldBe "/v1.40/containers/json?all=true"
             }
 
+            // Unlike an inspection, the listing grows with the number of containers on the host
+            then("it should allow a larger body than the other calls") {
+                transport.maxBodyBytesByPath["/v1.40/containers/json?all=true"] shouldBe 4 * 1024 * 1024
+                transport.maxBodyBytesByPath["/_ping"] shouldBe DockerHttpFraming.MAX_BODY_BYTES
+            }
+
             then("it should report them with the leading slash stripped from the name") {
                 result.shouldBeInstanceOf<DockerContainerListing.Listed>()
                 result.containers.map { it.name } shouldBe listOf("my-app", "worker")
@@ -862,6 +894,81 @@ class DockerApiClientTest : BehaviorSpec({
                     "/_ping",
                     "/v1.40/containers/my-app/json",
                     "/v1.40/containers/my-app/json",
+                )
+            }
+        }
+
+        // Engine 29.0 to 29.2 behind a proxy that does not allow the ping
+        `when`("the ping is rejected, and the daemon does not accept the oldest supported version") {
+            val transport = FakeTransport { path ->
+                when {
+                    path == "/_ping" -> DockerHttpResponse(403, "Forbidden")
+                    path.startsWith("/v1.44/") -> DockerHttpResponse(200, RUNNING_BODY)
+                    else -> DockerHttpResponse(400, """{"message":"client version 1.40 is too old"}""")
+                }
+            }
+            val client = DockerApiClient(transport)
+            val result = client.inspectContainer(LOCAL_HOST, "my-app", TIMEOUT_MS)
+            client.inspectContainer(LOCAL_HOST, "my-app", TIMEOUT_MS)
+
+            then("the newest used version should be tried next, and settled once it is accepted") {
+                result.shouldBeInstanceOf<DockerInspectResult.Inspected>()
+                client.negotiatedVersions() shouldBe mapOf("local" to "1.44")
+                transport.paths shouldBe listOf(
+                    "/_ping",
+                    "/v1.40/containers/my-app/json",
+                    "/v1.44/containers/my-app/json",
+                    "/v1.44/containers/my-app/json",
+                )
+            }
+        }
+
+        `when`("the ping is rejected, and the daemon is swapped for one that no longer accepts the guessed version") {
+            var acceptedPrefix = "/v1.40/"
+            val transport = FakeTransport { path ->
+                when {
+                    path == "/_ping" -> DockerHttpResponse(403, "Forbidden")
+                    path.startsWith(acceptedPrefix) -> DockerHttpResponse(200, RUNNING_BODY)
+                    else -> DockerHttpResponse(400, """{"message":"unsupported version"}""")
+                }
+            }
+            val client = DockerApiClient(transport)
+            client.inspectContainer(LOCAL_HOST, "my-app", TIMEOUT_MS)
+            acceptedPrefix = "/v1.44/"
+            val result = client.inspectContainer(LOCAL_HOST, "my-app", TIMEOUT_MS)
+
+            then("only the other guess should be retried, not the one that has just been rejected") {
+                result.shouldBeInstanceOf<DockerInspectResult.Inspected>()
+                client.negotiatedVersions() shouldBe mapOf("local" to "1.44")
+                transport.paths shouldBe listOf(
+                    "/_ping",
+                    "/v1.40/containers/my-app/json",
+                    "/v1.40/containers/my-app/json",
+                    "/_ping",
+                    "/v1.44/containers/my-app/json",
+                )
+            }
+        }
+
+        `when`("the ping is rejected, and the daemon accepts none of the guesses") {
+            val transport = FakeTransport { path ->
+                if (path == "/_ping") {
+                    DockerHttpResponse(403, "Forbidden")
+                } else {
+                    DockerHttpResponse(400, """{"message":"unsupported version"}""")
+                }
+            }
+            val client = DockerApiClient(transport)
+            val result = client.inspectContainer(LOCAL_HOST, "my-app", TIMEOUT_MS)
+
+            then("the last rejection should be surfaced, with nothing settled") {
+                result.shouldBeInstanceOf<DockerInspectResult.DaemonError>()
+                result.message shouldBe "unsupported version"
+                client.negotiatedVersions() shouldBe emptyMap()
+                transport.paths shouldBe listOf(
+                    "/_ping",
+                    "/v1.40/containers/my-app/json",
+                    "/v1.44/containers/my-app/json",
                 )
             }
         }

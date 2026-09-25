@@ -18,6 +18,8 @@ data class DockerMonitorDetailsDto(
     val dockerHost: String,
     @param:Schema(description = DockerMonitorDocs.CONTAINER, required = true)
     val container: String,
+    @param:Schema(description = DockerMonitorDocs.IMAGE, required = true, nullable = true)
+    val image: String?,
     @param:Schema(description = MonitorDocs.UPTIME_CHECK_INTERVAL, required = true)
     val uptimeCheckInterval: Int,
     @param:Schema(description = DockerMonitorDocs.TIMEOUT_MS, required = true)

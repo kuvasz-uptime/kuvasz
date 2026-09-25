@@ -10,7 +10,12 @@ import com.kuvaszuptime.kuvasz.services.docker.DockerHost
  */
 interface DockerHttpTransport {
 
-    fun get(host: DockerHost, path: String, timeoutMs: Int): DockerHttpResponse
+    fun get(
+        host: DockerHost,
+        path: String,
+        timeoutMs: Int,
+        maxBodyBytes: Int = DockerHttpFraming.MAX_BODY_BYTES,
+    ): DockerHttpResponse
 }
 
 data class DockerHttpResponse(

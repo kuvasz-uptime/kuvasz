@@ -4,10 +4,10 @@ import com.kuvaszuptime.kuvasz.jooq.Tables.DOCKER_METRICS_LOG
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DockerMetricsLogRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.docker.DockerMetricsLogDto
 import com.kuvaszuptime.kuvasz.services.docker.DockerContainerStats
+import com.kuvaszuptime.kuvasz.services.docker.cpuUsagePercentDecimal
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
-import java.math.RoundingMode
 import java.time.Duration
 
 @Singleton
@@ -24,8 +24,9 @@ class DockerMetricsLogRepository(dslContext: DSLContext) :
         DockerMetricsLogDto::class.java,
     ) {
 
-    private companion object {
-        const val CPU_PERCENT_SCALE = 2
+    companion object {
+        // Matches the NUMERIC(7, 2) the cpu_usage_percent column is declared with
+        const val CPU_USAGE_PERCENT_SCALE = 2
     }
 
     /**
@@ -39,9 +40,7 @@ class DockerMetricsLogRepository(dslContext: DSLContext) :
                 DockerMetricsLogRecord()
                     .setMonitorId(monitorId)
                     .setLatencyMs(latencyMs)
-                    .setCpuUsagePercent(
-                        stats?.cpuUsagePercent?.toBigDecimal()?.setScale(CPU_PERCENT_SCALE, RoundingMode.HALF_UP)
-                    )
+                    .setCpuUsagePercent(stats?.cpuUsagePercentDecimal)
                     .setMemoryUsageBytes(stats?.memoryUsageBytes)
                     .setMemoryLimitBytes(stats?.memoryLimitBytes)
                     .setCreatedAt(getCurrentTimestamp())

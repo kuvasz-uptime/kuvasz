@@ -33,11 +33,13 @@ import io.reactivex.rxjava3.subscribers.TestSubscriber
 import java.math.BigDecimal
 
 private const val LATENCY_MS = 12
+private const val IMAGE = "nginx:1.27"
 
 private fun inspected(
     status: DockerContainerStatus,
     health: DockerHealthStatus = DockerHealthStatus.NONE,
     exitCode: Int? = null,
+    image: String = IMAGE,
 ) = DockerInspectResult.Inspected(
     state = DockerContainerState(
         status = status,
@@ -45,6 +47,7 @@ private fun inspected(
         exitCode = exitCode,
         oomKilled = false,
         failingStreak = null,
+        image = image,
     ),
     latencyMs = LATENCY_MS,
 )
@@ -109,9 +112,13 @@ class DockerUptimeCheckerTest(
                     downSubscriber.values().shouldHaveSize(0)
                 }
 
-                then("the event should be persisted") {
-                    uptimeEventRepository.fetchByMonitorId(monitor.id).shouldHaveSize(1)
-                        .first().status shouldBe UptimeStatus.UP
+                then("the event should be persisted with the image of the container") {
+                    upSubscriber.awaitCount(1)
+                    upSubscriber.values().first().image shouldBe IMAGE
+                    with(uptimeEventRepository.fetchByMonitorId(monitor.id).shouldHaveSize(1).first()) {
+                        status shouldBe UptimeStatus.UP
+                        image shouldBe IMAGE
+                    }
                 }
 
                 then("the sample should be written to the metrics log") {
@@ -152,6 +159,46 @@ class DockerUptimeCheckerTest(
                 }
             }
 
+            `when`("a running container is recreated from another image") {
+                val monitor = createDockerMonitor(monitorRepository, dockerHost = "local")
+                val mock = getMock(apiClient)
+                every {
+                    mock.inspectContainer(any(), any(), any())
+                } returns inspected(DockerContainerStatus.RUNNING) andThen
+                    inspected(DockerContainerStatus.RUNNING, image = "nginx:1.28")
+                every { mock.containerStats(any(), any(), any()) } returns DockerStatsResult.Measured(SAMPLE)
+
+                uptimeChecker.check(monitor)
+                uptimeChecker.check(monitor)
+
+                then("the ongoing UP event should carry the new image") {
+                    with(uptimeEventRepository.fetchByMonitorId(monitor.id).shouldHaveSize(1).first()) {
+                        status shouldBe UptimeStatus.UP
+                        image shouldBe "nginx:1.28"
+                    }
+                }
+            }
+
+            `when`("the container of a monitor that is already down disappears") {
+                val monitor = createDockerMonitor(monitorRepository, dockerHost = "local")
+                val mock = getMock(apiClient)
+                every {
+                    mock.inspectContainer(any(), any(), any())
+                } returns inspected(DockerContainerStatus.EXITED, exitCode = 1) andThen
+                    DockerInspectResult.ContainerNotFound(LATENCY_MS)
+
+                uptimeChecker.check(monitor)
+                uptimeChecker.check(monitor)
+
+                then("the ongoing DOWN event should drop the image, since it cannot be told anymore") {
+                    with(uptimeEventRepository.fetchByMonitorId(monitor.id).shouldHaveSize(1).first()) {
+                        error shouldBe
+                            """Reason: There is no container called "${monitor.container}" on the Docker host "local""""
+                        image shouldBe null
+                    }
+                }
+            }
+
             `when`("the daemon cannot be reached") {
                 val monitor = createDockerMonitor(monitorRepository, dockerHost = "local")
                 val mock = getMock(apiClient)
@@ -164,10 +211,12 @@ class DockerUptimeCheckerTest(
 
                 uptimeChecker.check(monitor)
 
-                then("a DOWN event should name the host and the cause") {
+                then("a DOWN event should name the host and the cause, with no image to tell") {
                     downSubscriber.awaitCount(1)
-                    downSubscriber.values().shouldHaveSize(1).first().error shouldBe
-                        """The Docker host "local" cannot be reached: connection refused"""
+                    with(downSubscriber.values().shouldHaveSize(1).first()) {
+                        error shouldBe """The Docker host "local" cannot be reached: connection refused"""
+                        image shouldBe null
+                    }
                 }
 
                 // There was no round-trip to time, so the row would carry nothing but nulls

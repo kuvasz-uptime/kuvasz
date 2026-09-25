@@ -23,19 +23,29 @@ internal object DockerHttpFraming {
 
     private const val CRLF = "\r\n"
     private const val LF = '\n'.code
-    private const val MAX_BODY_BYTES = 1 shl 20
+    // Plenty for an inspection or a sample; only an endpoint whose answer grows with the host asks for more
+    const val MAX_BODY_BYTES = 1024 * 1024
     private const val CHUNK_RADIX = 16
     private const val HTTP_VERSION = "HTTP/1.1"
     private const val CONNECTION_CLOSE = "close"
     private const val CHUNKED_ENCODING = "chunked"
 
-    fun exchange(connection: DockerConnection, path: String, hostHeader: String): DockerHttpResponse {
+    fun exchange(
+        connection: DockerConnection,
+        path: String,
+        hostHeader: String,
+        maxBodyBytes: Int = MAX_BODY_BYTES,
+    ): DockerHttpResponse {
         writeRequest(connection.output, path, hostHeader)
 
         val input = BufferedInputStream(connection.input)
         val statusCode = readStatusCode(input)
         val headers = readHeaders(input)
-        return DockerHttpResponse(statusCode = statusCode, body = readBody(input, headers), headers = headers)
+        return DockerHttpResponse(
+            statusCode = statusCode,
+            body = readBody(input, headers, maxBodyBytes),
+            headers = headers,
+        )
     }
 
     private fun StringBuilder.appendHeader(header: String, value: String) {
@@ -84,30 +94,30 @@ internal object DockerHttpFraming {
         }
     }
 
-    private fun readBody(input: InputStream, headers: Map<String, String>): String {
+    private fun readBody(input: InputStream, headers: Map<String, String>, maxBodyBytes: Int): String {
         val contentLength = headers[HttpHeaders.CONTENT_LENGTH.lowercase()]
         val transferEncoding = headers[HttpHeaders.TRANSFER_ENCODING.lowercase()]
         val bytes = when {
-            transferEncoding?.contains(CHUNKED_ENCODING, ignoreCase = true) == true -> readChunked(input)
-            contentLength != null -> readExactly(input, parseContentLength(contentLength))
+            transferEncoding?.contains(CHUNKED_ENCODING, ignoreCase = true) == true -> readChunked(input, maxBodyBytes)
+            contentLength != null -> readExactly(input, parseContentLength(contentLength, maxBodyBytes))
             // Neither is set, so the body runs until the daemon closes the connection
-            else -> input.readNBytes(MAX_BODY_BYTES + 1).also { ensureWithinLimit(it.size.toLong()) }
+            else -> input.readNBytes(maxBodyBytes + 1).also { ensureWithinLimit(it.size.toLong(), maxBodyBytes) }
         }
         return String(bytes, StandardCharsets.UTF_8)
     }
 
-    private fun parseContentLength(value: String): Int {
+    private fun parseContentLength(value: String, maxBodyBytes: Int): Int {
         val length = value.toLongOrNull()?.takeIf { it >= 0 }
             ?: throw IOException("Malformed Content-Length in the daemon's response: [$value]")
-        ensureWithinLimit(length)
+        ensureWithinLimit(length, maxBodyBytes)
         return length.toInt()
     }
 
-    private fun readChunked(input: InputStream): ByteArray {
+    private fun readChunked(input: InputStream, maxBodyBytes: Int): ByteArray {
         val buffer = ByteArrayOutputStream()
         var size = parseChunkSize(readLine(input))
         while (size > 0) {
-            ensureWithinLimit(buffer.size().toLong() + size)
+            ensureWithinLimit(buffer.size().toLong() + size, maxBodyBytes)
             buffer.write(readExactly(input, size))
             readLine(input) // the CRLF closing the chunk
             size = parseChunkSize(readLine(input))
@@ -143,9 +153,9 @@ internal object DockerHttpFraming {
     /**
      * Takes a Long, so a running total cannot overflow past the check.
      */
-    private fun ensureWithinLimit(size: Long) {
-        if (size > MAX_BODY_BYTES) {
-            throw IOException("The daemon's response exceeds the $MAX_BODY_BYTES byte limit")
+    private fun ensureWithinLimit(size: Long, limit: Int = MAX_BODY_BYTES) {
+        if (size > limit) {
+            throw IOException("The daemon's response exceeds the $limit byte limit")
         }
     }
 }
