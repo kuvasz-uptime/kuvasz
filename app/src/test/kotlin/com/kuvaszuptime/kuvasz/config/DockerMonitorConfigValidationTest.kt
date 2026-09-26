@@ -92,7 +92,7 @@ class DockerMonitorConfigValidationTest : BehaviorSpec({
  *
  * It extends a DatabaseBehaviorSpec to delete the inserted monitor properly to not affect other tests
  */
-@MicronautTest(startApplication = false, environments = ["docker-monitor-without-defaults"])
+@MicronautTest(startApplication = false, environments = ["docker-monitor-without-defaults", "docker-hosts"])
 class DockerMonitorConfigDefaultValuesTest(applicationContext: ApplicationContext) : DatabaseBehaviorSpec({
 
     given("a DockerMonitorConfig bean") {
