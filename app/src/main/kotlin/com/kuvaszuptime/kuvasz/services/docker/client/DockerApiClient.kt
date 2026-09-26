@@ -10,7 +10,6 @@ import com.kuvaszuptime.kuvasz.services.docker.DockerHealthStatus
 import com.kuvaszuptime.kuvasz.services.docker.DockerHost
 import com.kuvaszuptime.kuvasz.services.docker.DockerInspectResult
 import com.kuvaszuptime.kuvasz.services.docker.DockerStatsResult
-import com.kuvaszuptime.kuvasz.util.elapsedMsSince
 import io.micronaut.context.annotation.Requires
 import io.micronaut.http.HttpStatus
 import jakarta.inject.Singleton
@@ -55,8 +54,7 @@ class DockerApiClient(private val transport: DockerHttpTransport) {
 
     fun inspectContainer(host: DockerHost, container: String, timeoutMs: Int): DockerInspectResult =
         callDaemon(DockerInspectResult::Unreachable) {
-            val (response, latencyMs) = getVersioned(host, inspectPath(container), timeoutMs)
-            response.toInspectResult(latencyMs)
+            getVersioned(host, inspectPath(container), timeoutMs).toInspectResult()
         }
 
     /**
@@ -72,8 +70,8 @@ class DockerApiClient(private val transport: DockerHttpTransport) {
         path: String,
         timeoutMs: Int,
         maxBodyBytes: Int = DockerHttpFraming.MAX_BODY_BYTES,
-    ): TimedResponse {
-        val get = { version: DockerApiVersion -> timedGet(host, version.pathPrefix + path, timeoutMs, maxBodyBytes) }
+    ): DockerHttpResponse {
+        val get = { version: DockerApiVersion -> fetch(host, version.pathPrefix + path, timeoutMs, maxBodyBytes) }
         val cachedVersion = negotiatedVersions[host.name]
         val cachedResponse = cachedVersion?.let(get)
         if (cachedResponse != null && !cachedResponse.rejectsVersion) return cachedResponse
@@ -94,10 +92,10 @@ class DockerApiClient(private val transport: DockerHttpTransport) {
      */
     private fun guessVersion(
         host: DockerHost,
-        get: (DockerApiVersion) -> TimedResponse,
+        get: (DockerApiVersion) -> DockerHttpResponse,
         rejected: DockerApiVersion?,
-    ): TimedResponse {
-        lateinit var response: TimedResponse
+    ): DockerHttpResponse {
+        lateinit var response: DockerHttpResponse
         for (guess in DockerApiVersion.FALLBACKS.filterNot { it == rejected }) {
             response = get(guess)
             if (!response.rejectsVersion) {
@@ -108,13 +106,20 @@ class DockerApiClient(private val transport: DockerHttpTransport) {
         return response
     }
 
-    private fun timedGet(host: DockerHost, path: String, timeoutMs: Int, maxBodyBytes: Int): TimedResponse {
-        val start = System.nanoTime()
-        return TimedResponse(transport.get(host, path, timeoutMs, maxBodyBytes), elapsedMsSince(start))
-    }
+    private fun fetch(
+        host: DockerHost,
+        path: String,
+        timeoutMs: Int,
+        maxBodyBytes: Int = DockerHttpFraming.MAX_BODY_BYTES,
+    ): DockerHttpResponse =
+        try {
+            transport.get(host, path, timeoutMs, maxBodyBytes)
+        } catch (ex: DockerServerErrorException) {
+            ex.response
+        }
 
     private fun pingVersion(host: DockerHost, timeoutMs: Int): DockerApiVersion? =
-        DockerApiVersion.parse(transport.get(host, PING_PATH, timeoutMs).headers[API_VERSION_HEADER])
+        DockerApiVersion.parse(fetch(host, PING_PATH, timeoutMs).headers[API_VERSION_HEADER])
 
     /**
      * The three endpoints differ only in what they return and in how they name a failure to reach the daemon, so
@@ -142,7 +147,7 @@ class DockerApiClient(private val transport: DockerHttpTransport) {
      */
     fun containerStats(host: DockerHost, container: String, timeoutMs: Int): DockerStatsResult =
         callDaemon(DockerStatsResult::Unavailable) {
-            getVersioned(host, statsPath(container), timeoutMs).response.toStatsResult()
+            getVersioned(host, statsPath(container), timeoutMs).toStatsResult()
         }
 
     /**
@@ -154,7 +159,7 @@ class DockerApiClient(private val transport: DockerHttpTransport) {
      */
     fun listContainers(host: DockerHost, timeoutMs: Int): DockerContainerListing =
         callDaemon(DockerContainerListing::Unavailable) {
-            getVersioned(host, LIST_PATH, timeoutMs, LIST_MAX_BODY_BYTES).response.toListing()
+            getVersioned(host, LIST_PATH, timeoutMs, LIST_MAX_BODY_BYTES).toListing()
         }
 
     private fun DockerHttpResponse.toListing(): DockerContainerListing =
@@ -184,7 +189,7 @@ class DockerApiClient(private val transport: DockerHttpTransport) {
         }
     }
 
-    private fun DockerHttpResponse.toInspectResult(latencyMs: Int): DockerInspectResult = when (statusCode) {
+    private fun DockerHttpResponse.toInspectResult(): DockerInspectResult = when (statusCode) {
         HttpStatus.OK.code -> parseState(body)
             ?.let { state -> DockerInspectResult.Inspected(state, latencyMs) }
             ?: DockerInspectResult.DaemonError(statusCode, "the response could not be parsed", latencyMs)
@@ -263,10 +268,8 @@ class DockerApiClient(private val transport: DockerHttpTransport) {
 
     private fun Throwable.describe(): String = message?.takeIf { it.isNotBlank() } ?: javaClass.simpleName
 
-    private data class TimedResponse(val response: DockerHttpResponse, val latencyMs: Int) {
-        // How a daemon answers a version it does not speak
-        val rejectsVersion: Boolean get() = response.statusCode == HttpStatus.BAD_REQUEST.code
-    }
+    // How a daemon answers a version it does not speak
+    private val DockerHttpResponse.rejectsVersion: Boolean get() = statusCode == HttpStatus.BAD_REQUEST.code
 
     private data class InspectResponse(
         @param:JsonProperty("State")

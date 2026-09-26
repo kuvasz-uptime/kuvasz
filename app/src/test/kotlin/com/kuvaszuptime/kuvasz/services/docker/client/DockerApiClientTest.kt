@@ -26,6 +26,7 @@ private val LOCAL_HOST = DockerHost(
 
 private const val TIMEOUT_MS = 5_000
 
+/** Throws a server-side error the way [SocketDockerHttpTransport] does, so that it can be retried. */
 private class FakeTransport(private val handler: (path: String) -> DockerHttpResponse) : DockerHttpTransport {
     val paths = mutableListOf<String>()
     val lastPath: String? get() = paths.lastOrNull()
@@ -36,12 +37,12 @@ private class FakeTransport(private val handler: (path: String) -> DockerHttpRes
         paths += path
         lastTimeoutMs = timeoutMs
         maxBodyBytesByPath[path] = maxBodyBytes
-        return handler(path)
+        return handler(path).also { if (it.statusCode >= 500) throw DockerServerErrorException(it) }
     }
 }
 
 private fun clientReturning(statusCode: Int, body: String): Pair<DockerApiClient, FakeTransport> {
-    val transport = FakeTransport { DockerHttpResponse(statusCode = statusCode, body = body) }
+    val transport = FakeTransport { daemonAnswer(statusCode, body) }
     return DockerApiClient(transport) to transport
 }
 
@@ -52,8 +53,11 @@ private fun inspectBody(state: String) = """{"Id":"abc123","Name":"/my-app","Sta
 
 private val RUNNING_BODY = inspectBody("""{"Status":"running","ExitCode":0,"OOMKilled":false}""")
 
+private fun daemonAnswer(statusCode: Int, body: String) =
+    DockerHttpResponse(statusCode, body, headers = emptyMap(), latencyMs = 0)
+
 private fun pingResponse(apiVersion: String?) =
-    DockerHttpResponse(200, "OK", listOfNotNull(apiVersion?.let { "api-version" to it }).toMap())
+    DockerHttpResponse(200, "OK", listOfNotNull(apiVersion?.let { "api-version" to it }).toMap(), latencyMs = 0)
 
 /**
  * A daemon that reports [apiVersion] on `/_ping` and answers every versioned call with [answer], so a spec can tell
@@ -61,7 +65,7 @@ private fun pingResponse(apiVersion: String?) =
  */
 private fun negotiatingClient(
     apiVersion: String?,
-    answer: (path: String) -> DockerHttpResponse = { DockerHttpResponse(200, RUNNING_BODY) },
+    answer: (path: String) -> DockerHttpResponse = { daemonAnswer(200, RUNNING_BODY) },
 ): Pair<DockerApiClient, FakeTransport> {
     val transport = FakeTransport { path -> if (path == "/_ping") pingResponse(apiVersion) else answer(path) }
     return DockerApiClient(transport) to transport
@@ -149,6 +153,17 @@ class DockerApiClientTest : BehaviorSpec({
             then("the inspect endpoint should have been called on the negotiated version, with the monitor's timeout") {
                 transport.lastPath shouldBe "/v1.40/containers/my-app/json"
                 transport.lastTimeoutMs shouldBe TIMEOUT_MS
+            }
+        }
+
+        `when`("the transport measured the exchange") {
+            val measured = DockerHttpResponse(200, RUNNING_BODY, emptyMap(), latencyMs = 42)
+            val client = DockerApiClient(FakeTransport { measured })
+            val result = client.inspectContainer(LOCAL_HOST, "my-app", TIMEOUT_MS)
+
+            then("its measurement should be the latency, so retries it made before do not count") {
+                result.shouldBeInstanceOf<DockerInspectResult.Inspected>()
+                result.latencyMs shouldBe 42
             }
         }
 
@@ -291,6 +306,16 @@ class DockerApiClientTest : BehaviorSpec({
                 result.shouldBeInstanceOf<DockerInspectResult.DaemonError>()
                 result.statusCode shouldBe 500
                 result.message shouldBe "driver failed"
+            }
+        }
+
+        `when`("the daemon fails internally, with a measured exchange") {
+            val client = DockerApiClient(FakeTransport { DockerHttpResponse(500, "", emptyMap(), latencyMs = 42) })
+            val result = client.inspectContainer(LOCAL_HOST, "my-app", TIMEOUT_MS)
+
+            then("the latency of the answer should be kept") {
+                result.shouldBeInstanceOf<DockerInspectResult.DaemonError>()
+                result.latencyMs shouldBe 42
             }
         }
 
@@ -671,6 +696,16 @@ class DockerApiClientTest : BehaviorSpec({
             }
         }
 
+        `when`("the daemon fails internally") {
+            val (client, _) = clientReturning(500, """{"message":"cgroup read failed"}""")
+            val result = client.containerStats(LOCAL_HOST, "my-app", TIMEOUT_MS)
+
+            then("the status code and the daemon's message should carry the reason") {
+                result.shouldBeInstanceOf<DockerStatsResult.Unavailable>()
+                result.reason shouldBe "the daemon answered 500: cgroup read failed"
+            }
+        }
+
         `when`("the daemon explains itself") {
             val (client, _) = clientReturning(404, """{"message":"No such container: my-app"}""")
             val result = client.containerStats(LOCAL_HOST, "my-app", TIMEOUT_MS)
@@ -799,6 +834,17 @@ class DockerApiClientTest : BehaviorSpec({
             }
         }
 
+        `when`("it fails internally") {
+            val (client, _) = clientReturning(502, "Bad Gateway")
+
+            then("it should be unavailable, carrying the status") {
+                val result = client.listContainers(LOCAL_HOST, TIMEOUT_MS)
+
+                result.shouldBeInstanceOf<DockerContainerListing.Unavailable>()
+                result.reason shouldBe "the daemon answered 502"
+            }
+        }
+
         `when`("it answers something unparseable") {
             val (client, _) = clientReturning(200, "not json at all")
 
@@ -882,7 +928,7 @@ class DockerApiClientTest : BehaviorSpec({
         // A socket proxy that does not allow the ping answers it this way
         `when`("the ping is rejected") {
             val transport = FakeTransport { path ->
-                if (path == "/_ping") DockerHttpResponse(403, "Forbidden") else DockerHttpResponse(200, RUNNING_BODY)
+                if (path == "/_ping") daemonAnswer(403, "Forbidden") else daemonAnswer(200, RUNNING_BODY)
             }
             val client = DockerApiClient(transport)
             val result = client.inspectContainer(LOCAL_HOST, "my-app", TIMEOUT_MS)
@@ -898,13 +944,25 @@ class DockerApiClientTest : BehaviorSpec({
             }
         }
 
+        `when`("the ping fails internally") {
+            val transport = FakeTransport { path ->
+                if (path == "/_ping") daemonAnswer(503, "") else daemonAnswer(200, RUNNING_BODY)
+            }
+            val result = DockerApiClient(transport).inspectContainer(LOCAL_HOST, "my-app", TIMEOUT_MS)
+
+            then("it should be treated like a rejected ping, guessing the oldest supported version first") {
+                result.shouldBeInstanceOf<DockerInspectResult.Inspected>()
+                transport.paths shouldBe listOf("/_ping", "/v1.40/containers/my-app/json")
+            }
+        }
+
         // Engine 29.0 to 29.2 behind a proxy that does not allow the ping
         `when`("the ping is rejected, and the daemon does not accept the oldest supported version") {
             val transport = FakeTransport { path ->
                 when {
-                    path == "/_ping" -> DockerHttpResponse(403, "Forbidden")
-                    path.startsWith("/v1.44/") -> DockerHttpResponse(200, RUNNING_BODY)
-                    else -> DockerHttpResponse(400, """{"message":"client version 1.40 is too old"}""")
+                    path == "/_ping" -> daemonAnswer(403, "Forbidden")
+                    path.startsWith("/v1.44/") -> daemonAnswer(200, RUNNING_BODY)
+                    else -> daemonAnswer(400, """{"message":"client version 1.40 is too old"}""")
                 }
             }
             val client = DockerApiClient(transport)
@@ -927,9 +985,9 @@ class DockerApiClientTest : BehaviorSpec({
             var acceptedPrefix = "/v1.40/"
             val transport = FakeTransport { path ->
                 when {
-                    path == "/_ping" -> DockerHttpResponse(403, "Forbidden")
-                    path.startsWith(acceptedPrefix) -> DockerHttpResponse(200, RUNNING_BODY)
-                    else -> DockerHttpResponse(400, """{"message":"unsupported version"}""")
+                    path == "/_ping" -> daemonAnswer(403, "Forbidden")
+                    path.startsWith(acceptedPrefix) -> daemonAnswer(200, RUNNING_BODY)
+                    else -> daemonAnswer(400, """{"message":"unsupported version"}""")
                 }
             }
             val client = DockerApiClient(transport)
@@ -953,9 +1011,9 @@ class DockerApiClientTest : BehaviorSpec({
         `when`("the ping is rejected, and the daemon accepts none of the guesses") {
             val transport = FakeTransport { path ->
                 if (path == "/_ping") {
-                    DockerHttpResponse(403, "Forbidden")
+                    daemonAnswer(403, "Forbidden")
                 } else {
-                    DockerHttpResponse(400, """{"message":"unsupported version"}""")
+                    daemonAnswer(400, """{"message":"unsupported version"}""")
                 }
             }
             val client = DockerApiClient(transport)
@@ -975,7 +1033,7 @@ class DockerApiClientTest : BehaviorSpec({
 
         `when`("every endpoint is called several times") {
             val (client, transport) = negotiatingClient("1.44") { path ->
-                DockerHttpResponse(200, if (path.endsWith("?all=true")) "[]" else RUNNING_BODY)
+                daemonAnswer(200, if (path.endsWith("?all=true")) "[]" else RUNNING_BODY)
             }
             client.inspectContainer(LOCAL_HOST, "my-app", TIMEOUT_MS)
             client.containerStats(LOCAL_HOST, "my-app", TIMEOUT_MS)
@@ -1001,7 +1059,7 @@ class DockerApiClientTest : BehaviorSpec({
                 when {
                     !reachable -> throw IOException("connection refused")
                     path == "/_ping" -> pingResponse("1.44")
-                    else -> DockerHttpResponse(200, RUNNING_BODY)
+                    else -> daemonAnswer(200, RUNNING_BODY)
                 }
             }
             val client = DockerApiClient(transport)
@@ -1028,9 +1086,9 @@ class DockerApiClientTest : BehaviorSpec({
                 when {
                     path == "/_ping" -> pingResponse(daemonVersion)
                     path.startsWith("/v$daemonVersion/") || daemonVersion == "1.44" ->
-                        DockerHttpResponse(200, RUNNING_BODY)
+                        daemonAnswer(200, RUNNING_BODY)
 
-                    else -> DockerHttpResponse(400, """{"message":"client version 1.44 is too new"}""")
+                    else -> daemonAnswer(400, """{"message":"client version 1.44 is too new"}""")
                 }
             }
             val client = DockerApiClient(transport)
@@ -1053,7 +1111,7 @@ class DockerApiClientTest : BehaviorSpec({
         `when`("a freshly negotiated version is rejected") {
             val tooOld = "client version 1.40 is too old. Minimum supported API version is 1.44"
             val (client, transport) = negotiatingClient("1.9") {
-                DockerHttpResponse(400, """{"message":"$tooOld"}""")
+                daemonAnswer(400, """{"message":"$tooOld"}""")
             }
             val result = client.inspectContainer(LOCAL_HOST, "my-app", TIMEOUT_MS)
 

@@ -5,6 +5,8 @@ import com.kuvaszuptime.kuvasz.services.docker.DockerConnectionFactory
 import com.kuvaszuptime.kuvasz.services.docker.DockerDaemonAddress
 import com.kuvaszuptime.kuvasz.services.docker.DockerHost
 import io.micronaut.context.annotation.Requires
+import io.micronaut.http.HttpStatus
+import io.micronaut.retry.annotation.Retryable
 import jakarta.annotation.PreDestroy
 import jakarta.inject.Singleton
 import java.io.IOException
@@ -30,6 +32,9 @@ class SocketDockerHttpTransport(
 
     private companion object {
         const val UNIX_SOCKET_HOST_HEADER = "localhost"
+        const val RETRY_COUNT = 2L
+        const val RETRY_INITIAL_DELAY = "500ms"
+        const val RETRY_BACKOFF_MULTIPLIER = 3L
     }
 
     // A unix domain socket read cannot be bounded with SO_TIMEOUT, and on TCP it only bounds a single read, so the
@@ -38,10 +43,25 @@ class SocketDockerHttpTransport(
     // the unix channel and stay stuck on a TCP or TLS socket.
     private val executor: ExecutorService = Executors.newVirtualThreadPerTaskExecutor()
 
+    @Retryable(
+        delay = RETRY_INITIAL_DELAY,
+        attempts = "$RETRY_COUNT",
+        multiplier = "$RETRY_BACKOFF_MULTIPLIER",
+        includes = [IOException::class, DockerServerErrorException::class],
+    )
     override fun get(host: DockerHost, path: String, timeoutMs: Int, maxBodyBytes: Int): DockerHttpResponse {
+        val response = exchange(host, path, timeoutMs, maxBodyBytes)
+        if (response.statusCode >= HttpStatus.INTERNAL_SERVER_ERROR.code) {
+            throw DockerServerErrorException(response)
+        }
+        return response
+    }
+
+    private fun exchange(host: DockerHost, path: String, timeoutMs: Int, maxBodyBytes: Int): DockerHttpResponse {
+        val start = System.nanoTime()
         val future = executor.submit<DockerHttpResponse> {
             connectionFactory.open(host, timeoutMs).use {
-                DockerHttpFraming.exchange(it, path, host.hostHeader, maxBodyBytes)
+                DockerHttpFraming.exchange(it, path, host.hostHeader, start, maxBodyBytes)
             }
         }
         return try {

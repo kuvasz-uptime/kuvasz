@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.services.docker.client
 
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckRequestConfigurator
 import com.kuvaszuptime.kuvasz.services.docker.DockerConnection
+import com.kuvaszuptime.kuvasz.util.elapsedMsSince
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpMethod
 import io.micronaut.http.MediaType
@@ -34,6 +35,7 @@ internal object DockerHttpFraming {
         connection: DockerConnection,
         path: String,
         hostHeader: String,
+        startNanos: Long,
         maxBodyBytes: Int = MAX_BODY_BYTES,
     ): DockerHttpResponse {
         writeRequest(connection.output, path, hostHeader)
@@ -41,10 +43,12 @@ internal object DockerHttpFraming {
         val input = BufferedInputStream(connection.input)
         val statusCode = readStatusCode(input)
         val headers = readHeaders(input)
+        val body = readBody(input, headers, maxBodyBytes)
         return DockerHttpResponse(
             statusCode = statusCode,
-            body = readBody(input, headers, maxBodyBytes),
+            body = body,
             headers = headers,
+            latencyMs = elapsedMsSince(startNanos),
         )
     }
 

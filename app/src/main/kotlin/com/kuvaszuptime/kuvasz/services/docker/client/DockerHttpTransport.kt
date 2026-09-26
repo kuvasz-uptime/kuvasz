@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.services.docker.DockerHost
  * endpoint the checker uses is a read-only inspection.
  *
  * Kuvasz serves many hosts from one bean, so the host (and that host's monitor-specific timeout) is passed per call.
+ * A server-side error is thrown as a [DockerServerErrorException] rather than returned, so it can be retried.
  */
 interface DockerHttpTransport {
 
@@ -21,5 +22,9 @@ interface DockerHttpTransport {
 data class DockerHttpResponse(
     val statusCode: Int,
     val body: String,
-    val headers: Map<String, String> = emptyMap(),
+    val headers: Map<String, String>,
+    val latencyMs: Int,
 )
+
+class DockerServerErrorException(val response: DockerHttpResponse) :
+    RuntimeException("the daemon answered ${response.statusCode}")

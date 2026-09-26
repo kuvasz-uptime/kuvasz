@@ -21,7 +21,13 @@ private fun exchange(response: String, maxBodyBytes: Int = LIMIT_BYTES): Pair<St
         output = sent,
         resource = {},
     )
-    val parsed = DockerHttpFraming.exchange(connection, "/containers/x/json", hostHeader = "localhost", maxBodyBytes)
+    val parsed = DockerHttpFraming.exchange(
+        connection,
+        "/containers/x/json",
+        hostHeader = "localhost",
+        startNanos = System.nanoTime(),
+        maxBodyBytes,
+    )
     return sent.toString(StandardCharsets.US_ASCII) to parsed
 }
 

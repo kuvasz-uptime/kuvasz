@@ -8,15 +8,19 @@ import com.kuvaszuptime.kuvasz.services.docker.DockerHostRegistry
 import com.kuvaszuptime.kuvasz.services.docker.FakeDockerDaemon
 import com.kuvaszuptime.kuvasz.services.docker.TestPki
 import com.kuvaszuptime.kuvasz.services.docker.ssl.DockerSslContextProvider
+import com.kuvaszuptime.kuvasz.testAppContext
+import com.kuvaszuptime.kuvasz.testutils.getBean
 import com.sun.management.UnixOperatingSystemMXBean
 import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.longs.shouldBeLessThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
+import io.micronaut.context.ApplicationContext
 import io.mockk.every
 import io.mockk.mockk
 import java.io.IOException
@@ -30,6 +34,10 @@ import kotlin.concurrent.thread
 import kotlin.time.Duration.Companion.seconds
 
 private const val OK_RESPONSE = "HTTP/1.1 200 OK\r\nContent-Length: 12\r\n\r\n{\"State\":{}}"
+private const val SERVER_ERROR_RESPONSE = "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n"
+private const val NOT_FOUND_RESPONSE = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n"
+// The first attempt and the two retries
+private const val ATTEMPTS = 3
 private const val TIMEOUT_MS = 500
 private const val GENEROUS_TIMEOUT_MS = 5_000
 private const val INSPECT_PATH = "/containers/my-app/json"
@@ -317,4 +325,67 @@ class SocketDockerHttpTransportTest : BehaviorSpec({
             }
         }
     }
+
+    given("the transport bean, which retries what may be transient") {
+
+        `when`("the daemon keeps failing internally") {
+            val daemon = autoClose(FakeDockerDaemon.UnixSocket(SERVER_ERROR_RESPONSE))
+            val ctx = testAppContext(dockerHostProperties("unix://${daemon.path}"))
+
+            val exception = shouldThrow<DockerServerErrorException> {
+                ctx.getBean<DockerHttpTransport>().get(ctx.dockerHost(), INSPECT_PATH, GENEROUS_TIMEOUT_MS)
+            }
+
+            then("the request should be retried, and the last answer handed over once the retries are spent") {
+                daemon.receivedRequests shouldHaveSize ATTEMPTS
+                exception.response.statusCode shouldBe 500
+            }
+        }
+
+        `when`("the daemon never answers") {
+            val daemon = autoClose(FakeDockerDaemon.UnixSocket(holdOpen = true))
+            val ctx = testAppContext(dockerHostProperties("unix://${daemon.path}"))
+
+            shouldThrow<IOException> {
+                ctx.getBean<DockerHttpTransport>().get(ctx.dockerHost(), INSPECT_PATH, TIMEOUT_MS)
+            }
+
+            then("each timed out attempt should be retried") {
+                daemon.receivedRequests shouldHaveSize ATTEMPTS
+            }
+        }
+
+        `when`("the daemon answers with a client error") {
+            val daemon = autoClose(FakeDockerDaemon.UnixSocket(NOT_FOUND_RESPONSE))
+            val ctx = testAppContext(dockerHostProperties("unix://${daemon.path}"))
+
+            val response = ctx.getBean<DockerHttpTransport>().get(ctx.dockerHost(), INSPECT_PATH, GENEROUS_TIMEOUT_MS)
+
+            then("its answer should stand, without a retry") {
+                response.statusCode shouldBe 404
+                daemon.receivedRequests shouldHaveSize 1
+            }
+        }
+
+        `when`("the daemon answers") {
+            val daemon = autoClose(FakeDockerDaemon.UnixSocket(OK_RESPONSE))
+            val ctx = testAppContext(dockerHostProperties("unix://${daemon.path}"))
+
+            val response = ctx.getBean<DockerHttpTransport>().get(ctx.dockerHost(), INSPECT_PATH, GENEROUS_TIMEOUT_MS)
+
+            then("the exchange should be timed") {
+                response.statusCode shouldBe 200
+                response.latencyMs shouldBeGreaterThanOrEqual 0
+                daemon.receivedRequests shouldHaveSize 1
+            }
+        }
+    }
 })
+
+private const val RETRIED_HOST = "retried"
+
+private fun dockerHostProperties(url: String): Map<String, Any> =
+    mapOf("docker-hosts[0].name" to RETRIED_HOST, "docker-hosts[0].url" to url)
+
+private fun ApplicationContext.dockerHost(): DockerHost =
+    getBean<DockerHostRegistry>()[RETRIED_HOST] ?: error("Docker host [$RETRIED_HOST] was not resolved")
