@@ -26,7 +26,8 @@ internal enum class MonitorTypeUiConfig(
     PUSH(MonitorType.PUSH, title = "Push", Icon.HEARTBEAT, Color.RED_LT),
     ICMP(MonitorType.ICMP, title = "ICMP", Icon.WAVE_SQUARE, Color.ORANGE_LT),
     TCP(MonitorType.TCP, title = "TCP", Icon.NETWORK, Color.PURPLE_LT),
-    DNS(MonitorType.DNS, title = "DNS", Icon.CLOUD_QUESTION, Color.CYAN_LT);
+    DNS(MonitorType.DNS, title = "DNS", Icon.CLOUD_QUESTION, Color.CYAN_LT),
+    DOCKER(MonitorType.DOCKER, title = "Docker", Icon.BRAND_DOCKER, Color.TEAL_LT);
 
     /** The identifier as it appears in routes, DOM ids and lower-camel-case JS names, e.g. `dns`. */
     val slug: String get() = type.identifier
@@ -54,6 +55,7 @@ internal enum class MonitorTypeUiConfig(
             ICMP -> Messages.icmpMonitors()
             TCP -> Messages.tcpMonitors()
             DNS -> Messages.dnsMonitors()
+            DOCKER -> Messages.dockerMonitors()
         }
 
     val readOnlyNotice: String
@@ -63,6 +65,7 @@ internal enum class MonitorTypeUiConfig(
             ICMP -> Messages.readOnlyIcmpMonitors()
             TCP -> Messages.readOnlyTcpMonitors()
             DNS -> Messages.readOnlyDnsMonitors()
+            DOCKER -> Messages.readOnlyDockerMonitors()
         }
 
     fun testId(suffix: String): String = "$slug-monitor-$suffix"

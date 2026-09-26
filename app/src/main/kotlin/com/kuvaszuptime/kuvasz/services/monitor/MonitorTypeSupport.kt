@@ -15,13 +15,16 @@ import org.jooq.DSLContext
  * a config of it into a record, and what an update of it invalidates.
  *
  * Keeping the last one here, instead of in the type's own actions, is what stops the import path and the CRUD path
- * from drifting apart: both of them announce their changes through [onUpserted].
+ * from drifting apart: both of them validate their writes through [beforeUpsert] and announce their changes through
+ * [onUpserted].
  */
 interface MonitorTypeSupport<C : MonitorCreator<R>, R : MonitorRecord, D : MonitorDetailsDto> {
 
     val repository: MonitorRepository<R, D>
 
     val monitorType: MonitorType get() = repository.monitorType
+
+    fun beforeUpsert(previous: R?, toUpsert: R) = Unit
 
     fun onUpserted(previous: R?, upserted: R, txCtx: DSLContext)
 }

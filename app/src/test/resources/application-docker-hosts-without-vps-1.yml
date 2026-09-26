@@ -1,0 +1,3 @@
+docker-hosts:
+  - name: "local"
+    url: "unix:///var/run/docker.sock"

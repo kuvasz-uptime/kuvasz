@@ -1,0 +1,30 @@
+package com.kuvaszuptime.kuvasz.services.docker.client
+
+import com.kuvaszuptime.kuvasz.services.docker.DockerHost
+
+/**
+ * The seam between "how bytes reach a daemon" and "what the Engine API means". Only `GET` is needed, because every
+ * endpoint the checker uses is a read-only inspection.
+ *
+ * Kuvasz serves many hosts from one bean, so the host (and that host's monitor-specific timeout) is passed per call.
+ * A server-side error is thrown as a [DockerServerErrorException] rather than returned, so it can be retried.
+ */
+interface DockerHttpTransport {
+
+    fun get(
+        host: DockerHost,
+        path: String,
+        timeoutMs: Int,
+        maxBodyBytes: Int = DockerHttpFraming.MAX_BODY_BYTES,
+    ): DockerHttpResponse
+}
+
+data class DockerHttpResponse(
+    val statusCode: Int,
+    val body: String,
+    val headers: Map<String, String>,
+    val latencyMs: Int,
+)
+
+class DockerServerErrorException(val response: DockerHttpResponse) :
+    RuntimeException("the daemon answered ${response.statusCode}")

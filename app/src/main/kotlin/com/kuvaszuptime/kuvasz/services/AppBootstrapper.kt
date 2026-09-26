@@ -10,12 +10,14 @@ import com.kuvaszuptime.kuvasz.config.MaintenanceWindowConfig
 import com.kuvaszuptime.kuvasz.config.MonitorConfig
 import com.kuvaszuptime.kuvasz.config.PushMonitorConfig
 import com.kuvaszuptime.kuvasz.config.StatusPageConfig
+import com.kuvaszuptime.kuvasz.config.DockerMonitorConfig
 import com.kuvaszuptime.kuvasz.config.TcpMonitorConfig
 import com.kuvaszuptime.kuvasz.jooq.MonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.DockerMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMonitorRecord
 import com.kuvaszuptime.kuvasz.metrics.MetricsExportRegistry
 import com.kuvaszuptime.kuvasz.models.MonitorType
@@ -28,16 +30,19 @@ import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.MaintenanceWindowRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.DockerMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.security.api.HeaderApiKeyReader.Companion.API_KEY_MIN_LENGTH
 import com.kuvaszuptime.kuvasz.services.check.MonitorCheckScheduler
 import com.kuvaszuptime.kuvasz.services.connectivity.ConnectivityCheckScheduler
+import com.kuvaszuptime.kuvasz.services.docker.DockerHostRegistry
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowImporter
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowScheduler
 import com.kuvaszuptime.kuvasz.services.monitor.MonitorImporter
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageImporter
 import com.kuvaszuptime.kuvasz.util.loggerFor
+import com.kuvaszuptime.kuvasz.validation.isConfigured
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Property
 import jakarta.annotation.Nullable
@@ -50,6 +55,7 @@ class AppBootstrapper(
     private val yamlPushMonitorConfigs: List<PushMonitorConfig>,
     private val yamlIcmpMonitorConfigs: List<IcmpMonitorConfig>,
     private val yamlTcpMonitorConfigs: List<TcpMonitorConfig>,
+    private val yamlDockerMonitorConfigs: List<DockerMonitorConfig>,
     private val yamlDnsMonitorConfigs: List<DnsMonitorConfig>,
     private val monitorImporter: MonitorImporter,
     private val appConfig: AppConfig,
@@ -57,6 +63,7 @@ class AppBootstrapper(
     private val pushMonitorRepository: PushMonitorRepository,
     private val icmpMonitorRepository: IcmpMonitorRepository,
     private val tcpMonitorRepository: TcpMonitorRepository,
+    private val dockerMonitorRepository: DockerMonitorRepository,
     private val dnsMonitorRepository: DnsMonitorRepository,
     private val integrationRepository: IntegrationRepository,
     private val checkSchedulers: List<MonitorCheckScheduler>,
@@ -69,6 +76,7 @@ class AppBootstrapper(
     private val maintenanceWindowScheduler: MaintenanceWindowScheduler,
     private val apiKeyConfig: ApiKeyConfig?,
     private val connectivityCheckScheduler: ConnectivityCheckScheduler?,
+    private val dockerHostRegistry: DockerHostRegistry?,
 ) {
 
     @Suppress("ProtectedMemberInFinalClass")
@@ -90,6 +98,11 @@ class AppBootstrapper(
     @Nullable
     @field:Property(name = TcpMonitorConfig.CONFIG_PREFIX)
     protected var tcpMonitorYAMLConfigChecker: List<Any>? = null
+
+    @Suppress("ProtectedMemberInFinalClass")
+    @Nullable
+    @field:Property(name = DockerMonitorConfig.CONFIG_PREFIX)
+    protected var dockerMonitorYAMLConfigChecker: List<Any>? = null
 
     @Suppress("ProtectedMemberInFinalClass")
     @Nullable
@@ -118,6 +131,8 @@ class AppBootstrapper(
         processYamlMonitorConfigs()
         // Sanitize the configured integrations on the monitors
         sanitizeIntegrationsOfMonitors()
+        // Warn about the Docker monitors that reference a host that is not configured anymore
+        warnAboutDanglingDockerHosts()
         // Importing status pages from config if any are present
         processYamlStatusPageConfigs()
         // Importing maintenance windows from config if any are present
@@ -169,9 +184,28 @@ class AppBootstrapper(
         if (!appConfig.isTcpMonitorExternalWriteDisabled()) {
             tcpMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations(configuredIntegrations) }
         }
+        if (!appConfig.isDockerMonitorExternalWriteDisabled()) {
+            dockerMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations(configuredIntegrations) }
+        }
         if (!appConfig.isDnsMonitorExternalWriteDisabled()) {
             dnsMonitorRepository.fetchAll().forEach { it.sanitizeIntegrations(configuredIntegrations) }
         }
+    }
+
+    /**
+     * Unlike the integrations, a dangling Docker host is not sanitized: it is the monitor's only target, so the fix
+     * would be deleting or disabling the monitor. It is kept and its checks report it instead.
+     */
+    private fun warnAboutDanglingDockerHosts() {
+        val danglingMonitors =
+            dockerMonitorRepository.fetchAll().filterNot { dockerHostRegistry.isConfigured(it.dockerHost) }
+        if (danglingMonitors.isEmpty()) return
+
+        logger.warn(
+            "The following Docker monitors reference a Docker host that is not configured, so their checks will " +
+                "fail until it is added back: " +
+                danglingMonitors.joinToString { "${it.name} (ID: ${it.id}, host: ${it.dockerHost})" }
+        )
     }
 
     private fun MonitorRecord.sanitizeIntegrations(configuredIntegrations: Set<IntegrationID>) {
@@ -191,6 +225,7 @@ class AppBootstrapper(
             is PushMonitorRecord -> pushMonitorRepository.updateIntegrations(id, newIntegrations)
             is IcmpMonitorRecord -> icmpMonitorRepository.updateIntegrations(id, newIntegrations)
             is TcpMonitorRecord -> tcpMonitorRepository.updateIntegrations(id, newIntegrations)
+            is DockerMonitorRecord -> dockerMonitorRepository.updateIntegrations(id, newIntegrations)
             is DnsMonitorRecord -> dnsMonitorRepository.updateIntegrations(id, newIntegrations)
         }
     }
@@ -274,6 +309,14 @@ class AppBootstrapper(
             yamlConfigChecker = dnsMonitorYAMLConfigChecker,
             callToDisableExternalWrite = appConfig::disableDnsMonitorExternalWrite,
             callToImportConfigs = monitorImporter::importDnsMonitorConfigs,
+        )
+
+        processYamlMonitorConfigs(
+            monitorType = MonitorType.DOCKER,
+            yamlMonitorConfigs = yamlDockerMonitorConfigs,
+            yamlConfigChecker = dockerMonitorYAMLConfigChecker,
+            callToDisableExternalWrite = appConfig::disableDockerMonitorExternalWrite,
+            callToImportConfigs = monitorImporter::importDockerMonitorConfigs,
         )
     }
 

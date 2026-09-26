@@ -13,6 +13,7 @@ import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsMonitorCreator
 import com.kuvaszuptime.kuvasz.models.monitor.http.HttpMonitorCreator
 import com.kuvaszuptime.kuvasz.models.monitor.icmp.IcmpMonitorCreator
 import com.kuvaszuptime.kuvasz.models.monitor.push.PushMonitorCreator
+import com.kuvaszuptime.kuvasz.models.monitor.docker.DockerMonitorCreator
 import com.kuvaszuptime.kuvasz.models.monitor.tcp.TcpMonitorCreator
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.check.MonitorCheckScheduler
@@ -20,6 +21,7 @@ import com.kuvaszuptime.kuvasz.services.check.dns.DnsMonitorTypeSupport
 import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorTypeSupport
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpMonitorTypeSupport
 import com.kuvaszuptime.kuvasz.services.check.push.PushMonitorTypeSupport
+import com.kuvaszuptime.kuvasz.services.check.docker.DockerMonitorTypeSupport
 import com.kuvaszuptime.kuvasz.services.check.tcp.TcpMonitorTypeSupport
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageCacheInvalidator
 import com.kuvaszuptime.kuvasz.util.loggerFor
@@ -35,6 +37,7 @@ class MonitorImporter(
     private val pushMonitors: PushMonitorTypeSupport,
     private val icmpMonitors: IcmpMonitorTypeSupport,
     private val tcpMonitors: TcpMonitorTypeSupport,
+    private val dockerMonitors: DockerMonitorTypeSupport,
     private val dnsMonitors: DnsMonitorTypeSupport,
     private val dslContext: DSLContext,
     private val checkSchedulers: List<MonitorCheckScheduler>,
@@ -61,6 +64,7 @@ class MonitorImporter(
         icmpMonitorConfigs: List<IcmpMonitorCreator>,
         tcpMonitorConfigs: List<TcpMonitorCreator>,
         dnsMonitorConfigs: List<DnsMonitorCreator>,
+        dockerMonitorConfigs: List<DockerMonitorCreator>,
         dryRun: Boolean,
     ): List<MonitorTypeImportResult> {
         val outcomes = dslContext.transactionResult { config ->
@@ -80,6 +84,9 @@ class MonitorImporter(
                 },
                 dnsMonitorConfigs.doIfNotEmpty { nonEmptyConfigs ->
                     dnsMonitors.reconcile(nonEmptyConfigs, dryRun, txCtx, lenientIntegrations = true)
+                },
+                dockerMonitorConfigs.doIfNotEmpty { nonEmptyConfigs ->
+                    dockerMonitors.reconcile(nonEmptyConfigs, dryRun, txCtx, lenientIntegrations = true)
                 },
             )
         }
@@ -113,6 +120,9 @@ class MonitorImporter(
     fun importDnsMonitorConfigs(monitorConfigs: List<DnsMonitorCreator>, dryRun: Boolean) =
         dnsMonitors.importFromConfig(monitorConfigs, dryRun)
 
+    fun importDockerMonitorConfigs(monitorConfigs: List<DockerMonitorCreator>, dryRun: Boolean) =
+        dockerMonitors.importFromConfig(monitorConfigs, dryRun)
+
     private fun <C : MonitorCreator<R>, R : MonitorRecord> MonitorTypeSupport<C, R, *>.importFromConfig(
         monitorConfigs: List<C>,
         dryRun: Boolean,
@@ -142,6 +152,7 @@ class MonitorImporter(
             ignoredIntegrations.addAll(resolved.ignored)
             val toUpsert = importedMonitor.toMonitorRecord(resolved.valid)
             val previous = repository.findByName(toUpsert.name, txCtx)
+            beforeUpsert(previous, toUpsert)
             repository.upsert(toUpsert, txCtx).also { upserted -> onUpserted(previous, upserted, txCtx) }
         }
         logger.info(
@@ -181,7 +192,7 @@ class MonitorImporter(
 
     private fun rescheduleChecksFor(monitorType: MonitorType) {
         when (monitorType) {
-            MonitorType.HTTP_SSL, MonitorType.TCP, MonitorType.ICMP, MonitorType.DNS -> {
+            MonitorType.HTTP_SSL, MonitorType.TCP, MonitorType.ICMP, MonitorType.DNS, MonitorType.DOCKER -> {
                 checkSchedulers.first { it.monitorType == monitorType }.run {
                     removeAllChecks()
                     initialize()

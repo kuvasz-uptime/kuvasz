@@ -8,17 +8,20 @@ import com.kuvaszuptime.kuvasz.jooq.enums.DnsTransport
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.mocks.createDnsMonitor
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createDockerMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPendingFailure
 import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.importing.DnsMonitorImportAdapter
 import com.kuvaszuptime.kuvasz.models.dto.importing.HttpMonitorImportAdapter
+import com.kuvaszuptime.kuvasz.models.dto.importing.DockerMonitorImportAdapter
 import com.kuvaszuptime.kuvasz.models.dto.importing.IcmpMonitorImportAdapter
 import com.kuvaszuptime.kuvasz.models.dto.importing.PushMonitorImportAdapter
 import com.kuvaszuptime.kuvasz.models.dto.importing.TcpMonitorImportAdapter
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.docker.DockerMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorExportDto
@@ -42,6 +45,7 @@ import com.kuvaszuptime.kuvasz.repositories.IcmpMetricsLogRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMetricsLogRepository
+import com.kuvaszuptime.kuvasz.repositories.DockerMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.check.dns.DnsCheckScheduler
@@ -50,6 +54,8 @@ import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.tcp.TcpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageCacheInvalidator
 import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
+import com.kuvaszuptime.kuvasz.validation.NonExistingDockerHostException
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
@@ -67,7 +73,7 @@ import io.reactivex.rxjava3.subscribers.TestSubscriber
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 
-@MicronautTest
+@MicronautTest(environments = ["docker-hosts"])
 class MonitorImporterTest(
     private val monitorImporter: MonitorImporter,
     private val httpMonitorRepository: HttpMonitorRepository,
@@ -78,6 +84,7 @@ class MonitorImporterTest(
     private val snapshotRepository: DnsResolutionSnapshotRepository,
     private val dnsCheckScheduler: DnsCheckScheduler,
     private val tcpMonitorRepository: TcpMonitorRepository,
+    private val dockerMonitorRepository: DockerMonitorRepository,
     private val tcpCheckScheduler: TcpCheckScheduler,
     private val pushMonitorRepository: PushMonitorRepository,
     private val latencyLogRepository: HttpLatencyLogRepository,
@@ -211,6 +218,7 @@ class MonitorImporterTest(
                     icmpMonitorConfigs = emptyList(),
                     tcpMonitorConfigs = emptyList(),
                     dnsMonitorConfigs = emptyList(),
+                    dockerMonitorConfigs = emptyList(),
                     dryRun = false,
                 )
 
@@ -254,7 +262,97 @@ class MonitorImporterTest(
             }
         }
 
+        given("MonitorImporter.importDockerMonitorConfigs()") {
+
+            `when`("it receives Docker monitors and dryRun is false") {
+                val result = monitorImporter.importDockerMonitorConfigs(
+                    listOf(dockerAdapter("persisted-docker")),
+                    dryRun = false,
+                )
+
+                then("it should persist the Docker monitor") {
+                    result.monitorType shouldBe MonitorType.DOCKER
+                    result.receivedCnt shouldBe 1
+                    dockerMonitorRepository.findByName("persisted-docker").shouldNotBeNull()
+                }
+            }
+
+            `when`("dryRun is true") {
+                val existingMonitor = createDockerMonitor(dockerMonitorRepository, monitorName = "existing-docker")
+
+                val result = monitorImporter.importDockerMonitorConfigs(
+                    listOf(dockerAdapter("dry-run-docker")),
+                    dryRun = true,
+                )
+
+                then("it should report the affected monitors without persisting anything") {
+                    result.imported shouldContainExactly listOf(MonitorID(MonitorType.DOCKER, "dry-run-docker"))
+                    result.deleted shouldContainExactly listOf(MonitorID(MonitorType.DOCKER, "existing-docker"))
+                    dockerMonitorRepository.findById(existingMonitor.id, null).shouldNotBeNull()
+                    dockerMonitorRepository.findByName("dry-run-docker").shouldBeNull()
+                }
+            }
+
+            `when`("a new monitor references a Docker host that is not configured") {
+                val ex = shouldThrow<NonExistingDockerHostException> {
+                    monitorImporter.importDockerMonitorConfigs(
+                        listOf(dockerAdapter("dangling-host-docker", dockerHost = "not-configured")),
+                        dryRun = false,
+                    )
+                }
+
+                then("it should reject it") {
+                    ex.message shouldBe "Non-existing Docker host found: not-configured."
+                    dockerMonitorRepository.findByName("dangling-host-docker").shouldBeNull()
+                }
+            }
+
+            // A YAML monitor whose host was removed from the config between two restarts is re-imported as it was
+            `when`("an existing monitor references a Docker host that is not configured anymore") {
+                val existing = createDockerMonitor(
+                    dockerMonitorRepository,
+                    monitorName = "kept-docker",
+                    dockerHost = "removed-host",
+                )
+
+                val result = monitorImporter.importDockerMonitorConfigs(
+                    listOf(dockerAdapter("kept-docker", dockerHost = "removed-host")),
+                    dryRun = false,
+                )
+
+                then("it should keep the monitor with its host") {
+                    result.imported shouldContainExactly listOf(MonitorID(MonitorType.DOCKER, "kept-docker"))
+                    with(dockerMonitorRepository.findByName("kept-docker").shouldNotBeNull()) {
+                        id shouldBe existing.id
+                        dockerHost shouldBe "removed-host"
+                    }
+                }
+            }
+        }
+
         given("MonitorImporter.batchImportMonitors()") {
+
+            `when`("the backup contains a new Docker monitor on a host that is not configured") {
+                val existingHttp = createHttpMonitor(httpMonitorRepository, monitorName = "existing-http")
+
+                shouldThrow<NonExistingDockerHostException> {
+                    monitorImporter.batchImportMonitors(
+                        httpMonitorConfigs = listOf(httpAdapter("imported-http")),
+                        pushMonitorConfigs = emptyList(),
+                        icmpMonitorConfigs = emptyList(),
+                        tcpMonitorConfigs = emptyList(),
+                        dnsMonitorConfigs = emptyList(),
+                        dockerMonitorConfigs = listOf(dockerAdapter("imported-docker", dockerHost = "not-configured")),
+                        dryRun = false,
+                    )
+                }
+
+                then("it should roll back the whole import") {
+                    httpMonitorRepository.findById(existingHttp.id, null).shouldNotBeNull()
+                    httpMonitorRepository.findByName("imported-http").shouldBeNull()
+                    dockerMonitorRepository.findByName("imported-docker").shouldBeNull()
+                }
+            }
 
             `when`("the backup contains no entry for a monitor type that already exists in the database") {
                 val existingHttp = createHttpMonitor(httpMonitorRepository, monitorName = "existing-http")
@@ -294,6 +392,7 @@ class MonitorImporterTest(
                     icmpMonitorConfigs = emptyList(),
                     tcpMonitorConfigs = emptyList(),
                     dnsMonitorConfigs = emptyList(),
+                    dockerMonitorConfigs = emptyList(),
                     dryRun = false,
                 )
 
@@ -316,6 +415,7 @@ class MonitorImporterTest(
                     icmpMonitorConfigs = listOf(icmpAdapter("scheduled-icmp")),
                     tcpMonitorConfigs = emptyList(),
                     dnsMonitorConfigs = emptyList(),
+                    dockerMonitorConfigs = emptyList(),
                     dryRun = false,
                 )
 
@@ -337,6 +437,7 @@ class MonitorImporterTest(
                     icmpMonitorConfigs = emptyList(),
                     tcpMonitorConfigs = listOf(tcpAdapter("scheduled-tcp")),
                     dnsMonitorConfigs = emptyList(),
+                    dockerMonitorConfigs = emptyList(),
                     dryRun = false,
                 )
 
@@ -361,6 +462,7 @@ class MonitorImporterTest(
                     icmpMonitorConfigs = emptyList(),
                     tcpMonitorConfigs = emptyList(),
                     dnsMonitorConfigs = emptyList(),
+                    dockerMonitorConfigs = emptyList(),
                     dryRun = true,
                 )
 
@@ -381,6 +483,7 @@ class MonitorImporterTest(
                     icmpMonitorConfigs = emptyList(),
                     tcpMonitorConfigs = emptyList(),
                     dnsMonitorConfigs = listOf(dnsAdapter("imported-dns", matchers, listOf(DnsRecordType.NS))),
+                    dockerMonitorConfigs = emptyList(),
                     dryRun = false,
                 )
 
@@ -474,6 +577,7 @@ class MonitorImporterTest(
                         icmpMonitorConfigs = listOf(icmpAdapter("icmp-kept")),
                         tcpMonitorConfigs = listOf(tcpAdapter("tcp-kept")),
                         dnsMonitorConfigs = listOf(dnsAdapter("dns-kept")),
+                        dockerMonitorConfigs = emptyList(),
                         dryRun = false,
                     )
 
@@ -528,6 +632,7 @@ class MonitorImporterTest(
                         icmpMonitorConfigs = emptyList(),
                         tcpMonitorConfigs = emptyList(),
                         dnsMonitorConfigs = emptyList(),
+                        dockerMonitorConfigs = emptyList(),
                         dryRun = true,
                     )
 
@@ -554,6 +659,7 @@ class MonitorImporterTest(
                     icmpMonitorConfigs = listOf(icmpAdapter("icmp-history", metricsHistoryEnabled = false)),
                     tcpMonitorConfigs = listOf(tcpAdapter("tcp-history", metricsHistoryEnabled = false)),
                     dnsMonitorConfigs = listOf(dnsAdapter("dns-history", metricsHistoryEnabled = false)),
+                    dockerMonitorConfigs = emptyList(),
                     dryRun = false,
                 )
 
@@ -581,6 +687,7 @@ class MonitorImporterTest(
                     icmpMonitorConfigs = listOf(icmpAdapter("icmp-history-kept")),
                     tcpMonitorConfigs = listOf(tcpAdapter("tcp-history-kept")),
                     dnsMonitorConfigs = listOf(dnsAdapter("dns-history-kept")),
+                    dockerMonitorConfigs = emptyList(),
                     dryRun = false,
                 )
 
@@ -736,6 +843,26 @@ class MonitorImporterTest(
             metricsHistoryEnabled = metricsHistoryEnabled,
             category = null,
             ignoreConnectivityCheck = false,
+        )
+    )
+
+    private fun dockerAdapter(
+        name: String,
+        dockerHost: String = "local",
+        metricsHistoryEnabled: Boolean = true,
+    ) = DockerMonitorImportAdapter(
+        DockerMonitorExportDto(
+            name = name,
+            dockerHost = dockerHost,
+            container = "my-app",
+            uptimeCheckInterval = 60,
+            timeoutMs = 5000,
+            failureCountThreshold = 1,
+            enabled = true,
+            integrations = emptySet(),
+            metricsHistoryEnabled = metricsHistoryEnabled,
+            category = null,
+            ignoreConnectivityCheck = true,
         )
     )
 }

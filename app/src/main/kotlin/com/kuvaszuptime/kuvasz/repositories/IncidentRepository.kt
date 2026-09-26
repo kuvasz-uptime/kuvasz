@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.repositories
 
+import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.Tables.SSL_EVENT
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
@@ -11,6 +12,8 @@ import com.kuvaszuptime.kuvasz.jooq.tables.IcmpMonitor.ICMP_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.IcmpUptimeEvent.ICMP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor.PUSH_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.PushUptimeEvent.PUSH_UPTIME_EVENT
+import com.kuvaszuptime.kuvasz.jooq.tables.DockerMonitor.DOCKER_MONITOR
+import com.kuvaszuptime.kuvasz.jooq.tables.DockerUptimeEvent.DOCKER_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.TcpMonitor.TCP_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.TcpUptimeEvent.TCP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.models.IncidentType
@@ -55,6 +58,8 @@ class IncidentRepository(private val dslContext: DSLContext) {
             .unionAll(dslContext.tcpUptimeIncidentSelect(monitorId, period, includeResolved))
             // DNS incidents
             .unionAll(dslContext.dnsUptimeIncidentSelect(monitorId, period, includeResolved))
+            // Docker incidents
+            .unionAll(dslContext.dockerUptimeIncidentSelect(monitorId, period, includeResolved))
             // SSL incidents
             .unionAll(dslContext.sslIncidentsSelect(monitorId, period, includeResolved))
             .orderBy(DSL.field(orderFieldName).desc())
@@ -212,6 +217,50 @@ class IncidentRepository(private val dslContext: DSLContext) {
         }
 
     @Suppress("IgnoredReturnValue")
+    private fun DSLContext.dockerUptimeIncidentSelect(
+        monitorId: Long? = null,
+        period: Duration? = null,
+        includeResolved: Boolean
+    ) = this
+        .select(
+            DOCKER_MONITOR.ID.`as`(IncidentDto::monitorId.name),
+            DOCKER_MONITOR.NAME.`as`(IncidentDto::monitorName.name),
+            DOCKER_MONITOR.ENABLED.`as`(IncidentDto::isMonitorEnabled.name),
+            DSL.inline(IncidentType.DOCKER.name).`as`(IncidentDto::incidentType.name),
+            DSL.`when`(DOCKER_UPTIME_EVENT.ENDED_AT.isNull, IncidentStatus.ONGOING.name)
+                .otherwise(IncidentStatus.RESOLVED.name).`as`(IncidentDto::status.name),
+            DSL.`when`(DOCKER_UPTIME_EVENT.IMAGE.isNull, DOCKER_UPTIME_EVENT.ERROR)
+                .otherwise(
+                    DSL.concat(
+                        DOCKER_UPTIME_EVENT.ERROR,
+                        DSL.inline(" · ${Messages.dockerImageLabel()}: "),
+                        DOCKER_UPTIME_EVENT.IMAGE,
+                    )
+                )
+                .`as`(IncidentDto::details.name),
+            DOCKER_UPTIME_EVENT.STARTED_AT.`as`(IncidentDto::startedAt.name),
+            DOCKER_UPTIME_EVENT.ENDED_AT.`as`(IncidentDto::endedAt.name),
+            DOCKER_UPTIME_EVENT.UPDATED_AT.`as`(IncidentDto::updatedAt.name),
+        )
+        .from(DOCKER_UPTIME_EVENT)
+        .join(DOCKER_MONITOR).on(DOCKER_UPTIME_EVENT.MONITOR_ID.eq(DOCKER_MONITOR.ID))
+        .where(DOCKER_UPTIME_EVENT.STATUS.eq(UptimeStatus.DOWN))
+        .apply {
+            if (monitorId != null) {
+                and(DOCKER_MONITOR.ID.eq(monitorId))
+            } else {
+                and(DOCKER_MONITOR.ENABLED.isTrue)
+            }
+            period?.let {
+                val periodStart = getCurrentTimestamp().minus(period)
+                and(DSL.coalesce(DOCKER_UPTIME_EVENT.ENDED_AT, DSL.now()).greaterThan(periodStart))
+            }
+            if (!includeResolved) {
+                and(DOCKER_UPTIME_EVENT.ENDED_AT.isNull)
+            }
+        }
+
+    @Suppress("IgnoredReturnValue")
     private fun DSLContext.dnsUptimeIncidentSelect(
         monitorId: Long? = null,
         period: Duration? = null,
@@ -335,6 +384,19 @@ class IncidentRepository(private val dslContext: DSLContext) {
 
         return dslContext
             .tcpUptimeIncidentSelect(monitorId, period, includeResolved)
+            .orderBy(DSL.field(orderFieldName).desc())
+            .fetchInto(IncidentDto::class.java)
+    }
+
+    fun getDockerUptimeIncidents(
+        monitorId: Long? = null,
+        period: Duration? = null,
+        includeResolved: Boolean,
+    ): List<IncidentDto> {
+        val orderFieldName = DSL.name(IncidentDto::updatedAt.name)
+
+        return dslContext
+            .dockerUptimeIncidentSelect(monitorId, period, includeResolved)
             .orderBy(DSL.field(orderFieldName).desc())
             .fetchInto(IncidentDto::class.java)
     }

@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.buildconfig.BuildConfig
 import com.kuvaszuptime.kuvasz.config.ApiKeyConfig
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.config.DefaultStatusPageConfig
+import com.kuvaszuptime.kuvasz.config.DockerHostConfig
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationMap
@@ -14,6 +15,7 @@ import com.kuvaszuptime.kuvasz.models.settings.ConnectivityState
 import com.kuvaszuptime.kuvasz.models.settings.ConnectivityStatus
 import com.kuvaszuptime.kuvasz.models.settings.VersionInfo
 import com.kuvaszuptime.kuvasz.services.VersionChecker
+import com.kuvaszuptime.kuvasz.services.docker.DockerHostRegistry
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.monitor.SharedMonitorActions
 import com.kuvaszuptime.kuvasz.util.toUri
@@ -64,6 +66,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 oidcClient = null,
                 apiKeyConfig = null,
                 connectivityChecker = null,
+                dockerHostRegistry = null,
             )
 
             then("it should return the correctly hydrated view model") {
@@ -74,6 +77,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 globals.editabilityState.areStatusPagesReadOnly() shouldBe false
                 globals.editabilityState.arePushMonitorsReadOnly() shouldBe false
                 globals.editabilityState.areMaintenanceWindowsReadOnly() shouldBe false
+                globals.editabilityState.areDockerMonitorsReadOnly() shouldBe false
             }
         }
 
@@ -91,6 +95,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 oidcClient = null,
                 apiKeyConfig = null,
                 connectivityChecker = null,
+                dockerHostRegistry = null,
             )
 
             then("it should return the correctly hydrated view model") {
@@ -101,6 +106,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 globals.editabilityState.areStatusPagesReadOnly() shouldBe false
                 globals.editabilityState.arePushMonitorsReadOnly() shouldBe false
                 globals.editabilityState.areMaintenanceWindowsReadOnly() shouldBe false
+                globals.editabilityState.areDockerMonitorsReadOnly() shouldBe false
             }
         }
 
@@ -118,6 +124,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 oidcClient = null,
                 apiKeyConfig = null,
                 connectivityChecker = null,
+                dockerHostRegistry = null,
             )
 
             then("it should return the correctly hydrated view model") {
@@ -128,6 +135,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 globals.editabilityState.areStatusPagesReadOnly() shouldBe false
                 globals.editabilityState.arePushMonitorsReadOnly() shouldBe false
                 globals.editabilityState.areMaintenanceWindowsReadOnly() shouldBe false
+                globals.editabilityState.areDockerMonitorsReadOnly() shouldBe false
             }
         }
 
@@ -137,6 +145,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
             appConfig.disablePushMonitorExternalWrite()
             appConfig.disableStatusPageExternalWrite()
             appConfig.disableMaintenanceWindowExternalWrite()
+            appConfig.disableDockerMonitorExternalWrite()
             val globals = AppGlobalsFactory().appGlobals(
                 null,
                 appConfig,
@@ -147,6 +156,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 oidcClient = null,
                 apiKeyConfig = null,
                 connectivityChecker = null,
+                dockerHostRegistry = null,
             )
 
             then("it should return the correctly hydrated view model") {
@@ -154,6 +164,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 globals.editabilityState.areStatusPagesReadOnly() shouldBe true
                 globals.editabilityState.arePushMonitorsReadOnly() shouldBe true
                 globals.editabilityState.areMaintenanceWindowsReadOnly() shouldBe true
+                globals.editabilityState.areDockerMonitorsReadOnly() shouldBe true
             }
         }
 
@@ -169,6 +180,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 oidcClient = null,
                 apiKeyConfig = null,
                 connectivityChecker = null,
+                dockerHostRegistry = null,
             )
             globals.editabilityState.areHttpMonitorsReadOnly() shouldBe false
             globals.editabilityState.areStatusPagesReadOnly() shouldBe false
@@ -189,6 +201,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 oidcClient = null,
                 apiKeyConfig = null,
                 connectivityChecker = null,
+                dockerHostRegistry = null,
             )
 
             then("it should return the correctly hydrated view model") {
@@ -221,6 +234,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 oidcClient = null,
                 apiKeyConfig = null,
                 connectivityChecker = null,
+                dockerHostRegistry = null,
             )
 
             then("it should return the correctly hydrated view model with integrations") {
@@ -248,6 +262,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                     oidcClient = null,
                     apiKeyConfig = null,
                     connectivityChecker = null,
+                    dockerHostRegistry = null,
                 )
                 globals.versionInfo() shouldBe VersionInfo(
                     installedVersion = BuildConfig.APP_VERSION,
@@ -268,6 +283,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 oidcClient = null,
                 apiKeyConfig = null,
                 connectivityChecker = null,
+                dockerHostRegistry = null,
             )
 
             then("it should return the correct default status page settings") {
@@ -287,6 +303,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 oidcClient = null,
                 apiKeyConfig = null,
                 connectivityChecker = null,
+                dockerHostRegistry = null,
             )
 
             then("it should return the correct list of enabled monitors") {
@@ -308,6 +325,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 oidcClient = null,
                 apiKeyConfig = null,
                 connectivityChecker = null,
+                dockerHostRegistry = null,
             )
 
             then("neither OIDC nor OIDC logout is enabled when the OIDC client bean is absent") {
@@ -330,6 +348,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 oidcClient = oidcClient,
                 apiKeyConfig = null,
                 connectivityChecker = null,
+                dockerHostRegistry = null,
             )
 
             then("both OIDC and OIDC logout are enabled") {
@@ -352,6 +371,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 oidcClient = oidcClient,
                 apiKeyConfig = null,
                 connectivityChecker = null,
+                dockerHostRegistry = null,
             )
 
             then("OIDC is enabled but OIDC logout is not") {
@@ -371,6 +391,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 oidcClient = null,
                 apiKeyConfig = null,
                 connectivityChecker = null,
+                dockerHostRegistry = null,
             )
 
             then("API key auth is reported as disabled") {
@@ -389,6 +410,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 oidcClient = null,
                 apiKeyConfig = null,
                 connectivityChecker = null,
+                dockerHostRegistry = null,
             )
 
             then("there is no connectivity status at all") {
@@ -417,6 +439,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 oidcClient = null,
                 apiKeyConfig = null,
                 connectivityChecker = mockk { every { getStatus() } returns status },
+                dockerHostRegistry = null,
             )
 
             then("the live status is exposed to the views") {
@@ -435,6 +458,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 oidcClient = null,
                 apiKeyConfig = ApiKeyConfig().apply { apiKey = "some-non-blank-api-key" },
                 connectivityChecker = null,
+                dockerHostRegistry = null,
             )
 
             then("API key auth is reported as enabled") {
@@ -453,6 +477,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 oidcClient = null,
                 apiKeyConfig = ApiKeyConfig().apply { apiKey = null },
                 connectivityChecker = null,
+                dockerHostRegistry = null,
             )
             val blankKeyGlobals = AppGlobalsFactory().appGlobals(
                 null,
@@ -464,11 +489,45 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 oidcClient = null,
                 apiKeyConfig = ApiKeyConfig().apply { apiKey = "   " },
                 connectivityChecker = null,
+                dockerHostRegistry = null,
             )
 
             then("API key auth is reported as disabled") {
                 nullKeyGlobals.isApiKeyAuthEnabled shouldBe false
                 blankKeyGlobals.isApiKeyAuthEnabled shouldBe false
+            }
+        }
+
+        `when`("Docker hosts are configured") {
+
+            val globals = AppGlobalsFactory().appGlobals(
+                null,
+                AppConfig(),
+                emptyIntegrationRepository,
+                mockVersionChecker,
+                mockDefaultPageSettings,
+                mockkMonitorActions,
+                oidcClient = null,
+                apiKeyConfig = null,
+                connectivityChecker = null,
+                dockerHostRegistry = DockerHostRegistry(
+                    listOf(
+                        mockk<DockerHostConfig> {
+                            every { name } returns "vps-1"
+                            every { url } returns "tcp://10.0.0.5:2375"
+                            every { tls } returns null
+                        },
+                        mockk<DockerHostConfig> {
+                            every { name } returns "local"
+                            every { url } returns "unix:///var/run/docker.sock"
+                            every { tls } returns null
+                        },
+                    )
+                ),
+            )
+
+            then("their names are exposed to the UI, sorted") {
+                globals.configuredDockerHosts shouldBe listOf("local", "vps-1")
             }
         }
     }

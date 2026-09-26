@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
+import com.kuvaszuptime.kuvasz.mocks.createDockerMonitor
 import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
@@ -21,6 +22,8 @@ import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.TcpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.TcpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
@@ -40,6 +43,8 @@ import com.kuvaszuptime.kuvasz.repositories.IcmpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
+import com.kuvaszuptime.kuvasz.repositories.DockerMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.DockerUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
@@ -71,6 +76,8 @@ class PagerdutyEventHandlerTest(
     private val pushMonitorRepository: PushMonitorRepository,
     private val icmpMonitorRepository: IcmpMonitorRepository,
     private val tcpMonitorRepository: TcpMonitorRepository,
+    private val dockerMonitorRepository: DockerMonitorRepository,
+    private val dockerUptimeEventRepository: DockerUptimeEventRepository,
     private val dnsMonitorRepository: DnsMonitorRepository,
     private val httpUptimeEventRepository: HttpUptimeEventRepository,
     private val pushUptimeEventRepository: PushUptimeEventRepository,
@@ -871,6 +878,200 @@ class PagerdutyEventHandlerTest(
                 val secondEvent = TcpMonitorDownEvent(
                     monitor = monitor,
                     error = "Connection refused",
+                    previousEvent = firstUptimeRecord,
+                )
+                mockSuccessfulTriggerResponse()
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should call only triggerAlert()") {
+                    val slot = slot<PagerdutyTriggerRequest>()
+
+                    verify(exactly = 1) { mockClient.triggerAlert(capture(slot)) }
+                    slot.captured.eventAction shouldBe PagerdutyEventAction.TRIGGER
+                    slot.captured.routingKey shouldBe globalPagerdutyConfig.integrationKey
+                }
+            }
+        }
+
+        given("the PagerdutyEventHandler - DOCKER UPTIME events") {
+            `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
+                val monitor = createDockerMonitor(dockerMonitorRepository)
+                val event = DockerMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                )
+
+                eventDispatcher.testDispatch(event)
+
+                then("it should not call the PD API") {
+                    verify(exactly = 0) { mockClient.resolveAlert(any()) }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
+                val monitor = createDockerMonitor(
+                    dockerMonitorRepository,
+                    integrations = listOf(
+                        globalPagerdutyConfig.id,
+                        otherPagerdutyConfig.id,
+                        disabledPagerdutyConfig.id,
+                    )
+                )
+                val event = DockerMonitorDownEvent(
+                    monitor = monitor,
+                    error = "The container exited (137)",
+                    previousEvent = null,
+                )
+                mockSuccessfulTriggerResponse()
+
+                eventDispatcher.testDispatch(event)
+
+                then("it should trigger an alert on PD for each enabled integration") {
+                    val slot = mutableListOf<PagerdutyTriggerRequest>()
+
+                    verify(exactly = 2) { mockClient.triggerAlert(capture(slot)) }
+                    slot.forAll { request ->
+                        request.eventAction shouldBe PagerdutyEventAction.TRIGGER
+                        request.dedupKey shouldBe "kuvasz_uptime_${monitor.id}"
+                        request.payload.severity shouldBe PagerdutySeverity.CRITICAL
+                        request.payload.source shouldBe monitor.name
+                        request.payload.summary shouldBe event.toStructuredMessage().summary
+                    }
+                    slot.forOne { fromGlobalConfig ->
+                        fromGlobalConfig.routingKey shouldBe globalPagerdutyConfig.integrationKey
+                    }
+                    slot.forOne { fromOtherConfig ->
+                        fromOtherConfig.routingKey shouldBe otherPagerdutyConfig.integrationKey
+                    }
+                    slot.forNone { it.routingKey shouldBe disabledPagerdutyConfig.integrationKey }
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with the same status") {
+                val monitor = createDockerMonitor(dockerMonitorRepository)
+                val firstEvent = DockerMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                )
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = dockerUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = DockerMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord,
+                    latencyInMs = 8,
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should not call the PD API") {
+                    verify(exactly = 0) { mockClient.resolveAlert(any()) }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with the same status") {
+                val monitor = createDockerMonitor(dockerMonitorRepository)
+                val firstEvent = DockerMonitorDownEvent(
+                    monitor = monitor,
+                    error = "The container exited (1)",
+                    previousEvent = null,
+                )
+                mockSuccessfulTriggerResponse()
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = dockerUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = DockerMonitorDownEvent(
+                    monitor = monitor,
+                    error = "The container is dead",
+                    previousEvent = firstUptimeRecord,
+                )
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should call triggerAlert() only once") {
+                    val slot = slot<PagerdutyTriggerRequest>()
+
+                    verify(exactly = 1) { mockClient.triggerAlert(capture(slot)) }
+                    slot.captured.eventAction shouldBe PagerdutyEventAction.TRIGGER
+                    slot.captured.routingKey shouldBe globalPagerdutyConfig.integrationKey
+                }
+            }
+
+            `when`("it receives a MonitorUpEvent and there is a previous event with different status") {
+                val monitor = createDockerMonitor(
+                    dockerMonitorRepository,
+                    integrations = listOf(
+                        globalPagerdutyConfig.id,
+                        otherPagerdutyConfig.id,
+                        disabledPagerdutyConfig.id,
+                    )
+                )
+                val firstEvent = DockerMonitorDownEvent(
+                    monitor = monitor,
+                    error = "The container exited (137)",
+                    previousEvent = null,
+                )
+                mockSuccessfulTriggerResponse()
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = dockerUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = DockerMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = firstUptimeRecord,
+                    latencyInMs = 5,
+                )
+                mockSuccessfulResolveResponse()
+                eventDispatcher.testDispatch(secondEvent)
+
+                then("it should trigger an alert and then resolve it for each enabled integration") {
+                    val triggerSlot = mutableListOf<PagerdutyTriggerRequest>()
+                    val resolveSlot = mutableListOf<PagerdutyResolveRequest>()
+
+                    verify(exactly = 2) { mockClient.triggerAlert(capture(triggerSlot)) }
+                    verify(exactly = 2) { mockClient.resolveAlert(capture(resolveSlot)) }
+
+                    triggerSlot.forAll { request ->
+                        request.eventAction shouldBe PagerdutyEventAction.TRIGGER
+                        request.dedupKey shouldBe "kuvasz_uptime_${monitor.id}"
+                        request.payload.severity shouldBe PagerdutySeverity.CRITICAL
+                        request.payload.source shouldBe monitor.name
+                        request.payload.summary shouldBe firstEvent.toStructuredMessage().summary
+                    }
+                    triggerSlot.forOne { fromGlobalConfig ->
+                        fromGlobalConfig.routingKey shouldBe globalPagerdutyConfig.integrationKey
+                    }
+                    triggerSlot.forOne { fromOtherConfig ->
+                        fromOtherConfig.routingKey shouldBe otherPagerdutyConfig.integrationKey
+                    }
+                    triggerSlot.forNone { it.routingKey shouldBe disabledPagerdutyConfig.integrationKey }
+
+                    resolveSlot.forAll { request ->
+                        request.eventAction shouldBe PagerdutyEventAction.RESOLVE
+                        request.dedupKey shouldBe "kuvasz_uptime_${monitor.id}"
+                    }
+                    resolveSlot.forOne { fromGlobalConfig ->
+                        fromGlobalConfig.routingKey shouldBe globalPagerdutyConfig.integrationKey
+                    }
+                    resolveSlot.forOne { fromOtherConfig ->
+                        fromOtherConfig.routingKey shouldBe otherPagerdutyConfig.integrationKey
+                    }
+                    resolveSlot.forNone { it.routingKey shouldBe disabledPagerdutyConfig.integrationKey }
+                }
+            }
+
+            `when`("it receives a MonitorDownEvent and there is a previous event with different status") {
+                val monitor = createDockerMonitor(dockerMonitorRepository)
+                val firstEvent = DockerMonitorUpEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    latencyInMs = 5,
+                )
+                eventDispatcher.testDispatch(firstEvent)
+                val firstUptimeRecord = dockerUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+
+                val secondEvent = DockerMonitorDownEvent(
+                    monitor = monitor,
+                    error = "The container exited (137)",
                     previousEvent = firstUptimeRecord,
                 )
                 mockSuccessfulTriggerResponse()

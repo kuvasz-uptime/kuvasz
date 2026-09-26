@@ -93,6 +93,8 @@ data class SettingsDto(
 
             @param:Schema(description = "Whether the DNS monitors are in read-only mode", required = true)
             val areDnsMonitorsReadOnly: Boolean,
+            @param:Schema(description = "Whether the Docker monitors are in read-only mode", required = true)
+            val areDockerMonitorsReadOnly: Boolean,
 
             @param:Schema(description = "Whether the maintenance windows are in read-only mode", required = true)
             val areMaintenanceWindowsReadOnly: Boolean,
@@ -144,6 +146,14 @@ data class SettingsDto(
             val dnsUptimeStatus: Boolean,
             @param:Schema(description = "Whether DNS latest latency exporter is enabled", required = true)
             val dnsLatestLatency: Boolean,
+            @param:Schema(description = "Whether Docker monitor status exporter is enabled", required = true)
+            val dockerUptimeStatus: Boolean,
+            @param:Schema(description = "Whether Docker API latency exporter is enabled", required = true)
+            val dockerLatestLatency: Boolean,
+            @param:Schema(description = "Whether Docker container CPU usage exporter is enabled", required = true)
+            val dockerLatestCpuUsage: Boolean,
+            @param:Schema(description = "Whether Docker container memory usage exporter is enabled", required = true)
+            val dockerLatestMemoryUsage: Boolean,
         )
 
         @Introspected

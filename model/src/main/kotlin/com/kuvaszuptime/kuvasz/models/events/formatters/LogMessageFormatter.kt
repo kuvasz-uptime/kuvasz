@@ -2,6 +2,8 @@ package com.kuvaszuptime.kuvasz.models.events.formatters
 
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
@@ -35,6 +37,8 @@ object LogMessageFormatter : TextMessageFormatter {
             is TcpMonitorDownEvent -> event.toParts()
             is DnsMonitorUpEvent -> event.toParts()
             is DnsMonitorDownEvent -> event.toParts()
+            is DockerMonitorUpEvent -> event.toParts()
+            is DockerMonitorDownEvent -> event.toParts()
         }
 
         return messageParts.assemble()
@@ -69,6 +73,14 @@ object LogMessageFormatter : TextMessageFormatter {
     }
 
     private fun TcpMonitorDownEvent.toParts() = toStructuredMessage().let { details ->
+        listOfNotNull(getEmoji() + " " + details.summary, details.error, details.previousUpTime)
+    }
+
+    private fun DockerMonitorUpEvent.toParts() = toStructuredMessage().let { details ->
+        listOfNotNull(getEmoji() + " " + details.summary, details.previousDownTime)
+    }
+
+    private fun DockerMonitorDownEvent.toParts() = toStructuredMessage().let { details ->
         listOfNotNull(getEmoji() + " " + details.summary, details.error, details.previousUpTime)
     }
 

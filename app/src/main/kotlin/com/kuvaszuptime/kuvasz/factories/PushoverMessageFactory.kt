@@ -6,6 +6,8 @@ import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.StructuredDnsMonitorDownMessage
 import com.kuvaszuptime.kuvasz.models.events.StructuredDnsMonitorUpMessage
+import com.kuvaszuptime.kuvasz.models.events.StructuredDockerMonitorDownMessage
+import com.kuvaszuptime.kuvasz.models.events.StructuredDockerMonitorUpMessage
 import com.kuvaszuptime.kuvasz.models.events.StructuredDnsRecordsChangedMessage
 import com.kuvaszuptime.kuvasz.models.events.StructuredHttpMonitorUpMessage
 import com.kuvaszuptime.kuvasz.models.events.StructuredIcmpMonitorDownMessage
@@ -104,6 +106,8 @@ class PushoverMessageFactory {
         is StructuredTcpMonitorDownMessage -> listOfNotNull(previousUpTime)
         is StructuredDnsMonitorUpMessage -> listOfNotNull(latency, previousDownTime)
         is StructuredDnsMonitorDownMessage -> listOfNotNull(previousUpTime)
+        is StructuredDockerMonitorUpMessage -> listOfNotNull(previousDownTime)
+        is StructuredDockerMonitorDownMessage -> listOfNotNull(previousUpTime)
     }
 
     private fun StructuredSSLMessage.toDetails(): List<String> = when (this) {
