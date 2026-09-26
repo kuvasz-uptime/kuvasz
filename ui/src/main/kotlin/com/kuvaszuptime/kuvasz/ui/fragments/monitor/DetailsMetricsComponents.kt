@@ -53,7 +53,7 @@ private fun FlowContent.metricStatCards(
         classes(ROW, ROW_CARDS, MB_3)
         metricStatCard(
             propertyName = "$propertyPrefix.average$propertySuffix",
-            label = Messages.latencyAverage(),
+            label = Messages.average(),
             unit = unit,
         )
         listOf("min" to "Min", "max" to "Max", "p90" to "P90", "p95" to "P95", "p99" to "P99")
