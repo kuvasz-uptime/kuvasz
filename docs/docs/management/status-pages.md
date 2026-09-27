@@ -28,6 +28,7 @@
           - "icmp:My ICMP Monitor"
           - "tcp:My TCP Monitor"
           - "dns:My DNS Monitor"
+          - "docker:My Docker Monitor"
         categories: # (9)!
           - "Payments"
         display-categories: true # (10)!
@@ -41,7 +42,7 @@
     5. The `public` field determines whether the status page is public or private.
     6. The `custom-logo-url` field is the URL of the custom logo to be displayed on the status page.
     7. The `custom-favicon-url` field is the URL of the custom favicon to be used for the status page.
-    8. The `monitors` field is a list of monitors to be displayed on the status page. You can reference monitors by their type and name, in the format `<type>:<name>`, e.g., `http:My HTTP Monitor`, `push:My backup 1`, `icmp:My ICMP Monitor`, `tcp:My TCP Monitor`, `dns:My DNS Monitor`.
+    8. The `monitors` field is a list of monitors to be displayed on the status page. You can reference monitors by their type and name, in the format `<type>:<name>`, e.g., `http:My HTTP Monitor`, `push:My backup 1`, `icmp:My ICMP Monitor`, `tcp:My TCP Monitor`, `dns:My DNS Monitor`, `docker:My Docker Monitor`.
     9. The `categories` field is a list of monitor categories. Every monitor belonging to one of them is displayed on the page, in addition to the ones listed under `monitors`.
     10. The `display-categories` field decides whether the monitors are shown grouped into their categories. It only affects the rendering, not which monitors the page contains.
 
@@ -291,7 +292,7 @@ The URL of the **custom favicon** to be used for the custom status page. If not 
 
 A list of **monitors to assign** to the status page. It can be combined with [**Categories**](#categories) below, in which case the page shows both.
 
-If you're using YAML, or the API, the format is `"{type}:{name}"`, where `type` is the alias of the monitor's type, and `name` is the name of the monitor. The supported types are `http`, `push`, `icmp`, `tcp` and `dns`. Example: `http:My HTTP Monitor`, `push:My backup 1`, `icmp:My ICMP Monitor`, `tcp:My TCP Monitor`, `dns:My DNS Monitor`.
+If you're using YAML, or the API, the format is `"{type}:{name}"`, where `type` is the alias of the monitor's type, and `name` is the name of the monitor. The supported types are `http`, `push`, `icmp`, `tcp`, `dns` and `docker`. Example: `http:My HTTP Monitor`, `push:My backup 1`, `icmp:My ICMP Monitor`, `tcp:My TCP Monitor`, `dns:My DNS Monitor`, `docker:My Docker Monitor`.
 
 !!!tip
 

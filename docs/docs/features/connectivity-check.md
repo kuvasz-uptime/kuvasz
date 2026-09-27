@@ -1,4 +1,4 @@
-When the **host running _Kuvasz_ itself** loses its outbound network access — an ISP blip, a router reboot, a restarted _Docker_ network, a flapping VPN, a _Kubernetes_ node losing egress — every single HTTP, ICMP, TCP and DNS monitor fails at the very same moment. The result is an **incident storm** across all of your integrations, a matching **recovery storm** a few minutes later, and **uptime percentages that stay polluted forever**, all of it caused by a problem that has nothing to do with the services you actually monitor.
+When the **host running _Kuvasz_ itself** loses its outbound network access — an ISP blip, a router reboot, a restarted _Docker_ network, a flapping VPN, a _Kubernetes_ node losing egress — every single HTTP, ICMP, TCP, DNS and Docker monitor fails at the very same moment. The result is an **incident storm** across all of your integrations, a matching **recovery storm** a few minutes later, and **uptime percentages that stay polluted forever**, all of it caused by a problem that has nothing to do with the services you actually monitor.
 
 The **connectivity check** is the answer to that. _Kuvasz_ periodically dials a few well-known endpoints, and while **none of them** can be reached, it **suspends the checks it initiates on its own**, exactly the way a [**maintenance window**](maintenance-windows.md) does — no checks, no events, no alerts.
 
@@ -25,7 +25,7 @@ The state is also **primed at startup**, before the first check of any monitor i
 
 For every monitor that **hasn't opted out**:
 
-- **Uptime checks are skipped entirely.** HTTP, ICMP, TCP and DNS checks don't run at all, which means **no uptime record, no latency measurement, no events and no notifications** — just like during a maintenance window, the history simply has a gap for that period.
+- **Uptime checks are skipped entirely.** HTTP, ICMP, TCP, DNS and Docker checks don't run at all, which means **no uptime record, no latency measurement, no events and no notifications** — just like during a maintenance window, the history simply has a gap for that period.
 - **SSL checks are postponed**, not skipped. Since they run once a day, skipping one could defer a certificate check by a whole day, so instead they are pushed out by 30 minutes and retried until the connectivity is back.
 - **The missed heartbeat detection of push monitors is skipped**, so a cron job that couldn't reach _Kuvasz_ during the outage isn't reported as DOWN.
 
@@ -42,6 +42,8 @@ For every monitor that **hasn't opted out**:
 "Does the host have internet access?" is simply **the wrong question** for a monitor that targets `192.168.1.10` or an internal service in the same cluster. Those keep working during an internet outage, and suspending them would **hide a real, local failure**.
 
 That's what [**`ignoreConnectivityCheck`**](../management/http-monitors.md#ignore-connectivity-check) is for. It's available on **every monitor type**, and a monitor with it enabled **keeps being checked** no matter what the global connectivity state is.
+
+[**Docker monitors**](../management/docker-monitors.md#ignore-connectivity-check) are the only exception to the defaults: they have it **enabled out of the box**, since a container reached through a local socket, or on the same LAN, doesn't depend on the internet access of _Kuvasz_ at all.
 
 ## How do I know that the checks are suspended?
 

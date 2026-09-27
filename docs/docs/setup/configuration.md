@@ -886,6 +886,10 @@ You can find the full configuration example below, which includes all the option
       tcp-latest-latency: true
       dns-uptime-status: true
       dns-latest-latency: true
+      docker-uptime-status: true
+      docker-latest-latency: true
+      docker-latest-cpu-usage: true
+      docker-latest-memory-usage: true
     ---
     admin-auth:
       username: YourSuperSecretUsername
@@ -977,6 +981,10 @@ You can find the full configuration example below, which includes all the option
     ENABLE_TCP_LATEST_LATENCY_EXPORT=true
     ENABLE_DNS_UPTIME_STATUS_EXPORT=true
     ENABLE_DNS_LATEST_LATENCY_EXPORT=true
+    ENABLE_DOCKER_UPTIME_STATUS_EXPORT=true
+    ENABLE_DOCKER_LATEST_LATENCY_EXPORT=true
+    ENABLE_DOCKER_LATEST_CPU_USAGE_EXPORT=true
+    ENABLE_DOCKER_LATEST_MEMORY_USAGE_EXPORT=true
     # SMTP is optional, only needed for the email integration
     SMTP_CONFIG_HOST=your.smtp.server
     SMTP_CONFIG_PORT=465
