@@ -792,10 +792,32 @@ class DockerApiClientTest : BehaviorSpec({
                 first.state shouldBe "running"
             }
 
-            // The API allows several names per container and the first is the one the daemon itself shows
             then("it should take only the first name of a container that has more") {
                 result.shouldBeInstanceOf<DockerContainerListing.Listed>()
                 result.containers.last().name shouldBe "worker"
+            }
+        }
+
+        // A legacy link adds an alias to the linked container's names, which may come before its own name
+        `when`("a container is also named by a legacy link") {
+            val (client, _) = clientReturning(200, """[{"Id": "abc123", "Names": ["/app/db", "/db"]}]""")
+
+            then("it should be offered under its own name, not the alias that only lives as long as the link") {
+                val result = client.listContainers(LOCAL_HOST, TIMEOUT_MS)
+
+                result.shouldBeInstanceOf<DockerContainerListing.Listed>()
+                result.containers.map { it.name } shouldBe listOf("db")
+            }
+        }
+
+        `when`("every name of a container is a link alias") {
+            val (client, _) = clientReturning(200, """[{"Id": "abc123", "Names": ["/app/db", "/web/db"]}]""")
+
+            then("it should still be offered, under its first name") {
+                val result = client.listContainers(LOCAL_HOST, TIMEOUT_MS)
+
+                result.shouldBeInstanceOf<DockerContainerListing.Listed>()
+                result.containers.map { it.name } shouldBe listOf("app/db")
             }
         }
 

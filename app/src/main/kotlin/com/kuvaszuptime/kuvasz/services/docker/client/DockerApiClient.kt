@@ -186,12 +186,17 @@ class DockerApiClient(private val transport: DockerHttpTransport) {
         }
 
     /**
-     * The API reports names with a leading slash and allows several per container; the first is the one the daemon
-     * itself shows, so that is what a monitor should reference. A container with no name at all is not offerable.
+     * The API reports names with a leading slash and allows several per container: a legacy link adds an alias like
+     * `/web/db` beside the container's own `/db`, in no guaranteed order. An alias only lives as long as the link, so
+     * the first name without a further slash is picked, the same way `docker ps` does, and the first name is the
+     * fallback. A container with no name at all is not offerable.
      */
     private fun ContainerSummaryNode.toContainer(): DockerContainer? {
         val containerId = id?.takeIf { it.isNotBlank() }
-        val name = names.orEmpty().firstOrNull()?.removePrefix("/")?.takeIf { it.isNotBlank() }
+        val name = names.orEmpty()
+            .map { it.removePrefix("/") }
+            .let { candidates -> candidates.firstOrNull { '/' !in it } ?: candidates.firstOrNull() }
+            ?.takeIf { it.isNotBlank() }
 
         return if (containerId != null && name != null) {
             DockerContainer(name = name, id = containerId, image = image, state = state)
