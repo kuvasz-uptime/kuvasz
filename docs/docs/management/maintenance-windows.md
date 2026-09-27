@@ -46,7 +46,7 @@ There are three ways to manage your maintenance windows in _Kuvasz_: through the
     5. Whether the window may be [displayed on status pages](status-pages.md).
     6. A **cron expression** for a recurring window. Mutually exclusive with `start` and requires `duration`. Standard cron syntax with extensions (`#`, `L`, `W`) is supported, and it is evaluated in the **server's time zone**.
     7. The **ISO-8601 duration** of the window (e.g. `PT1H30M`). Required for recurring and one-off windows.
-    8. The set of monitors the window applies to (ignored when `global` is `true`). Reference monitors by their type and name, in the format `<type>:<name>`, where the supported types are `http`, `push`, `icmp`, `tcp` and `dns`, e.g. `http:My HTTP Monitor`.
+    8. The set of monitors the window applies to (ignored when `global` is `true`). Reference monitors by their type and name, in the format `<type>:<name>`, where the supported types are `http`, `push`, `icmp`, `tcp`, `dns` and `docker`, e.g. `http:My HTTP Monitor`.
     9. The set of monitor categories the window applies to (ignored when `global` is `true`). Every monitor belonging to one of them is covered, in addition to the ones listed under `monitors`.
     10. The set of integrations that receive the window's start and end notifications. Reference them in the format `<type>:<name>`, e.g. `slack:my-slack`.
 
@@ -236,7 +236,7 @@ The **ISO-8601 duration** of the window (e.g. `PT1H30M`). Required for recurring
 
 The set of **monitors the window applies to** (ignored when `global` is `true`). It can be combined with [**Categories**](#categories) below, in which case the window covers both.
 
-If you're using YAML, or the API, the format is `"{type}:{name}"`, where `type` is the alias of the monitor's type, and `name` is the name of the monitor. The supported types are `http`, `push`, `icmp`, `tcp` and `dns`. Example: `http:My HTTP Monitor`, `push:My backup 1`, `icmp:My ICMP Monitor`, `tcp:My TCP Monitor`, `dns:My DNS Monitor`.
+If you're using YAML, or the API, the format is `"{type}:{name}"`, where `type` is the alias of the monitor's type, and `name` is the name of the monitor. The supported types are `http`, `push`, `icmp`, `tcp`, `dns` and `docker`. Example: `http:My HTTP Monitor`, `push:My backup 1`, `icmp:My ICMP Monitor`, `tcp:My TCP Monitor`, `dns:My DNS Monitor`, `docker:My Docker Monitor`.
 
 ### Categories
 

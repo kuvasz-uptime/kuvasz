@@ -17,6 +17,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent.SSL_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.StatusPage.STATUS_PAGE
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMetricsLogRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.DockerMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
@@ -29,9 +30,13 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.SslEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.StatusPageRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.DockerMetricsLogRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.DockerUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMetricsLogRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpUptimeEventRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.DockerMetricsLog.DOCKER_METRICS_LOG
+import com.kuvaszuptime.kuvasz.jooq.tables.DockerUptimeEvent.DOCKER_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.TcpMetricsLog.TCP_METRICS_LOG
 import com.kuvaszuptime.kuvasz.jooq.tables.TcpUptimeEvent.TCP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDefaults
@@ -43,6 +48,7 @@ import com.kuvaszuptime.kuvasz.models.monitor.dns.toJsonNode
 import com.kuvaszuptime.kuvasz.models.monitor.http.toJsonNode
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.CertificateInfo
 import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.DockerMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
@@ -50,6 +56,7 @@ import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import org.jooq.DSLContext
+import java.math.BigDecimal
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -340,6 +347,34 @@ fun createTcpMonitor(
     return repository.returningInsert(monitor)
 }
 
+fun createDockerMonitor(
+    repository: DockerMonitorRepository,
+    enabled: Boolean = true,
+    dockerHost: String = "local",
+    container: String = "my-app",
+    monitorName: String = randomClientSecret(),
+    uptimeCheckInterval: Int = 60,
+    timeoutMs: Int = 5000,
+    failureCountThreshold: Long = 1L,
+    integrations: List<IntegrationID> = emptyList(),
+    metricsHistoryEnabled: Boolean = true,
+    category: String? = null,
+): DockerMonitorRecord {
+    val monitor = DockerMonitorRecord()
+        .setName(monitorName)
+        .setDockerHost(dockerHost)
+        .setContainer(container)
+        .setUptimeCheckInterval(uptimeCheckInterval)
+        .setTimeoutMs(timeoutMs)
+        .setFailureCountThreshold(failureCountThreshold)
+        .setEnabled(enabled)
+        .setCreatedAt(getCurrentTimestamp())
+        .setIntegrations(integrations.toTypedArray())
+        .setMetricsHistoryEnabled(metricsHistoryEnabled)
+        .setCategory(category)
+    return repository.returningInsert(monitor)
+}
+
 @Suppress("LongParameterList")
 fun createDnsMonitor(
     repository: DnsMonitorRepository,
@@ -458,6 +493,52 @@ fun createTcpMetricsLogRecord(
     )
     .returning(TCP_METRICS_LOG.asterisk())
     .fetchOneOrThrow<TcpMetricsLogRecord>()
+
+fun createDockerUptimeEventRecord(
+    dslContext: DSLContext,
+    monitorId: Long,
+    status: UptimeStatus = UptimeStatus.UP,
+    startedAt: OffsetDateTime,
+    endedAt: OffsetDateTime?,
+    error: String? = null,
+    updatedAt: OffsetDateTime? = null,
+    image: String? = null,
+) = dslContext
+    .insertInto(DOCKER_UPTIME_EVENT)
+    .set(
+        DockerUptimeEventRecord()
+            .setMonitorId(monitorId)
+            .setStatus(status)
+            .setStartedAt(startedAt)
+            .setUpdatedAt(updatedAt ?: endedAt ?: startedAt)
+            .setEndedAt(endedAt)
+            .setError(error)
+            .setImage(image)
+    )
+    .returning(DOCKER_UPTIME_EVENT.asterisk())
+    .fetchOneOrThrow<DockerUptimeEventRecord>()
+
+fun createDockerMetricsLogRecord(
+    dslContext: DSLContext,
+    monitorId: Long,
+    latencyMs: Int = 10,
+    cpuUsagePercent: BigDecimal? = BigDecimal("12.50"),
+    memoryUsageBytes: Long? = 1_048_576,
+    memoryLimitBytes: Long? = 8_388_608,
+    createdAt: OffsetDateTime = getCurrentTimestamp(),
+) = dslContext
+    .insertInto(DOCKER_METRICS_LOG)
+    .set(
+        DockerMetricsLogRecord()
+            .setMonitorId(monitorId)
+            .setLatencyMs(latencyMs)
+            .setCpuUsagePercent(cpuUsagePercent)
+            .setMemoryUsageBytes(memoryUsageBytes)
+            .setMemoryLimitBytes(memoryLimitBytes)
+            .setCreatedAt(createdAt)
+    )
+    .returning(DOCKER_METRICS_LOG.asterisk())
+    .fetchOneOrThrow<DockerMetricsLogRecord>()
 
 fun createIcmpUptimeEventRecord(
     dslContext: DSLContext,

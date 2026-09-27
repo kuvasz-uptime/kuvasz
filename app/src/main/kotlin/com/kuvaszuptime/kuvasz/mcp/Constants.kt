@@ -45,4 +45,10 @@ object ToolNames {
     const val LIST_DNS_MONITORS = "list-dns-monitors"
     const val DELETE_DNS_MONITOR = "delete-dns-monitor"
     const val TOGGLE_DNS_MONITOR = "toggle-dns-monitor"
+    const val CREATE_DOCKER_MONITOR = "create-docker-monitor"
+    const val GET_DOCKER_MONITOR_DETAILS = "get-docker-monitor-details"
+    const val GET_DOCKER_MONITOR_STATS = "get-docker-monitor-stats"
+    const val LIST_DOCKER_MONITORS = "list-docker-monitors"
+    const val DELETE_DOCKER_MONITOR = "delete-docker-monitor"
+    const val TOGGLE_DOCKER_MONITOR = "toggle-docker-monitor"
 }

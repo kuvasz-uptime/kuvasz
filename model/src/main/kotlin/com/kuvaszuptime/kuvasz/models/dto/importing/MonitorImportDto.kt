@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.models.dto.importing
 
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorExportDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.docker.DockerMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorExportDto
@@ -14,4 +15,5 @@ data class MonitorImportDto(
     val icmpMonitors: List<IcmpMonitorExportDto>? = null,
     val tcpMonitors: List<TcpMonitorExportDto>? = null,
     val dnsMonitors: List<DnsMonitorExportDto>? = null,
+    val dockerMonitors: List<DockerMonitorExportDto>? = null,
 )

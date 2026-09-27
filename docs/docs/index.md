@@ -70,6 +70,14 @@ title: The developer- and cloud-friendly uptime monitor
 
     [:octicons-arrow-right-24: DNS monitors](features/dns-monitoring.md)
 
+-   :material-docker:{ .lg .card-header-icon } __Docker monitoring__
+
+    ---
+
+    Check whether your containers are actually running and healthy - not just whether they hold a port - right through the Docker daemon, locally or remotely.
+
+    [:octicons-arrow-right-24: Docker monitors](features/docker-monitoring.md)
+
 -   :bell:{ .lg .card-header-icon } __Notifications__
 
     ---
@@ -181,6 +189,7 @@ title: The developer- and cloud-friendly uptime monitor
 | **Ping (ICMP) monitoring**           |      ✅       |        ✅        |        ✅        |
 | **TCP monitoring**                   |      ✅       |        ✅        |        ✅        |
 | **DNS monitoring**                   |      ✅       |        ❌        |        ✅        |
+| **Docker container monitoring**      |      ✅       |        ❌        |        ❌        |
 | **Domain expiration monitoring**     |      ❌       |        ❌        |        ✅        |
 | **Notifications**                    |               |                  |                  |
 | Email                                |      ✅       |        ✅        |        ✅        |

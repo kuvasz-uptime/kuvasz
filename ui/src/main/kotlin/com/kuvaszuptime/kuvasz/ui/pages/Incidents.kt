@@ -134,6 +134,7 @@ private fun FlowContent.monitorTypeBadge(incidentType: IncidentType) {
         IncidentType.ICMP -> Icon.WAVE_SQUARE
         IncidentType.TCP -> Icon.NETWORK
         IncidentType.DNS -> Icon.CLOUD_QUESTION
+        IncidentType.DOCKER -> Icon.BRAND_DOCKER
     }
     val label = when (incidentType) {
         IncidentType.HTTP -> "HTTP"
@@ -142,6 +143,7 @@ private fun FlowContent.monitorTypeBadge(incidentType: IncidentType) {
         IncidentType.ICMP -> "ICMP"
         IncidentType.TCP -> "TCP"
         IncidentType.DNS -> "DNS"
+        IncidentType.DOCKER -> "Docker"
     }
     val colorClasses = when (incidentType) {
         IncidentType.HTTP -> mutableSetOf(BG_BLUE_LT, TEXT_BLUE_LT_FG)
@@ -150,6 +152,7 @@ private fun FlowContent.monitorTypeBadge(incidentType: IncidentType) {
         IncidentType.ICMP -> mutableSetOf(BG_ORANGE_LT, TEXT_ORANGE_LT_FG)
         IncidentType.TCP -> mutableSetOf(BG_PURPLE_LT, TEXT_PURPLE_LT_FG)
         IncidentType.DNS -> mutableSetOf(BG_CYAN_LT, TEXT_CYAN_LT_FG)
+        IncidentType.DOCKER -> mutableSetOf(BG_TEAL_LT, TEXT_TEAL_LT_FG)
     }
     span {
         classes(colorClasses.plus(STATUS))
@@ -184,6 +187,7 @@ private fun IncidentDto.getMonitorUrl(): String = when (this.incidentType) {
     IncidentType.ICMP -> "/icmp-monitors/${this.monitorId}"
     IncidentType.TCP -> "/tcp-monitors/${this.monitorId}"
     IncidentType.DNS -> "/dns-monitors/${this.monitorId}"
+    IncidentType.DOCKER -> "/docker-monitors/${this.monitorId}"
 }
 
 private fun HtmlBlockTag.incidentsPageHeader(formattedPeriod: String, selectedPeriod: Duration) {

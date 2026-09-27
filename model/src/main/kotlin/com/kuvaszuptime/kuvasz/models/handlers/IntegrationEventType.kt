@@ -12,6 +12,8 @@ enum class IntegrationEventType {
     DNS_UP,
     DNS_DOWN,
     DNS_RECORDS_CHANGED,
+    DOCKER_UP,
+    DOCKER_DOWN,
     SSL_VALID,
     SSL_INVALID,
     SSL_WILL_EXPIRE,

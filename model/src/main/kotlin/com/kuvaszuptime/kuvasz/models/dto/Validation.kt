@@ -69,6 +69,11 @@ object IntegrationValidationMessages {
     const val WEBHOOK_URL_NOT_BLANK = "Webhook integration URL must not be blank"
 }
 
+object DockerHostValidationMessages {
+    const val NAME_NOT_BLANK = "The name of a Docker host cannot be blank"
+    const val URL_NOT_BLANK = "The URL of a Docker host cannot be blank"
+}
+
 object MonitorValidationMessages {
     const val NAME_NOT_BLANK = "Monitor name must not be blank"
     const val CATEGORY_MAX_SIZE = "Monitor category must be at most {max} characters long"
@@ -111,6 +116,8 @@ object MonitorValidationMessages {
     const val RESOLVER_PORT_NOT_NULL = "Resolver port must not be null"
     const val RESOLVER_PORT_MIN = "Resolver port must be at least {value}"
     const val RESOLVER_PORT_MAX = "Resolver port must be at most {value}"
+    const val DOCKER_HOST_NOT_BLANK = "Docker host must not be blank"
+    const val CONTAINER_NOT_BLANK = "Container must not be blank"
     const val DNS_RESPONSE_CODE_REQUIRES_NO_MATCHERS =
         "Record matchers must be empty when the expected response code is not NOERROR, because you cannot assert " +
             "on the records of a name you expect not to resolve"

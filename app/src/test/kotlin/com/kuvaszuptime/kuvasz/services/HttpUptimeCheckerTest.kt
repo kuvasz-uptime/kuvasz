@@ -29,7 +29,7 @@ import io.micronaut.http.HttpStatus
 import io.micronaut.http.simple.SimpleHttpResponseFactory
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.mockk.clearAllMocks
-import io.mockk.every
+import io.mockk.coEvery
 import io.mockk.spyk
 import io.reactivex.rxjava3.subscribers.TestSubscriber
 import java.net.URI
@@ -267,11 +267,8 @@ class HttpUptimeCheckerTest(
                     headers.add(name, value)
                 }
             }
-        every {
-            uptimeChecker["sendHttpRequest"](
-                any<HttpMonitorRecord>(),
-                requestUri ?: any<URI>()
-            )
+        coEvery {
+            uptimeChecker.sendHttpRequest(any<HttpMonitorRecord>(), requestUri ?: any<URI>())
         } returns HttpCheckResponse(httpResponse = response, latency = 100)
     }
 }

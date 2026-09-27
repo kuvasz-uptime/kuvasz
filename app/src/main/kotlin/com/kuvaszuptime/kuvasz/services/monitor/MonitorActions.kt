@@ -92,6 +92,8 @@ abstract class MonitorActions<R, D : MonitorDetailsDto>(
         statusPageCacheInvalidator.invalidateAllCaches()
     }
 
+    protected fun validateCreation(toCreate: R) = monitorTypeSupport.beforeUpsert(null, toCreate)
+
     protected fun announceCreation() {
         statusPageCacheInvalidator.invalidateAllCaches()
     }
@@ -133,6 +135,7 @@ abstract class MonitorActions<R, D : MonitorDetailsDto>(
         validator.validate(patched.asUpdateDto(updateDtoType)).throwIfNotEmpty()
         // Validate the raw integrations from the DTO
         updatedMonitor.integrations?.let { integrationIdValidator.validateIntegrationIds(it) }
+        monitorTypeSupport.beforeUpsert(existingMonitor, updatedMonitor)
 
         monitorRepository.returningUpdate(updatedMonitor, txCtx).also { saved ->
             afterUpdate(existingMonitor, saved, txCtx)

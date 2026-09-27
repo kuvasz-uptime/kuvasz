@@ -125,6 +125,10 @@ jooq {
                                     recordImplements = "com.kuvaszuptime.kuvasz.jooq.UptimeEventRecord"
                                 }
                                 table {
+                                    expression = "DOCKER_UPTIME_EVENT"
+                                    recordImplements = "com.kuvaszuptime.kuvasz.jooq.UptimeEventRecord"
+                                }
+                                table {
                                     expression = "HTTP_MONITOR"
                                     recordImplements =
                                         "com.kuvaszuptime.kuvasz.jooq.SchedulableMonitorRecord, com.kuvaszuptime.kuvasz.jooq.MonitorWithMetricsHistory"
@@ -148,6 +152,11 @@ jooq {
                                     recordImplements =
                                         "com.kuvaszuptime.kuvasz.jooq.SchedulableMonitorRecord, com.kuvaszuptime.kuvasz.jooq.MonitorWithMetricsHistory"
                                 }
+                                table {
+                                    expression = "DOCKER_MONITOR"
+                                    recordImplements =
+                                        "com.kuvaszuptime.kuvasz.jooq.SchedulableMonitorRecord, com.kuvaszuptime.kuvasz.jooq.MonitorWithMetricsHistory"
+                                }
                             }
                         }
                     }
@@ -163,7 +172,8 @@ jooq {
                                 isGenericConverter = false
                                 jsonConverterImplementation = JSONConverterImplementation.JACKSON_3
                                 includeExpression =
-                                    "HTTP_MONITOR.INTEGRATIONS|PUSH_MONITOR.INTEGRATIONS|ICMP_MONITOR.INTEGRATIONS|TCP_MONITOR.INTEGRATIONS|DNS_MONITOR.INTEGRATIONS|MAINTENANCE_WINDOW.INTEGRATIONS"
+                                    "HTTP_MONITOR.INTEGRATIONS|PUSH_MONITOR.INTEGRATIONS|ICMP_MONITOR.INTEGRATIONS|TCP_MONITOR.INTEGRATIONS|" +
+                                    "DNS_MONITOR.INTEGRATIONS|DOCKER_MONITOR.INTEGRATIONS|MAINTENANCE_WINDOW.INTEGRATIONS"
                             }
                             forcedType {
                                 userType = "com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType[]"

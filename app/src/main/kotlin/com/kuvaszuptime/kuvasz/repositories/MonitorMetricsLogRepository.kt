@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.repositories
 
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import org.jooq.DSLContext
+import org.jooq.Field
 import org.jooq.Record
 import org.jooq.SelectConditionStep
 import org.jooq.Table
@@ -11,6 +12,7 @@ import org.jooq.impl.DSL.max
 import org.jooq.impl.DSL.min
 import org.jooq.impl.DSL.percentileCont
 import org.jooq.impl.DSL.round
+import java.math.BigDecimal
 import java.time.Duration
 import java.time.OffsetDateTime
 
@@ -71,29 +73,58 @@ abstract class MonitorMetricsLogRepository<R : Record, D : Any>(
         .execute()
 
     open fun getLatencyMetrics(monitorId: Long, period: Duration): LatencyMetricResult? =
-        aggregate(logTable.latency, monitorId, period, LatencyMetricResult::class.java)
+        aggregateWithPercentiles(logTable.latency, monitorId, period, LatencyMetricResult::class.java)
 
     /**
      * Aggregates a measurement of a monitor's logs over the given period. Rows where the measurement is null are left
-     * out, they carry no reading at all - a down monitor has no latency, for example.
+     * out, they carry no reading at all - a container that was not sampled has no CPU reading, for example.
+     *
+     * The result is reported in the measurement's own type, which [asMeasurementOf] brings the average back to,
+     * since the database answers it in its own decimal type whatever the column is.
      */
-    protected fun <T : Any> aggregate(
-        measurement: TableField<R, Int>,
+    protected fun <N : Number, T : Any> aggregate(
+        measurement: TableField<R, N>,
+        monitorId: Long,
+        period: Duration,
+        resultType: Class<T>,
+    ): T? = aggregateSelect(measurement, emptyList(), monitorId, period, resultType)
+
+    /**
+     * The same aggregation, extended with the percentiles that only the timings and the loss ratios are read by.
+     */
+    protected fun <N : Number, T : Any> aggregateWithPercentiles(
+        measurement: TableField<R, N>,
+        monitorId: Long,
+        period: Duration,
+        resultType: Class<T>,
+    ): T? = aggregateSelect(
+        measurement = measurement,
+        percentiles = listOf(
+            P90 to PercentileMetricResult<*>::p90.name,
+            P95 to PercentileMetricResult<*>::p95.name,
+            P99 to PercentileMetricResult<*>::p99.name,
+        ),
+        monitorId = monitorId,
+        period = period,
+        resultType = resultType,
+    )
+
+    private fun <N : Number, T : Any> aggregateSelect(
+        measurement: TableField<R, N>,
+        percentiles: List<Pair<Double, String>>,
         monitorId: Long,
         period: Duration,
         resultType: Class<T>,
     ): T? = dslContext
         .select(
-            logTable.monitorId.`as`(MetricResult::monitorId.name),
-            round(avg(measurement)).cast(Int::class.java).`as`(MetricResult::avg.name),
-            min(measurement).`as`(MetricResult::min.name),
-            max(measurement).`as`(MetricResult::max.name),
-            round(percentileCont(P90).withinGroupOrderBy(measurement)).cast(Int::class.java)
-                .`as`(MetricResult::p90.name),
-            round(percentileCont(P95).withinGroupOrderBy(measurement)).cast(Int::class.java)
-                .`as`(MetricResult::p95.name),
-            round(percentileCont(P99).withinGroupOrderBy(measurement)).cast(Int::class.java)
-                .`as`(MetricResult::p99.name),
+            listOf(
+                logTable.monitorId.`as`(MetricResult<*>::monitorId.name),
+                avg(measurement).asMeasurementOf(measurement).`as`(MetricResult<*>::avg.name),
+                min(measurement).`as`(MetricResult<*>::min.name),
+                max(measurement).`as`(MetricResult<*>::max.name),
+            ) + percentiles.map { (fraction, alias) ->
+                percentileCont(fraction).withinGroupOrderBy(measurement).asMeasurementOf(measurement).`as`(alias)
+            }
         )
         .from(logTable.table)
         .where(logTable.monitorId.eq(monitorId))
@@ -101,4 +132,16 @@ abstract class MonitorMetricsLogRepository<R : Record, D : Any>(
         .and(measurement.isNotNull)
         .groupBy(logTable.monitorId)
         .fetchOneInto(resultType)
+
+    /**
+     * Brings a computed decimal back to the type of the column it was computed from: an integral measurement is
+     * rounded to a whole unit, a fractional one only has its scale trimmed, because rounding it to a whole unit
+     * would throw away everything the column keeps decimals for.
+     */
+    private fun <N : Number> Field<BigDecimal>.asMeasurementOf(measurement: TableField<R, N>): Field<N> =
+        if (measurement.type == BigDecimal::class.java) {
+            round(this, measurement.dataType.scale()).coerce(measurement.dataType)
+        } else {
+            round(this).cast(measurement.dataType)
+        }
 }

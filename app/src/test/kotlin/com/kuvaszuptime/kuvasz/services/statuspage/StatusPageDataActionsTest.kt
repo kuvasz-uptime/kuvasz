@@ -17,6 +17,7 @@ import com.kuvaszuptime.kuvasz.models.statuspage.SystemStatus
 import com.kuvaszuptime.kuvasz.repositories.MaintenanceWindowRepository
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.services.check.dns.DnsMonitorActions
+import com.kuvaszuptime.kuvasz.services.check.docker.DockerMonitorActions
 import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorActions
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpMonitorActions
 import com.kuvaszuptime.kuvasz.services.check.push.PushMonitorActions
@@ -1488,6 +1489,11 @@ class StatusPageDataActionsTest(
 
     @MockBean(DnsMonitorActions::class)
     fun dnsMonitorActions(): DnsMonitorActions = mockk {
+        every { getStatusPageDataOfEnabledMonitors(any(), any(), any()) } returns emptyList()
+    }
+
+    @MockBean(DockerMonitorActions::class)
+    fun dockerMonitorActions(): DockerMonitorActions = mockk {
         every { getStatusPageDataOfEnabledMonitors(any(), any(), any()) } returns emptyList()
     }
 

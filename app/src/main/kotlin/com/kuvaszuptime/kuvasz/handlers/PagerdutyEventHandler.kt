@@ -2,6 +2,8 @@ package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
@@ -94,7 +96,7 @@ class PagerdutyEventHandler(
         val integrationKeys = filterTargetConfigs(event).map { (it as PagerdutyConfig).integrationKey }
         when (event) {
             is HttpMonitorUpEvent, is PushMonitorUpEvent, is IcmpMonitorUpEvent, is TcpMonitorUpEvent,
-            is DnsMonitorUpEvent ->
+            is DnsMonitorUpEvent, is DockerMonitorUpEvent ->
                 integrationKeys.forEach { integrationKey ->
                     val request = createResolveRequest(
                         serviceKey = integrationKey,
@@ -104,7 +106,7 @@ class PagerdutyEventHandler(
                 }
 
             is HttpMonitorDownEvent, is PushMonitorDownEvent, is IcmpMonitorDownEvent, is TcpMonitorDownEvent,
-            is DnsMonitorDownEvent ->
+            is DnsMonitorDownEvent, is DockerMonitorDownEvent ->
                 integrationKeys.forEach { integrationKey ->
                     val request = event.toTriggerRequest(
                         serviceKey = integrationKey,

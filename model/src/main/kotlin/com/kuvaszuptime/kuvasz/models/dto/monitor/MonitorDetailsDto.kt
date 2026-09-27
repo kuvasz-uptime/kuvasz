@@ -26,6 +26,7 @@ fun MonitorDetailsDto.monitorType(): MonitorType = when (this) {
     is IcmpMonitorDetailsDto -> MonitorType.ICMP
     is TcpMonitorDetailsDto -> MonitorType.TCP
     is DnsMonitorDetailsDto -> MonitorType.DNS
+    is DockerMonitorDetailsDto -> MonitorType.DOCKER
 }
 
 fun MonitorDetailsDto.monitorId(): MonitorID = MonitorID(monitorType(), name)

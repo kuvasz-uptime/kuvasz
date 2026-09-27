@@ -8,6 +8,9 @@ import com.kuvaszuptime.kuvasz.jooq.tables.DnsMetricsLog;
 import com.kuvaszuptime.kuvasz.jooq.tables.DnsMonitor;
 import com.kuvaszuptime.kuvasz.jooq.tables.DnsResolutionSnapshot;
 import com.kuvaszuptime.kuvasz.jooq.tables.DnsUptimeEvent;
+import com.kuvaszuptime.kuvasz.jooq.tables.DockerMetricsLog;
+import com.kuvaszuptime.kuvasz.jooq.tables.DockerMonitor;
+import com.kuvaszuptime.kuvasz.jooq.tables.DockerUptimeEvent;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpLatencyLog;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent;
@@ -66,6 +69,21 @@ public class Kuvasz extends SchemaImpl {
      * The table <code>kuvasz.dns_uptime_event</code>.
      */
     public final DnsUptimeEvent DNS_UPTIME_EVENT = DnsUptimeEvent.DNS_UPTIME_EVENT;
+
+    /**
+     * The table <code>kuvasz.docker_metrics_log</code>.
+     */
+    public final DockerMetricsLog DOCKER_METRICS_LOG = DockerMetricsLog.DOCKER_METRICS_LOG;
+
+    /**
+     * The table <code>kuvasz.docker_monitor</code>.
+     */
+    public final DockerMonitor DOCKER_MONITOR = DockerMonitor.DOCKER_MONITOR;
+
+    /**
+     * The table <code>kuvasz.docker_uptime_event</code>.
+     */
+    public final DockerUptimeEvent DOCKER_UPTIME_EVENT = DockerUptimeEvent.DOCKER_UPTIME_EVENT;
 
     /**
      * The table <code>kuvasz.http_latency_log</code>.
@@ -171,6 +189,9 @@ public class Kuvasz extends SchemaImpl {
             DnsMonitor.DNS_MONITOR,
             DnsResolutionSnapshot.DNS_RESOLUTION_SNAPSHOT,
             DnsUptimeEvent.DNS_UPTIME_EVENT,
+            DockerMetricsLog.DOCKER_METRICS_LOG,
+            DockerMonitor.DOCKER_MONITOR,
+            DockerUptimeEvent.DOCKER_UPTIME_EVENT,
             HttpLatencyLog.HTTP_LATENCY_LOG,
             HttpMonitor.HTTP_MONITOR,
             HttpUptimeEvent.HTTP_UPTIME_EVENT,

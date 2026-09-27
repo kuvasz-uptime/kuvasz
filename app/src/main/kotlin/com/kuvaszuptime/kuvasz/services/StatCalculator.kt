@@ -13,6 +13,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorsWithCategory
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.ActualUptimeStats
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.docker.DockerMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
@@ -77,6 +78,17 @@ class StatCalculator(
         return TcpMonitoringStatsDto(
             actual = TcpMonitoringStatsDto.ActualMonitoringStats(uptimeStats = overallStats.uptimeStats),
             history = TcpMonitoringStatsDto.HistoricalMonitoringStats(
+                uptimeStats = overallStats.historicalUptimeStats
+            )
+        )
+    }
+
+    fun calculateOverallDockerStats(period: Duration): DockerMonitoringStatsDto {
+        val overallStats = calculateOverallStats(MonitorType.DOCKER, period)
+
+        return DockerMonitoringStatsDto(
+            actual = DockerMonitoringStatsDto.ActualMonitoringStats(uptimeStats = overallStats.uptimeStats),
+            history = DockerMonitoringStatsDto.HistoricalMonitoringStats(
                 uptimeStats = overallStats.historicalUptimeStats
             )
         )

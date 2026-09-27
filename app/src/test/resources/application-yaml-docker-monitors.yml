@@ -1,0 +1,20 @@
+docker-monitors:
+  - name: test1
+    docker-host: local
+    container: my-app
+    uptime-check-interval: 120
+    enabled: false
+    timeout-ms: 10000
+    failure-count-threshold: 3
+  - name: test2
+    docker-host: local
+    container: 8dfafdbc3a40
+    uptime-check-interval: 60
+    integrations:
+      - 'slack:test_implicitly_enabled'
+  - name: test3
+    docker-host: vps-1
+    container: worker
+    uptime-check-interval: 120
+    enabled: true
+    ignore-connectivity-check: false

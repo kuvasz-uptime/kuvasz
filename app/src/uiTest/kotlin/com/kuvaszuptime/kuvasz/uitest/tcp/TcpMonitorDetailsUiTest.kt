@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.uitest.tcp
 
+import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.models.MonitorType
@@ -39,6 +40,9 @@ class TcpMonitorDetailsUiTest(private val tcpMonitorRepository: TcpMonitorReposi
 
             details.toggleButton.click()
             assertThat(details.resumeControl).isVisible()
+            // The paused state arrives via the heading's refresh, which must not nest the heading
+            assertThat(details.uptimeSummary).containsText(Messages.monitorIsPaused())
+            assertThat(details.headingElements).hasCount(1)
 
             details.toggleButton.click()
             assertThat(details.pauseControl).isVisible()

@@ -16,6 +16,7 @@ val MonitorRepository<*, *>.monitorType: MonitorType
         is IcmpMonitorRepository -> MonitorType.ICMP
         is TcpMonitorRepository -> MonitorType.TCP
         is DnsMonitorRepository -> MonitorType.DNS
+        is DockerMonitorRepository -> MonitorType.DOCKER
     }
 
 val UptimeEventRepository.monitorType: MonitorType
@@ -25,4 +26,5 @@ val UptimeEventRepository.monitorType: MonitorType
         is IcmpUptimeEventRepository -> MonitorType.ICMP
         is TcpUptimeEventRepository -> MonitorType.TCP
         is DnsUptimeEventRepository -> MonitorType.DNS
+        is DockerUptimeEventRepository -> MonitorType.DOCKER
     }

@@ -1,0 +1,17 @@
+docker-monitors:
+  - name: test1
+    docker-host: local
+    container: renamed-app
+    uptime-check-interval: 180
+    enabled: true
+    timeout-ms: 5000
+    failure-count-threshold: 2
+  - name: test2
+    docker-host: local
+    container: 8dfafdbc3a40
+    uptime-check-interval: 60
+  - name: test4
+    docker-host: vps-1
+    container: batch-job
+    uptime-check-interval: 300
+    enabled: false

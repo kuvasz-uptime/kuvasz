@@ -37,6 +37,17 @@ data class StructuredTcpMonitorDownMessage(
     val previousUpTime: String?,
 ) : StructuredMonitorMessage()
 
+data class StructuredDockerMonitorUpMessage(
+    override val summary: String,
+    val previousDownTime: String?,
+) : StructuredMonitorMessage()
+
+data class StructuredDockerMonitorDownMessage(
+    override val summary: String,
+    val error: String,
+    val previousUpTime: String?,
+) : StructuredMonitorMessage()
+
 data class StructuredDnsMonitorUpMessage(
     override val summary: String,
     val latency: String?,

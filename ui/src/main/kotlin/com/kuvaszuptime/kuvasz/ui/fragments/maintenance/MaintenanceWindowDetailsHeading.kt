@@ -17,11 +17,14 @@ fun renderMaintenanceWindowDetailsHeading(maintenanceWindow: MaintenanceWindowDe
 
 internal fun FlowContent.maintenanceWindowDetailsHeading(maintenanceWindow: MaintenanceWindowDetailsDto) {
     val type = maintenanceWindow.resolveType()
+    val headingId = "maintenance-window-detail-heading"
     div {
-        id = "maintenance-window-detail-heading"
+        id = headingId
         classes(COL_AUTO)
         hx {
             get("/maintenance-windows/fragments/details-heading/${maintenanceWindow.id}")
+            // The fragment is this whole element again, so only its children are swapped in to avoid nesting it
+            select("#$headingId > *")
             trigger {
                 every(15.seconds)
                 event("refresh-maintenance-window-detail-status")

@@ -8,11 +8,13 @@ import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.mocks.createDnsMonitor
+import com.kuvaszuptime.kuvasz.mocks.createDockerMonitor
 import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.DockerMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.util.UIDefaults
 import com.kuvaszuptime.kuvasz.util.getBodyAs
@@ -51,6 +53,7 @@ class WebUIAuthenticationTest(
     icmpMonitorRepository: IcmpMonitorRepository,
     tcpMonitorRepository: TcpMonitorRepository,
     dnsMonitorRepository: DnsMonitorRepository,
+    dockerMonitorRepository: DockerMonitorRepository,
 ) : DatabaseStringSpec() {
     init {
 
@@ -92,6 +95,12 @@ class WebUIAuthenticationTest(
                 row("/dns-monitors/fragments/details-uptime-incidents/1"),
                 row("/dns-monitors/fragments/snapshot/1"),
                 row("/dns-monitors/fragments/stats"),
+                row("/docker-monitors"),
+                row("/docker-monitors/1"),
+                row("/docker-monitors/fragments/list"),
+                row("/docker-monitors/fragments/details-heading/1"),
+                row("/docker-monitors/fragments/details-uptime-incidents/1"),
+                row("/docker-monitors/fragments/stats"),
                 row("/settings"),
                 row("/integrations"),
                 row("/incidents"),
@@ -150,6 +159,12 @@ class WebUIAuthenticationTest(
                 row("/dns-monitors/fragments/details-uptime-incidents/1"),
                 row("/dns-monitors/fragments/snapshot/1"),
                 row("/dns-monitors/fragments/stats"),
+                row("/docker-monitors"),
+                row("/docker-monitors/1"),
+                row("/docker-monitors/fragments/list"),
+                row("/docker-monitors/fragments/details-heading/1"),
+                row("/docker-monitors/fragments/details-uptime-incidents/1"),
+                row("/docker-monitors/fragments/stats"),
                 row("/settings"),
                 row("/integrations"),
                 row("/incidents"),
@@ -189,6 +204,7 @@ class WebUIAuthenticationTest(
             val icmpMonitor = createIcmpMonitor(icmpMonitorRepository)
             val tcpMonitor = createTcpMonitor(tcpMonitorRepository)
             val dnsMonitor = createDnsMonitor(dnsMonitorRepository)
+            val dockerMonitor = createDockerMonitor(dockerMonitorRepository)
             val statusPage = createStatusPage(dslContext, public = false)
             val maintenanceWindow = createMaintenanceWindow(dslContext, cron = "0 2 * * *", duration = "PT1H")
 
@@ -228,6 +244,12 @@ class WebUIAuthenticationTest(
                 row("/dns-monitors/fragments/details-uptime-incidents/${dnsMonitor.id}"),
                 row("/dns-monitors/fragments/snapshot/${dnsMonitor.id}"),
                 row("/dns-monitors/fragments/stats"),
+                row("/docker-monitors"),
+                row("/docker-monitors/${dockerMonitor.id}"),
+                row("/docker-monitors/fragments/list"),
+                row("/docker-monitors/fragments/details-heading/${dockerMonitor.id}"),
+                row("/docker-monitors/fragments/details-uptime-incidents/${dockerMonitor.id}"),
+                row("/docker-monitors/fragments/stats"),
                 row("/settings"),
                 row("/integrations"),
                 row("/incidents"),

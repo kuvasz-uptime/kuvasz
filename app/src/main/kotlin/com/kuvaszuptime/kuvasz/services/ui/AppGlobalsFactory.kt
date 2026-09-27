@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.type
 import com.kuvaszuptime.kuvasz.security.oidc.OIDC_PROVIDER_NAME
 import com.kuvaszuptime.kuvasz.services.VersionChecker
 import com.kuvaszuptime.kuvasz.services.connectivity.ConnectivityChecker
+import com.kuvaszuptime.kuvasz.services.docker.DockerHostRegistry
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.monitor.SharedMonitorActions
 import io.micronaut.context.annotation.Context
@@ -37,6 +38,7 @@ class AppGlobalsFactory {
         // Only present when security is enabled; API key auth is considered enabled only if a key is configured
         apiKeyConfig: ApiKeyConfig?,
         connectivityChecker: ConnectivityChecker?,
+        dockerHostRegistry: DockerHostRegistry?,
     ) = AppGlobals(
         editabilityState = AppGlobals.EditabilityState(
             areHttpMonitorsReadOnly = { appConfig.isHttpMonitorExternalWriteDisabled() },
@@ -44,6 +46,7 @@ class AppGlobalsFactory {
             areIcmpMonitorsReadOnly = { appConfig.isIcmpMonitorExternalWriteDisabled() },
             areTcpMonitorsReadOnly = { appConfig.isTcpMonitorExternalWriteDisabled() },
             areDnsMonitorsReadOnly = { appConfig.isDnsMonitorExternalWriteDisabled() },
+            areDockerMonitorsReadOnly = { appConfig.isDockerMonitorExternalWriteDisabled() },
             areStatusPagesReadOnly = { appConfig.isStatusPageExternalWriteDisabled() },
             areMaintenanceWindowsReadOnly = { appConfig.isMaintenanceWindowExternalWriteDisabled() },
         ),
@@ -62,6 +65,7 @@ class AppGlobalsFactory {
             .groupBy { it.type }
             .mapValues { (_, configs) -> configs.toSet() }
             .toMap(),
+        configuredDockerHosts = dockerHostRegistry?.configuredHosts?.keys.orEmpty().sorted(),
         versionInfo = { versionChecker.getVersionInfo() },
         connectivityStatus = { connectivityChecker?.getStatus() },
         defaultStatusPageSettings = AppGlobals.DefaultStatusPageSettings(

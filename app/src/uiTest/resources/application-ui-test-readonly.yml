@@ -16,6 +16,11 @@ tcp-monitors:
     host: 127.0.0.1
     port: 8080
     uptime-check-interval: 60
+docker-monitors:
+  - name: yaml-docker-monitor
+    docker-host: local
+    container: my-app
+    uptime-check-interval: 60
 dns-monitors:
   - name: yaml-dns-monitor
     host: example.com

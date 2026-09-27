@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.models.dto.statuspage.CategoryStatusDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDataDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDnsMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDockerMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageHttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIcmpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageMonitorDetailsDto
@@ -223,6 +224,11 @@ private fun FlowContent.monitorCardGrid(monitors: List<StatusPageMonitorDetailsD
                                     }
 
                                     is StatusPageTcpMonitorDetailsDto -> {
+                                        val lastCheckText = monitor.lastCheck?.timeAgo() ?: Messages.noData()
+                                        +"${Messages.lastCheck()}: $lastCheckText"
+                                    }
+
+                                    is StatusPageDockerMonitorDetailsDto -> {
                                         val lastCheckText = monitor.lastCheck?.timeAgo() ?: Messages.noData()
                                         +"${Messages.lastCheck()}: $lastCheckText"
                                     }

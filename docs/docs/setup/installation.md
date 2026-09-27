@@ -69,56 +69,9 @@ documentation right now to see how you can set up integrations, app-level settin
 
 Create a file called `docker-compose.yml` in the same directory where you created the `kuvasz.yml` file in the previous step, and add the following content to it. Please **make sure to change the credentials** (see the comments below) to secure ones!
 
-```yaml
-services:
-  kuvasz-db: # (7)!
-    image: pgautoupgrade/pgautoupgrade:18-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: kuvasz
-      POSTGRES_PASSWORD: YourSuperSecretDbPassword # change it!
-      TZ: 'UTC' # (4)!
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "kuvasz"]
-      interval: 10s
-      start_period: 30s
-    volumes:
-      - kuvasz-db-data:/var/lib/postgresql
-  kuvasz:
-    image: kuvaszmonitoring/kuvasz:latest
-    restart: unless-stopped
-    # platform: linux/arm64 # (8)
-    ports:
-      - "8080:8080" # (9)!
-    environment:
-      TZ: 'UTC' # (5)!
-      DATABASE_HOST: kuvasz-db # (1)!
-      DATABASE_USER: kuvasz # (2)!
-      DATABASE_PASSWORD: YourSuperSecretDbPassword # (6)!
-      ADMIN_USER: YourSuperSecretUsername # change it
-      ADMIN_PASSWORD: YourSuperSecretPassword # change it
-    volumes:
-      - ./kuvasz.yml:/config/kuvasz.yml # (3)!
-    healthcheck:
-      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:8080/api/v2/health || exit 1"]
-      interval: 60s
-      start_period: 30s
-    depends_on:
-      kuvasz-db:
-        condition: service_healthy
-volumes:
-  kuvasz-db-data:
+```yaml title="docker-compose.yml"
+--8<-- "docker-examples/docker-compose.yml"
 ```
-
-1. Use the service name from the PostgreSQL service above 
-2. Use the same user and password as in the PostgreSQL service above
-3. Make sure your config file is readable and the mount path is correct (`/config/kuvasz.yml`)
-4. Optional, but recommended, use your own timezone
-5. Optional, but recommended, match it with the PostgreSQL service above
-6. Use the same password as in the PostgreSQL service above
-7. You can omit this service if you already have a PostgreSQL instance running somewhere, but in this case make sure to adjust the connection details accordingly
-8. If you plan to run Kuvasz on an ARM based system, you might need to uncomment this line, depending on your setup
-9. If the port `8080` is already in use on your host machine, you can change the left side of the mapping to any other free port (e.g. `9090:8080`)
 
 !!! important "Credential requirements & disabling authentication"
 

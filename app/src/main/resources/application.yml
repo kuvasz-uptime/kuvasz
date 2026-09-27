@@ -200,6 +200,10 @@ metrics-exports:
   tcp-latest-latency: ${ENABLE_TCP_LATEST_LATENCY_EXPORT:`false`}
   dns-uptime-status: ${ENABLE_DNS_UPTIME_STATUS_EXPORT:`false`}
   dns-latest-latency: ${ENABLE_DNS_LATEST_LATENCY_EXPORT:`false`}
+  docker-uptime-status: ${ENABLE_DOCKER_UPTIME_STATUS_EXPORT:`false`}
+  docker-latest-memory-usage: ${ENABLE_DOCKER_LATEST_MEMORY_USAGE_EXPORT:`false`}
+  docker-latest-cpu-usage: ${ENABLE_DOCKER_LATEST_CPU_USAGE_EXPORT:`false`}
+  docker-latest-latency: ${ENABLE_DOCKER_LATEST_LATENCY_EXPORT:`false`}
 ---
 default-status-page:
   public: ${PUBLISH_DEFAULT_STATUS_PAGE:`false`}

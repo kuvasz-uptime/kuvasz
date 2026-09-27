@@ -5,7 +5,8 @@ enum class MonitorType(val identifier: String) {
     PUSH("push"),
     ICMP("icmp"),
     TCP("tcp"),
-    DNS("dns");
+    DNS("dns"),
+    DOCKER("docker");
 
     companion object {
         fun fromIdentifier(identifier: String): MonitorType? =

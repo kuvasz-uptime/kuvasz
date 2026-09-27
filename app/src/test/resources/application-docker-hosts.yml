@@ -1,0 +1,5 @@
+docker-hosts:
+  - name: "vps-1"
+    url: "tcp://10.0.0.5:2375"
+  - name: "local"
+    url: "unix:///var/run/docker.sock"

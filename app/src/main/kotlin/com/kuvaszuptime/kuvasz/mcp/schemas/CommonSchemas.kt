@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.mcp.schemas
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMetricsLogDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.docker.DockerMetricsLogDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.LatencyLogDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMetricsLogDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.PacketLossStatsDto
@@ -10,6 +11,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.LatencyStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMetricsLogDto
 import io.micronaut.core.annotation.Introspected
 import io.micronaut.jsonschema.JsonSchema
+import java.math.BigDecimal
 import java.time.OffsetDateTime
 
 @Introspected
@@ -127,6 +129,26 @@ data class TcpMetricsLogSchema(
         fun fromDto(dto: TcpMetricsLogDto) = TcpMetricsLogSchema(
             id = dto.id,
             latencyInMs = dto.latencyInMs,
+            createdAt = dto.createdAt,
+        )
+    }
+}
+
+@Introspected
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class DockerMetricsLogSchema(
+    val id: Long,
+    val cpuUsagePercent: BigDecimal?,
+    val memoryUsageBytes: Long?,
+    val memoryLimitBytes: Long?,
+    val createdAt: OffsetDateTime,
+) {
+    companion object {
+        fun fromDto(dto: DockerMetricsLogDto) = DockerMetricsLogSchema(
+            id = dto.id,
+            cpuUsagePercent = dto.cpuUsagePercent,
+            memoryUsageBytes = dto.memoryUsageBytes,
+            memoryLimitBytes = dto.memoryLimitBytes,
             createdAt = dto.createdAt,
         )
     }

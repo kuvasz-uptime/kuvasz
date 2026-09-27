@@ -22,11 +22,15 @@ internal fun FlowContent.monitorDetailsHeading(
     monitor: MonitorDetailsDto,
     extraBadges: UL.() -> Unit = {},
 ) {
+    val headingId = "${typeUiConfig.slug}-monitor-detail-heading"
     div {
-        id = "${typeUiConfig.slug}-monitor-detail-heading"
+        id = headingId
         classes(COL_AUTO)
         hx {
             get(typeUiConfig.fragmentPath("details-heading/${monitor.id}"))
+            // The fragment is this whole element again, so only its children are swapped in. Otherwise every refresh
+            // nests one more self-polling heading, whose in-flight responses can land detached and lose their OOB parts
+            select("#$headingId > *")
             trigger {
                 every(15.seconds)
                 event("refresh-monitor-detail-status")

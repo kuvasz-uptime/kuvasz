@@ -41,6 +41,7 @@ class AppConfig {
     private var isIcmpMonitorExternalWriteDisabled = false
     private var isTcpMonitorExternalWriteDisabled = false
     private var isDnsMonitorExternalWriteDisabled = false
+    private var isDockerMonitorExternalWriteDisabled = false
 
     private var isStatusPageExternalWriteDisabled = false
 
@@ -74,6 +75,10 @@ class AppConfig {
         isDnsMonitorExternalWriteDisabled = true
     }
 
+    fun disableDockerMonitorExternalWrite() {
+        isDockerMonitorExternalWriteDisabled = true
+    }
+
     fun disableStatusPageExternalWrite() {
         isStatusPageExternalWriteDisabled = true
     }
@@ -105,6 +110,10 @@ class AppConfig {
         isDnsMonitorExternalWriteDisabled = false
     }
 
+    fun enableDockerMonitorExternalWrite() {
+        isDockerMonitorExternalWriteDisabled = false
+    }
+
     fun enableStatusPageExternalWrite() {
         isStatusPageExternalWriteDisabled = false
     }
@@ -120,6 +129,8 @@ class AppConfig {
     fun isTcpMonitorExternalWriteDisabled() = isTcpMonitorExternalWriteDisabled
 
     fun isDnsMonitorExternalWriteDisabled() = isDnsMonitorExternalWriteDisabled
+
+    fun isDockerMonitorExternalWriteDisabled() = isDockerMonitorExternalWriteDisabled
 
     fun isMaintenanceWindowExternalWriteDisabled() = isMaintenanceWindowExternalWriteDisabled
 }

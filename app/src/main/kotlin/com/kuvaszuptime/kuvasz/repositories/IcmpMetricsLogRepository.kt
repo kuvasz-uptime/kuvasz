@@ -35,7 +35,12 @@ class IcmpMetricsLogRepository(dslContext: DSLContext) :
     }
 
     fun getPacketLossMetrics(monitorId: Long, period: Duration): PacketLossMetricResult? =
-        aggregate(ICMP_METRICS_LOG.PACKET_LOSS_PERCENTAGE, monitorId, period, PacketLossMetricResult::class.java)
+        aggregateWithPercentiles(
+            ICMP_METRICS_LOG.PACKET_LOSS_PERCENTAGE,
+            monitorId,
+            period,
+            PacketLossMetricResult::class.java,
+        )
 
     override fun DSLContext.logDtoSelect(monitorId: Long) =
         select(

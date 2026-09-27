@@ -126,6 +126,19 @@ The MCP server exposes the following tools to connected clients:
 | `toggle-dns-monitor`      | Enable or disable a DNS monitor                                              |
 | `delete-dns-monitor`      | Permanently delete a DNS monitor by ID, including all its history and events |
 
+### Docker monitors
+
+<!-- md:version 4.5.0 -->
+
+| Tool                         | Description                                                                            |
+|------------------------------|----------------------------------------------------------------------------------------|
+| `list-docker-monitors`       | List all Docker monitors with their current uptime status and container image          |
+| `get-docker-monitor-details` | Get detailed information about a Docker monitor by ID                                  |
+| `get-docker-monitor-stats`   | Get CPU, memory and uptime statistics of the container (configurable look-back window) |
+| `create-docker-monitor`      | Create a new Docker monitor                                                            |
+| `toggle-docker-monitor`      | Enable or disable a Docker monitor                                                     |
+| `delete-docker-monitor`      | Permanently delete a Docker monitor by ID, including all its history and events        |
+
 ### Status pages
 
 <!-- md:version 4.0.0 -->

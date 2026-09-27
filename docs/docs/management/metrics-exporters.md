@@ -31,22 +31,26 @@ Metrics have the following **labels/tags**, that you can use to filter/group the
 every metric has all of them:
 
 - `name`: the name of the monitor
-- `target`: the target that is monitored (i.e. a URL, an IP address / hostname, or a `host:port` pair for TCP monitors)
+- `target`: the target that is monitored (i.e. a URL, an IP address / hostname, a `host:port` pair for TCP monitors, or a `host/container` pair for Docker monitors)
 
-|                     | `name` | `target` |
-|---------------------|--------|----------|
-| HTTP uptime status  | ✅     | ✅       |
-| HTTP latest latency | ✅     | ✅       |
-| SSL status          | ✅     | ✅       |
-| SSL expiry          | ✅     | ✅       |
-| Push uptime status  | ✅     | ❌       |
-| ICMP uptime status  | ✅     | ✅       |
-| ICMP latest latency | ✅     | ✅       |
-| ICMP packet loss    | ✅     | ✅       |
-| TCP uptime status   | ✅     | ✅       |
-| TCP latest latency  | ✅     | ✅       |
-| DNS uptime status   | ✅     | ✅       |
-| DNS latest latency  | ✅     | ✅       |
+|                               | `name` | `target` |
+|-------------------------------|--------|----------|
+| HTTP uptime status            | ✅     | ✅       |
+| HTTP latest latency           | ✅     | ✅       |
+| SSL status                    | ✅     | ✅       |
+| SSL expiry                    | ✅     | ✅       |
+| Push uptime status            | ✅     | ❌       |
+| ICMP uptime status            | ✅     | ✅       |
+| ICMP latest latency           | ✅     | ✅       |
+| ICMP packet loss              | ✅     | ✅       |
+| TCP uptime status             | ✅     | ✅       |
+| TCP latest latency            | ✅     | ✅       |
+| DNS uptime status             | ✅     | ✅       |
+| DNS latest latency            | ✅     | ✅       |
+| Docker uptime status          | ✅     | ✅       |
+| Docker API latest latency     | ✅     | ✅       |
+| Docker container CPU usage    | ✅     | ✅       |
+| Docker container memory usage | ✅     | ✅       |
 
 ### HTTP uptime status
 
@@ -314,9 +318,102 @@ This metric is exported as a **gauge** and indicates the current uptime status o
 
     ```bash
     ENABLE_DNS_LATEST_LATENCY_EXPORT=true
+    ENABLE_DOCKER_UPTIME_STATUS_EXPORT=true
+    ENABLE_DOCKER_LATEST_LATENCY_EXPORT=true
+    ENABLE_DOCKER_LATEST_CPU_USAGE_EXPORT=true
+    ENABLE_DOCKER_LATEST_MEMORY_USAGE_EXPORT=true
     ```
 
 This metric is exported as a **gauge** and reports the latest recorded resolution latency of the monitored name, in milliseconds. The `target` tag is the queried host.
+
+### Docker uptime status
+
+<!-- md:version 4.5.0 -->
+<!-- md:default `false` -->
+<!-- md:type `boolean` -->
+
+=== "YAML"
+
+    ```yaml
+    metrics-exports.docker-uptime-status: true
+    ```
+
+=== "ENV"
+
+    ```bash
+    ENABLE_DOCKER_UPTIME_STATUS_EXPORT=true
+    ```
+
+This metric is exported as a **gauge** and indicates the current uptime status of the given Docker monitor. The `target` tag is the Docker host and the container, in a `host/container` format.
+
+| Status                                | Gauge value |
+|---------------------------------------|-------------|
+| UP                                    | 1           |
+| DOWN                                  | 0           |
+
+### Docker API latest latency
+
+<!-- md:version 4.5.0 -->
+<!-- md:default `false` -->
+<!-- md:type `boolean` -->
+
+=== "YAML"
+
+    ```yaml
+    metrics-exports.docker-latest-latency: true
+    ```
+
+=== "ENV"
+
+    ```bash
+    ENABLE_DOCKER_LATEST_LATENCY_EXPORT=true
+    ```
+
+This metric is exported as a **gauge** and reports the latest recorded round-trip of the container inspection to the Docker daemon, in milliseconds. It measures the **daemon, not the container**, which is useful for keeping an eye on a remote Docker host.
+
+### Docker container CPU usage
+
+<!-- md:version 4.5.0 -->
+<!-- md:default `false` -->
+<!-- md:type `boolean` -->
+
+=== "YAML"
+
+    ```yaml
+    metrics-exports.docker-latest-cpu-usage: true
+    ```
+
+=== "ENV"
+
+    ```bash
+    ENABLE_DOCKER_LATEST_CPU_USAGE_EXPORT=true
+    ```
+
+This metric is exported as a **gauge** and reports the latest sampled CPU usage of the container, as a percentage, in the same terms `docker stats` reports it (so a container using two full cores reports `200`). It's only available for monitors with [**metrics history**](docker-monitors.md#metrics-history-enabled) enabled.
+
+It's only reported while there is a fresh sample: once the monitor goes down, or a check fails to sample the container, the series is removed until the next successful sample, instead of repeating the last reading of a container that may have stopped since.
+
+### Docker container memory usage
+
+<!-- md:version 4.5.0 -->
+<!-- md:default `false` -->
+<!-- md:type `boolean` -->
+
+=== "YAML"
+
+    ```yaml
+    metrics-exports.docker-latest-memory-usage: true
+    ```
+
+=== "ENV"
+
+    ```bash
+    ENABLE_DOCKER_LATEST_MEMORY_USAGE_EXPORT=true
+    ```
+
+This metric is exported as a **gauge** and reports the latest sampled memory usage of the container in bytes, excluding the page cache, the same way `docker stats` does it. It's only available for monitors with [**metrics history**](docker-monitors.md#metrics-history-enabled) enabled.
+
+Like the CPU usage, it's only reported while there is a fresh sample.
 
 ## Prometheus
 
@@ -380,6 +477,10 @@ kuvasz_tcp_uptime_status{name="postgres",target="192.168.1.1:5432"} 1.0
 kuvasz_tcp_latency_latest_milliseconds{name="postgres",target="192.168.1.1:5432"} 3.0
 kuvasz_dns_uptime_status{name="example.com",target="example.com"} 1.0
 kuvasz_dns_latency_latest_milliseconds{name="example.com",target="example.com"} 12.0
+kuvasz_docker_uptime_status{name="my-app",target="local/my-app"} 1.0
+kuvasz_docker_api_latency_latest_milliseconds{name="my-app",target="local/my-app"} 4.0
+kuvasz_docker_cpu_usage_latest_percent{name="my-app",target="local/my-app"} 2.35
+kuvasz_docker_memory_usage_latest_bytes{name="my-app",target="local/my-app"} 5.4525952E7
 ```
 
 ### Example config
@@ -408,6 +509,14 @@ kuvasz_dns_latency_latest_milliseconds{name="example.com",target="example.com"} 
         tcp-latest-latency: true
         dns-uptime-status: true
         dns-latest-latency: true
+      docker-uptime-status: true
+      docker-latest-latency: true
+      docker-latest-cpu-usage: true
+      docker-latest-memory-usage: true
+        docker-uptime-status: true
+        docker-latest-latency: true
+        docker-latest-cpu-usage: true
+        docker-latest-memory-usage: true
     ```
 
 === "ENV"
@@ -429,6 +538,10 @@ kuvasz_dns_latency_latest_milliseconds{name="example.com",target="example.com"} 
     ENABLE_TCP_LATEST_LATENCY_EXPORT=true
     ENABLE_DNS_UPTIME_STATUS_EXPORT=true
     ENABLE_DNS_LATEST_LATENCY_EXPORT=true
+    ENABLE_DOCKER_UPTIME_STATUS_EXPORT=true
+    ENABLE_DOCKER_LATEST_LATENCY_EXPORT=true
+    ENABLE_DOCKER_LATEST_CPU_USAGE_EXPORT=true
+    ENABLE_DOCKER_LATEST_MEMORY_USAGE_EXPORT=true
     ```
 
 ## OpenTelemetry
@@ -531,6 +644,10 @@ kuvasz.tcp.uptime.status{name=postgres,target=192.168.1.1:5432} 1
 kuvasz.tcp.latency.latest.milliseconds{name=postgres,target=192.168.1.1:5432} 3
 kuvasz.dns.uptime.status{name=example.com,target=example.com} 1
 kuvasz.dns.latency.latest.milliseconds{name=example.com,target=example.com} 12
+kuvasz.docker.uptime.status{name=my-app,target=local/my-app} 1
+kuvasz.docker.api.latency.latest.milliseconds{name=my-app,target=local/my-app} 4
+kuvasz.docker.cpu.usage.latest.percent{name=my-app,target=local/my-app} 2.35
+kuvasz.docker.memory.usage.latest.bytes{name=my-app,target=local/my-app} 54525952
 ```
 
 ### Example config
@@ -561,6 +678,10 @@ kuvasz.dns.latency.latest.milliseconds{name=example.com,target=example.com} 12
       tcp-latest-latency: true
       dns-uptime-status: true
       dns-latest-latency: true
+      docker-uptime-status: true
+      docker-latest-latency: true
+      docker-latest-cpu-usage: true
+      docker-latest-memory-usage: true
     ```
 
 === "ENV"
@@ -584,6 +705,10 @@ kuvasz.dns.latency.latest.milliseconds{name=example.com,target=example.com} 12
     ENABLE_TCP_LATEST_LATENCY_EXPORT=true
     ENABLE_DNS_UPTIME_STATUS_EXPORT=true
     ENABLE_DNS_LATEST_LATENCY_EXPORT=true
+    ENABLE_DOCKER_UPTIME_STATUS_EXPORT=true
+    ENABLE_DOCKER_LATEST_LATENCY_EXPORT=true
+    ENABLE_DOCKER_LATEST_CPU_USAGE_EXPORT=true
+    ENABLE_DOCKER_LATEST_MEMORY_USAGE_EXPORT=true
     ```
 
 ## Checking the configuration on the UI

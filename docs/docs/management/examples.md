@@ -479,7 +479,7 @@ This widget can be used for both HTTP and push monitor stats, depending on the c
 
 * `base-url`: your Kuvasz host (mandatory)
 * `api-key`: your API key for Kuvasz (optional if you disabled authentication)
-* `monitor-type`: `http`, `push`, `icmp`, `tcp` or `dns` (mandatory)
+* `monitor-type`: `http`, `push`, `icmp`, `tcp`, `dns` or `docker` (mandatory)
 * `period`: an ISO-8601 period string for the cumulative stats (incidents, affected monitors, uptime ratio), e.g. `PT24H` or `P7D`. The widget default is 24 hours (`PT24H`).
 
 ??? example "Expand for example configuration"
@@ -538,9 +538,9 @@ This widget can be used for both HTTP and push monitor stats, depending on the c
         </div>
     ```
 
-### HTTP monitors
+### HTTP, ICMP, TCP, DNS and Docker monitors
 
-Lists the HTTP monitors from _Kuvasz_ with their uptime ratio, latency metrics (configurable) and state. You can also set up custom icons, URLs, or decide which monitors to show.
+A single widget for the HTTP, ICMP, TCP, DNS and Docker monitors, since they only differ in what they show about each monitor. It lists the monitors of the configured type with their target, uptime ratio, type-specific metrics (configurable) and state. You can also set up custom icons, URLs, or decide which monitors to show. Add it once per monitor type you'd like to display.
 
 === "Full style"
 
@@ -550,15 +550,29 @@ Lists the HTTP monitors from _Kuvasz_ with their uptime ratio, latency metrics (
 
     ![Kuvasz HTTP monitors widget (compact style) on Glance](../images/examples/kuvasz-glance-http-compact-preview.png)
 
+| Monitor type | Target                                           | Metrics                             |
+|--------------|--------------------------------------------------|-------------------------------------|
+| `http`       |                                                  | latency                             |
+| `icmp`       | the host                                         | latency, and optionally packet loss |
+| `tcp`        | `host:port`                                      | connect latency                     |
+| `dns`        | the queried name                                 | resolution latency                  |
+| `docker`     | `host/container`, and the image of the container | CPU and memory usage                |
+
+The metrics (except the uptime ratio) are only available when metrics history is enabled on the given monitor (see the [HTTP](http-monitors.md), [ICMP](icmp-monitors.md), [TCP](tcp-monitors.md), [DNS](dns-monitors.md) and [Docker](docker-monitors.md#metrics-history-enabled) monitors).
+
 **Options**
 
 * `base-url`: your Kuvasz host (mandatory)
 * `api-key`: your API key for Kuvasz (optional if you disabled authentication)
-* `style`: either `full` or `compact`. The full version can have custom icons and displays 2 metrics, while the compact variant only shows 1 metric and doesn't support custom icons. Default is `full`.
+* `monitor-type`: `http`, `icmp`, `tcp`, `dns` or `docker` (mandatory)
+* `style`: either `full` or `compact`. The full version can have custom icons and displays every metric, while the compact variant only shows 1 metric and doesn't support custom icons. Default is `full`.
 * `period`: an ISO-8601 period string for the cumulative stats, e.g. `PT24H` or `P7D`. The widget default is 24 hours (`PT24H`).
 * `show-metrics`: whether to load and display metrics at all. Be aware that showing metrics for a lot of monitors could slow down your dashboard, since the metrics need to be fetched on a per-monitor basis.
-* `compact-metric`: the metric to show in the compact variant, either `uptime` or `latency`, default is `uptime`
-* `latency-metric`: the latency metric to show, one of `average`, `min`, `max`, `p90`, `p95`, `p99`, default is `average`
+* `compact-metric`: the metric to show in the compact variant, default is `uptime`. Besides `uptime`, it can be `latency` (`http`, `icmp`, `tcp` and `dns`), `packet-loss` (`icmp`), or `cpu` and `memory` (`docker`)
+* `latency-metric`: the latency metric to show (`http`, `icmp`, `tcp` and `dns`), one of `average`, `min`, `max`, `p90`, `p95`, `p99`, default is `average`
+* `show-packet-loss`: whether to display the packet loss metric next to the latency in the full variant (`icmp` only), default is `false`
+* `packet-loss-metric`: the packet loss metric to show (`icmp` only), one of `average`, `min`, `max`, `p90`, `p95`, `p99`, default is `average`
+* `resource-metric`: the CPU and memory usage metric to show (`docker` only), one of `average`, `min`, `max`, default is `average`
 * `show-failing-only`: if `true`, only the failing (down) monitors will be shown
 * `show-configured-only`: if `true`, only the explicitly configured monitors will be shown (see below)
 
@@ -587,6 +601,7 @@ When `show-configured-only` is `true`, only the monitors that have a custom icon
       options:
         base-url: ${KUVASZ_HOST}
         api-key: ${KUVASZ_API_KEY}
+        monitor-type: http
         style: full
         period: P1D
         show-metrics: true
@@ -601,6 +616,7 @@ When `show-configured-only` is `true`, only the monitors that have a custom icon
       template: |
         {{/* Required config options */}}
         {{ $baseURL := .Options.StringOr "base-url" "" }}
+        {{ $monitorType := .Options.StringOr "monitor-type" "" }}
     
         {{/* Optional config options */}}
         {{ $apiKey := .Options.StringOr "api-key" "" }}
@@ -609,110 +625,87 @@ When `show-configured-only` is `true`, only the monitors that have a custom icon
         {{ $showMetrics := .Options.BoolOr "show-metrics" false }}
         {{ $compactMetric := .Options.StringOr "compact-metric" "uptime" }}
         {{ $latencyMetric := .Options.StringOr "latency-metric" "average" }}
+        {{ $showPacketLoss := .Options.BoolOr "show-packet-loss" false }}
+        {{ $packetLossMetric := .Options.StringOr "packet-loss-metric" "average" }}
+        {{ $resourceMetric := .Options.StringOr "resource-metric" "average" }}
         {{ $showFailingOnly := .Options.BoolOr "show-failing-only" false }}
         {{ $showOnlyConfigured := .Options.BoolOr "show-configured-only" false }}
     
-        {{ $monitors := newRequest (print $baseURL "/api/v2/http-monitors?enabled=true")
+        {{ $monitors := newRequest (print $baseURL "/api/v2/" $monitorType "-monitors?enabled=true")
           | withHeader "X-Api-Key" $apiKey
           | getResponse }}
     
         {{ $options := .Options }}
+        {{ $isCompact := eq $style "compact" }}
+        {{ $statusIconClass := "monitor-site-status-icon" }}
+        {{ if $isCompact }} {{ $statusIconClass = "monitor-site-status-icon-compact" }} {{ end }}
         {{ $displayedItems := 0 }}
     
-        {{ if eq $style "compact" }}
-          <ul class="dynamic-columns list-gap-8 ">
-          {{ range $i, $monitor := $monitors.JSON.Array "" }}
-              {{ $name := $monitor.String "name" }}
-              {{ $key := $monitor.String "id" }}
-              {{ $icon := $options.StringOr $name "" }}
-              {{ $linkUrlOption := $options.StringOr (concat $name "-url") "" }}
-              {{ $linkUrl := $options.StringOr (concat $name "-url") (concat $baseURL "/http-monitors/" $key) }}
-              {{ $status := $monitor.String "uptimeStatus" }}
-              {{ $isUp := eq $status "UP" }}
-              {{ $isDown := eq $status "DOWN" }}
-              {{ $hasLatencyMetrics := false }}
+        <ul class="dynamic-columns {{ if $isCompact }}list-gap-8{{ else }}list-gap-20 list-with-separator{{ end }}">
+        {{ range $i, $monitor := $monitors.JSON.Array "" }}
+            {{ $name := $monitor.String "name" }}
+            {{ $key := $monitor.String "id" }}
+            {{ $icon := $options.StringOr $name "" }}
+            {{ $linkUrlOption := $options.StringOr (concat $name "-url") "" }}
+            {{ $linkUrl := $options.StringOr (concat $name "-url") (concat $baseURL "/" $monitorType "-monitors/" $key) }}
+            {{ $status := $monitor.String "uptimeStatus" }}
+            {{ $isUp := eq $status "UP" }}
+            {{ $isDown := eq $status "DOWN" }}
     
-              {{ if and $showFailingOnly (not $isDown) }} {{ continue }} {{ end }}
-              {{ if and $showOnlyConfigured (eq $linkUrlOption "") (eq $icon "") }} {{ continue }} {{ end }}
-              {{ $displayedItems = add $displayedItems 1 }}
+            {{ if and $showFailingOnly (not $isDown) }} {{ continue }} {{ end }}
+            {{ if and $showOnlyConfigured (eq $linkUrlOption "") (eq $icon "") }} {{ continue }} {{ end }}
+            {{ $displayedItems = add $displayedItems 1 }}
     
-              {{ $metricValue := "" }}
-              {{ $stats := "" }}
+            {{/* What is monitored, if the type has anything worth showing */}}
+            {{ $target := "" }}
+            {{ if eq $monitorType "tcp" }}
+              {{ $target = concat ($monitor.String "host") ":" ($monitor.String "port") }}
+            {{ else if eq $monitorType "docker" }}
+              {{ $target = concat ($monitor.String "dockerHost") "/" ($monitor.String "container") }}
+            {{ else if ne $monitorType "http" }}
+              {{ $target = $monitor.String "host" }}
+            {{ end }}
+            {{ $image := $monitor.String "image" }}
     
-              {{ if $showMetrics }}
-                {{ $stats = newRequest (print $baseURL "/api/v2/http-monitors/" $key "/stats/?period=" $period )
-                    | withHeader "X-Api-Key" $apiKey
-                    | getResponse }}
-                {{ $hasLatencyMetrics = $stats.JSON.Exists "latencyStats.averageLatencyInMs" }}
+            {{/* The metrics, formatted once for both styles; the ones a type doesn't have stay empty */}}
+            {{ $uptime := "" }}
+            {{ $latency := "" }}
+            {{ $packetLoss := "" }}
+            {{ $cpu := "" }}
+            {{ $memory := "" }}
+            {{ if $showMetrics }}
+              {{ $stats := newRequest (print $baseURL "/api/v2/" $monitorType "-monitors/" $key "/stats/?period=" $period )
+                  | withHeader "X-Api-Key" $apiKey
+                  | getResponse }}
+              {{ $uptime = printf "%.2f%%" (mul 100 ($stats.JSON.Float "uptimeHistory.uptimeRatio")) }}
+              {{ if $stats.JSON.Exists "latencyStats.averageLatencyInMs" }}
+                {{ $latency = printf "%dms" ($stats.JSON.Int (printf "latencyStats.%sLatencyInMs" $latencyMetric)) }}
+              {{ end }}
+              {{ if $stats.JSON.Exists "packetLossStats.averagePacketLossPercentage" }}
+                {{ $packetLoss = printf "%d%% loss" ($stats.JSON.Int (printf "packetLossStats.%sPacketLossPercentage" $packetLossMetric)) }}
+              {{ end }}
+              {{ if $stats.JSON.Exists "cpuStats.averageCpuUsagePercentage" }}
+                {{ $cpu = printf "%.1f%% CPU" ($stats.JSON.Float (printf "cpuStats.%sCpuUsagePercentage" $resourceMetric)) }}
+              {{ end }}
+              {{ if $stats.JSON.Exists "memoryStats.averageMemoryUsageBytes" }}
+                {{ $memory = printf "%.0f MiB" (div ($stats.JSON.Float (printf "memoryStats.%sMemoryUsageBytes" $resourceMetric)) 1048576) }}
+              {{ end }}
+            {{ end }}
+    
+            {{ if $isCompact }}
+              {{ $compactValue := $uptime }}
+              {{ if eq $compactMetric "latency" }} {{ $compactValue = $latency }}
+              {{ else if eq $compactMetric "packet-loss" }} {{ $compactValue = $packetLoss }}
+              {{ else if eq $compactMetric "cpu" }} {{ $compactValue = $cpu }}
+              {{ else if eq $compactMetric "memory" }} {{ $compactValue = $memory }}
               {{ end }}
     
               <div class="flex items-center gap-12">
                 <a class="size-title-dynamic color-highlight text-truncate block grow" href="{{ $linkUrl | safeURL }}" target="_blank" rel="noreferrer">{{ $name }}</a>
-                <a href="{{ $linkUrl | safeURL }}" target="_blank" rel="noreferrer">
-                  {{ if eq $compactMetric "uptime" }}
-                    {{ $metricValue = mul 100 ($stats.JSON.Float "uptimeHistory.uptimeRatio") }}
-                    <div>{{ printf "%.2f" $metricValue }}%</div>
-                  {{ else if $hasLatencyMetrics }}
-                    <div>{{ $stats.JSON.Int (printf "latencyStats.%sLatencyInMs" $latencyMetric) }}ms</div>
-                  {{ end }}
-                </a>
-    
-                {{ if $isUp }}
-                  <div class="monitor-site-status-icon-compact">
-                    <a href="{{ $linkUrl | safeURL }}" target="_blank" rel="noreferrer">
-                        <svg fill="var(--color-positive)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                          <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clip-rule="evenodd" />
-                        </svg>
-                    </a>
-                  </div>
-                {{ else if $isDown }}
-                  <div class="monitor-site-status-icon-compact" title="{{ $monitor.String "uptimeError" }}">
-                    <a href="{{ $linkUrl | safeURL }}" target="_blank" rel="noreferrer">
-                        <svg fill="var(--color-negative)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                          <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd" />
-                        </svg>
-                    </a>
-                  </div>
-                {{ else }}
-                  <div class="monitor-site-status-icon-compact" title="Not checked yet">
-                    <a href="{{ $linkUrl | safeURL }}" target="_blank" rel="noreferrer">
-                        <svg fill="var(--color-text-subdue)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                          <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM7 9.25a.75.75 0 0 0 0 1.5h6a.75.75 0 0 0 0-1.5H7Z" clip-rule="evenodd" />
-                        </svg>
-                    </a>
-                  </div>
+                {{ if $compactValue }}
+                  <a href="{{ $linkUrl | safeURL }}" target="_blank" rel="noreferrer"><div>{{ $compactValue }}</div></a>
                 {{ end }}
-              </div>
-            {{ end }}
-          </ul>
-        {{ else }}
-          <ul class="dynamic-columns list-gap-20 list-with-separator">
-          {{ range $i, $monitor := $monitors.JSON.Array "" }}
-              {{ $name := $monitor.String "name" }}
-              {{ $key := $monitor.String "id" }}
-              {{ $icon := $options.StringOr $name "" }}
-              {{ $linkUrlOption := $options.StringOr (concat $name "-url") "" }}
-              {{ $linkUrl := $options.StringOr (concat $name "-url") (concat $baseURL "/http-monitors/" $key) }}
-              {{ $status := $monitor.String "uptimeStatus" }}
-              {{ $isUp := eq $status "UP" }}
-              {{ $isDown := eq $status "DOWN" }}
-              {{ $hasLatencyMetrics := false }}
-    
-              {{ if and $showFailingOnly (not $isDown) }} {{ continue }} {{ end }}
-              {{ if and $showOnlyConfigured (eq $linkUrlOption "") (eq $icon "") }} {{ continue }} {{ end }}
-              {{ $displayedItems = add $displayedItems 1 }}
-    
-              {{ $uptimeValue := "" }}
-              {{ $stats := "" }}
-    
-              {{ if $showMetrics }}
-                {{ $stats = newRequest (print $baseURL "/api/v2/http-monitors/" $key "/stats/?period=" $period )
-                    | withHeader "X-Api-Key" $apiKey
-                    | getResponse }}
-                {{ $hasLatencyMetrics = $stats.JSON.Exists "latencyStats.averageLatencyInMs" }}
-                {{ $uptimeValue = mul 100 ($stats.JSON.Float "uptimeHistory.uptimeRatio") }}
-              {{ end }}
-    
+            {{ else }}
               {{ $iconUrl := "" }}
               {{ if $icon }}
                 {{ $iconPrefix := findMatch "^(si|di|mdi|sh):" $icon }}
@@ -744,52 +737,50 @@ When `show-configured-only` is `true`, only the monitors that have a custom icon
                 {{ end }}
                 <div class="grow min-width-0">
                   <a class="size-h3 color-highlight text-truncate block" href="{{ $linkUrl | safeURL }}" target="_blank" rel="noreferrer">{{ $name }}</a>
-                  {{ if $showMetrics }}
-                    <a href="{{ $linkUrl | safeURL }}" target="_blank" rel="noreferrer">
-                      <ul class="list-horizontal-text">
-                        <li class="{{ if $isDown }}color-negative{{ end }}">{{ printf "%.2f" $uptimeValue }}%</li>
-                        {{ if $hasLatencyMetrics }}
-                          <li>{{ $stats.JSON.Int (printf "latencyStats.%sLatencyInMs" $latencyMetric) }}ms</li>
-                        {{ end }}
-                      </ul>
-                    </a>
-                  {{ end }}
+                  <ul class="list-horizontal-text">
+                    {{ if $target }} <li class="color-subdue">{{ $target }}</li> {{ end }}
+                    {{ if $image }} <li class="color-subdue">{{ $image }}</li> {{ end }}
+                    {{ if $uptime }} <li class="{{ if $isDown }}color-negative{{ end }}">{{ $uptime }}</li> {{ end }}
+                    {{ if $latency }} <li>{{ $latency }}</li> {{ end }}
+                    {{ if and $showPacketLoss $packetLoss }} <li>{{ $packetLoss }}</li> {{ end }}
+                    {{ if $cpu }} <li>{{ $cpu }}</li> {{ end }}
+                    {{ if $memory }} <li>{{ $memory }}</li> {{ end }}
+                  </ul>
                 </div>
-    
-                {{ if $isUp }}
-                  <div class="monitor-site-status-icon">
-                    <a href="{{ $linkUrl | safeURL }}" target="_blank" rel="noreferrer">
-                      <svg fill="var(--color-positive)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clip-rule="evenodd" />
-                      </svg>
-                    </a>
-                  </div>
-                {{ else if $isDown }}
-                  <div class="monitor-site-status-icon" title="{{ $monitor.String "uptimeError" }}">
-                    <a href="{{ $linkUrl | safeURL }}" target="_blank" rel="noreferrer">
-                      <svg fill="var(--color-negative)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd" />
-                      </svg>
-                    </a>
-                  </div>
-                {{ else }}
-                  <div class="monitor-site-status-icon" title="Not checked yet">
-                    <a href="{{ $linkUrl | safeURL }}" target="_blank" rel="noreferrer">
-                      <svg fill="var(--color-text-subdue)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM7 9.25a.75.75 0 0 0 0 1.5h6a.75.75 0 0 0 0-1.5H7Z" clip-rule="evenodd" />
-                      </svg>
-                    </a>
-                  </div>
-                {{ end }}
-    
-              </div>
             {{ end }}
-          </ul>
+    
+              {{ if $isUp }}
+                <div class="{{ $statusIconClass }}">
+                  <a href="{{ $linkUrl | safeURL }}" target="_blank" rel="noreferrer">
+                    <svg fill="var(--color-positive)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clip-rule="evenodd" />
+                    </svg>
+                  </a>
+                </div>
+              {{ else if $isDown }}
+                <div class="{{ $statusIconClass }}" title="{{ $monitor.String "uptimeError" }}">
+                  <a href="{{ $linkUrl | safeURL }}" target="_blank" rel="noreferrer">
+                    <svg fill="var(--color-negative)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd" />
+                    </svg>
+                  </a>
+                </div>
+              {{ else }}
+                <div class="{{ $statusIconClass }}" title="Not checked yet">
+                  <a href="{{ $linkUrl | safeURL }}" target="_blank" rel="noreferrer">
+                    <svg fill="var(--color-text-subdue)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM7 9.25a.75.75 0 0 0 0 1.5h6a.75.75 0 0 0 0-1.5H7Z" clip-rule="evenodd" />
+                    </svg>
+                  </a>
+                </div>
+              {{ end }}
+            </div>
         {{ end }}
+        </ul>
     
         {{ if eq $displayedItems 0 }}
           <div class="flex items-center justify-center gap-10 padding-block-5">
-            <p>All sites are online</p>
+            <p>All monitors are up</p>
             <svg class="shrink-0" style="width: 1.7rem;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--color-positive)">
               <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd" />
             </svg>
@@ -799,7 +790,7 @@ When `show-configured-only` is `true`, only the monitors that have a custom icon
 
 ### Push monitors
 
-Very similar to the HTTP monitors widget, but latency is not relevant here.
+Very similar to the [compact style](#http-icmp-tcp-dns-and-docker-monitors) of the widget above, but only the uptime ratio is shown, since latency is not relevant here.
 
 ![Kuvasz push monitors widget on Glance](../images/examples/kuvasz-glance-push-preview.png)
 
@@ -810,7 +801,7 @@ Very similar to the HTTP monitors widget, but latency is not relevant here.
 * `period`: an ISO-8601 period string for the cumulative stats, e.g. `PT24H` or `P7D`. The widget default is 24 hours (`PT24H`).
 * `show-uptime`: whether to load and display the uptime ratio. Be aware that showing it for a lot of monitors could slow down your dashboard, since it's fetched on a per-monitor basis.
 * `show-failing-only`: if `true`, only the failing (down) monitors will be shown
-* `show-configured-only`: if `true`, only the explicitly configured monitors will be shown. The explicit monitor config is the same as for the HTTP monitors.
+* `show-configured-only`: if `true`, only the explicitly configured monitors will be shown (see below)
 
 **Explicit monitor configs**
 
@@ -927,493 +918,6 @@ When `show-configured-only` is `true`, only the monitors that have an explicit c
         {{ end }}
     ```
 
-### ICMP monitors
-
-Lists the ping (ICMP) monitors from _Kuvasz_ with their host, uptime ratio, latency and packet loss metrics (all configurable) and state. Just like the HTTP widget, it supports custom icons, custom links and filtering. Packet loss and latency metrics are only available when [metrics history is enabled](icmp-monitors.md) on the given monitor.
-
-**Options**
-
-* `base-url`: your Kuvasz host (mandatory)
-* `api-key`: your API key for Kuvasz (optional if you disabled authentication)
-* `period`: an ISO-8601 period string for the cumulative stats, e.g. `PT24H` or `P7D`. The widget default is 24 hours (`PT24H`).
-* `show-metrics`: whether to load and display metrics at all. Be aware that showing metrics for a lot of monitors could slow down your dashboard, since the metrics need to be fetched on a per-monitor basis.
-* `latency-metric`: the latency metric to show, one of `average`, `min`, `max`, `p90`, `p95`, `p99`, default is `average`
-* `packet-loss-metric`: the packet loss metric to show, one of `average`, `min`, `max`, `p90`, `p95`, `p99`, default is `average`
-* `show-packet-loss`: whether to display the packet loss metric next to the latency, default is `false`
-* `show-failing-only`: if `true`, only the failing (down) monitors will be shown
-* `show-configured-only`: if `true`, only the explicitly configured monitors will be shown. The explicit monitor config is the same as for the HTTP monitors.
-
-??? example "Expand for example configuration"
-    ```yaml
-    - type: custom-api
-      title: ICMP monitors
-      cache: 5m
-      options:
-        base-url: ${KUVASZ_HOST}
-        api-key: ${KUVASZ_API_KEY}
-        period: P1D
-        show-metrics: true
-        latency-metric: average
-        packet-loss-metric: max
-        show-packet-loss: true
-        show-failing-only: false
-        show-configured-only: false
-        'Local router': mdi:router-network
-        'Local router-url': http://192.168.1.1
-      template: |
-        {{/* Required config options */}}
-        {{ $baseURL := .Options.StringOr "base-url" "" }}
-    
-        {{/* Optional config options */}}
-        {{ $apiKey := .Options.StringOr "api-key" "" }}
-        {{ $period := .Options.StringOr "period" "PT24H" }}
-        {{ $showMetrics := .Options.BoolOr "show-metrics" false }}
-        {{ $latencyMetric := .Options.StringOr "latency-metric" "average" }}
-        {{ $packetLossMetric := .Options.StringOr "packet-loss-metric" "average" }}
-        {{ $showPacketLoss := .Options.BoolOr "show-packet-loss" false }}
-        {{ $showFailingOnly := .Options.BoolOr "show-failing-only" false }}
-        {{ $showOnlyConfigured := .Options.BoolOr "show-configured-only" false }}
-    
-        {{ $monitors := newRequest (print $baseURL "/api/v2/icmp-monitors?enabled=true")
-          | withHeader "X-Api-Key" $apiKey
-          | getResponse }}
-    
-        {{ $options := .Options }}
-        {{ $displayedItems := 0 }}
-    
-        <ul class="dynamic-columns list-gap-20 list-with-separator">
-        {{ range $i, $monitor := $monitors.JSON.Array "" }}
-            {{ $name := $monitor.String "name" }}
-            {{ $key := $monitor.String "id" }}
-            {{ $host := $monitor.String "host" }}
-            {{ $icon := $options.StringOr $name "" }}
-            {{ $linkUrlOption := $options.StringOr (concat $name "-url") "" }}
-            {{ $linkUrl := $options.StringOr (concat $name "-url") (concat $baseURL "/icmp-monitors/" $key) }}
-            {{ $status := $monitor.String "uptimeStatus" }}
-            {{ $isUp := eq $status "UP" }}
-            {{ $isDown := eq $status "DOWN" }}
-            {{ $hasLatency := false }}
-            {{ $hasPacketLoss := false }}
-    
-            {{ if and $showFailingOnly (not $isDown) }} {{ continue }} {{ end }}
-            {{ if and $showOnlyConfigured (eq $linkUrlOption "") (eq $icon "") }} {{ continue }} {{ end }}
-            {{ $displayedItems = add $displayedItems 1 }}
-    
-            {{ $uptimeValue := "" }}
-            {{ $stats := "" }}
-    
-            {{ if $showMetrics }}
-              {{ $stats = newRequest (print $baseURL "/api/v2/icmp-monitors/" $key "/stats/?period=" $period )
-                  | withHeader "X-Api-Key" $apiKey
-                  | getResponse }}
-              {{ $hasLatency = $stats.JSON.Exists "latencyStats.averageLatencyInMs" }}
-              {{ $hasPacketLoss = $stats.JSON.Exists "packetLossStats.averagePacketLossPercentage" }}
-              {{ $uptimeValue = mul 100 ($stats.JSON.Float "uptimeHistory.uptimeRatio") }}
-            {{ end }}
-    
-            {{ $iconUrl := "" }}
-            {{ if $icon }}
-              {{ $iconPrefix := findMatch "^(si|di|mdi|sh):" $icon }}
-              {{ $iconBase := replaceMatches "^(si|di|mdi|sh):" "" $icon }}
-    
-              {{ $iconExt := findMatch "\\.[a-z]+$" $iconBase }}
-              {{ $iconExt := replaceMatches "\\." "" $iconExt }}
-              {{ $iconBase = replaceMatches "\\.[a-z]+$" "" $iconBase }}
-              {{ if eq $iconExt "" }} {{ $iconExt = "svg" }} {{ end }}
-    
-              {{ if eq $iconPrefix "si:" }}
-                {{ $iconUrl = concat "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/" $iconBase ".svg" }}
-              {{ else if eq $iconPrefix "di:" }}
-                {{ $iconUrl = concat "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/" $iconExt "/" $iconBase "." $iconExt }}
-              {{ else if eq $iconPrefix "mdi:" }}
-                {{ $iconUrl = concat "https://cdn.jsdelivr.net/npm/@mdi/svg@latest/svg/" $iconBase ".svg" }}
-              {{ else if eq $iconPrefix "sh:" }}
-                {{ $iconUrl = concat "https://cdn.jsdelivr.net/gh/selfhst/icons@main/png/" $iconBase ".png" }}
-              {{ else }}
-                {{ $iconUrl = $icon }}
-              {{ end }}
-            {{ end }}
-    
-            <div class="monitor-site flex items-center gap-15">
-              {{ if $iconUrl }}
-                <a href="{{ $linkUrl | safeURL }}" target="_blank" rel="noreferrer">
-                  <img class="monitor-site-icon" src="{{ $iconUrl | safeURL }}" alt="" loading="lazy">
-                </a>
-              {{ end }}
-              <div class="grow min-width-0">
-                <a class="size-h3 color-highlight text-truncate block" href="{{ $linkUrl | safeURL }}" target="_blank" rel="noreferrer">{{ $name }}</a>
-                <ul class="list-horizontal-text">
-                  <li class="color-subdue">{{ $host }}</li>
-                  {{ if $showMetrics }}
-                    <li class="{{ if $isDown }}color-negative{{ end }}">{{ printf "%.2f" $uptimeValue }}%</li>
-                    {{ if $hasLatency }}
-                      <li>{{ $stats.JSON.Int (printf "latencyStats.%sLatencyInMs" $latencyMetric) }}ms</li>
-                    {{ end }}
-                    {{ if and $showPacketLoss $hasPacketLoss }}
-                      <li>{{ $stats.JSON.Int (printf "packetLossStats.%sPacketLossPercentage" $packetLossMetric) }}% loss</li>
-                    {{ end }}
-                  {{ end }}
-                </ul>
-              </div>
-    
-              {{ if $isUp }}
-                <div class="monitor-site-status-icon">
-                  <a href="{{ $linkUrl | safeURL }}" target="_blank" rel="noreferrer">
-                    <svg fill="var(--color-positive)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clip-rule="evenodd" />
-                    </svg>
-                  </a>
-                </div>
-              {{ else if $isDown }}
-                <div class="monitor-site-status-icon" title="{{ $monitor.String "uptimeError" }}">
-                  <a href="{{ $linkUrl | safeURL }}" target="_blank" rel="noreferrer">
-                    <svg fill="var(--color-negative)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd" />
-                    </svg>
-                  </a>
-                </div>
-              {{ else }}
-                <div class="monitor-site-status-icon" title="Not checked yet">
-                  <a href="{{ $linkUrl | safeURL }}" target="_blank" rel="noreferrer">
-                    <svg fill="var(--color-text-subdue)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM7 9.25a.75.75 0 0 0 0 1.5h6a.75.75 0 0 0 0-1.5H7Z" clip-rule="evenodd" />
-                    </svg>
-                  </a>
-                </div>
-              {{ end }}
-    
-            </div>
-          {{ end }}
-        </ul>
-    
-        {{ if eq $displayedItems 0 }}
-          <div class="flex items-center justify-center gap-10 padding-block-5">
-            <p>All sites are online</p>
-            <svg class="shrink-0" style="width: 1.7rem;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--color-positive)">
-              <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd" />
-            </svg>
-          </div>
-        {{ end }}
-    ```
-
-### TCP monitors
-
-Lists the TCP (port) monitors from _Kuvasz_ with their `host:port`, uptime ratio, connect latency metric (configurable) and state. Just like the HTTP widget, it supports custom icons, custom links and filtering. The latency metric is only available when [metrics history is enabled](tcp-monitors.md) on the given monitor.
-
-**Options**
-
-* `base-url`: your Kuvasz host (mandatory)
-* `api-key`: your API key for Kuvasz (optional if you disabled authentication)
-* `period`: an ISO-8601 period string for the cumulative stats, e.g. `PT24H` or `P7D`. The widget default is 24 hours (`PT24H`).
-* `show-metrics`: whether to load and display metrics at all. Be aware that showing metrics for a lot of monitors could slow down your dashboard, since the metrics need to be fetched on a per-monitor basis.
-* `latency-metric`: the latency metric to show, one of `average`, `min`, `max`, `p90`, `p95`, `p99`, default is `average`
-* `show-failing-only`: if `true`, only the failing (down) monitors will be shown
-* `show-configured-only`: if `true`, only the explicitly configured monitors will be shown. The explicit monitor config is the same as for the HTTP monitors.
-
-??? example "Expand for example configuration"
-    ```yaml
-    - type: custom-api
-      title: TCP monitors
-      cache: 5m
-      options:
-        base-url: ${KUVASZ_HOST}
-        api-key: ${KUVASZ_API_KEY}
-        period: P1D
-        show-metrics: true
-        latency-metric: average
-        show-failing-only: false
-        show-configured-only: false
-        'SMTP server': mdi:email-outline
-        'SMTP server-url': http://192.168.1.10
-      template: |
-        {{/* Required config options */}}
-        {{ $baseURL := .Options.StringOr "base-url" "" }}
-    
-        {{/* Optional config options */}}
-        {{ $apiKey := .Options.StringOr "api-key" "" }}
-        {{ $period := .Options.StringOr "period" "PT24H" }}
-        {{ $showMetrics := .Options.BoolOr "show-metrics" false }}
-        {{ $latencyMetric := .Options.StringOr "latency-metric" "average" }}
-        {{ $showFailingOnly := .Options.BoolOr "show-failing-only" false }}
-        {{ $showOnlyConfigured := .Options.BoolOr "show-configured-only" false }}
-    
-        {{ $monitors := newRequest (print $baseURL "/api/v2/tcp-monitors?enabled=true")
-          | withHeader "X-Api-Key" $apiKey
-          | getResponse }}
-    
-        {{ $options := .Options }}
-        {{ $displayedItems := 0 }}
-    
-        <ul class="dynamic-columns list-gap-20 list-with-separator">
-        {{ range $i, $monitor := $monitors.JSON.Array "" }}
-            {{ $name := $monitor.String "name" }}
-            {{ $key := $monitor.String "id" }}
-            {{ $host := $monitor.String "host" }}
-            {{ $port := $monitor.String "port" }}
-            {{ $target := concat $host ":" $port }}
-            {{ $icon := $options.StringOr $name "" }}
-            {{ $linkUrlOption := $options.StringOr (concat $name "-url") "" }}
-            {{ $linkUrl := $options.StringOr (concat $name "-url") (concat $baseURL "/tcp-monitors/" $key) }}
-            {{ $status := $monitor.String "uptimeStatus" }}
-            {{ $isUp := eq $status "UP" }}
-            {{ $isDown := eq $status "DOWN" }}
-            {{ $hasLatency := false }}
-    
-            {{ if and $showFailingOnly (not $isDown) }} {{ continue }} {{ end }}
-            {{ if and $showOnlyConfigured (eq $linkUrlOption "") (eq $icon "") }} {{ continue }} {{ end }}
-            {{ $displayedItems = add $displayedItems 1 }}
-    
-            {{ $uptimeValue := "" }}
-            {{ $stats := "" }}
-    
-            {{ if $showMetrics }}
-              {{ $stats = newRequest (print $baseURL "/api/v2/tcp-monitors/" $key "/stats/?period=" $period )
-                  | withHeader "X-Api-Key" $apiKey
-                  | getResponse }}
-              {{ $hasLatency = $stats.JSON.Exists "latencyStats.averageLatencyInMs" }}
-              {{ $uptimeValue = mul 100 ($stats.JSON.Float "uptimeHistory.uptimeRatio") }}
-            {{ end }}
-    
-            {{ $iconUrl := "" }}
-            {{ if $icon }}
-              {{ $iconPrefix := findMatch "^(si|di|mdi|sh):" $icon }}
-              {{ $iconBase := replaceMatches "^(si|di|mdi|sh):" "" $icon }}
-    
-              {{ $iconExt := findMatch "\\.[a-z]+$" $iconBase }}
-              {{ $iconExt := replaceMatches "\\." "" $iconExt }}
-              {{ $iconBase = replaceMatches "\\.[a-z]+$" "" $iconBase }}
-              {{ if eq $iconExt "" }} {{ $iconExt = "svg" }} {{ end }}
-    
-              {{ if eq $iconPrefix "si:" }}
-                {{ $iconUrl = concat "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/" $iconBase ".svg" }}
-              {{ else if eq $iconPrefix "di:" }}
-                {{ $iconUrl = concat "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/" $iconExt "/" $iconBase "." $iconExt }}
-              {{ else if eq $iconPrefix "mdi:" }}
-                {{ $iconUrl = concat "https://cdn.jsdelivr.net/npm/@mdi/svg@latest/svg/" $iconBase ".svg" }}
-              {{ else if eq $iconPrefix "sh:" }}
-                {{ $iconUrl = concat "https://cdn.jsdelivr.net/gh/selfhst/icons@main/png/" $iconBase ".png" }}
-              {{ else }}
-                {{ $iconUrl = $icon }}
-              {{ end }}
-            {{ end }}
-    
-            <div class="monitor-site flex items-center gap-15">
-              {{ if $iconUrl }}
-                <a href="{{ $linkUrl | safeURL }}" target="_blank" rel="noreferrer">
-                  <img class="monitor-site-icon" src="{{ $iconUrl | safeURL }}" alt="" loading="lazy">
-                </a>
-              {{ end }}
-              <div class="grow min-width-0">
-                <a class="size-h3 color-highlight text-truncate block" href="{{ $linkUrl | safeURL }}" target="_blank" rel="noreferrer">{{ $name }}</a>
-                <ul class="list-horizontal-text">
-                  <li class="color-subdue">{{ $target }}</li>
-                  {{ if $showMetrics }}
-                    <li class="{{ if $isDown }}color-negative{{ end }}">{{ printf "%.2f" $uptimeValue }}%</li>
-                    {{ if $hasLatency }}
-                      <li>{{ $stats.JSON.Int (printf "latencyStats.%sLatencyInMs" $latencyMetric) }}ms</li>
-                    {{ end }}
-                  {{ end }}
-                </ul>
-              </div>
-    
-              {{ if $isUp }}
-                <div class="monitor-site-status-icon">
-                  <a href="{{ $linkUrl | safeURL }}" target="_blank" rel="noreferrer">
-                    <svg fill="var(--color-positive)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clip-rule="evenodd" />
-                    </svg>
-                  </a>
-                </div>
-              {{ else if $isDown }}
-                <div class="monitor-site-status-icon" title="{{ $monitor.String "uptimeError" }}">
-                  <a href="{{ $linkUrl | safeURL }}" target="_blank" rel="noreferrer">
-                    <svg fill="var(--color-negative)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd" />
-                    </svg>
-                  </a>
-                </div>
-              {{ else }}
-                <div class="monitor-site-status-icon" title="Not checked yet">
-                  <a href="{{ $linkUrl | safeURL }}" target="_blank" rel="noreferrer">
-                    <svg fill="var(--color-text-subdue)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM7 9.25a.75.75 0 0 0 0 1.5h6a.75.75 0 0 0 0-1.5H7Z" clip-rule="evenodd" />
-                    </svg>
-                  </a>
-                </div>
-              {{ end }}
-    
-            </div>
-          {{ end }}
-        </ul>
-    
-        {{ if eq $displayedItems 0 }}
-          <div class="flex items-center justify-center gap-10 padding-block-5">
-            <p>All sites are online</p>
-            <svg class="shrink-0" style="width: 1.7rem;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--color-positive)">
-              <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd" />
-            </svg>
-          </div>
-        {{ end }}
-    ```
-
-### DNS monitors
-
-Lists the DNS monitors from _Kuvasz_ with their queried name, uptime ratio, resolution latency metric (configurable) and state. Just like the HTTP widget, it supports custom icons, custom links and filtering. The latency metric is only available when [metrics history is enabled](dns-monitors.md) on the given monitor.
-
-**Options**
-
-* `base-url`: your Kuvasz host (mandatory)
-* `api-key`: your API key for Kuvasz (optional if you disabled authentication)
-* `period`: an ISO-8601 period string for the cumulative stats, e.g. `PT24H` or `P7D`. The widget default is 24 hours (`PT24H`).
-* `show-metrics`: whether to load and display metrics at all. Be aware that showing metrics for a lot of monitors could slow down your dashboard, since the metrics need to be fetched on a per-monitor basis.
-* `latency-metric`: the latency metric to show, one of `average`, `min`, `max`, `p90`, `p95`, `p99`, default is `average`
-* `show-failing-only`: if `true`, only the failing (down) monitors will be shown
-* `show-configured-only`: if `true`, only the explicitly configured monitors will be shown. The explicit monitor config is the same as for the HTTP monitors.
-
-??? example "Expand for example configuration"
-    ```yaml
-    - type: custom-api
-      title: DNS monitors
-      cache: 5m
-      options:
-        base-url: ${KUVASZ_HOST}
-        api-key: ${KUVASZ_API_KEY}
-        period: P1D
-        show-metrics: true
-        latency-metric: average
-        show-failing-only: false
-        show-configured-only: false
-        'My DNS Monitor': mdi:dns-outline
-        'My DNS Monitor-url': https://example.com
-      template: |
-        {{/* Required config options */}}
-        {{ $baseURL := .Options.StringOr "base-url" "" }}
-    
-        {{/* Optional config options */}}
-        {{ $apiKey := .Options.StringOr "api-key" "" }}
-        {{ $period := .Options.StringOr "period" "PT24H" }}
-        {{ $showMetrics := .Options.BoolOr "show-metrics" false }}
-        {{ $latencyMetric := .Options.StringOr "latency-metric" "average" }}
-        {{ $showFailingOnly := .Options.BoolOr "show-failing-only" false }}
-        {{ $showOnlyConfigured := .Options.BoolOr "show-configured-only" false }}
-    
-        {{ $monitors := newRequest (print $baseURL "/api/v2/dns-monitors?enabled=true")
-          | withHeader "X-Api-Key" $apiKey
-          | getResponse }}
-    
-        {{ $options := .Options }}
-        {{ $displayedItems := 0 }}
-    
-        <ul class="dynamic-columns list-gap-20 list-with-separator">
-        {{ range $i, $monitor := $monitors.JSON.Array "" }}
-            {{ $name := $monitor.String "name" }}
-            {{ $key := $monitor.String "id" }}
-            {{ $target := $monitor.String "host" }}
-            {{ $icon := $options.StringOr $name "" }}
-            {{ $linkUrlOption := $options.StringOr (concat $name "-url") "" }}
-            {{ $linkUrl := $options.StringOr (concat $name "-url") (concat $baseURL "/dns-monitors/" $key) }}
-            {{ $status := $monitor.String "uptimeStatus" }}
-            {{ $isUp := eq $status "UP" }}
-            {{ $isDown := eq $status "DOWN" }}
-            {{ $hasLatency := false }}
-    
-            {{ if and $showFailingOnly (not $isDown) }} {{ continue }} {{ end }}
-            {{ if and $showOnlyConfigured (eq $linkUrlOption "") (eq $icon "") }} {{ continue }} {{ end }}
-            {{ $displayedItems = add $displayedItems 1 }}
-    
-            {{ $uptimeValue := "" }}
-            {{ $stats := "" }}
-    
-            {{ if $showMetrics }}
-              {{ $stats = newRequest (print $baseURL "/api/v2/dns-monitors/" $key "/stats/?period=" $period )
-                  | withHeader "X-Api-Key" $apiKey
-                  | getResponse }}
-              {{ $hasLatency = $stats.JSON.Exists "latencyStats.averageLatencyInMs" }}
-              {{ $uptimeValue = mul 100 ($stats.JSON.Float "uptimeHistory.uptimeRatio") }}
-            {{ end }}
-    
-            {{ $iconUrl := "" }}
-            {{ if $icon }}
-              {{ $iconPrefix := findMatch "^(si|di|mdi|sh):" $icon }}
-              {{ $iconBase := replaceMatches "^(si|di|mdi|sh):" "" $icon }}
-    
-              {{ $iconExt := findMatch "\\.[a-z]+$" $iconBase }}
-              {{ $iconExt := replaceMatches "\\." "" $iconExt }}
-              {{ $iconBase = replaceMatches "\\.[a-z]+$" "" $iconBase }}
-              {{ if eq $iconExt "" }} {{ $iconExt = "svg" }} {{ end }}
-    
-              {{ if eq $iconPrefix "si:" }}
-                {{ $iconUrl = concat "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/" $iconBase ".svg" }}
-              {{ else if eq $iconPrefix "di:" }}
-                {{ $iconUrl = concat "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/" $iconExt "/" $iconBase "." $iconExt }}
-              {{ else if eq $iconPrefix "mdi:" }}
-                {{ $iconUrl = concat "https://cdn.jsdelivr.net/npm/@mdi/svg@latest/svg/" $iconBase ".svg" }}
-              {{ else if eq $iconPrefix "sh:" }}
-                {{ $iconUrl = concat "https://cdn.jsdelivr.net/gh/selfhst/icons@main/png/" $iconBase ".png" }}
-              {{ else }}
-                {{ $iconUrl = $icon }}
-              {{ end }}
-            {{ end }}
-    
-            <div class="monitor-site flex items-center gap-15">
-              {{ if $iconUrl }}
-                <a href="{{ $linkUrl | safeURL }}" target="_blank" rel="noreferrer">
-                  <img class="monitor-site-icon" src="{{ $iconUrl | safeURL }}" alt="" loading="lazy">
-                </a>
-              {{ end }}
-              <div class="grow min-width-0">
-                <a class="size-h3 color-highlight text-truncate block" href="{{ $linkUrl | safeURL }}" target="_blank" rel="noreferrer">{{ $name }}</a>
-                <ul class="list-horizontal-text">
-                  <li class="color-subdue">{{ $target }}</li>
-                  {{ if $showMetrics }}
-                    <li class="{{ if $isDown }}color-negative{{ end }}">{{ printf "%.2f" $uptimeValue }}%</li>
-                    {{ if $hasLatency }}
-                      <li>{{ $stats.JSON.Int (printf "latencyStats.%sLatencyInMs" $latencyMetric) }}ms</li>
-                    {{ end }}
-                  {{ end }}
-                </ul>
-              </div>
-    
-              {{ if $isUp }}
-                <div class="monitor-site-status-icon">
-                  <a href="{{ $linkUrl | safeURL }}" target="_blank" rel="noreferrer">
-                    <svg fill="var(--color-positive)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clip-rule="evenodd" />
-                    </svg>
-                  </a>
-                </div>
-              {{ else if $isDown }}
-                <div class="monitor-site-status-icon" title="{{ $monitor.String "uptimeError" }}">
-                  <a href="{{ $linkUrl | safeURL }}" target="_blank" rel="noreferrer">
-                    <svg fill="var(--color-negative)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd" />
-                    </svg>
-                  </a>
-                </div>
-              {{ else }}
-                <div class="monitor-site-status-icon" title="Not checked yet">
-                  <a href="{{ $linkUrl | safeURL }}" target="_blank" rel="noreferrer">
-                    <svg fill="var(--color-text-subdue)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM7 9.25a.75.75 0 0 0 0 1.5h6a.75.75 0 0 0 0-1.5H7Z" clip-rule="evenodd" />
-                    </svg>
-                  </a>
-                </div>
-              {{ end }}
-    
-            </div>
-          {{ end }}
-        </ul>
-    
-        {{ if eq $displayedItems 0 }}
-          <div class="flex items-center justify-center gap-10 padding-block-5">
-            <p>All sites are online</p>
-            <svg class="shrink-0" style="width: 1.7rem;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--color-positive)">
-              <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd" />
-            </svg>
-          </div>
-        {{ end }}
-    ```
-
 ## Full YAML example (app-config + monitors + integrations)
 
 This is just a full example of a _YAML_ configuration file, which you can use as a **starting point** for your own configuration. You can copy and paste it into your own configuration file, and then modify it to suit your needs, but always make sure that **you read the corresponding documentation** sections for each feature or integration you want to use.
@@ -1484,6 +988,16 @@ integrations:
           "monitorName": "{{ctx.monitorName}}",
           "type": "{{ctx.type}}"
         }
+---
+docker-hosts:
+  - name: "local"
+    url: "unix:///var/run/docker.sock"
+  - name: "homelab"
+    url: "tcp://192.168.1.108:2376"
+    tls:
+      ca: "/certs/homelab/ca.pem"
+      cert: "/certs/homelab/cert.pem"
+      key: "/certs/homelab/key.pem"
 ---
 http-monitors:
   - name: "full configuration example"
@@ -1597,6 +1111,22 @@ dns-monitors:
     uptime-check-interval: 300
     expected-response-code: "NXDOMAIN"
     enabled: true
+docker-monitors:
+  - name: "My Docker Monitor"
+    docker-host: "local"
+    container: "my-app"
+    uptime-check-interval: 60
+    timeout-ms: 5000
+    failure-count-threshold: 1
+    enabled: true
+    metrics-history-enabled: true
+    ignore-connectivity-check: true
+    integrations:
+      - "slack:slack_default"
+  - name: "Home Assistant"
+    docker-host: "homelab"
+    container: "homeassistant"
+    uptime-check-interval: 30
 maintenance-windows:
   - name: "Nightly DB maintenance"
     description: "Recurring nightly database maintenance"
@@ -1610,6 +1140,7 @@ maintenance-windows:
       - "icmp:My ICMP Monitor"
       - "tcp:My TCP Monitor"
       - "dns:My DNS Monitor"
+      - "docker:My Docker Monitor"
     integrations:
       - "slack:slack_default"
   - name: "Datacenter migration"
@@ -1636,4 +1167,5 @@ status-pages:
       - "icmp:My ICMP Monitor"
       - "tcp:My TCP Monitor"
       - "dns:My DNS Monitor"
+      - "docker:My Docker Monitor"
 ```

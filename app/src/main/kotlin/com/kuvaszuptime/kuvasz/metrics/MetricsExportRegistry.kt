@@ -5,11 +5,13 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.DockerMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMonitorRecord
 import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.DockerMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import io.micrometer.core.instrument.MeterRegistry
 import io.micronaut.context.annotation.Requires
@@ -28,11 +30,13 @@ class MetricsExportRegistry(
     private val icmpMonitorRepository: IcmpMonitorRepository,
     private val tcpMonitorRepository: TcpMonitorRepository,
     private val dnsMonitorRepository: DnsMonitorRepository,
+    private val dockerMonitorRepository: DockerMonitorRepository,
     private val httpMetricsExporters: List<MetricsExporter<HttpMonitorRecord>>,
     private val pushMetricsExporters: List<MetricsExporter<PushMonitorRecord>>,
     private val icmpMetricsExporters: List<MetricsExporter<IcmpMonitorRecord>>,
     private val tcpMetricsExporters: List<MetricsExporter<TcpMonitorRecord>>,
     private val dnsMetricsExporters: List<MetricsExporter<DnsMonitorRecord>>,
+    private val dockerMetricsExporters: List<MetricsExporter<DockerMonitorRecord>>,
 ) {
 
     companion object {
@@ -57,6 +61,9 @@ class MetricsExportRegistry(
 
         val dnsMonitors = dnsMonitorRepository.fetchByEnabled(enabled = true)
         dnsMetricsExporters.forEach { it.init(dnsMonitors) }
+
+        val dockerMonitors = dockerMonitorRepository.fetchByEnabled(enabled = true)
+        dockerMetricsExporters.forEach { it.init(dockerMonitors) }
     }
 
     private fun <M : MonitorRecord> MetricsExporter<M>.init(monitors: List<M>) {

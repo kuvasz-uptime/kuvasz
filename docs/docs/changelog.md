@@ -2,6 +2,16 @@
 
 ### Features
 
+**🐳 Docker monitoring**
+
+[**Docker monitors**](features/docker-monitoring.md) ask the **Docker daemon itself** whether a container is running and healthy, so they catch what a port check misses: crash loops, OOM kills, paused containers, failing healthchecks, and containers without any port at all. The errors tell you **what actually happened**, e.g. _"The container exited (137) after it was OOM killed"_, and the **image** of the container is recorded with every incident. With [**metrics history**](management/docker-monitors.md#metrics-history-enabled) enabled, the **CPU and memory usage** of the container is charted too.
+
+The daemons are configured as named [**Docker hosts**](management/docker-hosts.md) in your configuration file: the **local socket**, a **socket proxy**, or a **remote daemon** over TCP with **(mutual) TLS**, from **Engine 19.03** onwards (see the [**compatibility matrix**](features/docker-monitoring.md#compatibility)).
+
+Docker monitors are fully integrated across _Kuvasz_: they're manageable via the [**Web UI, REST API, or YAML**](management/docker-monitors.md), participate in **incidents**, **uptime stats**, **status pages**, **maintenance windows**, **notifications**, the [**metrics**](management/metrics-exporters.md#docker-uptime-status) exporter, **YAML import/restore**, and are exposed to AI assistants through the [**MCP server**](features/mcp-server.md#docker-monitors).
+
+---
+
 **🔌 Connectivity check**
 
 When the host running _Kuvasz_ loses its own outbound network access — an ISP blip, a router reboot, a restarted _Docker_ network, a flapping VPN — every monitor fails at the very same moment, and you get an incident storm, a matching recovery storm and permanently polluted uptime percentages, all because of something that has nothing to do with the services you monitor.

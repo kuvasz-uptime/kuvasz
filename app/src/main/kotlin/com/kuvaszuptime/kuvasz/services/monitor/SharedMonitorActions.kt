@@ -5,11 +5,13 @@ import com.kuvaszuptime.kuvasz.models.monitor.dns.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.http.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.icmp.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.push.monitorId
+import com.kuvaszuptime.kuvasz.models.monitor.docker.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.tcp.monitorId
 import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.DockerMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import jakarta.inject.Singleton
 
@@ -19,6 +21,7 @@ class SharedMonitorActions(
     private val pushMonitorRepository: PushMonitorRepository,
     private val icmpMonitorRepository: IcmpMonitorRepository,
     private val tcpMonitorRepository: TcpMonitorRepository,
+    private val dockerMonitorRepository: DockerMonitorRepository,
     private val dnsMonitorRepository: DnsMonitorRepository,
 ) {
     fun getConfiguredMonitors(): List<MonitorID> =
@@ -26,6 +29,7 @@ class SharedMonitorActions(
             .plus(pushMonitorRepository.fetchAll().map { it.monitorId() })
             .plus(icmpMonitorRepository.fetchAll().map { it.monitorId() })
             .plus(tcpMonitorRepository.fetchAll().map { it.monitorId() })
+            .plus(dockerMonitorRepository.fetchAll().map { it.monitorId() })
             .plus(dnsMonitorRepository.fetchAll().map { it.monitorId() })
 
     fun getConfiguredMonitorIds(): Map<MonitorID, Long> =
@@ -33,5 +37,6 @@ class SharedMonitorActions(
             .plus(pushMonitorRepository.fetchAll().associate { it.monitorId() to it.id })
             .plus(icmpMonitorRepository.fetchAll().associate { it.monitorId() to it.id })
             .plus(tcpMonitorRepository.fetchAll().associate { it.monitorId() to it.id })
+            .plus(dockerMonitorRepository.fetchAll().associate { it.monitorId() to it.id })
             .plus(dnsMonitorRepository.fetchAll().associate { it.monitorId() to it.id })
 }

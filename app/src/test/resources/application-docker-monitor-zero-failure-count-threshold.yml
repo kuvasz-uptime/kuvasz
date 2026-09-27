@@ -1,0 +1,6 @@
+docker-monitors:
+  - name: test
+    docker-host: local
+    container: my-app
+    uptime-check-interval: 60
+    failure-count-threshold: 0

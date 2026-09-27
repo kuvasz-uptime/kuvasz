@@ -4,10 +4,12 @@ on:
     branches: [ main ]
     paths:
       - 'docs/**'
+      - 'docker-examples/**'
   pull_request:
     branches: [ main ]
     paths:
       - 'docs/**'
+      - 'docker-examples/**'
 jobs:
   build:
     runs-on: ubuntu-latest

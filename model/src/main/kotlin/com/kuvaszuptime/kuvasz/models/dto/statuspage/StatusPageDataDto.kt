@@ -47,6 +47,7 @@ data class StatusPageMaintenanceWindowDto(
         StatusPageHttpMonitorDetailsDto::class,
         StatusPageIcmpMonitorDetailsDto::class,
         StatusPageTcpMonitorDetailsDto::class,
+        StatusPageDockerMonitorDetailsDto::class,
     ]
 )
 // JSON subtypes are needed only for the tests
@@ -62,6 +63,7 @@ data class StatusPageMaintenanceWindowDto(
     JsonSubTypes.Type(value = StatusPageIcmpMonitorDetailsDto::class, name = "icmp"),
     JsonSubTypes.Type(value = StatusPageTcpMonitorDetailsDto::class, name = "tcp"),
     JsonSubTypes.Type(value = StatusPageDnsMonitorDetailsDto::class, name = "dns"),
+    JsonSubTypes.Type(value = StatusPageDockerMonitorDetailsDto::class, name = "docker"),
 )
 sealed interface StatusPageMonitorDetailsDto {
     val name: String
@@ -150,3 +152,18 @@ data class StatusHistoryDto(
     val date: LocalDate,
     val outageCnt: Int?,
 )
+
+/**
+ * Deliberately not [WithLatency], like the push monitors: the only timing a Docker check produces is the round-trip
+ * to the daemon, which says nothing about the container a status page is reporting on.
+ */
+data class StatusPageDockerMonitorDetailsDto(
+    override val name: String,
+    override val type: String = "docker",
+    override val lastCheck: OffsetDateTime?,
+    override val uptimeRatio: Double?,
+    override val uptimeStatus: UptimeStatus?,
+    override val uptimeStatusHistory: List<StatusHistoryDto>,
+    override val inMaintenance: Boolean = false,
+    override val category: String? = null,
+) : StatusPageMonitorDetailsDto
