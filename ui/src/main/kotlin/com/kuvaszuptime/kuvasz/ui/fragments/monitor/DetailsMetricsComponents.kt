@@ -101,7 +101,7 @@ internal fun FlowContent.dockerResourceMetricCards() {
             propertySuffix = "MemoryUsageBytes",
             labelPrefix = Messages.memory(),
             unit = " MiB",
-            valueExpression = { "($it / $BYTES_IN_MIB).toFixed(1)" },
+            valueExpression = { "bytesToMib($it)" },
         )
     }
 }
@@ -123,8 +123,6 @@ private fun FlowContent.resourceCards(
         )
     }
 }
-
-private const val BYTES_IN_MIB = 1048576
 
 internal fun FlowContent.latencyMetricCards() =
     metricStatCards(

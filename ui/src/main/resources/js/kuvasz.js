@@ -803,10 +803,8 @@ const dnsMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, chart
 const BYTES_IN_MIB = 1048576;
 
 const nullableCpuOf = (item) => item.cpuUsagePercent !== null ? parseFloat(item.cpuUsagePercent) : null;
-const nullableMemoryMibOf = (item) =>
-    item.memoryUsageBytes !== null ? parseFloat((item.memoryUsageBytes / BYTES_IN_MIB).toFixed(1)) : null;
-const nullableMemoryLimitMibOf = (item) =>
-    item.memoryLimitBytes !== null ? parseFloat((item.memoryLimitBytes / BYTES_IN_MIB).toFixed(1)) : null;
+// Shared by the chart and the stat cards (called from their Alpine expressions), so both show the same figure
+const bytesToMib = (bytes) => bytes != null ? parseFloat((bytes / BYTES_IN_MIB).toFixed(1)) : null;
 
 /*
  A container's CPU and memory share one chart on two axes. Neither is capped the way a packet loss percentage is:
@@ -880,8 +878,8 @@ const dockerMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, ch
         labels: logs.map(item => new Date(item.createdAt).toString()),
         series: [
             {name: labels.cpuUsage, type: 'area', data: logs.map(nullableCpuOf)},
-            {name: labels.memoryUsage, type: 'line', data: logs.map(nullableMemoryMibOf)},
-            {name: labels.memoryLimit, type: 'line', data: logs.map(nullableMemoryLimitMibOf)},
+            {name: labels.memoryUsage, type: 'line', data: logs.map(item => bytesToMib(item.memoryUsageBytes))},
+            {name: labels.memoryLimit, type: 'line', data: logs.map(item => bytesToMib(item.memoryLimitBytes))},
         ],
     }),
     /*
@@ -2516,6 +2514,7 @@ if (typeof module !== 'undefined' && module.exports) {
         escapeHtml,
         buildToastMarkup,
         hasNonNullValue,
+        bytesToMib,
         formatChartTimestamp,
         buildIncidentAnnotations,
         isValidUrl,

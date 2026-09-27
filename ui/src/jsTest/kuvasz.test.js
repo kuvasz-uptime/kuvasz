@@ -10,6 +10,7 @@ const {
     splitWithLimit,
     statusCodeToBadgeClass,
     hasNonNullValue,
+    bytesToMib,
     isValidUrl,
     isValidSlug,
     isValidIsoDuration,
@@ -56,6 +57,16 @@ test('hasNonNullValue', () => {
     // Falsy-but-not-null values still count as present
     assert.equal(hasNonNullValue({a: ''}), true);
     assert.equal(hasNonNullValue({a: 0}), true);
+});
+
+test('bytesToMib', () => {
+    assert.equal(bytesToMib(null), null);
+    assert.equal(bytesToMib(undefined), null);
+    assert.equal(bytesToMib(0), 0);
+    assert.equal(bytesToMib(1048576), 1);
+    assert.equal(bytesToMib(1572864), 1.5);
+    assert.equal(bytesToMib(1100000), 1.0);
+    assert.equal(bytesToMib(123456789), 117.7);
 });
 
 test('isValidUrl', () => {
