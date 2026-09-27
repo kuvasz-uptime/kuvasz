@@ -43,11 +43,25 @@ class DockerCpuUsageExporter(
     override val meterName = MONITOR_CPU_USAGE
 
     override fun subscribeToEvents() {
-        // Only the up events carry a sample: a container that is not running has no live cgroup to read
         eventDispatcher.subscribeToDockerMonitorUpEvents { event ->
-            val cpuUsage = event.cpuUsagePercent ?: return@subscribeToDockerMonitorUpEvents
-            logger.debug("Updating CPU usage for monitor with ID: ${event.monitor.id} to $cpuUsage")
-            upsertMeter(event.monitor.numericMonitorId(), cpuUsage)
+            updateCpuUsage(event.monitor, event.cpuUsagePercent)
+        }
+        // A down event never carries a sample, not even for a container that is still running but unhealthy
+        eventDispatcher.subscribeToDockerMonitorDownEvents { event ->
+            updateCpuUsage(event.monitor, cpuUsage = null)
+        }
+    }
+
+    /**
+     * Without a fresh sample the container's usage is unknown, so the meter is removed rather than left reporting
+     * the last reading of a container that may have long stopped. The next sample registers it again.
+     */
+    private fun updateCpuUsage(monitor: DockerMonitorRecord, cpuUsage: BigDecimal?) {
+        if (cpuUsage == null) {
+            deleteMeter(monitor.numericMonitorId())
+        } else {
+            logger.debug("Updating CPU usage for monitor with ID: ${monitor.id} to $cpuUsage")
+            upsertMeter(monitor.numericMonitorId(), cpuUsage)
         }
     }
 

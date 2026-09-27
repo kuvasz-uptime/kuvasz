@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.models.events.DockerMonitorUpEvent
 import com.kuvaszuptime.kuvasz.services.docker.DockerCgroupVersion
 import com.kuvaszuptime.kuvasz.services.docker.DockerContainerStats
 import com.kuvaszuptime.kuvasz.testAppContext
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import java.math.BigDecimal
@@ -120,12 +121,11 @@ class DockerCpuUsageExporterTest : DockerExporterTest("enabled-metrics-docker-cp
                     DockerMonitorUpEvent(sampledMonitor, previousEvent = null, latencyInMs = 10)
                 )
 
-                then("it should leave the meter on the last known value") {
-                    meterRegistry().meters.single() shouldHaveValue 12.5
+                then("it should remove the meter instead of reporting a stale value") {
+                    meterRegistry().meters.shouldBeEmpty()
                 }
             }
 
-            // A stopped container has no live cgroup, so a down event never carries one
             `when`("a down event arrives") {
                 appContext = testAppContext()
 
@@ -147,8 +147,41 @@ class DockerCpuUsageExporterTest : DockerExporterTest("enabled-metrics-docker-cp
                     )
                 )
 
-                then("it should leave the meter untouched") {
-                    meterRegistry().meters.single() shouldHaveValue 12.5
+                then("it should remove the meter instead of reporting a stale value") {
+                    meterRegistry().meters.shouldBeEmpty()
+                }
+            }
+
+            `when`("a new sample arrives after the meter was removed") {
+                appContext = testAppContext()
+
+                val sampledMonitor = createDockerMonitor(dockerMonitorRepository(), monitorName = "test-sampled")
+                dockerMetricsLogRepository().insertLog(
+                    monitorId = sampledMonitor.id,
+                    latencyMs = 10,
+                    stats = statsOf(cpu = 12.50),
+                )
+
+                restartAppContextWithMetrics()
+
+                eventDispatcher().dispatch(
+                    DockerMonitorDownEvent(sampledMonitor, error = "The container exited (137)", previousEvent = null)
+                )
+                meterRegistry().meters.shouldBeEmpty()
+
+                eventDispatcher().dispatch(
+                    DockerMonitorUpEvent(
+                        sampledMonitor,
+                        previousEvent = null,
+                        latencyInMs = 10,
+                        cpuUsagePercent = BigDecimal("3.5"),
+                    )
+                )
+
+                then("it should register the meter again with the new sample") {
+                    val expectedMeter = meterRegistry().meters.single()
+                    expectedMeter shouldHaveNameTag sampledMonitor.name
+                    expectedMeter shouldHaveValue 3.5
                 }
             }
         }
@@ -252,8 +285,67 @@ class DockerMemoryUsageExporterTest : DockerExporterTest("enabled-metrics-docker
                     DockerMonitorUpEvent(sampledMonitor, previousEvent = null, latencyInMs = 10)
                 )
 
-                then("it should leave the meter on the last known value") {
-                    meterRegistry().meters.single() shouldHaveValue 1_048_576.0
+                then("it should remove the meter instead of reporting a stale value") {
+                    meterRegistry().meters.shouldBeEmpty()
+                }
+            }
+
+            `when`("a down event arrives") {
+                appContext = testAppContext()
+
+                val sampledMonitor = createDockerMonitor(dockerMonitorRepository(), monitorName = "test-sampled")
+                dockerMetricsLogRepository().insertLog(
+                    monitorId = sampledMonitor.id,
+                    latencyMs = 10,
+                    stats = statsOf(memory = 1_048_576),
+                )
+
+                restartAppContextWithMetrics()
+
+                eventDispatcher().dispatch(
+                    DockerMonitorDownEvent(
+                        sampledMonitor,
+                        error = "The container exited (137)",
+                        previousEvent = null,
+                        latencyInMs = 10,
+                    )
+                )
+
+                then("it should remove the meter instead of reporting a stale value") {
+                    meterRegistry().meters.shouldBeEmpty()
+                }
+            }
+
+            `when`("a new sample arrives after the meter was removed") {
+                appContext = testAppContext()
+
+                val sampledMonitor = createDockerMonitor(dockerMonitorRepository(), monitorName = "test-sampled")
+                dockerMetricsLogRepository().insertLog(
+                    monitorId = sampledMonitor.id,
+                    latencyMs = 10,
+                    stats = statsOf(memory = 1_048_576),
+                )
+
+                restartAppContextWithMetrics()
+
+                eventDispatcher().dispatch(
+                    DockerMonitorDownEvent(sampledMonitor, error = "The container exited (137)", previousEvent = null)
+                )
+                meterRegistry().meters.shouldBeEmpty()
+
+                eventDispatcher().dispatch(
+                    DockerMonitorUpEvent(
+                        sampledMonitor,
+                        previousEvent = null,
+                        latencyInMs = 10,
+                        memoryUsageBytes = 2_097_152,
+                    )
+                )
+
+                then("it should register the meter again with the new sample") {
+                    val expectedMeter = meterRegistry().meters.single()
+                    expectedMeter shouldHaveNameTag sampledMonitor.name
+                    expectedMeter shouldHaveValue 2_097_152.0
                 }
             }
         }

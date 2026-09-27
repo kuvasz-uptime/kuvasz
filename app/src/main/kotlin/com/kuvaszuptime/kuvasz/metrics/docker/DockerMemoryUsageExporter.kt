@@ -43,9 +43,22 @@ class DockerMemoryUsageExporter(
 
     override fun subscribeToEvents() {
         eventDispatcher.subscribeToDockerMonitorUpEvents { event ->
-            val memoryUsage = event.memoryUsageBytes ?: return@subscribeToDockerMonitorUpEvents
-            logger.debug("Updating memory usage for monitor with ID: ${event.monitor.id} to $memoryUsage")
-            upsertMeter(event.monitor.numericMonitorId(), memoryUsage)
+            updateMemoryUsage(event.monitor, event.memoryUsageBytes)
+        }
+        eventDispatcher.subscribeToDockerMonitorDownEvents { event ->
+            updateMemoryUsage(event.monitor, memoryUsage = null)
+        }
+    }
+
+    /**
+     * Removes the meter when there is no fresh sample, for the same reason the CPU gauge does.
+     */
+    private fun updateMemoryUsage(monitor: DockerMonitorRecord, memoryUsage: Long?) {
+        if (memoryUsage == null) {
+            deleteMeter(monitor.numericMonitorId())
+        } else {
+            logger.debug("Updating memory usage for monitor with ID: ${monitor.id} to $memoryUsage")
+            upsertMeter(monitor.numericMonitorId(), memoryUsage)
         }
     }
 

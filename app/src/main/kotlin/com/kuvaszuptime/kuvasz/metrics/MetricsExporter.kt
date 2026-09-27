@@ -122,7 +122,7 @@ abstract class BaseHttpMetricsExporter<SOURCE_VAL : Any, INTERNAL_VAL : Any, MET
     /**
      * Deletes the meter for the given monitor ID if it exists and also de-registers it from the meter registry.
      */
-    private fun deleteMeter(monitorId: NumericMonitorID) {
+    protected fun deleteMeter(monitorId: NumericMonitorID) {
         meterDefinitions.remove(monitorId)?.let { meterDefinition ->
             logger.debug("Removing meter of monitor with ID: $monitorId")
             meterRegistry.remove(meterDefinition.id)

@@ -391,6 +391,8 @@ This metric is exported as a **gauge** and reports the latest recorded round-tri
 
 This metric is exported as a **gauge** and reports the latest sampled CPU usage of the container, as a percentage, in the same terms `docker stats` reports it (so a container using two full cores reports `200`). It's only available for monitors with [**metrics history**](docker-monitors.md#metrics-history-enabled) enabled.
 
+It's only reported while there is a fresh sample: once the monitor goes down, or a check fails to sample the container, the series is removed until the next successful sample, instead of repeating the last reading of a container that may have stopped since.
+
 ### Docker container memory usage
 
 <!-- md:version 4.5.0 -->
@@ -410,6 +412,8 @@ This metric is exported as a **gauge** and reports the latest sampled CPU usage 
     ```
 
 This metric is exported as a **gauge** and reports the latest sampled memory usage of the container in bytes, excluding the page cache, the same way `docker stats` does it. It's only available for monitors with [**metrics history**](docker-monitors.md#metrics-history-enabled) enabled.
+
+Like the CPU usage, it's only reported while there is a fresh sample.
 
 ## Prometheus
 
