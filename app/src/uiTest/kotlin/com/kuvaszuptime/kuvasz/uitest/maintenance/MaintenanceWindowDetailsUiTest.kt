@@ -27,6 +27,7 @@ class MaintenanceWindowDetailsUiTest(private val httpMonitorRepository: HttpMoni
             details.toggleButton.click()
             // After disabling, the live heading refreshes to the paused (cyan) state.
             assertThat(details.statusIndicator("status-cyan")).isVisible()
+            assertThat(details.headingElements).hasCount(1)
         }
 
         "a global window shows the all-monitors badge in the affected-monitors row" {

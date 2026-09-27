@@ -22,6 +22,8 @@ const {
     upsertIcmpMonitorForm,
     upsertTcpMonitorForm,
     upsertDnsMonitorForm,
+    upsertDockerMonitorForm,
+    renderDockerContainerOption,
     upsertStatusPageForm,
     upsertMaintenanceWindowForm,
     httpMetricsBlock,
@@ -561,6 +563,223 @@ test('TCP validators enforce port, timeout and the optional latency threshold', 
     assertValidatorBoundaries(buildForm, 'latencyThresholdMs', 'validateLatencyThreshold', 'LT', [
         ['', false], [null, false], [0, true], [1, false], [500, false], [-1, true],
     ]);
+});
+
+test('Docker validators reject a host that is not configured, but only on creation', () => {
+    const msgs = {
+        dockerHostRequired: 'REQ', dockerHostNotConfigured: 'NC', containerRequired: 'CR', timeoutMsInvalid: 'TS',
+    };
+    const buildForm = () => upsertDockerMonitorForm(
+        null, msgs, 'category-select', false, 'host-select', 'container-select', ['local'], '(not configured)', 0,
+    );
+
+    // A host that is not configured is what a clone of a monitor with a since-removed host would carry
+    assertValidatorBoundaries(buildForm, 'dockerHost', 'validateDockerHost', 'REQ', [['', true], ['local', false]]);
+    assertValidatorBoundaries(buildForm, 'dockerHost', 'validateDockerHost', 'NC', [['removed', true]]);
+    assertValidatorBoundaries(buildForm, 'container', 'validateContainer', 'CR', [[' ', true], ['my-app', false]]);
+    assertValidatorBoundaries(buildForm, 'timeoutMs', 'validateTimeoutMs', 'TS', [
+        [0, true], [1, false], [30000, false], [30001, true],
+    ]);
+
+    // The monitor that already has such a host may keep it
+    const update = buildForm();
+    Object.assign(update, {errors: {}, isUpdate: true, dockerHost: 'removed'});
+    update.validateDockerHost();
+    assert.equal(update.errors.dockerHost, null);
+});
+
+test('Docker host select re-offers a host that is no longer configured, marked as such', () => {
+    const tomSelect = fakeTomSelect();
+    const form = upsertDockerMonitorForm(
+        null, {}, 'category-select', false, 'host-select', 'container-select', ['local'], '(not configured)', 0,
+    );
+
+    withCategorySelect(tomSelect, () => form.populateTypeFields({dockerHost: 'removed', container: 'my-app'}));
+
+    assert.deepEqual(tomSelect.options.slice(0, 2), [
+        {value: 'local', text: 'local'},
+        {value: 'removed', text: 'removed (not configured)'},
+    ]);
+    assert.equal(form.dockerHost, 'removed');
+});
+
+test('Docker containers are listed only while the modal is open', () => {
+    const listeners = {};
+    const modal = {addEventListener: (event, listener) => listeners[event] = listener};
+    const originalGetElementById = document.getElementById;
+    document.getElementById = () => ({closest: () => modal});
+    try {
+        const form = upsertDockerMonitorForm(
+            null, {}, 'category-select', false, 'host-select', 'container-select', ['local'], '(not configured)', 0,
+        );
+        let loads = 0;
+        form.loadContainers = () => loads++;
+        form.watchModal();
+
+        // The initial populate of a rendered page, and the reset after a close, must not ask the daemon
+        form.populateFrom({dockerHost: 'local', container: 'my-app'});
+        assert.equal(loads, 0);
+
+        listeners['show.bs.modal']();
+        assert.equal(loads, 1);
+        // A list row loaded into the open modal lists the containers of its own host
+        form.populateFrom({dockerHost: 'local', container: 'other-app'});
+        assert.equal(loads, 2);
+
+        listeners['hide.bs.modal']();
+        form.populateFrom(null);
+        assert.equal(loads, 2);
+    } finally {
+        document.getElementById = originalGetElementById;
+    }
+});
+
+test('a listed Docker container is offered with its image and a badge of its raw state', () => {
+    const html = renderDockerContainerOption(
+        {value: 'web', text: 'web', image: 'nginx:alpine', state: 'running'}, escapeHtml,
+    );
+
+    assert.match(html, /web<span class="badge ms-2 bg-green-lt text-green-lt-fg">running<\/span>/);
+    assert.match(html, /<div class="text-secondary small">nginx:alpine<\/div>/);
+    assert.match(renderDockerContainerOption({text: 'w', state: 'exited'}, escapeHtml), /bg-red-lt/);
+    assert.match(renderDockerContainerOption({text: 'w', state: 'paused'}, escapeHtml), /bg-orange-lt/);
+    assert.match(renderDockerContainerOption({text: 'w', state: 'created'}, escapeHtml), /bg-secondary-lt/);
+});
+
+test('a Docker container that was not listed, e.g. a typed in one, is offered by its name only', () => {
+    assert.equal(renderDockerContainerOption({value: '<x>', text: '<x>'}, escapeHtml), '<div><div>&lt;x&gt;</div></div>');
+});
+
+// Like TomSelect's, clearOptions() keeps the selected option, and addOption() replaces an existing one
+const stubContainerTomSelect = (t, options = {}) => {
+    const wrapperClasses = new Set();
+    const tomSelect = {
+        options,
+        loading: 0,
+        settings: {loadingClass: 'loading'},
+        wrapper: {classList: {add: (c) => wrapperClasses.add(c), remove: (c) => wrapperClasses.delete(c)}},
+        wrapperClasses,
+        clearOptions() {},
+        addOption(option) {
+            this.options[option.value] = option;
+        },
+        addItem() {},
+        refreshOptions() {},
+    };
+    const originalGetElementById = document.getElementById;
+    document.getElementById = () => ({tomselect: tomSelect});
+    t.after(() => document.getElementById = originalGetElementById);
+    return tomSelect;
+};
+
+test('the listing gives the details to the container that is already selected, too', async (t) => {
+    const tomSelect = stubContainerTomSelect(t, {web: {value: 'web', text: 'web'}});
+    stubFetch(t, async () => jsonResponse({
+        available: true,
+        containers: [
+            {name: 'web', image: 'nginx:alpine', state: 'running'},
+            {name: 'worker', image: 'busybox', state: 'exited'},
+        ],
+    }));
+    const form = upsertDockerMonitorForm(
+        null, {}, 'category-select', false, 'host-select', 'container-select', ['local'], '(not configured)', 0,
+    );
+    Object.assign(form, {dockerHost: 'local', container: 'web'});
+
+    await form.loadContainers();
+
+    assert.deepEqual(tomSelect.options.web, {value: 'web', text: 'web', image: 'nginx:alpine', state: 'running'});
+    assert.deepEqual(tomSelect.options.worker, {value: 'worker', text: 'worker', image: 'busybox', state: 'exited'});
+});
+
+test('the container select is in its loading state only while the listing is in flight', async (t) => {
+    const tomSelect = stubContainerTomSelect(t);
+    let respond;
+    stubFetch(t, () => new Promise(resolve => respond = resolve));
+    const form = upsertDockerMonitorForm(
+        null, {}, 'category-select', false, 'host-select', 'container-select', ['local'], '(not configured)', 0,
+    );
+    Object.assign(form, {dockerHost: 'local', container: ''});
+
+    const loading = form.loadContainers();
+    assert.equal(tomSelect.loading, 1);
+    assert.ok(tomSelect.wrapperClasses.has('loading'));
+
+    respond(jsonResponse({available: true, containers: []}));
+    await loading;
+    assert.equal(tomSelect.loading, 0);
+    assert.ok(!tomSelect.wrapperClasses.has('loading'));
+});
+
+test('a late listing of a host that is not selected anymore is dropped', async (t) => {
+    const tomSelect = stubContainerTomSelect(t);
+    const pending = {};
+    stubFetch(t, (url) => new Promise(resolve => pending[url.includes('/slow/') ? 'slow' : 'fast'] = resolve));
+    const form = upsertDockerMonitorForm(
+        null, {}, 'category-select', false, 'host-select', 'container-select', ['slow', 'fast'], '(not configured)', 0,
+    );
+    Object.assign(form, {dockerHost: 'slow', container: ''});
+    const slowLoad = form.loadContainers();
+    form.dockerHost = 'fast';
+    const fastLoad = form.loadContainers();
+    assert.equal(tomSelect.loading, 2);
+
+    pending.fast(jsonResponse({available: true, containers: [{name: 'web', image: 'nginx', state: 'running'}]}));
+    await fastLoad;
+    // The other listing is still in flight, so the widget keeps loading
+    assert.ok(tomSelect.wrapperClasses.has('loading'));
+    pending.slow(jsonResponse({available: false, containers: []}));
+    await slowLoad;
+
+    assert.deepEqual(Object.keys(tomSelect.options), ['web']);
+    assert.equal(form.containerLoadFailed, false);
+    assert.equal(tomSelect.loading, 0);
+    assert.ok(!tomSelect.wrapperClasses.has('loading'));
+});
+
+test('switching the Docker host drops the container of the previous one, and switching back restores it', (t) => {
+    const tomSelect = stubContainerTomSelect(t);
+    let cleared = 0;
+    tomSelect.clear = () => cleared++;
+    const form = upsertDockerMonitorForm(
+        null, {}, 'category-select', false, 'host-select', 'container-select', ['homelab', 'local'], '(not configured)', 0,
+    );
+    form.errors = {};
+    let loads = 0;
+    form.loadContainers = () => loads++;
+    Object.assign(form, {dockerHost: 'homelab', container: 'bentopdf', storedDockerHost: 'homelab', storedContainer: 'bentopdf'});
+
+    form.dockerHost = 'local';
+    form.onDockerHostChanged();
+    assert.equal(form.container, '');
+    assert.equal(cleared, 1);
+
+    form.dockerHost = 'homelab';
+    form.onDockerHostChanged();
+    assert.equal(form.container, 'bentopdf');
+    assert.equal(loads, 2);
+});
+
+test('a Docker container picked on a new monitor is dropped when its host is switched', (t) => {
+    const tomSelect = stubContainerTomSelect(t);
+    let cleared = 0;
+    tomSelect.clear = () => cleared++;
+    const form = upsertDockerMonitorForm(
+        null, {}, 'category-select', false, 'host-select', 'container-select', ['homelab', 'local'], '(not configured)', 0,
+    );
+    form.errors = {};
+    form.loadContainers = () => {};
+    Object.assign(form, {dockerHost: 'local', container: 'web'});
+
+    form.dockerHost = 'homelab';
+    form.onDockerHostChanged();
+    assert.equal(form.container, '');
+    assert.equal(cleared, 1);
+
+    // Nothing to drop the second time
+    form.dockerHost = 'local';
+    form.onDockerHostChanged();
+    assert.equal(cleared, 1);
 });
 
 test('Push validators enforce interval, grace period and client secret rules', () => {

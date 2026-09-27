@@ -13,3 +13,8 @@ datasources:
 app-config:
   # No outbound update checks during the E2E run
   check-updates: false
+docker-hosts:
+  - name: local
+    url: unix:///var/run/kuvasz-e2e-not-a-real-docker.sock
+  - name: vps-1
+    url: tcp://127.0.0.1:1

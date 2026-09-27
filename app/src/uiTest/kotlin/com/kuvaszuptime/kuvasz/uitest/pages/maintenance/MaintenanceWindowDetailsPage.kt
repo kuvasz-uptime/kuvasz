@@ -14,6 +14,9 @@ class MaintenanceWindowDetailsPage(private val page: Page) {
 
     val toggleButton: Locator get() = page.getByTestId("toggle-maintenance-window-button")
 
+    // The heading refreshes itself in place, so its id must stay unique on the page
+    val headingElements: Locator get() = page.locator("#maintenance-window-detail-heading")
+
     // The live status dot in the header, refreshed via HTMX whenever the enabled state changes.
     fun statusIndicator(colorClass: String): Locator =
         page.locator("#maintenance-window-detail-heading .$colorClass")

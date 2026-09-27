@@ -64,6 +64,11 @@ internal fun FlowContent.navigation(
                                             link = "/dns-monitors",
                                             icon = Icon.CLOUD_QUESTION,
                                         ),
+                                        NavItem(
+                                            label = "Docker",
+                                            link = "/docker-monitors",
+                                            icon = Icon.BRAND_DOCKER,
+                                        ),
                                     )
                                 )
                                 navItem(

@@ -183,6 +183,7 @@ const pushMonitorApi = crudRequests('/api/v2/push-monitors', 'monitor');
 const icmpMonitorApi = crudRequests('/api/v2/icmp-monitors', 'monitor');
 const tcpMonitorApi = crudRequests('/api/v2/tcp-monitors', 'monitor');
 const dnsMonitorApi = crudRequests('/api/v2/dns-monitors', 'monitor');
+const dockerMonitorApi = crudRequests('/api/v2/docker-monitors', 'monitor');
 const statusPageApi = crudRequests('/api/v2/status-pages', 'status page');
 const maintenanceWindowApi = crudRequests('/api/v2/maintenance-windows', 'maintenance window');
 
@@ -193,6 +194,7 @@ const refreshPushMonitorDetailStatus = () => sendHtmxEvent('#push-monitor-detail
 const refreshIcmpMonitorDetailStatus = () => sendHtmxEvent('#icmp-monitor-detail-heading', 'refresh-monitor-detail-status');
 const refreshTcpMonitorDetailStatus = () => sendHtmxEvent('#tcp-monitor-detail-heading', 'refresh-monitor-detail-status');
 const refreshDnsMonitorDetailStatus = () => sendHtmxEvent('#dns-monitor-detail-heading', 'refresh-monitor-detail-status');
+const refreshDockerMonitorDetailStatus = () => sendHtmxEvent('#docker-monitor-detail-heading', 'refresh-monitor-detail-status');
 
 // Refreshes a monitor list by triggering an HTMX event
 const refreshHttpMonitorList = () => sendHtmxEvent('#http-monitors-list', 'refresh-monitor-list');
@@ -200,6 +202,7 @@ const refreshPushMonitorList = () => sendHtmxEvent('#push-monitors-list', 'refre
 const refreshIcmpMonitorList = () => sendHtmxEvent('#icmp-monitors-list', 'refresh-monitor-list');
 const refreshTcpMonitorList = () => sendHtmxEvent('#tcp-monitors-list', 'refresh-monitor-list');
 const refreshDnsMonitorList = () => sendHtmxEvent('#dns-monitors-list', 'refresh-monitor-list');
+const refreshDockerMonitorList = () => sendHtmxEvent('#docker-monitors-list', 'refresh-monitor-list');
 
 // Refreshes the status page list by triggering an HTMX event
 const refreshStatusPageList = () => sendHtmxEvent('#status-page-list', 'refresh-status-page-list');
@@ -260,6 +263,7 @@ const httpMonitorListItem = monitorListItem(httpMonitorApi, refreshHttpMonitorLi
 const icmpMonitorListItem = monitorListItem(icmpMonitorApi, refreshIcmpMonitorList);
 const tcpMonitorListItem = monitorListItem(tcpMonitorApi, refreshTcpMonitorList);
 const dnsMonitorListItem = monitorListItem(dnsMonitorApi, refreshDnsMonitorList);
+const dockerMonitorListItem = monitorListItem(dockerMonitorApi, refreshDockerMonitorList);
 const pushMonitorListItem = monitorListItem(pushMonitorApi, refreshPushMonitorList);
 
 const statusPageListItem = (statusPageId, isStatusPagePublic, clonedFields, editTitle) => ({
@@ -328,6 +332,7 @@ const pushMonitorDetails = monitorDetails(pushMonitorApi, refreshPushMonitorDeta
 const icmpMonitorDetails = monitorDetails(icmpMonitorApi, refreshIcmpMonitorDetailStatus, '/icmp-monitors');
 const tcpMonitorDetails = monitorDetails(tcpMonitorApi, refreshTcpMonitorDetailStatus, '/tcp-monitors');
 const dnsMonitorDetails = monitorDetails(dnsMonitorApi, refreshDnsMonitorDetailStatus, '/dns-monitors');
+const dockerMonitorDetails = monitorDetails(dockerMonitorApi, refreshDockerMonitorDetailStatus, '/docker-monitors');
 
 const statusPageDetails = (statusPageId, isStatusPagePublic) => ({
     statusPageId,
@@ -542,6 +547,8 @@ const metricsBlock = ({
     buildChartOptions,
     logsOf,
     toChartData,
+    // Series that start collapsed, still listed in the legend so they can be toggled on
+    initiallyHiddenSeries = [],
 }) => {
     return {
         isMonitorEnabled,
@@ -557,6 +564,8 @@ const metricsBlock = ({
         isPeriodLoading: false,
         // An ISO-8601 duration, bound to the period selector of the block
         period,
+        // The series are only added by the first update, so they cannot be collapsed before that
+        hasCollapsedInitialSeries: false,
 
         now() {
             return Date.now();
@@ -681,6 +690,14 @@ const metricsBlock = ({
                 // The axis spans the whole range, otherwise it would only fit the logs and cut off the newest markers
                 xaxis: {min: newData.range.start, max: newData.range.end},
             });
+            /*
+             Collapsed once, on the update that first puts the series on the chart. Doing it on every update would
+             undo a toggle the viewer made, and ApexCharts keeps the collapsed state across updates on its own.
+            */
+            if (!this.hasCollapsedInitialSeries && newData.series.length) {
+                this.hasCollapsedInitialSeries = true;
+                initiallyHiddenSeries.forEach(name => this.chart.hideSeries(name));
+            }
         },
     };
 };
@@ -781,6 +798,97 @@ const dnsMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, chart
     buildChartOptions: latencyChartOptions,
     logsOf: (rawData) => rawData.metricsLogs,
     toChartData: (logs, labels) => toLatencyChartData(logs, labels, nullableLatencyOf),
+});
+
+const BYTES_IN_MIB = 1048576;
+
+const nullableCpuOf = (item) => item.cpuUsagePercent !== null ? parseFloat(item.cpuUsagePercent) : null;
+const nullableMemoryMibOf = (item) =>
+    item.memoryUsageBytes !== null ? parseFloat((item.memoryUsageBytes / BYTES_IN_MIB).toFixed(1)) : null;
+const nullableMemoryLimitMibOf = (item) =>
+    item.memoryLimitBytes !== null ? parseFloat((item.memoryLimitBytes / BYTES_IN_MIB).toFixed(1)) : null;
+
+/*
+ A container's CPU and memory share one chart on two axes. Neither is capped the way a packet loss percentage is:
+ CPU goes above 100% on several cores, and the memory ceiling is whatever the container was given.
+*/
+const dockerResourceChartOptions = (chartLabels) => {
+    const options = baseAreaChartOptions(chartLabels.noData, null);
+    return {
+        ...options,
+        chart: {...options.chart, type: "line"},
+        colors: [
+            tabler.tabler.getColor("primary"),
+            tabler.tabler.getColor("green"),
+            tabler.tabler.getColor("red"),
+        ],
+        fill: {
+            type: "solid",
+            opacity: [0.16, 1, 1],
+        },
+        // The ceiling is a boundary rather than a measurement, so it is dashed instead of drawn like the readings
+        stroke: {...options.stroke, width: [2, 2, 1], dashArray: [0, 0, 4]},
+        tooltip: {
+            ...options.tooltip,
+            shared: true,
+            y: [
+                {formatter: formatWithUnit("%")},
+                {formatter: formatWithUnit(" MiB")},
+                {formatter: formatWithUnit(" MiB")},
+            ],
+        },
+        /*
+         Three series on two scales: naming the memory axis again for the limit makes it share the usage's scale
+         instead of getting one of its own, and the duplicate is hidden so only two axes are drawn.
+        */
+        yaxis: [
+            {
+                seriesName: chartLabels.cpuUsage,
+                min: 0,
+                labels: {padding: 4, formatter: (val) => Math.round(val) + "%"},
+            },
+            {
+                seriesName: chartLabels.memoryUsage,
+                opposite: true,
+                min: 0,
+                labels: {padding: 4, formatter: (val) => Math.round(val) + " MiB"},
+            },
+            {
+                seriesName: chartLabels.memoryUsage,
+                opposite: true,
+                min: 0,
+                show: false,
+            },
+        ],
+        legend: {
+            show: true,
+        },
+    };
+};
+
+const dockerMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, chartLabels, period) => metricsBlock({
+    monitorId,
+    isMonitorEnabled,
+    uptimeCheckInterval,
+    chartLabels,
+    period,
+    statsPath: 'docker-monitors',
+    chartElementId: 'docker-monitor-details-metrics-chart',
+    buildChartOptions: dockerResourceChartOptions,
+    logsOf: (rawData) => rawData.metricsLogs,
+    toChartData: (logs, labels) => ({
+        labels: logs.map(item => new Date(item.createdAt).toString()),
+        series: [
+            {name: labels.cpuUsage, type: 'area', data: logs.map(nullableCpuOf)},
+            {name: labels.memoryUsage, type: 'line', data: logs.map(nullableMemoryMibOf)},
+            {name: labels.memoryLimit, type: 'line', data: logs.map(nullableMemoryLimitMibOf)},
+        ],
+    }),
+    /*
+     A container started without a memory limit reports the host's whole RAM as one, which would dwarf the usage
+     and flatten it against the bottom of the scale. So the ceiling stays off until it is asked for.
+    */
+    initiallyHiddenSeries: [chartLabels.memoryLimit],
 });
 
 const hasNonNullValue = (obj) => Object.values(obj).some(value => value !== null);
@@ -909,7 +1017,16 @@ const upsertForm = ({api, entity, errorMessages, pagePath, entityLabel}) => ({
 });
 
 // Shared by every monitor type, the forms provide populateTypeFields, validateTypeFields and typeRequestBody
-const monitorForm = ({api, pagePath, monitor, errorMessages, categorySelectId, isNameLocked, globalIntegrationCount}) => ({
+const monitorForm = ({
+    api,
+    pagePath,
+    monitor,
+    errorMessages,
+    categorySelectId,
+    isNameLocked,
+    globalIntegrationCount,
+    defaultIgnoreConnectivityCheck = false,
+}) => ({
     ...upsertForm({api, entity: monitor, errorMessages, pagePath, entityLabel: 'monitor'}),
     globalIntegrationCount: globalIntegrationCount || 0,
     // The name of a monitor can't be changed while it's on a status page that is read-only
@@ -930,7 +1047,7 @@ const monitorForm = ({api, pagePath, monitor, errorMessages, categorySelectId, i
         this.failureCountThreshold = source?.failureCountThreshold || 1;
         this.integrations = source?.integrations || [];
         this.category = source?.category || null;
-        this.ignoreConnectivityCheck = source?.ignoreConnectivityCheck ?? false;
+        this.ignoreConnectivityCheck = source?.ignoreConnectivityCheck ?? defaultIgnoreConnectivityCheck;
         resetCategorySelect(categorySelectId, this.category);
         this.populateTypeFields(source);
         this.errors = {};
@@ -1483,6 +1600,196 @@ const upsertDnsMonitorForm = (monitor, errorMessages, categorySelectId, isNameLo
     },
 });
 
+/*
+ The Docker monitor form. Its two type specific fields are selects rather than free text: the host can only come
+ from the YAML config, and the container is offered by the daemon. Both still keep a value that is no longer on
+ offer, because a host can be removed from the config and a container can be gone from the daemon, and neither
+ should be silently rewritten by an edit that does not touch the field.
+*/
+const upsertDockerMonitorForm = (
+    monitor,
+    errorMessages,
+    categorySelectId,
+    isNameLocked,
+    hostSelectId,
+    containerSelectId,
+    configuredDockerHosts,
+    notConfiguredHostSuffix,
+    globalIntegrationCount,
+) => ({
+    ...monitorForm({
+        api: dockerMonitorApi,
+        pagePath: '/docker-monitors',
+        monitor,
+        errorMessages,
+        categorySelectId,
+        isNameLocked,
+        globalIntegrationCount,
+        // Mirrors DockerMonitorDefaults.IGNORE_CONNECTIVITY_CHECK: a container reached over a local socket does
+        // not care whether Kuvasz itself has internet
+        defaultIgnoreConnectivityCheck: true,
+    }),
+
+    configuredDockerHosts: configuredDockerHosts || [],
+    containerLoadFailed: false,
+    isModalOpen: false,
+    storedDockerHost: '',
+    storedContainer: '',
+
+    populateTypeFields(source) {
+        this.dockerHost = source?.dockerHost || '';
+        this.container = source?.container || '';
+        this.uptimeCheckInterval = source?.uptimeCheckInterval || 60;
+        this.timeoutMs = source?.timeoutMs || 5000;
+        this.metricsHistoryEnabled = source?.metricsHistoryEnabled ?? false;
+        this.containerLoadFailed = false;
+
+        /*
+         The list page edits every monitor through one shared modal, so a dangling host or a container the daemon
+         no longer reports has to be re-offered on each populate, not only when the page was rendered for it.
+        */
+        /*
+         Captured before the reset: clearing the widget is what re-binds it to Alpine, so reading the values back
+         out of `this` afterwards would be reading whatever the clear left behind.
+        */
+        const host = this.dockerHost;
+        const container = this.container;
+        resetTomSelectState(hostSelectId, (ts) => {
+            this.configuredDockerHosts.forEach(configured => ts.addOption({value: configured, text: configured}));
+            if (host) {
+                ts.addOption({
+                    value: host,
+                    text: this.configuredDockerHosts.includes(host) ? host : `${host} ${notConfiguredHostSuffix}`,
+                });
+                ts.addItem(host, true);
+            }
+        });
+        resetTomSelectState(containerSelectId, (ts) => {
+            if (container) {
+                ts.addOption({value: container, text: container});
+                ts.addItem(container, true);
+            }
+        });
+        this.dockerHost = host;
+        this.container = container;
+        this.storedDockerHost = host;
+        this.storedContainer = container;
+        // A list row is loaded into a modal that is already open, while a closing modal must not list anything
+        if (this.isModalOpen) {
+            this.loadContainers();
+        }
+    },
+
+    /*
+     The containers are listed when the modal opens, not when it's rendered: every details page renders this form,
+     and asking the daemon on each page view would cost a request nobody may need.
+    */
+    watchModal() {
+        const modal = document.getElementById(containerSelectId)?.closest('.modal');
+        if (!modal) {
+            return;
+        }
+        modal.addEventListener('show.bs.modal', () => {
+            this.isModalOpen = true;
+            this.loadContainers();
+        });
+        // Not hidden.bs.modal: the reset that follows the close has to see the modal as closed already
+        modal.addEventListener('hide.bs.modal', () => this.isModalOpen = false);
+    },
+
+    /*
+     Best effort: an unreachable daemon, or a socket proxy that does not allow the listing, leaves the operator
+     typing the container name instead of picking it. It must never block the form.
+    */
+    async loadContainers() {
+        const host = this.dockerHost;
+        const select = document.getElementById(containerSelectId);
+        const tomSelect = select?.tomselect;
+        if (!host || !tomSelect) {
+            return;
+        }
+        // Mirrors TomSelect's own load(), so a search typed meanwhile shows the loading template, not the empty one
+        tomSelect.loading++;
+        tomSelect.wrapper.classList.add(tomSelect.settings.loadingClass);
+        const listing = await fetchDockerContainers(host);
+        tomSelect.loading = Math.max(tomSelect.loading - 1, 0);
+        if (!tomSelect.loading) {
+            tomSelect.wrapper.classList.remove(tomSelect.settings.loadingClass);
+        }
+        // A slow listing of a host that is not selected anymore must not overwrite the current host's containers
+        if (this.dockerHost !== host) {
+            tomSelect.refreshOptions(false);
+            return;
+        }
+        this.containerLoadFailed = !listing.available;
+        // The current value stays on offer whatever the daemon says about it
+        const keptValue = this.container;
+        tomSelect.clearOptions();
+        listing.containers.forEach(container => {
+            tomSelect.addOption({value: container.name, text: container.name, image: container.image, state: container.state});
+        });
+        if (keptValue) {
+            // addOption() replaces an existing option, which would strip the listed one of its details
+            if (!tomSelect.options[keptValue]) {
+                tomSelect.addOption({value: keptValue, text: keptValue});
+            }
+            tomSelect.addItem(keptValue, true);
+            // clearOptions() drops the selection silently, so Alpine has to be told it is still there
+            this.container = keptValue;
+        }
+        tomSelect.refreshOptions(false);
+    },
+
+    onDockerHostChanged() {
+        this.validateDockerHost();
+        // A container only exists on its own host, so switching back to the monitor's host restores the monitor's one
+        const container = this.dockerHost === this.storedDockerHost ? this.storedContainer : '';
+        if (container !== this.container) {
+            document.getElementById(containerSelectId)?.tomselect?.clear(true);
+            this.container = container;
+        }
+        this.loadContainers();
+    },
+
+    validateTypeFields() {
+        this.validateDockerHost();
+        this.validateContainer();
+        this.validateUptimeCheckInterval();
+        this.validateTimeoutMs();
+    },
+
+    validateDockerHost() {
+        // Only an existing monitor may keep a host that was removed from the config since, a clone of it may not
+        const isDangling = this.dockerHost && !this.isUpdate && !this.configuredDockerHosts.includes(this.dockerHost);
+        this.errors.dockerHost = isDangling
+            ? this.errorMessages.dockerHostNotConfigured
+            : blankError(this.dockerHost, this.errorMessages.dockerHostRequired);
+    },
+
+    validateContainer() {
+        this.errors.container = blankError(this.container, this.errorMessages.containerRequired);
+    },
+
+    validateUptimeCheckInterval() {
+        this.errors.uptimeCheckInterval =
+            rangeError(this.uptimeCheckInterval, 5, Infinity, this.errorMessages.uptimeCheckIntervalInvalid);
+    },
+
+    validateTimeoutMs() {
+        this.errors.timeoutMs = rangeError(this.timeoutMs, 1, 30000, this.errorMessages.timeoutMsInvalid);
+    },
+
+    typeRequestBody() {
+        return {
+            dockerHost: this.dockerHost,
+            container: this.container,
+            uptimeCheckInterval: this.uptimeCheckInterval,
+            timeoutMs: this.timeoutMs,
+            metricsHistoryEnabled: this.metricsHistoryEnabled,
+        };
+    },
+});
+
 const upsertStatusPageForm = (
     statusPage,
     errorMessages,
@@ -1657,6 +1964,77 @@ const loadCategoryOptions = (tomSelect) => {
 };
 
 /*
+ Loads the containers of a host. Returns null when the listing could not be produced at all, which the form shows
+ as a hint, as opposed to an empty array, which is a host that genuinely runs nothing.
+*/
+const fetchDockerContainers = async (dockerHost) => {
+    const unavailable = {available: false, containers: []};
+    try {
+        const response = await fetch(`/api/internal/docker-hosts/${encodeURIComponent(dockerHost)}/containers`);
+        return response.ok ? await response.json() : unavailable;
+    } catch (error) {
+        console.error('Error fetching the containers of the Docker host:', error);
+        return unavailable;
+    }
+};
+
+/*
+ The Docker host select. Its options are the configured hosts, which only the YAML config can define, so there is
+ nothing to create here: a typo would be a monitor that can never come up.
+*/
+const initDockerHostSelect = (selector) => {
+    new TomSelect(selector, {
+        create: false,
+        persist: false,
+        maxItems: 1,
+    });
+};
+
+const dockerContainerStateBadgeClass = (state) => {
+    switch (state) {
+        case 'running':
+            return 'bg-green-lt text-green-lt-fg';
+        case 'paused':
+        case 'restarting':
+            return 'bg-orange-lt text-orange-lt-fg';
+        case 'exited':
+        case 'dead':
+            return 'bg-red-lt text-red-lt-fg';
+        default:
+            return 'bg-secondary-lt text-secondary-lt-fg';
+    }
+};
+
+// Only the opened dropdown shows the details, the selected item keeps the default rendering of the bare name
+const renderDockerContainerOption = (data, escape) => {
+    const state = data.state
+        ? `<span class="badge ms-2 ${dockerContainerStateBadgeClass(data.state)}">${escape(data.state)}</span>`
+        : '';
+    const image = data.image ? `<div class="text-secondary small">${escape(data.image)}</div>` : '';
+    return `<div><div>${escape(data.text)}${state}</div>${image}</div>`;
+};
+
+/*
+ The container select. Unlike the host it does accept a typed in value, because the listing is best effort and a
+ container may simply not exist yet when the monitor is set up.
+*/
+const initDockerContainerSelect = (selector, loadingLabel, noResultsLabel) => {
+    new TomSelect(selector, {
+        create: true,
+        persist: false,
+        maxItems: 1,
+        plugins: ['clear_button'],
+        loadingClass: 'loading',
+        render: {
+            option: renderDockerContainerOption,
+            option_create: (data, escape) => `<div class="create"><strong>${escape(data.input)}</strong></div>`,
+            loading: () => `<div class="no-results">${loadingLabel}</div>`,
+            no_results: () => `<div class="no-results">${noResultsLabel}</div>`,
+        },
+    });
+};
+
+/*
  The single value category select of the monitor forms: it offers the already existing categories with an
  autocomplete, but a brand new one can be typed in as well.
 */
@@ -1720,7 +2098,7 @@ const renderMonitorOption = (data, escape) => {
     const parts = splitWithLimit(data.value, ':', 2);
     const type = parts[0];
     const name = parts[1];
-    const badgeColor = type === 'http' ? 'bg-blue-lt text-blue-lt-fg' : type === 'push' ? 'bg-red-lt text-red-lt-fg' : type === 'icmp' ? 'bg-orange-lt text-orange-lt-fg' : type === 'tcp' ? 'bg-purple-lt text-purple-lt-fg' : type === 'dns' ? 'bg-cyan-lt text-cyan-lt-fg' : '';
+    const badgeColor = type === 'http' ? 'bg-blue-lt text-blue-lt-fg' : type === 'push' ? 'bg-red-lt text-red-lt-fg' : type === 'icmp' ? 'bg-orange-lt text-orange-lt-fg' : type === 'tcp' ? 'bg-purple-lt text-purple-lt-fg' : type === 'dns' ? 'bg-cyan-lt text-cyan-lt-fg' : type === 'docker' ? 'bg-teal-lt text-teal-lt-fg' : '';
     return `<div><span class="badge me-2 ${badgeColor}">${escape(type.toUpperCase())}</span>${escape(name)}</div>`;
 };
 
@@ -1795,6 +2173,9 @@ const importForm = (config) => {
                     break;
                 case 'DNS':
                     typeLabel = this.labels.typeDnsLabel;
+                    break;
+                case 'DOCKER':
+                    typeLabel = this.labels.typeDockerLabel;
                     break;
                 default:
                     typeLabel = typeResult.monitorType;
@@ -2157,11 +2538,17 @@ if (typeof module !== 'undefined' && module.exports) {
         upsertIcmpMonitorForm,
         upsertTcpMonitorForm,
         upsertDnsMonitorForm,
+        upsertDockerMonitorForm,
         upsertStatusPageForm,
         upsertMaintenanceWindowForm,
         httpMetricsBlock,
         icmpMetricsBlock,
         tcpMetricsBlock,
         dnsMetricsBlock,
+        dockerMetricsBlock,
+        fetchDockerContainers,
+        initDockerHostSelect,
+        initDockerContainerSelect,
+        renderDockerContainerOption,
     };
 }

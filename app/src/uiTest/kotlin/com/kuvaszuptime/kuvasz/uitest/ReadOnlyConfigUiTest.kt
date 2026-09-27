@@ -83,6 +83,22 @@ class ReadOnlyConfigUiTest : UiTestSpec() {
             )
         }
 
+        // Only the name is asserted as a field: the two type specific ones are TomSelects rather than inputs, and
+        // their disabled state is covered by the Docker form specs
+        "YAML-configured Docker monitors are read-only on the list, detail page and config modal" {
+            val page = newPage()
+            val list = ListReadOnlyView(page, "/docker-monitors")
+            list.navigate()
+            assertListIsReadOnly(list, "yaml-docker-monitor")
+
+            assertConfigIsReadOnly(
+                page,
+                list,
+                "yaml-docker-monitor",
+                "name" to "yaml-docker-monitor",
+            )
+        }
+
         "YAML-configured DNS monitors are read-only on the list, detail page and config modal" {
             val page = newPage()
             val list = ListReadOnlyView(page, "/dns-monitors")

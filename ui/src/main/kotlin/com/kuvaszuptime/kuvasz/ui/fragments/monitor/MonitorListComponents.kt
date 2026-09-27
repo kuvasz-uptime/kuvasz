@@ -15,7 +15,8 @@ import kotlinx.html.stream.*
 internal fun TR.monitorNameCell(
     monitor: MonitorDetailsDto,
     typeUiConfig: MonitorTypeUiConfig,
-    tooltipTitle: String? = null
+    tooltipTitle: String? = null,
+    nameBadge: FlowContent.() -> Unit = {},
 ) {
     td {
         a(href = typeUiConfig.detailsPath(monitor.id)) {
@@ -26,6 +27,7 @@ internal fun TR.monitorNameCell(
                 +monitor.name.abbreviate(MONITOR_NAME_MAX_LENGTH)
             }
         }
+        nameBadge()
     }
 }
 
@@ -40,6 +42,8 @@ internal fun <T : MonitorDetailsDto> renderMonitorList(
     columns: List<MonitorListColumn<T>>,
     // The tooltip of the name cell, for the types that have a target worth showing without opening the monitor
     nameTooltip: (T) -> String? = { null },
+    // Rendered next to the name, for the types that have something about the monitor to flag
+    nameBadge: FlowContent.(T) -> Unit = {},
 ): String =
     createHTML(prettyPrint = false, xhtmlCompatible = false).run {
         val isReadOnlyMode = editabilityState.areMonitorsReadOnly(typeUiConfig.type)
@@ -79,7 +83,7 @@ internal fun <T : MonitorDetailsDto> renderMonitorList(
                     }
                     tbody {
                         monitors.forEach { monitor ->
-                            monitorListRow(monitor, typeUiConfig, editabilityState, columns, nameTooltip)
+                            monitorListRow(monitor, typeUiConfig, editabilityState, columns, nameTooltip, nameBadge)
                         }
                     }
                 }
@@ -93,6 +97,7 @@ private fun <T : MonitorDetailsDto> TBODY.monitorListRow(
     editabilityState: AppGlobals.EditabilityState,
     columns: List<MonitorListColumn<T>>,
     nameTooltip: (T) -> String?,
+    nameBadge: FlowContent.(T) -> Unit,
 ) {
     tr {
         testId(typeUiConfig.testId("row"))
@@ -113,7 +118,7 @@ private fun <T : MonitorDetailsDto> TBODY.monitorListRow(
             |)
             """.trimMargin()
         )
-        monitorNameCell(monitor, typeUiConfig, nameTooltip(monitor))
+        monitorNameCell(monitor, typeUiConfig, nameTooltip(monitor)) { nameBadge(monitor) }
         td {
             classes(TEXT_CENTER)
             uptimeBadgeOfMonitor(monitor, withTooltip = true)

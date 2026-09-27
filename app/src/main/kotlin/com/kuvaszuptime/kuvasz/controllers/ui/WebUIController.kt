@@ -7,6 +7,8 @@ import com.kuvaszuptime.kuvasz.repositories.SettingsRepository
 import com.kuvaszuptime.kuvasz.repositories.SharedMonitorRepository
 import com.kuvaszuptime.kuvasz.security.ui.UnauthenticatedOnly
 import com.kuvaszuptime.kuvasz.security.ui.WebSecured
+import com.kuvaszuptime.kuvasz.services.docker.DockerHostRegistry
+import com.kuvaszuptime.kuvasz.services.docker.client.DockerApiClient
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.ui.fragments.dashboard.*
 import com.kuvaszuptime.kuvasz.ui.fragments.layout.*
@@ -30,6 +32,8 @@ class WebUIController(
     private val integrationsRepository: IntegrationRepository,
     private val incidentRepository: IncidentRepository,
     private val sharedMonitorRepository: SharedMonitorRepository,
+    private val dockerHostRegistry: DockerHostRegistry?,
+    private val dockerApiClient: DockerApiClient?,
 ) {
 
     companion object {
@@ -67,7 +71,11 @@ class WebUIController(
     @WebSecured
     @Produces(MediaType.TEXT_HTML)
     @ExecuteOn(TaskExecutors.BLOCKING)
-    fun settings() = renderSettings(appGlobals, settingsRepository.getSettings())
+    fun settings() = renderSettings(
+        globals = appGlobals,
+        settings = settingsRepository.getSettings(),
+        dockerHosts = dockerHostRegistry?.getHostDtos(dockerApiClient).orEmpty(),
+    )
 
     @Get("/integrations")
     @WebSecured

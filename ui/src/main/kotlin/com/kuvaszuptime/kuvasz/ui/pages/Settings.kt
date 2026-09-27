@@ -2,6 +2,8 @@ package com.kuvaszuptime.kuvasz.ui.pages
 
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
+import com.kuvaszuptime.kuvasz.models.dto.docker.DockerHostAuthMethod
+import com.kuvaszuptime.kuvasz.models.dto.docker.DockerHostDto
 import com.kuvaszuptime.kuvasz.models.dto.settings.SettingsDto
 import com.kuvaszuptime.kuvasz.models.settings.ConnectivityState
 import com.kuvaszuptime.kuvasz.ui.*
@@ -24,7 +26,7 @@ private const val OIDC_WEB_ORIGIN_ID = "oidc-web-origin"
 private const val OIDC_POST_LOGOUT_REDIRECT_PATH = "/auth/logout"
 private const val OIDC_CALLBACK_PATH = "/oauth/callback/oidc"
 
-fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
+fun renderSettings(globals: AppGlobals, settings: SettingsDto, dockerHosts: List<DockerHostDto>) =
     withLayout(
         globals,
         title = Messages.settings(),
@@ -102,6 +104,10 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                     settingsToggle(
                         label = Messages.dnsMonitorsReadOnlyMode(),
                         checked = settings.app.editabilityState.areDnsMonitorsReadOnly
+                    )
+                    settingsToggle(
+                        label = Messages.dockerMonitorsReadOnlyMode(),
+                        checked = settings.app.editabilityState.areDockerMonitorsReadOnly
                     )
                     settingsToggle(
                         label = Messages.statusPagesReadOnlyMode(),
@@ -268,6 +274,23 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                     }
                 }
             }
+            // Docker hosts
+            settingsCard(
+                title = Messages.dockerHostsSettings(),
+                icon = Icon.BRAND_DOCKER,
+            ) {
+                div {
+                    classes(DIVIDE_Y)
+                    testId("docker-hosts-settings")
+                    if (dockerHosts.isEmpty()) {
+                        span {
+                            classes(TEXT_SECONDARY)
+                            +Messages.notConfigured()
+                        }
+                    }
+                    dockerHosts.forEach { dockerHostSettingsRow(it) }
+                }
+            }
             // Exporter settings
             settingsCard(
                 title = Messages.exporterSettings(),
@@ -333,6 +356,22 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                                     multiSettingsToggle(
                                         label = Messages.dnsLatestLatency(),
                                         checked = metersConfig.dnsLatestLatency
+                                    )
+                                    multiSettingsToggle(
+                                        label = Messages.dockerUptimeStatus(),
+                                        checked = metersConfig.dockerUptimeStatus
+                                    )
+                                    multiSettingsToggle(
+                                        label = Messages.dockerLatestLatency(),
+                                        checked = metersConfig.dockerLatestLatency
+                                    )
+                                    multiSettingsToggle(
+                                        label = Messages.dockerLatestCpuUsage(),
+                                        checked = metersConfig.dockerLatestCpuUsage
+                                    )
+                                    multiSettingsToggle(
+                                        label = Messages.dockerLatestMemoryUsage(),
+                                        checked = metersConfig.dockerLatestMemoryUsage
                                     )
                                 }
                             }
@@ -413,6 +452,7 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto) =
                     "typePushLabel" to Messages.monitorImportResultTypePush(),
                     "typeIcmpLabel" to Messages.monitorImportResultTypeIcmp(),
                     "typeTcpLabel" to Messages.monitorImportResultTypeTcp(),
+                    "typeDockerLabel" to Messages.monitorImportResultTypeDocker(),
                     "typeDnsLabel" to Messages.monitorImportResultTypeDns(),
                     "countReceivedLabel" to Messages.monitorImportResultCountReceived(),
                     "countImportedLabel" to Messages.monitorImportResultCountImported(),
@@ -675,6 +715,29 @@ private fun FlowContent.importDropdownItem(
     }
 }
 
+
+private fun FlowContent.dockerHostSettingsRow(host: DockerHostDto) {
+    div {
+        testId("docker-host-settings-row")
+        settingsLabel(label = host.name, value = host.authMethod.label(), multi = true) {
+            span {
+                classes(BADGE, MS_2)
+                testId("docker-host-api-version")
+                host.apiVersion?.let { +Messages.dockerHostApiVersion(it) } ?: run {
+                    tooltip(Messages.dockerHostApiVersionUnknownTooltip())
+                    +Messages.dockerHostApiVersionUnknown()
+                }
+            }
+        }
+    }
+}
+
+private fun DockerHostAuthMethod.label(): String = when (this) {
+    DockerHostAuthMethod.UNIX_SOCKET -> Messages.dockerHostAuthUnixSocket()
+    DockerHostAuthMethod.NONE -> Messages.dockerHostAuthNone()
+    DockerHostAuthMethod.TLS -> Messages.dockerHostAuthTls()
+    DockerHostAuthMethod.MUTUAL_TLS -> Messages.dockerHostAuthMutualTls()
+}
 
 private fun ConnectivityState.label(): String = when (this) {
     ConnectivityState.UP -> Messages.connectivityStateUp()

@@ -256,8 +256,11 @@ tasks.withType<JavaExec> {
         "-Xms64M",
         "-Xmx192M",
     )
-    systemProperty("micronaut.environments", "macos") // TODO revisit
-    systemProperty("micronaut.config.files", file("../localdev/application-dev.yml"))
+    systemProperty("micronaut.environments", "macos")
+    val localConfigFiles = listOf("application-dev.yml", "application-local.yml")
+        .map { file("../localdev/$it") }
+        .filter { it.exists() }
+    systemProperty("micronaut.config.files", localConfigFiles.joinToString(","))
 }
 
 tasks.withType<ShadowJar> {

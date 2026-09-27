@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.http.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.icmp.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.push.*
+import com.kuvaszuptime.kuvasz.ui.fragments.monitor.docker.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.tcp.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.dns.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
@@ -88,6 +89,19 @@ fun renderDashboard(globals: AppGlobals) =
         }
         div {
             hx {
+                get("/docker-monitors/fragments/stats")
+                trigger {
+                    load()
+                    every(30.seconds)
+                    event("refresh-dashboard")
+                }
+                onSwapReinitTooltips()
+            }
+            id = "docker-monitoring-dashboard"
+            htmxLoadingIndicator()
+        }
+        div {
+            hx {
                 get("/dns-monitors/fragments/stats")
                 trigger {
                     load()
@@ -106,6 +120,7 @@ private fun HtmlBlockTag.dashboardHeader(globals: AppGlobals) {
     val createPushModalId = "create-push-monitor-modal"
     val createIcmpModalId = "create-icmp-monitor-modal"
     val createTcpModalId = "create-tcp-monitor-modal"
+    val createDockerModalId = "create-docker-monitor-modal"
     val createDnsModalId = "create-dns-monitor-modal"
     div {
         classes(CONTAINER_XL)
@@ -185,6 +200,16 @@ private fun HtmlBlockTag.dashboardHeader(globals: AppGlobals) {
                                         }
                                     }
                                     button {
+                                        val isReadOnly = globals.editabilityState.areDockerMonitorsReadOnly()
+                                        classes(DROPDOWN_ITEM)
+                                        modalOpener(createDockerModalId)
+                                        disabled = isReadOnly
+                                        +Messages.dockerMonitor()
+                                        if (isReadOnly) {
+                                            readOnlyBadge(Messages.readOnlyDockerMonitors())
+                                        }
+                                    }
+                                    button {
                                         val isReadOnly = globals.editabilityState.areDnsMonitorsReadOnly()
                                         classes(DROPDOWN_ITEM)
                                         modalOpener(createDnsModalId)
@@ -220,5 +245,8 @@ private fun HtmlBlockTag.dashboardHeader(globals: AppGlobals) {
     }
     if (!globals.editabilityState.areDnsMonitorsReadOnly()) {
         dnsMonitorCreateUpdateModal(modalId = createDnsModalId, monitor = null, globals)
+    }
+    if (!globals.editabilityState.areDockerMonitorsReadOnly()) {
+        dockerMonitorCreateUpdateModal(modalId = createDockerModalId, monitor = null, globals)
     }
 }

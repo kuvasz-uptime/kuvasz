@@ -17,7 +17,12 @@ private val DEFAULT_METRICS_PERIOD: Duration = Duration.ofDays(UIDefaults.MONITO
  * A single card of a metrics row, rendered only when the Alpine.js property behind [propertyName] has a value.
  * [unit] is appended to the value as-is, so it has to carry its own leading space when it needs one.
  */
-internal fun FlowContent.metricStatCard(propertyName: String, label: String, unit: String) {
+internal fun FlowContent.metricStatCard(
+    propertyName: String,
+    label: String,
+    unit: String,
+    valueExpression: String = propertyName,
+) {
     templateTag {
         xIf("$propertyName != null")
         div {
@@ -32,7 +37,7 @@ internal fun FlowContent.metricStatCard(propertyName: String, label: String, uni
                     }
                     h4 {
                         classes(M_0)
-                        xText("$propertyName + '$unit'")
+                        xText("$valueExpression + '$unit'")
                     }
                 }
             }
@@ -48,20 +53,78 @@ private fun FlowContent.metricStatCards(
     propertyPrefix: String,
     propertySuffix: String,
     unit: String,
+    extraCards: List<Pair<String, String>> = PERCENTILE_CARDS,
+    valueExpression: (String) -> String = { it },
 ) {
     div {
         classes(ROW, ROW_CARDS, MB_3)
+        val averageProperty = "$propertyPrefix.average$propertySuffix"
         metricStatCard(
-            propertyName = "$propertyPrefix.average$propertySuffix",
+            propertyName = averageProperty,
             label = Messages.average(),
             unit = unit,
+            valueExpression = valueExpression(averageProperty),
         )
-        listOf("min" to "Min", "max" to "Max", "p90" to "P90", "p95" to "P95", "p99" to "P99")
-            .forEach { (property, label) ->
-                metricStatCard(propertyName = "$propertyPrefix.$property$propertySuffix", label = label, unit = unit)
-            }
+        (MIN_MAX_CARDS + extraCards).forEach { (property, label) ->
+            val propertyName = "$propertyPrefix.$property$propertySuffix"
+            metricStatCard(
+                propertyName = propertyName,
+                label = label,
+                unit = unit,
+                valueExpression = valueExpression(propertyName),
+            )
+        }
     }
 }
+
+private val MIN_MAX_CARDS = listOf("min" to "Min", "max" to "Max")
+private val PERCENTILE_CARDS = listOf("p90" to "P90", "p95" to "P95", "p99" to "P99")
+
+/**
+ * The container's CPU and memory in one row: three cards each, which is exactly the six a row fits from `md` up.
+ *
+ * The CPU figures stay fractional, because a container idling below a whole percent would otherwise read as a flat
+ * zero, and they go above 100% on several cores. The memory is stored in bytes and shown in MiB, the unit an
+ * operator sizing a container actually thinks in. Each card names its measurement, since the two sit side by side.
+ */
+internal fun FlowContent.dockerResourceMetricCards() {
+    div {
+        classes(ROW, ROW_CARDS, MB_3)
+        resourceCards(
+            propertyPrefix = "lastResponse?.cpuStats?",
+            propertySuffix = "CpuUsagePercentage",
+            labelPrefix = Messages.cpu(),
+            unit = "%",
+        )
+        resourceCards(
+            propertyPrefix = "lastResponse?.memoryStats?",
+            propertySuffix = "MemoryUsageBytes",
+            labelPrefix = Messages.memory(),
+            unit = " MiB",
+            valueExpression = { "($it / $BYTES_IN_MIB).toFixed(1)" },
+        )
+    }
+}
+
+private fun FlowContent.resourceCards(
+    propertyPrefix: String,
+    propertySuffix: String,
+    labelPrefix: String,
+    unit: String,
+    valueExpression: (String) -> String = { it },
+) {
+    (listOf("average" to Messages.average()) + MIN_MAX_CARDS).forEach { (property, label) ->
+        val propertyName = "$propertyPrefix.$property$propertySuffix"
+        metricStatCard(
+            propertyName = propertyName,
+            label = "$labelPrefix - $label",
+            unit = unit,
+            valueExpression = valueExpression(propertyName),
+        )
+    }
+}
+
+private const val BYTES_IN_MIB = 1048576
 
 internal fun FlowContent.latencyMetricCards() =
     metricStatCards(
@@ -165,6 +228,9 @@ internal fun FlowContent.monitorMetricsBlock(
             |incidentResolved: "${Messages.chartIncidentResolved()}",
             |latency: "${Messages.latencyBlockTitle()}",
             |packetLoss: "${Messages.packetLossBlockTitle()}",
+            |cpuUsage: "${Messages.dockerCpuUsageBlockTitle()}",
+            |memoryUsage: "${Messages.dockerMemoryUsageBlockTitle()}",
+            |memoryLimit: "${Messages.dockerMemoryLimit()}",
             |},
             |"$DEFAULT_METRICS_PERIOD"
             |)

@@ -19,6 +19,12 @@ class PushMonitorDetailsPage(private val page: Page) {
 
     val configureButton: Locator get() = page.getByTestId("configure-button")
 
+    // The heading refreshes itself in place, so its id must stay unique on the page
+    val headingElements: Locator get() = page.locator("#push-monitor-detail-heading")
+
+    // Swapped out-of-band by every heading refresh
+    val uptimeSummary: Locator get() = page.locator("#push-monitor-details-uptime-summary")
+
     // The badge in the header showing the monitor's category, if it has one
     val categoryBadge: Locator get() = page.getByTestId("monitor-category-badge")
 
