@@ -1962,8 +1962,9 @@ const loadCategoryOptions = (tomSelect) => {
 };
 
 /*
- Loads the containers of a host. Returns null when the listing could not be produced at all, which the form shows
- as a hint, as opposed to an empty array, which is a host that genuinely runs nothing.
+ Loads the containers of a host. A listing that could not be produced at all comes back with `available: false`,
+ which the form shows as a hint, as opposed to an available but empty listing, which is a host that genuinely runs
+ nothing.
 */
 const fetchDockerContainers = async (dockerHost) => {
     const unavailable = {available: false, containers: []};
