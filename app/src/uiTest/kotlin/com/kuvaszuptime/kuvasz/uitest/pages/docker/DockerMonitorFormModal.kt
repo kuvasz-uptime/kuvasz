@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.uitest.pages.docker
 import com.kuvaszuptime.kuvasz.uitest.pages.common.ModalView
 import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
+import com.microsoft.playwright.TimeoutError
 
 /**
  * The Alpine.js-driven create/update modal for Docker monitors.
@@ -88,19 +89,31 @@ class DockerMonitorFormModal(page: Page) : ModalView(page) {
      * while TomSelect happens to have the matching row highlighted.
      */
     private fun pickFromDropdown(field: Locator, value: String) {
-        field.locator(".ts-control").click()
-        field.locator(".ts-dropdown .option")
+        val option = field.locator(".ts-dropdown .option")
             .filter(Locator.FilterOptions().setHasText(value))
             .first()
-            .click()
+        // TomSelect focuses on a timer, so on a slow machine another field can take the focus back and close this one
+        repeat(OPEN_ATTEMPTS) { attempt ->
+            field.locator(".ts-control").click()
+            try {
+                option.click(Locator.ClickOptions().setTimeout(OPTION_TIMEOUT_MS))
+                return
+            } catch (ex: TimeoutError) {
+                if (attempt == OPEN_ATTEMPTS - 1) throw ex
+            }
+        }
     }
 
-    /** Types a value into a field that accepts new ones, committing it with Enter. */
+    /**
+     * Types a value into a field that accepts new ones, committing it with Enter, then leaves the field with Tab,
+     * so a focus TomSelect still has pending does not reopen it while the next field is being used.
+     */
     private fun pick(field: Locator, value: String) {
         field.locator(".ts-control").click()
         val textbox = field.locator(".ts-control input")
         textbox.fill(value)
         textbox.press("Enter")
+        textbox.press("Tab")
     }
 
     /**
@@ -112,5 +125,10 @@ class DockerMonitorFormModal(page: Page) : ModalView(page) {
         val options = field.locator(".ts-dropdown .option")
         options.first().waitFor()
         return options.allTextContents().map { it.trim() }
+    }
+
+    private companion object {
+        const val OPEN_ATTEMPTS = 3
+        const val OPTION_TIMEOUT_MS = 5000.0
     }
 }
