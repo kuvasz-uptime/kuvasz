@@ -3,6 +3,8 @@ package com.kuvaszuptime.kuvasz.uitest.pages.dns
 import com.kuvaszuptime.kuvasz.uitest.pages.common.ModalView
 import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
+import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
+import java.util.regex.Pattern
 
 // The Alpine.js-driven create/update modal for DNS monitors.
 class DnsMonitorFormModal(page: Page) : ModalView(page) {
@@ -59,6 +61,8 @@ class DnsMonitorFormModal(page: Page) : ModalView(page) {
     fun openAssertionSettings(): DnsMonitorFormModal {
         if (!newMatcherValueInput.isVisible) {
             modal.getByTestId("accordion-toggle-dns-monitor-assertion-settings").click()
+            // Bootstrap only sets `show` once the expansion ends, and a click on a field that is still moving misses
+            assertThat(modal.locator("#dns-monitor-assertion-settings")).hasClass(Pattern.compile(".*\\bshow\\b.*"))
         }
         return this
     }
