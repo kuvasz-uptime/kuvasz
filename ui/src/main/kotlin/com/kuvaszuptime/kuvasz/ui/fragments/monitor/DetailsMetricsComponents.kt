@@ -46,38 +46,37 @@ internal fun FlowContent.metricStatCard(
 }
 
 /**
- * The average/min/max/percentile cards of a metrics row. [propertyPrefix] is the Alpine.js path of the stats object,
- * [propertySuffix] the name of the metric within it, e.g. `LatencyInMs` for `latencyStats.p90LatencyInMs`.
+ * The stat cards of a metric, one for each of [cards] (a stat's property name and its label). [propertyPrefix] is the
+ * Alpine.js path of the stats object, [propertySuffix] the name of the metric within it, e.g. `LatencyInMs` for
+ * `latencyStats.p90LatencyInMs`. [labelPrefix] names the measurement when a row holds more than one.
  */
 private fun FlowContent.metricStatCards(
     propertyPrefix: String,
     propertySuffix: String,
     unit: String,
-    extraCards: List<Pair<String, String>> = PERCENTILE_CARDS,
+    cards: List<Pair<String, String>>,
+    labelPrefix: String? = null,
     valueExpression: (String) -> String = { it },
 ) {
-    div {
-        classes(ROW, ROW_CARDS, MB_3)
-        val averageProperty = "$propertyPrefix.average$propertySuffix"
+    cards.forEach { (property, label) ->
+        val propertyName = "$propertyPrefix.$property$propertySuffix"
         metricStatCard(
-            propertyName = averageProperty,
-            label = Messages.average(),
+            propertyName = propertyName,
+            label = labelPrefix?.let { "$it - $label" } ?: label,
             unit = unit,
-            valueExpression = valueExpression(averageProperty),
+            valueExpression = valueExpression(propertyName),
         )
-        (MIN_MAX_CARDS + extraCards).forEach { (property, label) ->
-            val propertyName = "$propertyPrefix.$property$propertySuffix"
-            metricStatCard(
-                propertyName = propertyName,
-                label = label,
-                unit = unit,
-                valueExpression = valueExpression(propertyName),
-            )
-        }
     }
 }
 
-private val MIN_MAX_CARDS = listOf("min" to "Min", "max" to "Max")
+private fun FlowContent.metricStatRow(block: DIV.() -> Unit) {
+    div {
+        classes(ROW, ROW_CARDS, MB_3)
+        block()
+    }
+}
+
+private fun averageMinMaxCards() = listOf("average" to Messages.average(), "min" to "Min", "max" to "Max")
 private val PERCENTILE_CARDS = listOf("p90" to "P90", "p95" to "P95", "p99" to "P99")
 
 /**
@@ -87,56 +86,44 @@ private val PERCENTILE_CARDS = listOf("p90" to "P90", "p95" to "P95", "p99" to "
  * zero, and they go above 100% on several cores. The memory is stored in bytes and shown in MiB, the unit an
  * operator sizing a container actually thinks in. Each card names its measurement, since the two sit side by side.
  */
-internal fun FlowContent.dockerResourceMetricCards() {
-    div {
-        classes(ROW, ROW_CARDS, MB_3)
-        resourceCards(
+internal fun FlowContent.dockerResourceMetricCards() =
+    metricStatRow {
+        metricStatCards(
             propertyPrefix = "lastResponse?.cpuStats?",
             propertySuffix = "CpuUsagePercentage",
-            labelPrefix = Messages.cpu(),
             unit = "%",
+            cards = averageMinMaxCards(),
+            labelPrefix = Messages.cpu(),
         )
-        resourceCards(
+        metricStatCards(
             propertyPrefix = "lastResponse?.memoryStats?",
             propertySuffix = "MemoryUsageBytes",
-            labelPrefix = Messages.memory(),
             unit = " MiB",
+            cards = averageMinMaxCards(),
+            labelPrefix = Messages.memory(),
             valueExpression = { "bytesToMib($it)" },
         )
     }
-}
-
-private fun FlowContent.resourceCards(
-    propertyPrefix: String,
-    propertySuffix: String,
-    labelPrefix: String,
-    unit: String,
-    valueExpression: (String) -> String = { it },
-) {
-    (listOf("average" to Messages.average()) + MIN_MAX_CARDS).forEach { (property, label) ->
-        val propertyName = "$propertyPrefix.$property$propertySuffix"
-        metricStatCard(
-            propertyName = propertyName,
-            label = "$labelPrefix - $label",
-            unit = unit,
-            valueExpression = valueExpression(propertyName),
-        )
-    }
-}
 
 internal fun FlowContent.latencyMetricCards() =
-    metricStatCards(
-        propertyPrefix = "lastResponse?.latencyStats?",
-        propertySuffix = "LatencyInMs",
-        unit = " ms",
-    )
+    metricStatRow {
+        metricStatCards(
+            propertyPrefix = "lastResponse?.latencyStats?",
+            propertySuffix = "LatencyInMs",
+            unit = " ms",
+            cards = averageMinMaxCards() + PERCENTILE_CARDS,
+        )
+    }
 
 internal fun FlowContent.packetLossMetricCards() =
-    metricStatCards(
-        propertyPrefix = "lastResponse?.packetLossStats?",
-        propertySuffix = "PacketLossPercentage",
-        unit = "%",
-    )
+    metricStatRow {
+        metricStatCards(
+            propertyPrefix = "lastResponse?.packetLossStats?",
+            propertySuffix = "PacketLossPercentage",
+            unit = "%",
+            cards = averageMinMaxCards() + PERCENTILE_CARDS,
+        )
+    }
 
 internal fun FlowContent.metricsAutoRefreshToggle() {
     label {
