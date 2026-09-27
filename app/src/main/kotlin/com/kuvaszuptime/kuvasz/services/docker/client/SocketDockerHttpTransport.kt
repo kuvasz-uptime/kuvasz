@@ -43,12 +43,6 @@ class SocketDockerHttpTransport(
     // the unix channel and stay stuck on a TCP or TLS socket.
     private val executor: ExecutorService = Executors.newVirtualThreadPerTaskExecutor()
 
-    @Retryable(
-        delay = RETRY_INITIAL_DELAY,
-        attempts = "$RETRY_COUNT",
-        multiplier = "$RETRY_BACKOFF_MULTIPLIER",
-        includes = [IOException::class, DockerServerErrorException::class],
-    )
     override fun get(host: DockerHost, path: String, timeoutMs: Int, maxBodyBytes: Int): DockerHttpResponse {
         val response = exchange(host, path, timeoutMs, maxBodyBytes)
         if (response.statusCode >= HttpStatus.INTERNAL_SERVER_ERROR.code) {
@@ -56,6 +50,15 @@ class SocketDockerHttpTransport(
         }
         return response
     }
+
+    @Retryable(
+        delay = RETRY_INITIAL_DELAY,
+        attempts = "$RETRY_COUNT",
+        multiplier = "$RETRY_BACKOFF_MULTIPLIER",
+        includes = [IOException::class, DockerServerErrorException::class],
+    )
+    override fun getWithRetry(host: DockerHost, path: String, timeoutMs: Int, maxBodyBytes: Int): DockerHttpResponse =
+        get(host, path, timeoutMs, maxBodyBytes)
 
     private fun exchange(host: DockerHost, path: String, timeoutMs: Int, maxBodyBytes: Int): DockerHttpResponse {
         val start = System.nanoTime()

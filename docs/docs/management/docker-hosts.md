@@ -107,7 +107,7 @@ The same is available through the API, at `GET /api/v2/docker-hosts`. It **never
 
 - Every call is **read-only**: _Kuvasz_ only inspects containers, samples their resource usage, and lists them for the container picker of the Web UI.
 - The **API version is negotiated** per host through the `/_ping` endpoint. See the [**compatibility matrix**](../features/docker-monitoring.md#docker-engine-versions) for the supported Engine versions.
-- A request that fails at the network level (a timeout, a refused connection, a failed TLS handshake), or is answered with a `5xx` status, is **retried twice** (after 0.5 and 1.5 seconds), the same way HTTP checks are. The monitor's [timeout](docker-monitors.md#timeout) applies to every attempt, so a daemon that never answers takes about `3 × timeout + 2 seconds` to be reported DOWN.
+- A request that fails at the network level (a timeout, a refused connection, a failed TLS handshake), or is answered with a `5xx` status, is **retried twice** (after 0.5 and 1.5 seconds), the same way HTTP checks are. The monitor's [timeout](docker-monitors.md#timeout) applies to every attempt, so a daemon that never answers takes about `3 × timeout + 2 seconds` to be reported DOWN. The only exception is the resource sampling: it's best-effort, so it gets a **single attempt**, and a slow daemon doesn't hold back the check's result with retries.
 
 ## Recipes
 

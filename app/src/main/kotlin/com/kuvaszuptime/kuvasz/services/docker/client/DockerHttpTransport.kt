@@ -17,6 +17,13 @@ interface DockerHttpTransport {
         timeoutMs: Int,
         maxBodyBytes: Int = DockerHttpFraming.MAX_BODY_BYTES,
     ): DockerHttpResponse
+
+    fun getWithRetry(
+        host: DockerHost,
+        path: String,
+        timeoutMs: Int,
+        maxBodyBytes: Int = DockerHttpFraming.MAX_BODY_BYTES,
+    ): DockerHttpResponse
 }
 
 data class DockerHttpResponse(

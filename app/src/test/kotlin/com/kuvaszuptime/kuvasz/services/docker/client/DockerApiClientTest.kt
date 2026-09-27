@@ -10,6 +10,8 @@ import com.kuvaszuptime.kuvasz.services.docker.DockerInspectResult
 import com.kuvaszuptime.kuvasz.services.docker.DockerStatsResult
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.doubles.plusOrMinus
 import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.nulls.shouldBeNull
@@ -32,12 +34,18 @@ private class FakeTransport(private val handler: (path: String) -> DockerHttpRes
     val lastPath: String? get() = paths.lastOrNull()
     var lastTimeoutMs: Int? = null
     val maxBodyBytesByPath = mutableMapOf<String, Int>()
+    val retriedPaths = mutableSetOf<String>()
 
     override fun get(host: DockerHost, path: String, timeoutMs: Int, maxBodyBytes: Int): DockerHttpResponse {
         paths += path
         lastTimeoutMs = timeoutMs
         maxBodyBytesByPath[path] = maxBodyBytes
         return handler(path).also { if (it.statusCode >= 500) throw DockerServerErrorException(it) }
+    }
+
+    override fun getWithRetry(host: DockerHost, path: String, timeoutMs: Int, maxBodyBytes: Int): DockerHttpResponse {
+        retriedPaths += path
+        return get(host, path, timeoutMs, maxBodyBytes)
     }
 }
 
@@ -153,6 +161,10 @@ class DockerApiClientTest : BehaviorSpec({
             then("the inspect endpoint should have been called on the negotiated version, with the monitor's timeout") {
                 transport.lastPath shouldBe "/v1.40/containers/my-app/json"
                 transport.lastTimeoutMs shouldBe TIMEOUT_MS
+            }
+
+            then("the inspection should be retried, since the check's verdict depends on it") {
+                transport.retriedPaths shouldContain "/v1.40/containers/my-app/json"
             }
         }
 
@@ -402,6 +414,10 @@ class DockerApiClientTest : BehaviorSpec({
             then("the stream should be turned off, so the daemon answers once instead of forever") {
                 transport.lastPath shouldBe "/v1.40/containers/my-app/stats?stream=false"
                 transport.lastTimeoutMs shouldBe TIMEOUT_MS
+            }
+
+            then("the sampling should get a single attempt, so a slow daemon does not hold the check back") {
+                transport.retriedPaths shouldNotContain "/v1.40/containers/my-app/stats?stream=false"
             }
         }
 

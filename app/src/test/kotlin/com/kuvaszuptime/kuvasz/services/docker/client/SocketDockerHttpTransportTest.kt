@@ -333,11 +333,25 @@ class SocketDockerHttpTransportTest : BehaviorSpec({
             val ctx = testAppContext(dockerHostProperties("unix://${daemon.path}"))
 
             val exception = shouldThrow<DockerServerErrorException> {
-                ctx.getBean<DockerHttpTransport>().get(ctx.dockerHost(), INSPECT_PATH, GENEROUS_TIMEOUT_MS)
+                ctx.getBean<DockerHttpTransport>().getWithRetry(ctx.dockerHost(), INSPECT_PATH, GENEROUS_TIMEOUT_MS)
             }
 
             then("the request should be retried, and the last answer handed over once the retries are spent") {
                 daemon.receivedRequests shouldHaveSize ATTEMPTS
+                exception.response.statusCode shouldBe 500
+            }
+        }
+
+        `when`("the daemon keeps failing internally, but only a single attempt is asked for") {
+            val daemon = autoClose(FakeDockerDaemon.UnixSocket(SERVER_ERROR_RESPONSE))
+            val ctx = testAppContext(dockerHostProperties("unix://${daemon.path}"))
+
+            val exception = shouldThrow<DockerServerErrorException> {
+                ctx.getBean<DockerHttpTransport>().get(ctx.dockerHost(), INSPECT_PATH, GENEROUS_TIMEOUT_MS)
+            }
+
+            then("the request should not be retried") {
+                daemon.receivedRequests shouldHaveSize 1
                 exception.response.statusCode shouldBe 500
             }
         }
@@ -347,7 +361,7 @@ class SocketDockerHttpTransportTest : BehaviorSpec({
             val ctx = testAppContext(dockerHostProperties("unix://${daemon.path}"))
 
             shouldThrow<IOException> {
-                ctx.getBean<DockerHttpTransport>().get(ctx.dockerHost(), INSPECT_PATH, TIMEOUT_MS)
+                ctx.getBean<DockerHttpTransport>().getWithRetry(ctx.dockerHost(), INSPECT_PATH, TIMEOUT_MS)
             }
 
             then("each timed out attempt should be retried") {
@@ -359,7 +373,8 @@ class SocketDockerHttpTransportTest : BehaviorSpec({
             val daemon = autoClose(FakeDockerDaemon.UnixSocket(NOT_FOUND_RESPONSE))
             val ctx = testAppContext(dockerHostProperties("unix://${daemon.path}"))
 
-            val response = ctx.getBean<DockerHttpTransport>().get(ctx.dockerHost(), INSPECT_PATH, GENEROUS_TIMEOUT_MS)
+            val response = ctx.getBean<DockerHttpTransport>()
+                .getWithRetry(ctx.dockerHost(), INSPECT_PATH, GENEROUS_TIMEOUT_MS)
 
             then("its answer should stand, without a retry") {
                 response.statusCode shouldBe 404
@@ -371,7 +386,8 @@ class SocketDockerHttpTransportTest : BehaviorSpec({
             val daemon = autoClose(FakeDockerDaemon.UnixSocket(OK_RESPONSE))
             val ctx = testAppContext(dockerHostProperties("unix://${daemon.path}"))
 
-            val response = ctx.getBean<DockerHttpTransport>().get(ctx.dockerHost(), INSPECT_PATH, GENEROUS_TIMEOUT_MS)
+            val response = ctx.getBean<DockerHttpTransport>()
+                .getWithRetry(ctx.dockerHost(), INSPECT_PATH, GENEROUS_TIMEOUT_MS)
 
             then("the exchange should be timed") {
                 response.statusCode shouldBe 200

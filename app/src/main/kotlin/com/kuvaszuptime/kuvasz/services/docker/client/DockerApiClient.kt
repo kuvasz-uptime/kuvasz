@@ -70,8 +70,11 @@ class DockerApiClient(private val transport: DockerHttpTransport) {
         path: String,
         timeoutMs: Int,
         maxBodyBytes: Int = DockerHttpFraming.MAX_BODY_BYTES,
+        withRetry: Boolean = true,
     ): DockerHttpResponse {
-        val get = { version: DockerApiVersion -> fetch(host, version.pathPrefix + path, timeoutMs, maxBodyBytes) }
+        val get = { version: DockerApiVersion ->
+            fetch(host, version.pathPrefix + path, timeoutMs, maxBodyBytes, withRetry)
+        }
         val cachedVersion = negotiatedVersions[host.name]
         val cachedResponse = cachedVersion?.let(get)
         if (cachedResponse != null && !cachedResponse.rejectsVersion) return cachedResponse
@@ -111,9 +114,14 @@ class DockerApiClient(private val transport: DockerHttpTransport) {
         path: String,
         timeoutMs: Int,
         maxBodyBytes: Int = DockerHttpFraming.MAX_BODY_BYTES,
+        withRetry: Boolean = true,
     ): DockerHttpResponse =
         try {
-            transport.get(host, path, timeoutMs, maxBodyBytes)
+            if (withRetry) {
+                transport.getWithRetry(host, path, timeoutMs, maxBodyBytes)
+            } else {
+                transport.get(host, path, timeoutMs, maxBodyBytes)
+            }
         } catch (ex: DockerServerErrorException) {
             ex.response
         }
@@ -144,10 +152,13 @@ class DockerApiClient(private val transport: DockerHttpTransport) {
      * cost is that the call blocks for the daemon's collection interval (a second, give or take), which comes out of
      * the monitor's timeout budget - and which makes this round-trip useless as a latency signal, unlike the
      * inspection's.
+     *
+     * The sample is best-effort and taken before the check reports the container UP, so it gets a single attempt:
+     * retrying a slow daemon would hold the verdict back by several timeouts, only to maybe gain a sample.
      */
     fun containerStats(host: DockerHost, container: String, timeoutMs: Int): DockerStatsResult =
         callDaemon(DockerStatsResult::Unavailable) {
-            getVersioned(host, statsPath(container), timeoutMs).toStatsResult()
+            getVersioned(host, statsPath(container), timeoutMs, withRetry = false).toStatsResult()
         }
 
     /**

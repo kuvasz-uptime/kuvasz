@@ -128,7 +128,7 @@ Whether the monitor is enabled or not. If it's disabled, it won't be checked, an
 
 The **timeout of the Docker API requests in milliseconds**. Must be between 1 and 30000. If the daemon doesn't answer within this time, the check is considered a failure.
 
-The timeout applies to **every request** of a check separately: the inspection of the container, the resource sampling (when [metrics history](#metrics-history-enabled) is enabled), and each of their [retries](docker-hosts.md#how-the-daemon-is-called). Keep in mind that the resource sampling itself takes about a second, so a timeout below that makes every sampling fail (the uptime check is not affected by that, though).
+The timeout applies to **every request** of a check separately: the inspection of the container and each of its [retries](docker-hosts.md#how-the-daemon-is-called), and the resource sampling (when [metrics history](#metrics-history-enabled) is enabled), which is never retried. Keep in mind that the resource sampling itself takes about a second, so a timeout below that makes every sampling fail (the uptime check is not affected by that, though).
 
 ### Failure count threshold
 
