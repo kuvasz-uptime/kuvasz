@@ -85,8 +85,11 @@ class DockerUptimeEventRepository(private val dslContext: DSLContext) : UptimeEv
     fun updateEvent(eventId: Long, newEvent: DockerUptimeMonitorEvent) = dslContext
         .update(DOCKER_UPTIME_EVENT)
         .set(DOCKER_UPTIME_EVENT.UPDATED_AT, newEvent.dispatchedAt)
-        .set(DOCKER_UPTIME_EVENT.IMAGE, newEvent.image)
         .apply {
+            // A check that could not tell the image (a vanished container, an unreachable daemon) keeps the known one
+            if (newEvent.image != null) {
+                set(DOCKER_UPTIME_EVENT.IMAGE, newEvent.image)
+            }
             if (newEvent is DockerMonitorDownEvent) {
                 set(DOCKER_UPTIME_EVENT.ERROR, newEvent.getPersistableError())
             }

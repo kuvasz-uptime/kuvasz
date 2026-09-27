@@ -190,11 +190,30 @@ class DockerUptimeCheckerTest(
                 uptimeChecker.check(monitor)
                 uptimeChecker.check(monitor)
 
-                then("the ongoing DOWN event should drop the image, since it cannot be told anymore") {
+                then("the ongoing DOWN event should keep the image it was started with") {
                     with(uptimeEventRepository.fetchByMonitorId(monitor.id).shouldHaveSize(1).first()) {
                         error shouldBe
                             """Reason: There is no container called "${monitor.container}" on the Docker host "local""""
-                        image shouldBe null
+                        image shouldBe IMAGE
+                    }
+                }
+            }
+
+            `when`("the daemon of a monitor that is already down becomes unreachable") {
+                val monitor = createDockerMonitor(monitorRepository, dockerHost = "local")
+                val mock = getMock(apiClient)
+                every {
+                    mock.inspectContainer(any(), any(), any())
+                } returns inspected(DockerContainerStatus.EXITED, exitCode = 1) andThen
+                    DockerInspectResult.Unreachable("connection refused")
+
+                uptimeChecker.check(monitor)
+                uptimeChecker.check(monitor)
+
+                then("the ongoing DOWN event should take the new error, but keep the known image") {
+                    with(uptimeEventRepository.fetchByMonitorId(monitor.id).shouldHaveSize(1).first()) {
+                        error shouldBe """Reason: The Docker host "local" cannot be reached: connection refused"""
+                        image shouldBe IMAGE
                     }
                 }
             }
