@@ -2031,11 +2031,27 @@ test('Push editFrom keeps the client secret of the monitor, while cloneFrom gene
     assert.notEqual(cloned.clientSecret, sourceMonitor.clientSecret);
 });
 
+test('the status page form sends the picked gray palette', (t) => {
+    stubBrowser(t);
+    const form = upsertStatusPageForm(
+        {id: 2, title: 'Status', slug: 'status', themeBase: 'SLATE'},
+        {}, 'monitor-select', [], 'categories-select', 'GRAY',
+    );
+    form.resetState();
+    assert.equal(form.buildRequestBody().themeBase, 'SLATE');
+
+    form.themeBase = 'ZINC';
+
+    assert.equal(form.buildRequestBody().themeBase, 'ZINC');
+});
+
 // --------- Editing a status page or a maintenance window through the upsert modal of its list ---------
 
 const listEditedEntities = {
     'status-pages': {
-        createForm: (entity = null) => upsertStatusPageForm(entity, {}, 'monitor-select', [], 'categories-select'),
+        createForm: (entity = null) => upsertStatusPageForm(
+            entity, {}, 'monitor-select', [], 'categories-select', 'GRAY',
+        ),
         clonedFields: {title: 'Copy of Source', slug: 'source-copy', public: false},
         source: {
             id: 7,
@@ -2044,6 +2060,7 @@ const listEditedEntities = {
             monitors: ['http:Site'],
             categories: ['Payments'],
             displayCategories: false,
+            themeBase: 'SLATE',
             public: true,
         },
         rendered: {id: 3, title: 'Rendered', slug: 'rendered'},
@@ -2053,11 +2070,14 @@ const listEditedEntities = {
             assert.deepEqual(form.selectedMonitors, ['http:Site']);
             assert.deepEqual(form.selectedCategories, ['Payments']);
             assert.equal(form.displayCategories, false);
+            assert.equal(form.themeBase, 'SLATE');
             assert.equal(form.public, true);
         },
         assertBlank: (form) => {
             assert.equal(form.title, '');
             assert.deepEqual(form.selectedCategories, []);
+            // An unset palette is preselected with the default it falls back to
+            assert.equal(form.themeBase, 'GRAY');
         },
         assertRendered: (form) => assert.equal(form.title, 'Rendered'),
     },

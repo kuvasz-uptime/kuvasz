@@ -1,73 +1,28 @@
 package com.kuvaszuptime.kuvasz.ui
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
+import com.kuvaszuptime.kuvasz.models.theme.ThemeBase
+import com.kuvaszuptime.kuvasz.models.theme.ThemeOption
+import com.kuvaszuptime.kuvasz.models.theme.ThemePrimary
 
-internal interface ThemeOption {
-    val value: String
-    val label: String
-}
-
-internal enum class ThemeBase : ThemeOption {
-    GRAY,
-    SLATE,
-    ZINC,
-    NEUTRAL,
-    STONE,
-    PINK;
-
-    override val value: String get() = name.lowercase()
-
-    override val label: String
-        get() = when (this) {
-            GRAY -> Messages.themeColorGray()
-            SLATE -> Messages.themeColorSlate()
-            ZINC -> Messages.themeColorZinc()
-            NEUTRAL -> Messages.themeColorNeutral()
-            STONE -> Messages.themeColorStone()
-            PINK -> Messages.themeColorPink()
-        }
-
-    companion object {
-        // Tabler switched to the neutral palette in 1.6, but the blue-tinted one it used before is kept as the default
-        val DEFAULT = GRAY
+internal val ThemeOption.label: String
+    get() = when (this) {
+        ThemeBase.GRAY -> Messages.themeColorGray()
+        ThemeBase.SLATE -> Messages.themeColorSlate()
+        ThemeBase.ZINC -> Messages.themeColorZinc()
+        ThemeBase.NEUTRAL -> Messages.themeColorNeutral()
+        ThemeBase.STONE -> Messages.themeColorStone()
+        ThemePrimary.BLUE -> Messages.themeColorBlue()
+        ThemePrimary.AZURE -> Messages.themeColorAzure()
+        ThemePrimary.INDIGO -> Messages.themeColorIndigo()
+        ThemePrimary.PURPLE -> Messages.themeColorPurple()
+        ThemePrimary.PINK -> Messages.themeColorPink()
+        ThemePrimary.RED -> Messages.themeColorRed()
+        ThemePrimary.ORANGE -> Messages.themeColorOrange()
+        ThemePrimary.YELLOW -> Messages.themeColorYellow()
+        ThemePrimary.LIME -> Messages.themeColorLime()
+        ThemePrimary.GREEN -> Messages.themeColorGreen()
+        ThemePrimary.TEAL -> Messages.themeColorTeal()
+        ThemePrimary.CYAN -> Messages.themeColorCyan()
+        ThemePrimary.INVERTED -> Messages.themeColorInverted()
     }
-}
-
-internal enum class ThemePrimary : ThemeOption {
-    BLUE,
-    AZURE,
-    INDIGO,
-    PURPLE,
-    PINK,
-    RED,
-    ORANGE,
-    YELLOW,
-    LIME,
-    GREEN,
-    TEAL,
-    CYAN,
-    INVERTED;
-
-    override val value: String get() = name.lowercase()
-
-    override val label: String
-        get() = when (this) {
-            BLUE -> Messages.themeColorBlue()
-            AZURE -> Messages.themeColorAzure()
-            INDIGO -> Messages.themeColorIndigo()
-            PURPLE -> Messages.themeColorPurple()
-            PINK -> Messages.themeColorPink()
-            RED -> Messages.themeColorRed()
-            ORANGE -> Messages.themeColorOrange()
-            YELLOW -> Messages.themeColorYellow()
-            LIME -> Messages.themeColorLime()
-            GREEN -> Messages.themeColorGreen()
-            TEAL -> Messages.themeColorTeal()
-            CYAN -> Messages.themeColorCyan()
-            INVERTED -> Messages.themeColorInverted()
-        }
-
-    companion object {
-        val DEFAULT = BLUE
-    }
-}

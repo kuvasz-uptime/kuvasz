@@ -190,6 +190,11 @@ jooq {
                                 includeExpression = "STATUS_PAGE.MONITORS|MAINTENANCE_WINDOW.MONITORS"
                             }
                             forcedType {
+                                userType = "com.kuvaszuptime.kuvasz.models.theme.ThemeBase"
+                                isEnumConverter = true
+                                includeExpression = "STATUS_PAGE.THEME_BASE"
+                            }
+                            forcedType {
                                 userType = "tools.jackson.databind.JsonNode"
                                 isJsonConverter = true
                                 jsonConverterImplementation = JSONConverterImplementation.JACKSON_3

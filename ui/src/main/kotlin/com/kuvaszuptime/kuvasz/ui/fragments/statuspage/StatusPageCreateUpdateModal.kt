@@ -3,6 +3,8 @@ package com.kuvaszuptime.kuvasz.ui.fragments.statuspage
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDto
+import com.kuvaszuptime.kuvasz.models.theme.ThemeBase
+import com.kuvaszuptime.kuvasz.models.theme.ThemeOption
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
@@ -36,7 +38,8 @@ internal fun FlowContent.statusPageCreateUpdateModal(
                 |$serializedErrorMessages, 
                 |'$monitorsSelectId', 
                 |$serializedMonitors, 
-                |'$categoriesSelectId')
+                |'$categoriesSelectId',
+                |'${ThemeBase.DEFAULT.name}')
             """.trimMargin()
         )
         attributes["@$modalClosedEvent.window"] = "resetState()"
@@ -187,6 +190,14 @@ internal fun FlowContent.statusPageCreateUpdateModal(
                             isDisabled = isReadOnlyMode,
                         )
                     }
+                    // Gray palette, sent with the API values of the options
+                    themeBasePicker(
+                        ThemePickerBinding(
+                            xModelName = "themeBase",
+                            radioValue = ThemeOption::name,
+                            isDisabled = isReadOnlyMode,
+                        )
+                    )
                 }
                 // Modal footer
                 upsertModalFooter(

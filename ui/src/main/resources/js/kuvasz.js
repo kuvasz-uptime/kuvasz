@@ -1825,6 +1825,7 @@ const upsertStatusPageForm = (
     monitorSelectId,
     selectableMonitors,
     categorySelectId,
+    defaultThemeBase = null,
 ) => ({
     ...upsertForm({
         api: statusPageApi,
@@ -1855,6 +1856,8 @@ const upsertStatusPageForm = (
         this.selectedMonitors = source?.monitors || [];
         this.selectedCategories = source?.categories || [];
         this.displayCategories = source?.displayCategories ?? true;
+        // Preselected with the default an unset palette falls back to
+        this.themeBase = source?.themeBase || defaultThemeBase;
         this.public = source?.public ?? false;
         this.errors = {};
         this.formError = null;
@@ -1897,6 +1900,7 @@ const upsertStatusPageForm = (
             monitors: this.selectedMonitors,
             categories: this.selectedCategories,
             displayCategories: this.displayCategories,
+            themeBase: this.themeBase,
             public: this.public,
         };
     },

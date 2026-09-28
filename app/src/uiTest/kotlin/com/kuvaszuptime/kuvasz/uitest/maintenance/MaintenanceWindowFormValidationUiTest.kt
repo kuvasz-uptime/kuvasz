@@ -247,14 +247,16 @@ class MaintenanceWindowFormValidationUiTest : UiTestSpec() {
             val popup = modal.datepicker.boundingBox().shouldNotBeNull()
             // Opened above the input instead
             popup.y shouldBeGreaterThanOrEqual 0.0
-            (popup.y + popup.height) shouldBeLessThanOrEqual input.y
+            val popupBottom = popup.y + popup.height
+            popupBottom shouldBeLessThanOrEqual input.y
             val offsetFromInput = popup.y - input.y
 
             modal.scrollBy(SCROLL_DISTANCE)
             val scrolledInput = modal.startInput.boundingBox().shouldNotBeNull()
             val scrolledPopup = modal.datepicker.boundingBox().shouldNotBeNull()
             scrolledInput.y shouldBeLessThan input.y
-            (scrolledPopup.y - scrolledInput.y) shouldBe (offsetFromInput plusOrMinus 1.0)
+            val scrolledOffsetFromInput = scrolledPopup.y - scrolledInput.y
+            scrolledOffsetFromInput shouldBe (offsetFromInput plusOrMinus 1.0)
         }
     }
 

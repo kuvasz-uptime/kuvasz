@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.mocks
 
+import com.kuvaszuptime.kuvasz.models.theme.ThemeBase
 import com.kuvaszuptime.kuvasz.jooq.enums.DnsResponseCode
 import com.kuvaszuptime.kuvasz.jooq.enums.DnsTransport
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
@@ -238,6 +239,7 @@ fun createStatusPage(
     displayCategories: Boolean = StatusPageDefaults.DISPLAY_CATEGORIES,
     customLogoUrl: String? = null,
     customFaviconUrl: String? = null,
+    themeBase: ThemeBase? = null,
 ) = dslContext
     .insertInto(STATUS_PAGE)
     .set(
@@ -250,6 +252,7 @@ fun createStatusPage(
             .setMonitors(monitors.toTypedArray())
             .setCategories(categories.toTypedArray())
             .setDisplayCategories(displayCategories)
+            .setThemeBase(themeBase)
     )
     .returning(STATUS_PAGE.asterisk())
     .fetchOneOrThrow<StatusPageRecord>()

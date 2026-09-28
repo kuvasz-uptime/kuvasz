@@ -1,6 +1,9 @@
 package com.kuvaszuptime.kuvasz.ui
 
 import com.kuvaszuptime.kuvasz.AppGlobals
+import com.kuvaszuptime.kuvasz.models.theme.ThemeBase
+import com.kuvaszuptime.kuvasz.models.theme.ThemeOption
+import com.kuvaszuptime.kuvasz.models.theme.ThemePrimary
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.fragments.layout.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
@@ -22,7 +25,7 @@ internal fun withLayout(
     return DOCTYPE_NOTATION +
         createHTML(prettyPrint = false, xhtmlCompatible = false)
             .html {
-                withDefaultThemeBase()
+                withThemeBase()
                 head {
                     commonHeadElements(
                         appVersion = globals.appVersion,
@@ -96,7 +99,7 @@ internal fun withLayout(
 
 /**
  * @param applyThemePreferences whether the gray palette and the accent color picked on the Settings page are applied,
- * which isn't the case for the public status pages, so a visitor's own preferences can't restyle them
+ * which isn't the case for the public status pages, as they come with their own theme
  **/
 internal fun FlowOrMetaDataOrPhrasingContent.commonHeadElements(
     appVersion: String,
@@ -139,8 +142,8 @@ private fun themePreferenceLoader(option: String, values: List<ThemeOption>): St
     """.trimIndent()
 }
 
-internal fun HTML.withDefaultThemeBase() {
-    attributes["data-bs-theme-base"] = ThemeBase.DEFAULT.value
+internal fun HTML.withThemeBase(base: ThemeBase? = null) {
+    attributes["data-bs-theme-base"] = (base ?: ThemeBase.DEFAULT).value
 }
 
 internal fun FlowOrMetaDataOrPhrasingContent.commonScripts(appVersion: String) {

@@ -18,7 +18,7 @@ internal fun withStatusPageLayout(
     return DOCTYPE_NOTATION +
         createHTML(prettyPrint = false, xhtmlCompatible = false)
             .html {
-                withDefaultThemeBase()
+                withThemeBase(pageData.themeBase)
                 head {
                     val faviconsAndManifest = {
                         if (!pageData.customFaviconUrl.isNullOrBlank()) {

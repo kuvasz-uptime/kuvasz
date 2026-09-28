@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.statuspage.SystemStatus
+import com.kuvaszuptime.kuvasz.models.theme.ThemeBase
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDate
 import java.time.OffsetDateTime
@@ -19,6 +20,7 @@ data class StatusPageDataDto(
     val activeMaintenanceWindows: List<StatusPageMaintenanceWindowDto> = emptyList(),
     val upcomingMaintenanceWindows: List<StatusPageMaintenanceWindowDto> = emptyList(),
     val displayCategories: Boolean = StatusPageDefaults.DISPLAY_CATEGORIES,
+    val themeBase: ThemeBase? = null,
 )
 
 /**

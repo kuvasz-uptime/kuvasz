@@ -80,6 +80,7 @@ class StatusPageRepository(private val dslContext: DSLContext) {
                 .set(STATUS_PAGE.MONITORS, updatedStatusPage.monitors)
                 .set(STATUS_PAGE.CATEGORIES, updatedStatusPage.categories)
                 .set(STATUS_PAGE.DISPLAY_CATEGORIES, updatedStatusPage.displayCategories)
+                .set(STATUS_PAGE.THEME_BASE, updatedStatusPage.themeBase)
                 .set(STATUS_PAGE.UPDATED_AT, getCurrentTimestamp())
                 .where(STATUS_PAGE.ID.eq(updatedStatusPage.id))
                 .returning(STATUS_PAGE.asterisk())

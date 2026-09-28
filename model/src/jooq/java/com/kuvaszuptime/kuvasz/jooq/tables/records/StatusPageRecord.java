@@ -6,6 +6,7 @@ package com.kuvaszuptime.kuvasz.jooq.tables.records;
 
 import com.kuvaszuptime.kuvasz.jooq.tables.StatusPage;
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID;
+import com.kuvaszuptime.kuvasz.models.theme.ThemeBase;
 
 import java.time.OffsetDateTime;
 
@@ -186,6 +187,21 @@ public class StatusPageRecord extends UpdatableRecordImpl<StatusPageRecord> {
         return (Boolean) get(10);
     }
 
+    /**
+     * Setter for <code>kuvasz.status_page.theme_base</code>.
+     */
+    public StatusPageRecord setThemeBase(ThemeBase value) {
+        set(11, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.status_page.theme_base</code>.
+     */
+    public ThemeBase getThemeBase() {
+        return (ThemeBase) get(11);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -209,7 +225,7 @@ public class StatusPageRecord extends UpdatableRecordImpl<StatusPageRecord> {
     /**
      * Create a detached, initialised StatusPageRecord
      */
-    public StatusPageRecord(Long id, String title, String slug, String customLogoUrl, String customFaviconUrl, Boolean public_, MonitorID[] monitors, OffsetDateTime createdAt, OffsetDateTime updatedAt, String[] categories, Boolean displayCategories) {
+    public StatusPageRecord(Long id, String title, String slug, String customLogoUrl, String customFaviconUrl, Boolean public_, MonitorID[] monitors, OffsetDateTime createdAt, OffsetDateTime updatedAt, String[] categories, Boolean displayCategories, ThemeBase themeBase) {
         super(StatusPage.STATUS_PAGE);
 
         setId(id);
@@ -223,6 +239,7 @@ public class StatusPageRecord extends UpdatableRecordImpl<StatusPageRecord> {
         setUpdatedAt(updatedAt);
         setCategories(categories);
         setDisplayCategories(displayCategories);
+        setThemeBase(themeBase);
         resetTouchedOnNotNull();
     }
 
@@ -244,6 +261,7 @@ public class StatusPageRecord extends UpdatableRecordImpl<StatusPageRecord> {
             setUpdatedAt(value.getUpdatedAt());
             setCategories(value.getCategories());
             setDisplayCategories(value.getDisplayCategories());
+            setThemeBase(value.getThemeBase());
             resetTouchedOnNotNull();
         }
     }

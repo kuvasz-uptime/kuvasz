@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.services
 
+import com.kuvaszuptime.kuvasz.models.theme.ThemeBase
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.jooq.tables.records.StatusPageRecord
 import com.kuvaszuptime.kuvasz.models.MonitorType
@@ -87,6 +88,8 @@ class AppBootstrappingStatusPageYamlConfigTest : StringSpec({
             firstPage.categories.shouldBeEmpty()
             // ...and an absent `display-categories` falls back to the default
             firstPage.displayCategories shouldBe true
+            // ...just like the absent theme options, which are left unset
+            firstPage.themeBase shouldBe null
         }
 
         pagesInDb.forOne { secondPage ->
@@ -98,6 +101,7 @@ class AppBootstrappingStatusPageYamlConfigTest : StringSpec({
             )
             secondPage.categories shouldContainExactlyInAnyOrder arrayOf("Payments", "Search")
             secondPage.displayCategories shouldBe false
+            secondPage.themeBase shouldBe ThemeBase.SLATE
         }
 
         pagesInDb.forOne { thirdPage ->

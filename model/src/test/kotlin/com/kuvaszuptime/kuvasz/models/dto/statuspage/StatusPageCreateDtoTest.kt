@@ -84,6 +84,7 @@ class StatusPageCreateDtoDefaultsTest : BehaviorSpec({
             dto.displayCategories shouldBe StatusPageDefaults.DISPLAY_CATEGORIES
             dto.customLogoUrl shouldBe null
             dto.customFaviconUrl shouldBe null
+            dto.themeBase shouldBe null
         }
     }
 })

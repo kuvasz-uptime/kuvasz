@@ -5,6 +5,7 @@ package com.kuvaszuptime.kuvasz.jooq.tables.pojos;
 
 
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID;
+import com.kuvaszuptime.kuvasz.models.theme.ThemeBase;
 
 import java.io.Serializable;
 import java.time.OffsetDateTime;
@@ -30,6 +31,7 @@ public class StatusPage implements Serializable {
     private OffsetDateTime updatedAt;
     private String[] categories;
     private Boolean displayCategories;
+    private ThemeBase themeBase;
 
     public StatusPage() {}
 
@@ -45,6 +47,7 @@ public class StatusPage implements Serializable {
         this.updatedAt = value.updatedAt;
         this.categories = value.categories;
         this.displayCategories = value.displayCategories;
+        this.themeBase = value.themeBase;
     }
 
     public StatusPage(
@@ -58,7 +61,8 @@ public class StatusPage implements Serializable {
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt,
         String[] categories,
-        Boolean displayCategories
+        Boolean displayCategories,
+        ThemeBase themeBase
     ) {
         this.id = id;
         this.title = title;
@@ -71,6 +75,7 @@ public class StatusPage implements Serializable {
         this.updatedAt = updatedAt;
         this.categories = categories;
         this.displayCategories = displayCategories;
+        this.themeBase = themeBase;
     }
 
     /**
@@ -238,6 +243,21 @@ public class StatusPage implements Serializable {
         return this;
     }
 
+    /**
+     * Getter for <code>kuvasz.status_page.theme_base</code>.
+     */
+    public ThemeBase getThemeBase() {
+        return this.themeBase;
+    }
+
+    /**
+     * Setter for <code>kuvasz.status_page.theme_base</code>.
+     */
+    public StatusPage setThemeBase(ThemeBase themeBase) {
+        this.themeBase = themeBase;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -313,6 +333,12 @@ public class StatusPage implements Serializable {
         }
         else if (!this.displayCategories.equals(other.displayCategories))
             return false;
+        if (this.themeBase == null) {
+            if (other.themeBase != null)
+                return false;
+        }
+        else if (!this.themeBase.equals(other.themeBase))
+            return false;
         return true;
     }
 
@@ -331,6 +357,7 @@ public class StatusPage implements Serializable {
         result = prime * result + ((this.updatedAt == null) ? 0 : this.updatedAt.hashCode());
         result = prime * result + ((this.categories == null) ? 0 : Arrays.deepHashCode(this.categories));
         result = prime * result + ((this.displayCategories == null) ? 0 : this.displayCategories.hashCode());
+        result = prime * result + ((this.themeBase == null) ? 0 : this.themeBase.hashCode());
         return result;
     }
 
@@ -349,6 +376,7 @@ public class StatusPage implements Serializable {
         sb.append(", ").append(updatedAt);
         sb.append(", ").append(Arrays.deepToString(categories));
         sb.append(", ").append(displayCategories);
+        sb.append(", ").append(themeBase);
 
         sb.append(")");
         return sb.toString();

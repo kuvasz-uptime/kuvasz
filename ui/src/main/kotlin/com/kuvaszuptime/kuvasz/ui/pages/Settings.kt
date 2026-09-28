@@ -6,6 +6,8 @@ import com.kuvaszuptime.kuvasz.models.dto.docker.DockerHostAuthMethod
 import com.kuvaszuptime.kuvasz.models.dto.docker.DockerHostDto
 import com.kuvaszuptime.kuvasz.models.dto.settings.SettingsDto
 import com.kuvaszuptime.kuvasz.models.settings.ConnectivityState
+import com.kuvaszuptime.kuvasz.models.theme.ThemeOption
+import com.kuvaszuptime.kuvasz.models.theme.ThemePrimary
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
@@ -58,8 +60,20 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto, dockerHosts: List
                         classes(TEXT_SECONDARY)
                         +Messages.appearanceSettingsDescription()
                     }
-                    themeBasePicker()
-                    themePrimaryPicker()
+                    themeBasePicker(
+                        ThemePickerBinding(
+                            xModelName = "base",
+                            radioValue = ThemeOption::value,
+                            xOnChange = "setThemeOption('base', \$event.target.value)",
+                        )
+                    )
+                    themePrimaryPicker(
+                        ThemePickerBinding(
+                            xModelName = "primary",
+                            radioValue = ThemeOption::value,
+                            xOnChange = "setThemeOption('primary', \$event.target.value)",
+                        )
+                    )
                 }
             }
             // App settings
@@ -563,80 +577,6 @@ private fun FlowContent.settingsCard(
                 content()
             }
         }
-    }
-}
-
-// The gray palettes only differ in their tint, so they're picked by their names, with a light and a dark shade of each
-private fun FlowContent.themeBasePicker() {
-    val option = "base"
-    themeOptionGroup(option, Messages.themeBaseLabel()) {
-        div {
-            classes(FORM_SELECTGROUP, FORM_SELECTGROUP_PILLS)
-            ThemeBase.entries.forEach { themeBase ->
-                label {
-                    classes(FORM_SELECTGROUP_ITEM)
-                    themeOptionRadio(option, themeBase, FORM_SELECTGROUP_INPUT)
-                    span {
-                        classes(FORM_SELECTGROUP_LABEL, D_FLEX, ALIGN_ITEMS_CENTER)
-                        themeSwatch(option, themeBase, THEME_SWATCH_BASE)
-                        span {
-                            classes(MS_2)
-                            +themeBase.label
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-private fun FlowContent.themePrimaryPicker() {
-    val option = "primary"
-    themeOptionGroup(option, Messages.themePrimaryLabel()) {
-        div {
-            classes(ROW, G_2)
-            ThemePrimary.entries.forEach { themePrimary ->
-                div {
-                    classes(COL_AUTO)
-                    label {
-                        classes(FORM_COLORINPUT)
-                        title = themePrimary.label
-                        themeOptionRadio(option, themePrimary, FORM_COLORINPUT_INPUT)
-                        themeSwatch(option, themePrimary, FORM_COLORINPUT_COLOR, THEME_SWATCH_PRIMARY)
-                    }
-                }
-            }
-        }
-    }
-}
-
-private fun FlowContent.themeOptionGroup(option: String, label: String, content: FlowContent.() -> Unit) {
-    div {
-        classes(MB_3)
-        testId("theme-$option-picker")
-        div {
-            classes(FORM_LABEL)
-            +label
-        }
-        content()
-    }
-}
-
-private fun FlowContent.themeOptionRadio(option: String, themeOption: ThemeOption, inputClass: CSSClass) {
-    input(type = InputType.radio, name = "theme-$option") {
-        classes(inputClass)
-        value = themeOption.value
-        ariaLabel(themeOption.label)
-        xModel(option)
-        xOnChange("setThemeOption('$option', \$event.target.value)")
-    }
-}
-
-// Shows the colors of the option by being scoped to the theme attribute it stands for
-private fun FlowContent.themeSwatch(option: String, themeOption: ThemeOption, vararg swatchClasses: CSSClass) {
-    span {
-        classes(*swatchClasses)
-        attributes["data-bs-theme-$option"] = themeOption.value
     }
 }
 

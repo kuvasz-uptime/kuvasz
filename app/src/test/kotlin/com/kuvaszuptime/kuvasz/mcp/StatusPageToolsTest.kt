@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.mcp
 
+import com.kuvaszuptime.kuvasz.models.theme.ThemeBase
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_STATUS_PAGE_DETAILS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_STATUS_PAGES
 import com.kuvaszuptime.kuvasz.mcp.schemas.StatusPageDetailsSchema
@@ -110,6 +111,22 @@ class StatusPageToolsTest(
                     pageList.statusPages.forOne { statusPage ->
                         statusPage.displayCategories shouldBe false
                         statusPage.categories shouldContainExactlyInAnyOrder setOf("Payments")
+                    }
+                }
+            }
+
+            `when`("a status page has a gray palette") {
+                createStatusPage(dslContext, themeBase = ThemeBase.SLATE)
+                createStatusPage(dslContext)
+                val response = callToolWithMcpClient(LIST_STATUS_PAGES)
+
+                then("it is exposed, while an unset one is left out") {
+                    val pageList = response.structuredContentAs<StatusPageListSchema>().shouldNotBeNull()
+                    pageList.statusPages.forOne { statusPage ->
+                        statusPage.themeBase shouldBe ThemeBase.SLATE
+                    }
+                    pageList.statusPages.forOne { statusPage ->
+                        statusPage.themeBase shouldBe null
                     }
                 }
             }

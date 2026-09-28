@@ -110,7 +110,8 @@ class ThemeToggleUiTest(private val httpMonitorRepository: HttpMonitorRepository
             val settings = SettingsAppearancePage(page)
             settings.navigate()
             page.evaluate(
-                "localStorage.setItem('kuvasz-theme-base', 'bogus'); localStorage.setItem('kuvasz-theme-primary', 'bogus')"
+                "localStorage.setItem('kuvasz-theme-base', 'bogus'); " +
+                    "localStorage.setItem('kuvasz-theme-primary', 'bogus')"
             )
 
             page.reload()

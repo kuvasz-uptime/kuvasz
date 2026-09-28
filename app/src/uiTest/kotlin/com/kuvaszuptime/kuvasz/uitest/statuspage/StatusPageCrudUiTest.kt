@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.uitest.statuspage
 
+import com.kuvaszuptime.kuvasz.models.theme.ThemeBase
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
@@ -8,6 +9,7 @@ import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.uitest.PlaywrightSupport
 import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
+import com.kuvaszuptime.kuvasz.uitest.pages.statuspage.PublicStatusPage
 import com.kuvaszuptime.kuvasz.uitest.pages.statuspage.StatusPageDetailsPage
 import com.kuvaszuptime.kuvasz.uitest.pages.statuspage.StatusPageListPage
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
@@ -141,6 +143,7 @@ class StatusPageCrudUiTest(private val httpMonitorRepository: HttpMonitorReposit
                 monitors = listOf(MonitorID(MonitorType.HTTP_SSL, "Cloned Monitor")),
                 categories = listOf("Payments"),
                 displayCategories = false,
+                themeBase = ThemeBase.ZINC,
             )
 
             val page = newPage()
@@ -160,6 +163,7 @@ class StatusPageCrudUiTest(private val httpMonitorRepository: HttpMonitorReposit
             assertThat(modal.selectedCategories).hasCount(1)
             assertThat(modal.selectedCategories).containsText("Payments")
             assertThat(modal.displayCategoriesToggle).not().isChecked()
+            assertThat(modal.themeBaseRadio("ZINC")).isChecked()
 
             modal.save()
             page.waitForURL("**/status-pages/*")
@@ -295,6 +299,27 @@ class StatusPageCrudUiTest(private val httpMonitorRepository: HttpMonitorReposit
 
             val reopened = StatusPageDetailsPage(page).openConfigureModal()
             assertThat(reopened.displayCategoriesToggle).not().isChecked()
+        }
+
+        "the gray palette of a status page can be picked from the form and is applied on its public page" {
+            val page = newPage()
+            val list = StatusPageListPage(page)
+            list.navigate()
+
+            val modal = list.openCreateModal()
+                .setTitle("Slate Page")
+                .setSlug("slate-page")
+            // The default palette is preselected
+            assertThat(modal.themeBaseRadio("GRAY")).isChecked()
+            modal.pickThemeBase("SLATE")
+            modal.save()
+            page.waitForURL("**/status-pages/*")
+
+            val reopened = StatusPageDetailsPage(page).openConfigureModal()
+            assertThat(reopened.themeBaseRadio("SLATE")).isChecked()
+
+            PublicStatusPage(page).navigate("slate-page")
+            assertThat(page.locator("html")).hasAttribute("data-bs-theme-base", "slate")
         }
 
         "the categories of a status page can be cleared entirely" {

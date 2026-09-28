@@ -17,6 +17,7 @@ status-pages:
       - "Payments"
       - "Search"
     display-categories: false
+    theme-base: "SLATE"
   - title: Status Page 3
     slug: status-page-3
     monitors:

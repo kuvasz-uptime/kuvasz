@@ -129,6 +129,7 @@ class StatusPageController(
                 monitors = dataDto.monitors,
                 categoryStatus = dataDto.categoryStatus,
                 displayCategories = dataDto.displayCategories,
+                themeBase = dataDto.themeBase,
                 activeMaintenanceWindows = dataDto.activeMaintenanceWindows,
                 upcomingMaintenanceWindows = dataDto.upcomingMaintenanceWindows,
             )
@@ -151,6 +152,7 @@ class StatusPageController(
                 monitors = dataDto.monitors,
                 categoryStatus = dataDto.categoryStatus,
                 displayCategories = dataDto.displayCategories,
+                themeBase = dataDto.themeBase,
                 activeMaintenanceWindows = dataDto.activeMaintenanceWindows,
                 upcomingMaintenanceWindows = dataDto.upcomingMaintenanceWindows,
             )
