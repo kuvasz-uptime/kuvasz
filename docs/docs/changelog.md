@@ -22,6 +22,15 @@ The new [**connectivity check**](features/connectivity-check.md) periodically di
 
     _Kuvasz_ is often run on **egress-filtered or LAN-only networks**, where the default targets can never be reached, and enabling the feature there would make it **silently stop monitoring everything**. Turn it on deliberately with [`ENABLE_CONNECTIVITY_CHECK`](setup/configuration.md#connectivity-check), and adjust the [**targets**](setup/configuration.md#connectivity-check-targets) if your network filters outbound traffic.
 
+### Improvements
+
+- **Virtual thread scheduling** (experimental, disabled by default): the scheduled checks can run on [**virtual threads**](setup/configuration.md#virtual-thread-scheduling) now, so a lot of unreachable TCP, DNS or Docker targets waiting for their timeout can't delay the checks of your other monitors anymore.
+- **Lower memory usage on the database side**: _Kuvasz_ keeps only **2 idle database connections** open instead of 10, which saves **a few megabytes of memory** on your _PostgreSQL_ server while there's nothing to do. The pool still grows (up to 10 connections) when it's needed.
+
+### Fixes
+
+- **Shutting down could hang while monitors were failing**: on shutdown, _Kuvasz_ waited for **every** running check to finish, while the checks of the other monitor types kept starting new ones, and the finished ones even re-scheduled themselves. With enough slow or unreachable targets, it never stopped on its own, and _Docker_ (or whatever runs it) had to kill it. Now no new check starts once the shutdown begins, and the running ones get **at most 5 seconds** to finish.
+
 ## 4.4.0 <small>2026-09-15</small> { id="4.4.0" data-toc-label="4.4.0" }
 
 !!! question "Make your voice heard!"
