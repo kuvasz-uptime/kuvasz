@@ -88,7 +88,7 @@ internal fun withLayout(
                     script(src = "/public/ext/js/vanilla-calendar-pro.3.3.2.min.js") {}
                     commonScripts(globals.appVersion)
                     script(src = "/public/ext/js/htmx.2.0.10.min.js") {}
-                    script(src = "/public/ext/js/alpine.3.17.3.min.js") {}
+                    script(src = "/public/ext/js/alpine.3.17.4.min.js") {}
                     script(src = "/public/ext/js/masonry.4.2.2.min.js") {}
                 }
             }
