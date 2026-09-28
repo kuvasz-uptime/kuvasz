@@ -229,14 +229,18 @@ test('anchorPopupToModal moves the datepicker popup into the modal, translating 
         },
     };
     const input = {closest: (selector) => selector === '.modal' ? modal : null};
-    const popup = {parentElement: {}, style: {top: '400px', left: '305px'}};
+    const popup = {parentElement: {}, style: {top: '400px', left: '305px'}, dataset: {}};
 
     anchorPopupToModal(input, popup);
     assert.deepEqual(appended, [popup]);
     // 400 - 100 (page scroll) - 10 (modal offset) + 250 (modal scroll), and 305 - 5 - 20 + 0
     assert.deepEqual(popup.style, {top: '540px', left: '280px'});
 
-    // Once it's in the modal, it's only repositioned when shown again
+    // An already anchored position isn't translated again
+    anchorPopupToModal(input, popup);
+    assert.deepEqual(popup.style, {top: '540px', left: '280px'});
+
+    // Once it's in the modal, it's only translated again when the calendar has repositioned it in page coordinates
     popup.style = {top: '400px', left: '305px'};
     anchorPopupToModal(input, popup);
     assert.equal(appended.length, 1);
@@ -260,7 +264,7 @@ test('onStartTyped splits the typed start into a date and a time, and validates 
     assert.equal(form.errors.start, 'INVALID');
 });
 
-test('initStartDatepicker keeps the Tabler datepicker and the start in sync', (t) => {
+test('initStartDatepicker keeps the Tabler datepicker and the start in sync', async (t) => {
     const datepickers = [];
     const originalTabler = globalThis.tabler;
     globalThis.tabler = {
@@ -271,9 +275,8 @@ test('initStartDatepicker keeps the Tabler datepicker and the start in sync', (t
                 this.selectedDates = [];
                 this.setCalls = [];
                 this.calendarUpdates = [];
-                this.hideCalls = 0;
                 this.calendar = {
-                    context: {selectedTime: '08:15', mainElement: {style: {top: '500px', left: '40px'}}},
+                    context: {selectedTime: '08:15', mainElement: popup},
                     update: (resets) => this.calendarUpdates.push(resets),
                 };
                 datepickers.push(this);
@@ -283,19 +286,23 @@ test('initStartDatepicker keeps the Tabler datepicker and the start in sync', (t
                 this.selectedDates = dates;
                 this.setCalls.push(dates);
             }
-            hide() { this.hideCalls++; }
         },
     };
     const originalWindow = globalThis.window;
+    const originalRequestAnimationFrame = globalThis.requestAnimationFrame;
     const windowListeners = {};
     globalThis.window = {scrollX: 0, scrollY: 0, addEventListener: (name, listener) => windowListeners[name] = listener};
+    globalThis.requestAnimationFrame = (callback) => callback();
     t.after(() => {
         globalThis.tabler = originalTabler;
         globalThis.window = originalWindow;
+        globalThis.requestAnimationFrame = originalRequestAnimationFrame;
     });
 
+    const popup = {parentElement: null, style: {top: '500px', left: '40px'}, dataset: {}};
+    let modal = null;
     const listeners = {};
-    const element = {addEventListener: (name, listener) => listeners[name] = listener, closest: () => null};
+    const element = {addEventListener: (name, listener) => listeners[name] = listener, closest: () => modal};
     const watchers = {};
     const form = upsertMaintenanceWindowForm(null, {startRequired: 'REQUIRED'}, 'select', []);
     Object.assign(form, {
@@ -313,11 +320,35 @@ test('initStartDatepicker keeps the Tabler datepicker and the start in sync', (t
 
     // Outside of a modal the popup is left where Tabler put it
     listeners['shown.bs.datepicker']();
-    assert.deepEqual(datepicker.calendar.context.mainElement.style, {top: '500px', left: '40px'});
+    assert.deepEqual(popup.style, {top: '500px', left: '40px'});
+    listeners['hidden.bs.datepicker']();
 
-    // The popup is closed on a resize, instead of being repositioned in page coordinates
+    modal = {
+        scrollTop: 100,
+        scrollLeft: 0,
+        getBoundingClientRect: () => ({top: 0, left: 0}),
+        append: (child) => child.parentElement = modal,
+    };
+    // Before the popup is shown (when the calendar's main element is still the input), a resize leaves it in place
     windowListeners.resize();
-    assert.equal(datepicker.hideCalls, 1);
+    assert.equal(popup.parentElement, null);
+    assert.deepEqual(popup.style, {top: '500px', left: '40px'});
+
+    // In a modal, the popup is anchored to it whenever the calendar has put it in page coordinates
+    listeners['shown.bs.datepicker']();
+    assert.deepEqual(popup.style, {top: '600px', left: '40px'});
+
+    // ...e.g. after the calendar repositions it on a resize
+    popup.style = {top: '520px', left: '40px'};
+    windowListeners.resize();
+    assert.deepEqual(popup.style, {top: '620px', left: '40px'});
+
+    // ...but not while it's hidden
+    listeners['hidden.bs.datepicker']();
+    popup.style = {top: '520px', left: '40px'};
+    windowListeners.resize();
+    assert.deepEqual(popup.style, {top: '520px', left: '40px'});
+    listeners['shown.bs.datepicker']();
 
     // A picked day lands in the model, taking over the time shown by the time picker when there's none yet
     listeners['change.bs.datepicker']({dates: ['2030-01-05']});
@@ -331,6 +362,10 @@ test('initStartDatepicker keeps the Tabler datepicker and the start in sync', (t
     const hideAfterPick = {defaultPrevented: false, preventDefault() { this.defaultPrevented = true; }};
     listeners['hide.bs.datepicker'](hideAfterPick);
     assert.equal(hideAfterPick.defaultPrevented, true);
+    // Tabler reopens the popup in page coordinates right after the prevented hide, which gets anchored again
+    popup.style = {top: '510px', left: '40px'};
+    await Promise.resolve();
+    assert.deepEqual(popup.style, {top: '610px', left: '40px'});
     const laterHide = {defaultPrevented: false, preventDefault() { this.defaultPrevented = true; }};
     listeners['hide.bs.datepicker'](laterHide);
     assert.equal(laterHide.defaultPrevented, false);

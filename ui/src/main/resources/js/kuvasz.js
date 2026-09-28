@@ -377,21 +377,31 @@ const toRgbColor = ([red, green, blue], opacity = 1) => {
     return '#' + [red, green, blue].map((channel) => channel.toString(16).padStart(2, '0')).join('');
 };
 
+let themeColorContext = null;
+
 // Tabler defines its palette with oklch(), which ApexCharts can't parse, so the theme color is painted on a canvas
 // and read back as plain sRGB channels
 const themeColor = (name, opacity = 1) => {
     const value = getComputedStyle(document.body).getPropertyValue(`--tblr-${name}`).trim();
-    const canvas = document.createElement('canvas');
-    canvas.width = 1;
-    canvas.height = 1;
-    const context = canvas.getContext('2d', {willReadFrequently: true});
-    context.fillStyle = value;
-    context.fillRect(0, 0, 1, 1);
-    return toRgbColor(context.getImageData(0, 0, 1, 1).data, opacity);
+    if (!themeColorContext) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 1;
+        canvas.height = 1;
+        themeColorContext = canvas.getContext('2d', {willReadFrequently: true});
+    }
+    // The canvas ignores a value it can't parse, which would silently leave the previous color in place
+    themeColorContext.fillStyle = 'transparent';
+    themeColorContext.fillStyle = value;
+    if (!value || themeColorContext.fillStyle === 'rgba(0, 0, 0, 0)') {
+        console.warn(`Unable to resolve the --tblr-${name} theme color`);
+    }
+    themeColorContext.clearRect(0, 0, 1, 1);
+    themeColorContext.fillRect(0, 0, 1, 1);
+    return toRgbColor(themeColorContext.getImageData(0, 0, 1, 1).data, opacity);
 };
 
 // Shared ApexCharts config for the metrics charts on the monitor detail pages
-const baseAreaChartOptions =(noDataLabel, tooltipFormatter) => ({
+const baseAreaChartOptions = (noDataLabel, tooltipFormatter) => ({
     chart: {
         type: "area",
         fontFamily: "inherit",
@@ -2314,30 +2324,31 @@ const isValidCronExpression = async (value) => {
 };
 
 // Formats a Date as YYYY-MM-DD, in the browser's local time
-const toIsoDate = (date) => {
-    const pad = (n) => String(n).padStart(2, '0');
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-};
+const toIsoDate = (date) =>
+    `${date.getFullYear()}-${padToTwoDigits(date.getMonth() + 1)}-${padToTwoDigits(date.getDate())}`;
 
 // Converts an ISO timestamp into a local YYYY-MM-DDTHH:mm value (in the browser's local time)
 const toDateTimeLocalValue = (isoString) => {
     if (!isoString) return '';
     const date = new Date(isoString);
     if (isNaN(date.getTime())) return '';
-    const pad = (n) => String(n).padStart(2, '0');
-    return `${toIsoDate(date)}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    return `${toIsoDate(date)}T${padToTwoDigits(date.getHours())}:${padToTwoDigits(date.getMinutes())}`;
 };
 
 // Tabler's datepicker attaches its popup to the body, positioned in page coordinates, so in a modal (which scrolls on
 // its own) it would detach from its input. It's moved into the modal instead, with its position translated into the
-// coordinates of the modal, so it scrolls together with the input, and it's inside the focus trap of the modal as well
+// coordinates of the modal, so it scrolls together with the input, and it's inside the focus trap of the modal as well.
+// The translated position is remembered, so a popup that hasn't been repositioned since then is left as it is
 const anchorPopupToModal = (input, popup) => {
     const modal = input.closest('.modal');
     if (!modal) return;
     if (popup.parentElement !== modal) modal.append(popup);
+    if (popup.style.top === popup.dataset.anchoredTop && popup.style.left === popup.dataset.anchoredLeft) return;
     const {top, left} = modal.getBoundingClientRect();
     popup.style.top = `${parseFloat(popup.style.top) - window.scrollY - top + modal.scrollTop}px`;
     popup.style.left = `${parseFloat(popup.style.left) - window.scrollX - left + modal.scrollLeft}px`;
+    popup.dataset.anchoredTop = popup.style.top;
+    popup.dataset.anchoredLeft = popup.style.left;
 };
 
 // Checks that the value is an existing calendar day in the YYYY-MM-DD format
@@ -2562,19 +2573,29 @@ const upsertMaintenanceWindowForm = (
                 },
             },
         });
+        const anchorPopup = () => anchorPopupToModal(element, datepicker.calendar.context.mainElement);
         // Tabler closes the popup right after a day is picked, before the time could be adjusted
         let isDayJustPicked = false;
         element.addEventListener('hide.bs.datepicker', (event) => {
             if (isDayJustPicked) {
                 isDayJustPicked = false;
                 event.preventDefault();
+                // Tabler reopens the popup in page coordinates right after this, without triggering 'shown'
+                queueMicrotask(anchorPopup);
             }
         });
+        let isPopupShown = false;
         element.addEventListener('shown.bs.datepicker', () => {
-            anchorPopupToModal(element, datepicker.calendar.context.mainElement);
+            isPopupShown = true;
+            anchorPopup();
         });
-        // The calendar repositions itself in page coordinates when the window is resized, so it's closed instead
-        window.addEventListener('resize', () => datepicker.hide());
+        element.addEventListener('hidden.bs.datepicker', () => isPopupShown = false);
+        // The calendar repositions itself in page coordinates when the window is resized (e.g. by an on-screen
+        // keyboard), so it's anchored again once that's done. Until the popup is first shown, the calendar's main
+        // element is the input itself, which must be left in place
+        window.addEventListener('resize', () => requestAnimationFrame(() => {
+            if (isPopupShown) anchorPopup();
+        }));
         element.addEventListener('change.bs.datepicker', (event) => {
             isDayJustPicked = event.dates.length > 0;
             this.startDate = event.dates[0] || '';
