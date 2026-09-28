@@ -23,6 +23,7 @@ import kotlinx.coroutines.reactive.awaitSingle
 import java.net.URI
 import java.time.Duration
 import java.util.Optional
+import kotlin.coroutines.cancellation.CancellationException
 
 @Singleton
 class HttpUptimeChecker(
@@ -66,6 +67,9 @@ class HttpUptimeChecker(
                     logger.debug("HTTP uptime check for monitor with ID: ${monitor.id} finished successfully")
                 }
             }
+        } catch (ex: CancellationException) {
+            // E.g. the dispatcher is shut down under a check that outlived the shutdown's grace period
+            throw ex
         } catch (error: Exception) {
             checkResponseEvaluator.evaluateError(monitor, error)
         }

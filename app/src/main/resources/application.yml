@@ -141,6 +141,8 @@ datasources:
     driverClassName: 'org.postgresql.Driver'
     schema: 'kuvasz'
     maximumPoolSize: 10
+    # Hikari keeps maximumPoolSize connections open by default, a smaller idle pool spares resources on the DB side
+    minimumIdle: 2
 ---
 flyway:
   datasources:
@@ -172,6 +174,7 @@ app-config:
   check-updates: ${ENABLE_CHECK_UPDATES:`true`}
   http-check-timeout-seconds: ${HTTP_CHECK_TIMEOUT_SECONDS:`30`}
   http-check-max-redirects: ${HTTP_CHECK_MAX_REDIRECTS:`10`}
+  use-virtual-thread-scheduling: ${USE_VIRTUAL_THREAD_SCHEDULING:`false`}
   connectivity-check:
     enabled: ${ENABLE_CONNECTIVITY_CHECK:`false`}
     targets: ${CONNECTIVITY_CHECK_TARGETS:`1.1.1.1:53,8.8.8.8:53`}

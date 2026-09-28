@@ -30,6 +30,7 @@ import java.time.OffsetDateTime
 @Property(name = "app-config.log-event-handler", value = "true")
 @Property(name = "app-config.http-check-timeout-seconds", value = "15")
 @Property(name = "app-config.http-check-max-redirects", value = "3")
+@Property(name = "app-config.use-virtual-thread-scheduling", value = "true")
 class SettingsToolsTest(
     @param:Client("/") private val client: HttpClient,
     private val appGlobals: AppGlobals,
@@ -56,6 +57,7 @@ class SettingsToolsTest(
                         updateChecksEnabled shouldBe false
                         httpCheckTimeoutSeconds shouldBe 15L
                         httpCheckMaxRedirects shouldBe 3
+                        virtualThreadSchedulingEnabled shouldBe true
                         with(editabilityState) {
                             areHttpMonitorsReadOnly shouldBe false
                             arePushMonitorsReadOnly shouldBe false

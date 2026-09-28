@@ -23,6 +23,7 @@ import io.kotest.matchers.maps.shouldNotContainKey
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.kotest5.MicronautKotest5Extension.getMock
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
@@ -34,10 +35,16 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
+import io.mockk.verifyOrder
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeout
 import java.time.Instant
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 @MicronautTest(startApplication = false, environments = [ENABLED_CONNECTIVITY_CHECK])
 class HttpCheckSchedulerTest(
@@ -384,6 +391,28 @@ class HttpCheckSchedulerTest(
                 }
             }
 
+            `when`("an uptime check gets cancelled") {
+                val monitor = createHttpMonitor(monitorRepository, uptimeCheckInterval = 3)
+                val uptimeCheckerMock = getMock(uptimeChecker)
+                coEvery {
+                    uptimeCheckerMock.check(monitor, any(), any(), captureLambda())
+                } throws CancellationException("The task was rejected")
+                val lockRegistryMock = getMock(uptimeCheckLockRegistry)
+                coEvery { lockRegistryMock.tryAcquire(monitor.id) } returns true
+                coEvery { lockRegistryMock.release(monitor.id) } just Runs
+
+                checkScheduler.initialize()
+                delay(4000.milliseconds) // Wait for the check to be executed
+
+                then("the lock should be released anyway") {
+                    coVerifyOrder {
+                        lockRegistryMock.tryAcquire(monitor.id)
+                        uptimeCheckerMock.check(monitor, any(), any(), any())
+                        lockRegistryMock.release(monitor.id)
+                    }
+                }
+            }
+
             `when`("the getNextCheck() method is called, but no check is scheduled for the given monitor") {
                 val monitor = createHttpMonitor(monitorRepository, uptimeCheckInterval = 10, sslCheckEnabled = true)
                 checkScheduler.initialize()
@@ -455,23 +484,48 @@ class HttpCheckSchedulerTest(
 class HttpCheckSchedulerCloseTest(
     private val checkScheduler: HttpCheckScheduler,
     private val monitorRepository: HttpMonitorRepository,
+    private val uptimeChecker: HttpUptimeChecker,
     private val uptimeCheckLockRegistry: UptimeCheckLockRegistry,
 ) : DatabaseBehaviorSpec() {
     init {
         given("a CheckScheduler service with scheduled uptime and SSL checks") {
-            `when`("it is closed") {
-                val monitor = createHttpMonitor(monitorRepository, sslCheckEnabled = true)
+            `when`("it is closed while an uptime check is still running") {
+                val monitor = createHttpMonitor(monitorRepository, sslCheckEnabled = true, uptimeCheckInterval = 3)
+                val checkStarted = CompletableDeferred<Unit>()
+                val checkFinished = CompletableDeferred<Unit>()
+                val lockReleased = CountDownLatch(1)
+                val uptimeCheckerMock = getMock(uptimeChecker)
+                coEvery { uptimeCheckerMock.check(monitor, any(), any(), captureLambda()) } coAnswers {
+                    checkStarted.complete(Unit)
+                    checkFinished.await()
+                    lambda<(HttpMonitorRecord) -> Unit>().captured.invoke(monitor)
+                }
                 val lockRegistryMock = getMock(uptimeCheckLockRegistry)
-                every { lockRegistryMock.hasLocks() } returns false
+                every { lockRegistryMock.tryAcquire(monitor.id) } returns true
+                every { lockRegistryMock.release(monitor.id) } answers { lockReleased.countDown() }
+                // The running check finishes while the registry is being drained
+                every { lockRegistryMock.drain(any()) } answers {
+                    checkFinished.complete(Unit)
+                    lockReleased.await(5, TimeUnit.SECONDS)
+                }
                 checkScheduler.initialize()
                 val uptimeCheck = checkScheduler.getScheduledUptimeChecks()[monitor.id].shouldNotBeNull()
                 val sslCheck = checkScheduler.getScheduledSSLChecks()[monitor.id].shouldNotBeNull()
+                withTimeout(5.seconds) { checkStarted.await() }
 
                 checkScheduler.close()
 
                 then("it should cancel the scheduled SSL checks beside the uptime ones") {
                     uptimeCheck.isCancelled.shouldBeTrue()
                     sslCheck.isCancelled.shouldBeTrue()
+                }
+
+                then("it should drain the running checks, without re-scheduling the ones that finish meanwhile") {
+                    verifyOrder {
+                        lockRegistryMock.drain(any())
+                        lockRegistryMock.release(monitor.id)
+                    }
+                    checkScheduler.getScheduledUptimeChecks()[monitor.id] shouldBeSameInstanceAs uptimeCheck
                 }
             }
         }

@@ -51,6 +51,7 @@ import kotlinx.coroutines.reactive.awaitFirst
 @Property(name = "app-config.log-event-handler", value = "true")
 @Property(name = "app-config.http-check-timeout-seconds", value = "10")
 @Property(name = "app-config.http-check-max-redirects", value = "7")
+@Property(name = "app-config.use-virtual-thread-scheduling", value = "true")
 class SettingsControllerTest(
     settingsClient: SettingsClient,
     appGlobals: AppGlobals,
@@ -90,6 +91,7 @@ class SettingsControllerTest(
                 result.app.updateChecksEnabled shouldBe false
                 result.app.httpCheckTimeoutSeconds shouldBe 10
                 result.app.httpCheckMaxRedirects shouldBe 7
+                result.app.virtualThreadSchedulingEnabled shouldBe true
 
                 with(result.smtp.shouldNotBeNull()) {
                     host shouldBe "localhost"

@@ -838,6 +838,39 @@ The timeout of a **single dial**, in seconds. The **minimum value is 1 second**.
 
 Keep in mind that this is a per-target limit, and that a failing probe is [retried twice before it's accepted](../features/connectivity-check.md#how-does-it-work), so a whole probe can take up to `3 × targets × timeout + 2s` while the connectivity is lost. With many targets and a generous timeout that can add up: the **startup** of _Kuvasz_ is also delayed by up to `targets × timeout` when it boots into an outage, because the connectivity state is primed before the monitors are scheduled.
 
+### Virtual thread scheduling
+
+<!-- md:version 4.5.0 -->
+<!-- md:flag experimental -->
+<!-- md:default `false` -->
+<!-- md:type `boolean` -->
+
+=== "YAML"
+
+    ```yaml
+    app-config.use-virtual-thread-scheduling: true
+    ```
+
+=== "ENV"
+
+    ```bash
+    USE_VIRTUAL_THREAD_SCHEDULING=true
+    ```
+
+Runs every scheduled uptime check (and the [connectivity check](#connectivity-check)) on its **own [virtual thread](https://openjdk.org/jeps/444)**, instead of the shared thread pool that is used by default.
+
+By default, the checks share a pool of **64 threads** (or as many as the number of CPU cores, if that's more). That's plenty as long as your targets respond quickly, and an **HTTP** check doesn't even occupy a thread while it waits for the response, but a **TCP, ICMP, DNS or Docker** check keeps its thread busy until it gets a response, or until its **timeout** expires. If many targets become unreachable at once (e.g. a whole network segment goes down), these slow checks can use up the pool, and the **checks of every other monitor get delayed** until a thread frees up — exactly when you need them the most. With virtual threads, a check that is waiting for a timeout costs next to nothing, so **the rest of your monitors keep being checked on time**.
+
+!!! tip
+
+    It's worth enabling if you have **hundreds of TCP, DNS or Docker monitors**, or you use **long timeouts** on many of them. For a smaller setup it won't make a noticeable difference, neither in the timing of the checks, nor in the resource usage.
+
+!!! warning
+
+    With virtual threads there is **no upper limit** on the number of TCP, DNS and Docker checks running at the same time anymore, so when a lot of targets go down together, _Kuvasz_ does proportionally more work (checks, database writes) than with the default pool.
+
+    **ICMP monitors** are the exception: every ping runs as a separate `ping` process, which still needs regular (platform) threads and extra memory, so **at most 64 ICMP checks run at the same time**. Unlike the default pool, this limit is dedicated to the ICMP checks: if a lot of your ICMP monitors go down together, their checks can still be delayed, but they don't hold up the checks of your other monitors anymore.
+
 ## Full configuration example
 
 You can find the full configuration example below, which includes all the options currently available. You can use it as a starting point for your own configuration.
@@ -910,6 +943,7 @@ You can find the full configuration example below, which includes all the option
       check-updates: true
       http-check-timeout-seconds: 30
       http-check-max-redirects: 10
+      use-virtual-thread-scheduling: false
       connectivity-check:
         enabled: false
         targets:
@@ -959,6 +993,7 @@ You can find the full configuration example below, which includes all the option
     CONNECTIVITY_CHECK_TARGETS=1.1.1.1:53,8.8.8.8:53
     CONNECTIVITY_CHECK_INTERVAL_SECONDS=60
     CONNECTIVITY_CHECK_TIMEOUT_SECONDS=5
+    USE_VIRTUAL_THREAD_SCHEDULING=false
     ENABLE_MCP_SERVER=false
     TZ=UTC
     ENABLE_METRICS_EXPORT=true

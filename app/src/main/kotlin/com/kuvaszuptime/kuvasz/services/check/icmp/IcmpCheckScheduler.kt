@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.services.check.icmp
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
+import com.kuvaszuptime.kuvasz.services.DispatcherFactory
 import com.kuvaszuptime.kuvasz.services.check.UptimeCheckLockRegistry
 import com.kuvaszuptime.kuvasz.services.check.UptimeCheckScheduler
 import com.kuvaszuptime.kuvasz.services.connectivity.ConnectivityChecker
@@ -18,7 +19,7 @@ class IcmpCheckScheduler(
     @Named(TaskExecutors.SCHEDULED) taskScheduler: TaskScheduler,
     monitorRepository: IcmpMonitorRepository,
     private val uptimeChecker: IcmpUptimeChecker,
-    dispatcher: CoroutineDispatcher,
+    @Named(DispatcherFactory.ICMP_CHECK_DISPATCHER) dispatcher: CoroutineDispatcher,
     lockRegistry: UptimeCheckLockRegistry,
     maintenanceWindowService: MaintenanceWindowService,
     connectivityChecker: ConnectivityChecker?,

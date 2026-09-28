@@ -1,11 +1,12 @@
 package com.kuvaszuptime.kuvasz.services.connectivity
 
+import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.config.ConnectivityCheckConfig
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.settings.ConnectivityState
 import com.kuvaszuptime.kuvasz.services.check.tcp.SystemHostnameResolver
 import com.kuvaszuptime.kuvasz.services.check.tcp.TcpCheckResult
-import com.kuvaszuptime.kuvasz.services.DispatcherFactory
+import com.kuvaszuptime.kuvasz.services.ScheduledCheckDispatchers
 import com.kuvaszuptime.kuvasz.services.check.tcp.TcpConnectExecutor
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
@@ -28,7 +29,7 @@ class ConnectivityCheckerTest : BehaviorSpec({
 
     val executor = TcpConnectExecutor(SystemHostnameResolver())
     // The very dispatcher the application injects into the checker
-    val dispatcher = DispatcherFactory().provideDispatcher()
+    val dispatcher = ScheduledCheckDispatchers(AppConfig()).default
 
     lateinit var openTarget: ClientAndServer
     var closedPort = 0
