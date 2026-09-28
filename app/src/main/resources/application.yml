@@ -141,6 +141,8 @@ datasources:
     driverClassName: 'org.postgresql.Driver'
     schema: 'kuvasz'
     maximumPoolSize: 10
+    # Hikari keeps maximumPoolSize connections open by default, a smaller idle pool spares resources on the DB side
+    minimumIdle: 2
 ---
 flyway:
   datasources:
