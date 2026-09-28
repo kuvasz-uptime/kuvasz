@@ -12,6 +12,10 @@ class MaintenanceWindowFormModal(page: Page) : ModalView(page) {
     val nameInput: Locator get() = modal.locator("#name-input")
     val cronInput: Locator get() = modal.locator("#cron-input")
     val startInput: Locator get() = modal.locator("#start-input")
+
+    // Tabler's datepicker popup, which is attached to the body instead of the modal
+    val datepicker: Locator get() = page.locator("[data-vc=calendar][data-vc-input]:not([data-vc-calendar-hidden])")
+
     val durationInput: Locator get() = modal.locator("#duration-input")
 
     private val globalToggle: Locator get() = modal.locator("input[name='global']")
@@ -41,7 +45,31 @@ class MaintenanceWindowFormModal(page: Page) : ModalView(page) {
 
     fun setDuration(value: String): MaintenanceWindowFormModal = apply { durationInput.fill(value) }
 
-    fun setStart(value: String): MaintenanceWindowFormModal = apply { startInput.fill(value) }
+    // Typing is applied when the input changes (i.e. on blur or Enter), just like in the browser
+    fun setStart(value: String): MaintenanceWindowFormModal = apply {
+        startInput.fill(value)
+        startInput.dispatchEvent("change")
+    }
+
+    // Opens the datepicker and picks a day of the month it shows first
+    fun pickStartDay(isoDate: String): MaintenanceWindowFormModal = apply {
+        startInput.click()
+        datepicker.locator("[data-vc-date='$isoDate'] [data-vc-date-btn]").click()
+    }
+
+    // Types the hour and the minute into the time picker of the (open) datepicker
+    fun pickStartTime(hour: String, minute: String): MaintenanceWindowFormModal = apply {
+        listOf("hour" to hour, "minute" to minute).forEach { (unit, value) ->
+            val input = datepicker.locator("[data-vc-time-input='$unit'] input")
+            input.fill(value)
+            input.dispatchEvent("change")
+        }
+    }
+
+    // The modal is the scroll container of its content, not the page
+    fun scrollBy(pixels: Int): MaintenanceWindowFormModal = apply {
+        modal.evaluate("(element, pixels) => element.scrollTop += pixels", pixels)
+    }
 
     // Cron validation only fires when the field loses focus (or on submit), mirroring the production wiring.
     fun blurCron(): MaintenanceWindowFormModal = apply { cronInput.blur() }

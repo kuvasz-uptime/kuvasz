@@ -24,6 +24,7 @@ internal fun FlowContent.maintenanceWindowCreateUpdateModal(
         "cronRequired" to Messages.errorMaintenanceWindowCronRequired(),
         "cronInvalid" to Messages.errorMaintenanceWindowCronInvalid(),
         "startRequired" to Messages.errorMaintenanceWindowStartRequired(),
+        "startInvalid" to Messages.errorMaintenanceWindowStartInvalid(),
         "durationRequired" to Messages.errorMaintenanceWindowDurationRequired(),
         "durationInvalid" to Messages.errorMaintenanceWindowDurationInvalid(),
     ).asJsonString()
@@ -302,21 +303,31 @@ private fun FlowContent.maintenanceWindowStartInput(isReadOnly: Boolean) {
         inputName = inputName,
         required = true,
     )
-    input(type = InputType.dateTimeLocal) {
-        classes(FORM_CONTROL, NATIVE_DATETIME_INPUT)
-        id = inputName
-        name = inputName
-        xModel("start")
-        xBindErrorClass("start")
-        xOnInput("validateStart()")
-        // Open the native picker when the field is clicked anywhere, not only on the (hidden) calendar icon
-        onClick = "try { this.showPicker() } catch (e) {}"
-        if (isReadOnly) disabled = true
+    div {
+        classes(INPUT_ICON)
+        span {
+            classes(INPUT_ICON_ADDON)
+            icon(Icon.CALENDAR_EVENT)
+        }
+        input(type = InputType.text) {
+            classes(FORM_CONTROL)
+            id = inputName
+            name = inputName
+            placeholder = "YYYY-MM-DD HH:mm"
+            autoComplete = "off"
+            attributes["data-bs-toggle"] = "datepicker"
+            xInit("initStartDatepicker(\$el)")
+            xBindValue("formatStartValue(startDate, startTime)")
+            xBindErrorClass("start")
+            xOnChange("onStartTyped(\$event.target.value)")
+            if (isReadOnly) disabled = true
+        }
     }
     templateTag {
         xIf("errors.start")
         div {
-            classes(INVALID_FEEDBACK)
+            // The input isn't a sibling of the feedback, so it has to be displayed explicitly
+            classes(INVALID_FEEDBACK, D_BLOCK)
             xText("errors.start")
         }
     }

@@ -9,7 +9,14 @@ import com.kuvaszuptime.kuvasz.uitest.pages.maintenance.MaintenanceWindowListPag
 import com.kuvaszuptime.kuvasz.uitest.shouldAcceptAfterFixing
 import com.kuvaszuptime.kuvasz.uitest.shouldRejectWith
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
+import io.kotest.matchers.doubles.plusOrMinus
+import io.kotest.matchers.doubles.shouldBeGreaterThanOrEqual
+import io.kotest.matchers.doubles.shouldBeLessThan
+import io.kotest.matchers.doubles.shouldBeLessThanOrEqual
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
+import java.time.LocalDate
 
 /**
  * Exercises the Alpine.js validation in the maintenance-window create modal: the per-type required fields, the
@@ -165,19 +172,103 @@ class MaintenanceWindowFormValidationUiTest : UiTestSpec() {
             val modal = openCreateModal()
 
             modal.selectType(MaintenanceWindowType.SINGLE)
-                .setStart("2030-01-01T10:00")
-            assertThat(modal.startInput).hasValue("2030-01-01T10:00")
+                .setStart("2030-01-01 10:00")
+            assertThat(modal.startInput).hasValue("2030-01-01 10:00")
 
             modal.selectType(MaintenanceWindowType.CRON)
             modal.selectType(MaintenanceWindowType.SINGLE)
             assertThat(modal.startInput).hasValue("")
         }
+
+        "a one-off window requires a time besides the start date" {
+            val modal = openCreateModal()
+
+            modal.selectType(MaintenanceWindowType.SINGLE)
+                .setName("One-off window")
+                .setDuration("PT1H")
+                .setStart("2030-01-01")
+            modal shouldRejectWith Messages.errorMaintenanceWindowStartRequired()
+
+            modal.setStart("2030-01-01 10:00")
+            modal shouldAcceptAfterFixing Messages.errorMaintenanceWindowStartRequired()
+        }
+
+        "a typed start that is not an existing day or time is flagged and blocks saving until corrected" {
+            val modal = openCreateModal()
+
+            modal.selectType(MaintenanceWindowType.SINGLE)
+                .setName("One-off window")
+                .setDuration("PT1H")
+                .setStart("2030-02-30 10:00")
+            modal shouldRejectWith Messages.errorMaintenanceWindowStartInvalid()
+
+            modal.setStart("2030-02-28 24:00")
+            modal shouldRejectWith Messages.errorMaintenanceWindowStartInvalid()
+
+            modal.setStart("2030-02-28 10:00")
+            modal shouldAcceptAfterFixing Messages.errorMaintenanceWindowStartInvalid()
+        }
+
+        "the start date and time can be picked in the datepicker" {
+            val modal = openCreateModal()
+            // Days that are surely in the month the calendar opens with
+            val pickedDay = LocalDate.now().withDayOfMonth(1).toString()
+            val typedDay = LocalDate.now().withDayOfMonth(2).toString()
+
+            modal.selectType(MaintenanceWindowType.SINGLE)
+                .setName("One-off window")
+                .setDuration("PT1H")
+                .pickStartDay(pickedDay)
+            // The popup stays open after a day is picked, so the time can be adjusted as well
+            assertThat(modal.datepicker).isVisible()
+            modal.pickStartTime(hour = "09", minute = "45")
+            assertThat(modal.startInput).hasValue("$pickedDay 09:45")
+            modal shouldAcceptAfterFixing Messages.errorMaintenanceWindowStartRequired()
+
+            // Picking another day keeps the picked time
+            modal.datepicker.locator("[data-vc-date='$typedDay'] [data-vc-date-btn]").click()
+            assertThat(modal.startInput).hasValue("$typedDay 09:45")
+
+            // A typed start is selected in the calendar as well
+            modal.setStart("$pickedDay 18:30")
+            assertThat(modal.datepicker.locator("[data-vc-date='$pickedDay'][data-vc-date-selected]")).isVisible()
+            assertThat(modal.datepicker.locator("[data-vc-time-input='hour'] input")).hasValue("18")
+            assertThat(modal.datepicker.locator("[data-vc-time-input='minute'] input")).hasValue("30")
+        }
+
+        "the datepicker fits into the viewport and stays attached to its input when the modal is scrolled" {
+            // Short enough that the popup doesn't fit below the input
+            val modal = openCreateModal(viewportHeight = SHORT_VIEWPORT_HEIGHT)
+            modal.selectType(MaintenanceWindowType.SINGLE)
+            modal.startInput.click()
+            assertThat(modal.datepicker).isVisible()
+
+            val input = modal.startInput.boundingBox().shouldNotBeNull()
+            val popup = modal.datepicker.boundingBox().shouldNotBeNull()
+            // Opened above the input instead
+            popup.y shouldBeGreaterThanOrEqual 0.0
+            (popup.y + popup.height) shouldBeLessThanOrEqual input.y
+            val offsetFromInput = popup.y - input.y
+
+            modal.scrollBy(SCROLL_DISTANCE)
+            val scrolledInput = modal.startInput.boundingBox().shouldNotBeNull()
+            val scrolledPopup = modal.datepicker.boundingBox().shouldNotBeNull()
+            scrolledInput.y shouldBeLessThan input.y
+            (scrolledPopup.y - scrolledInput.y) shouldBe (offsetFromInput plusOrMinus 1.0)
+        }
     }
 
-    private fun openCreateModal(): MaintenanceWindowFormModal {
+    private fun openCreateModal(viewportHeight: Int? = null): MaintenanceWindowFormModal {
         val page = newPage()
+        viewportHeight?.let { page.setViewportSize(VIEWPORT_WIDTH, it) }
         val list = MaintenanceWindowListPage(page)
         list.navigate()
         return list.openCreateModal()
+    }
+
+    companion object {
+        private const val VIEWPORT_WIDTH = 1280
+        private const val SHORT_VIEWPORT_HEIGHT = 600
+        private const val SCROLL_DISTANCE = 100
     }
 }

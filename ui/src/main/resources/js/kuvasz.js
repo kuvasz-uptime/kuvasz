@@ -4,6 +4,18 @@ const setTheme = (theme) => {
     localStorage.setItem('kuvasz-theme', theme);
 };
 
+// Gray palette ('base') and accent color ('primary') of tabler-themes.css, applied eagerly on the next page loads
+const setThemeOption = (option, value) => {
+    document.documentElement.setAttribute(`data-bs-theme-${option}`, value);
+    localStorage.setItem(`kuvasz-theme-${option}`, value);
+};
+
+// The appearance card of the Settings page, preselecting what's applied at the moment
+const appearanceSettings = (defaultPrimary) => ({
+    base: document.documentElement.getAttribute('data-bs-theme-base'),
+    primary: document.documentElement.getAttribute('data-bs-theme-primary') || defaultPrimary,
+});
+
 // Auto-select the active route in the navigation
 document.addEventListener('DOMContentLoaded', function () {
     const navLinks = document.querySelectorAll('.nav-link');
@@ -359,8 +371,27 @@ const statusPageDetails = (statusPageId, isStatusPagePublic) => ({
     }
 });
 
+// Formats the red, green and blue channels (0-255) as a hex color, or as rgba() when it's translucent
+const toRgbColor = ([red, green, blue], opacity = 1) => {
+    if (opacity < 1) return `rgba(${red}, ${green}, ${blue}, ${opacity})`;
+    return '#' + [red, green, blue].map((channel) => channel.toString(16).padStart(2, '0')).join('');
+};
+
+// Tabler defines its palette with oklch(), which ApexCharts can't parse, so the theme color is painted on a canvas
+// and read back as plain sRGB channels
+const themeColor = (name, opacity = 1) => {
+    const value = getComputedStyle(document.body).getPropertyValue(`--tblr-${name}`).trim();
+    const canvas = document.createElement('canvas');
+    canvas.width = 1;
+    canvas.height = 1;
+    const context = canvas.getContext('2d', {willReadFrequently: true});
+    context.fillStyle = value;
+    context.fillRect(0, 0, 1, 1);
+    return toRgbColor(context.getImageData(0, 0, 1, 1).data, opacity);
+};
+
 // Shared ApexCharts config for the metrics charts on the monitor detail pages
-const baseAreaChartOptions = (noDataLabel, tooltipFormatter) => ({
+const baseAreaChartOptions =(noDataLabel, tooltipFormatter) => ({
     chart: {
         type: "area",
         fontFamily: "inherit",
@@ -377,7 +408,7 @@ const baseAreaChartOptions = (noDataLabel, tooltipFormatter) => ({
         enabled: false,
     },
     fill: {
-        colors: [tabler.tabler.getColor("primary", 0.16), tabler.tabler.getColor("primary", 0.16)],
+        colors: [themeColor("primary", 0.16), themeColor("primary", 0.16)],
         type: "solid",
     },
     stroke: {
@@ -437,8 +468,8 @@ const baseAreaChartOptions = (noDataLabel, tooltipFormatter) => ({
         xaxis: [],
         points: [],
     },
-    // ApexCharts can't resolve CSS color functions, so Tabler's own helper resolves the theme color for it
-    colors: [tabler.tabler.getColor("primary")],
+    // ApexCharts can't resolve CSS color functions, so the theme color is resolved for it upfront
+    colors: [themeColor("primary")],
     legend: {
         show: false,
     },
@@ -615,8 +646,8 @@ const metricsBlock = ({
 
         initializeChart() {
             this.markerColors = {
-                started: tabler.tabler.getColor("red"),
-                resolved: tabler.tabler.getColor("green"),
+                started: themeColor("red"),
+                resolved: themeColor("green"),
             };
             this.chart = new ApexCharts(document.getElementById(chartElementId), buildChartOptions(this.chartLabels));
             this.chart.render();
@@ -721,7 +752,7 @@ const icmpChartOptions = (chartLabels) => {
     return {
         ...options,
         chart: {...options.chart, type: "line"},
-        colors: [tabler.tabler.getColor("primary"), tabler.tabler.getColor("orange")],
+        colors: [themeColor("primary"), themeColor("orange")],
         fill: {
             type: "solid",
             opacity: [0.16, 1],
@@ -816,9 +847,9 @@ const dockerResourceChartOptions = (chartLabels) => {
         ...options,
         chart: {...options.chart, type: "line"},
         colors: [
-            tabler.tabler.getColor("primary"),
-            tabler.tabler.getColor("green"),
-            tabler.tabler.getColor("red"),
+            themeColor("primary"),
+            themeColor("green"),
+            themeColor("red"),
         ],
         fill: {
             type: "solid",
@@ -2278,14 +2309,49 @@ const isValidCronExpression = async (value) => {
     }
 };
 
-// Converts an ISO timestamp into the value expected by a datetime-local input (in the browser's local time)
+// Formats a Date as YYYY-MM-DD, in the browser's local time
+const toIsoDate = (date) => {
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+};
+
+// Converts an ISO timestamp into a local YYYY-MM-DDTHH:mm value (in the browser's local time)
 const toDateTimeLocalValue = (isoString) => {
     if (!isoString) return '';
     const date = new Date(isoString);
     if (isNaN(date.getTime())) return '';
     const pad = (n) => String(n).padStart(2, '0');
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
-        `T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    return `${toIsoDate(date)}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
+
+// Tabler's datepicker attaches its popup to the body, positioned in page coordinates, so in a modal (which scrolls on
+// its own) it would detach from its input. It's moved into the modal instead, with its position translated into the
+// coordinates of the modal, so it scrolls together with the input, and it's inside the focus trap of the modal as well
+const anchorPopupToModal = (input, popup) => {
+    const modal = input.closest('.modal');
+    if (!modal) return;
+    if (popup.parentElement !== modal) modal.append(popup);
+    const {top, left} = modal.getBoundingClientRect();
+    popup.style.top = `${parseFloat(popup.style.top) - window.scrollY - top + modal.scrollTop}px`;
+    popup.style.left = `${parseFloat(popup.style.left) - window.scrollX - left + modal.scrollLeft}px`;
+};
+
+// Checks that the value is an existing calendar day in the YYYY-MM-DD format
+const isValidIsoDate = (value) => {
+    if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    const [year, month, day] = value.split('-').map(Number);
+    return toIsoDate(new Date(year, month - 1, day)) === value;
+};
+
+// Checks that the value is a time of the day in the 24-hour HH:mm format
+const isValidTime = (value) => typeof value === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+
+// The start of a one-off maintenance window is shown (and can be typed in) as YYYY-MM-DD HH:mm
+const formatStartValue = (date, time) => [date, time].filter(Boolean).join(' ');
+
+const parseStartValue = (value) => {
+    const [date = '', time = ''] = (value || '').trim().split(/[\sT]+/);
+    return {date, time};
 };
 
 const resolveMaintenanceWindowType = (window) => {
@@ -2392,7 +2458,7 @@ const upsertMaintenanceWindowForm = (
         this.description = source?.description || null;
         this.type = resolveMaintenanceWindowType(source);
         this.cron = source?.cron || '';
-        this.start = toDateTimeLocalValue(source?.start);
+        [this.startDate, this.startTime = ''] = toDateTimeLocalValue(source?.start).split('T');
         this.duration = source?.duration || '';
         this.enabled = source?.enabled ?? true;
         this.global = source?.global ?? false;
@@ -2425,7 +2491,8 @@ const upsertMaintenanceWindowForm = (
             this.cron = '';
         }
         if (this.type !== MAINTENANCE_WINDOW_TYPES.SINGLE) {
-            this.start = '';
+            this.startDate = '';
+            this.startTime = '';
         }
         if (this.type === MAINTENANCE_WINDOW_TYPES.MANUAL) {
             this.duration = '';
@@ -2454,8 +2521,77 @@ const upsertMaintenanceWindowForm = (
     },
 
     validateStart() {
-        const isMissing = this.type === MAINTENANCE_WINDOW_TYPES.SINGLE && !this.start;
-        this.errors.start = isMissing ? this.errorMessages.startRequired : null;
+        if (this.type !== MAINTENANCE_WINDOW_TYPES.SINGLE) {
+            this.errors.start = null;
+        } else if (!this.startDate || !this.startTime) {
+            this.errors.start = this.errorMessages.startRequired;
+        } else if (!isValidIsoDate(this.startDate) || !isValidTime(this.startTime)) {
+            this.errors.start = this.errorMessages.startInvalid;
+        } else {
+            this.errors.start = null;
+        }
+    },
+
+    // Applies what was typed into the start input
+    onStartTyped(value) {
+        const {date, time} = parseStartValue(value);
+        this.startDate = date;
+        this.startTime = time;
+        this.validateStart();
+    },
+
+    // The start is picked with Tabler's datepicker, extended with the time picker of the underlying Vanilla Calendar
+    // Pro. The picker and the model are kept in sync in both directions: a picked day or time lands in the model,
+    // and a typed (or loaded) one is selected in the calendar
+    initStartDatepicker(element) {
+        const datepicker = new tabler.Datepicker(element, {
+            // Tabler writes the input when a day is picked, which has to show the time as well
+            dateFormat: (date) => formatStartValue(toIsoDate(date), this.startTime),
+            // Opens above the input when there isn't enough room below it
+            placement: 'auto',
+            vcpOptions: {
+                selectionTimeMode: 24,
+                ...(isValidTime(this.startTime) ? {selectedTime: this.startTime} : {}),
+                onChangeTime: (calendar) => {
+                    this.startTime = calendar.context.selectedTime;
+                    this.validateStart();
+                },
+            },
+        });
+        // Tabler closes the popup right after a day is picked, before the time could be adjusted
+        let isDayJustPicked = false;
+        element.addEventListener('hide.bs.datepicker', (event) => {
+            if (isDayJustPicked) {
+                isDayJustPicked = false;
+                event.preventDefault();
+            }
+        });
+        element.addEventListener('shown.bs.datepicker', () => {
+            anchorPopupToModal(element, datepicker.calendar.context.mainElement);
+        });
+        // The calendar repositions itself in page coordinates when the window is resized, so it's closed instead
+        window.addEventListener('resize', () => datepicker.hide());
+        element.addEventListener('change.bs.datepicker', (event) => {
+            isDayJustPicked = event.dates.length > 0;
+            this.startDate = event.dates[0] || '';
+            // The time picker always shows a time, which is taken over unless one was set already
+            this.startTime = this.startTime || datepicker.calendar.context.selectedTime;
+            this.validateStart();
+        });
+        this.$watch('startDate', (value) => {
+            const selectedDates = isValidIsoDate(value) ? [value] : [];
+            if (selectedDates[0] !== datepicker.getSelectedDates()[0]) {
+                datepicker.setSelectedDates(selectedDates);
+            }
+        });
+        this.$watch('startTime', (value) => {
+            if (!isValidTime(value)) return;
+            // Kept in the options too, because every later update of the calendar resets the time from there
+            datepicker.calendar.selectedTime = value;
+            if (value !== datepicker.calendar.context.selectedTime) {
+                datepicker.calendar.update({dates: false, month: false, year: false});
+            }
+        });
     },
 
     // Fills the duration input with a predefined ISO-8601 value coming from a quick-select button
@@ -2495,7 +2631,9 @@ const upsertMaintenanceWindowForm = (
             global: this.global,
             showOnStatusPages: this.showOnStatusPages,
             cron: isCron ? this.cron : null,
-            start: isSingle && this.start ? new Date(this.start).toISOString() : null,
+            start: isSingle && this.startDate && this.startTime
+                ? new Date(`${this.startDate}T${this.startTime}`).toISOString()
+                : null,
             duration: isManual ? null : this.duration,
             monitors: this.selectedMonitors,
             categories: this.selectedCategories,
@@ -2516,6 +2654,8 @@ if (typeof module !== 'undefined' && module.exports) {
         buildToastMarkup,
         hasNonNullValue,
         bytesToMib,
+        toRgbColor,
+        anchorPopupToModal,
         formatChartTimestamp,
         buildIncidentAnnotations,
         isValidUrl,
@@ -2523,12 +2663,19 @@ if (typeof module !== 'undefined' && module.exports) {
         isValidIsoDuration,
         isoDurationToMillis,
         toDateTimeLocalValue,
+        isValidIsoDate,
+        isValidTime,
+        formatStartValue,
+        parseStartValue,
         resolveMaintenanceWindowType,
         createRandomSecret,
         // Helpers of the category select
         fetchCategories,
         resetCategorySelect,
         resetCategoryMultiSelect,
+        // Theme preferences
+        setThemeOption,
+        appearanceSettings,
         // Alpine x-data component factories
         monitorListItem,
         statusPageListItem,

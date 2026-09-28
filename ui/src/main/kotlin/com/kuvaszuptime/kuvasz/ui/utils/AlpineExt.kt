@@ -79,6 +79,10 @@ internal fun HTMLTag.xIf(value: String) {
     attributes["x-if"] = value
 }
 
+internal fun HTMLTag.xInit(action: String) {
+    attributes["x-init"] = action
+}
+
 internal fun HTMLTag.xInitNextTick(action: String) {
     attributes["x-init"] = "\$nextTick(() => $action)"
 }

@@ -16,6 +16,11 @@ const {
     isValidIsoDuration,
     isoDurationToMillis,
     toDateTimeLocalValue,
+    isValidIsoDate,
+    isValidTime,
+    formatStartValue,
+    parseStartValue,
+    toRgbColor,
     resolveMaintenanceWindowType,
     createRandomSecret,
 } = require('../main/resources/js/kuvasz.js');
@@ -117,6 +122,53 @@ test('toDateTimeLocalValue', () => {
     const expected = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
         `T${pad(d.getHours())}:${pad(d.getMinutes())}`;
     assert.equal(toDateTimeLocalValue(iso), expected);
+});
+
+test('isValidIsoDate', () => {
+    assert.equal(isValidIsoDate('2030-01-05'), true);
+    assert.equal(isValidIsoDate('2028-02-29'), true);
+    assert.equal(isValidIsoDate(''), false);
+    assert.equal(isValidIsoDate(null), false);
+    assert.equal(isValidIsoDate('2030-1-5'), false);
+    assert.equal(isValidIsoDate('05/01/2030'), false);
+    assert.equal(isValidIsoDate('2030-01-05T10:00'), false);
+    // Well-formed, but not an existing calendar day
+    assert.equal(isValidIsoDate('2030-02-29'), false);
+    assert.equal(isValidIsoDate('2030-13-01'), false);
+});
+
+test('isValidTime', () => {
+    assert.equal(isValidTime('00:00'), true);
+    assert.equal(isValidTime('23:59'), true);
+    assert.equal(isValidTime(''), false);
+    assert.equal(isValidTime(null), false);
+    assert.equal(isValidTime('24:00'), false);
+    assert.equal(isValidTime('10:60'), false);
+    assert.equal(isValidTime('9:30'), false);
+    assert.equal(isValidTime('10:30:00'), false);
+});
+
+test('formatStartValue', () => {
+    assert.equal(formatStartValue('2030-01-05', '10:30'), '2030-01-05 10:30');
+    assert.equal(formatStartValue('2030-01-05', ''), '2030-01-05');
+    assert.equal(formatStartValue('', '10:30'), '10:30');
+    assert.equal(formatStartValue('', ''), '');
+});
+
+test('parseStartValue', () => {
+    assert.deepEqual(parseStartValue('2030-01-05 10:30'), {date: '2030-01-05', time: '10:30'});
+    // Extra whitespace and the ISO separator are tolerated
+    assert.deepEqual(parseStartValue('  2030-01-05   10:30 '), {date: '2030-01-05', time: '10:30'});
+    assert.deepEqual(parseStartValue('2030-01-05T10:30'), {date: '2030-01-05', time: '10:30'});
+    assert.deepEqual(parseStartValue('2030-01-05'), {date: '2030-01-05', time: ''});
+    assert.deepEqual(parseStartValue(''), {date: '', time: ''});
+    assert.deepEqual(parseStartValue(null), {date: '', time: ''});
+});
+
+test('toRgbColor', () => {
+    assert.equal(toRgbColor([6, 111, 209]), '#066fd1');
+    assert.equal(toRgbColor([0, 0, 0, 255]), '#000000');
+    assert.equal(toRgbColor([6, 111, 209], 0.16), 'rgba(6, 111, 209, 0.16)');
 });
 
 test('resolveMaintenanceWindowType', () => {

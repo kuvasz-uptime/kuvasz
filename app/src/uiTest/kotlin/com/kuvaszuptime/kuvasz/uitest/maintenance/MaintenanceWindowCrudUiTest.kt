@@ -244,7 +244,7 @@ class MaintenanceWindowCrudUiTest(private val httpMonitorRepository: HttpMonitor
             list.openCreateModal()
                 .selectType(MaintenanceWindowType.SINGLE)
                 .setName(name)
-                .setStart("2030-01-01T10:00")
+                .setStart("2030-01-01 10:00")
                 .setDuration("PT1H")
                 .save()
 
