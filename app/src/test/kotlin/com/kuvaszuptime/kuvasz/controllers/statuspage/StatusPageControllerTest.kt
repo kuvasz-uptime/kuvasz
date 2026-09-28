@@ -1,8 +1,8 @@
 package com.kuvaszuptime.kuvasz.controllers.statuspage
 
 import com.kuvaszuptime.kuvasz.jooq.tables.StatusPage.STATUS_PAGE
-import org.jooq.impl.DSL
 import com.kuvaszuptime.kuvasz.models.theme.ThemeBase
+import org.jooq.impl.DSL
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.config.DefaultStatusPageConfig
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
