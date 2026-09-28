@@ -24,6 +24,7 @@ The new [**connectivity check**](features/connectivity-check.md) periodically di
 
 ### Improvements
 
+- **Connecting to PostgreSQL through its unix socket**: if [`DATABASE_HOST`](setup/configuration.md#connecting-through-a-unix-socket) points to the **directory of the socket** (e.g. `/var/run/postgresql`), _Kuvasz_ connects through it instead of TCP, just like `psql` does. So when your database runs on the same host, you can mount its socket into the container and don't need to expose _PostgreSQL_ on the network at all.
 - **Virtual thread scheduling** (experimental, disabled by default): the scheduled checks can run on [**virtual threads**](setup/configuration.md#virtual-thread-scheduling) now, so a lot of unreachable TCP, DNS or Docker targets waiting for their timeout can't delay the checks of your other monitors anymore.
 - **Lower memory usage on the database side**: _Kuvasz_ keeps only **2 idle database connections** open instead of 10, which saves **a few megabytes of memory** on your _PostgreSQL_ server while there's nothing to do. The pool still grows (up to 10 connections) when it's needed.
 

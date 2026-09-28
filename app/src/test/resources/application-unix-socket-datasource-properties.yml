@@ -1,0 +1,5 @@
+datasources:
+  default:
+    data-source-properties:
+      socketFactory: com.kuvaszuptime.kuvasz.database.PostgresUnixSocketFactory
+      socketFactoryArg: ${test.socket-file}

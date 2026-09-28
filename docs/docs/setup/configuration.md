@@ -401,7 +401,49 @@ datasources:
     DATABASE_HOST=localhost
     ```
 
-A hostname or IP address of the database server.
+A hostname or IP address of the database server, or the **directory of its unix domain socket** (see [below](#connecting-through-a-unix-socket)).
+
+#### Connecting through a unix socket
+
+<!-- md:version 4.5.0 -->
+
+If your _PostgreSQL_ runs on the same machine, you can connect to it through its unix domain socket instead of TCP, so you don't need to expose it on the network at all. Just like with `libpq` (e.g. `psql`), a `DATABASE_HOST` starting with a `/` is treated as the directory of the socket, and the socket file in it is picked by `DATABASE_PORT` (e.g. `.s.PGSQL.5432`).
+
+When running _Kuvasz_ in _Docker_, mount the socket's directory into the container:
+
+```yaml title="docker-compose.yml"
+services:
+  kuvasz:
+    image: kuvaszmonitoring/kuvasz:latest
+    environment:
+      DATABASE_HOST: /var/run/postgresql
+      DATABASE_NAME: kuvasz
+      DATABASE_USER: change_me
+      DATABASE_PASSWORD: change_me
+    volumes:
+      - /var/run/postgresql:/var/run/postgresql
+```
+
+!!! warning "Authentication"
+
+    Connections through the socket are matched by the `local` lines of your `pg_hba.conf`. Many distributions default to `peer` authentication there, which compares the database user to the operating system user of the connecting process, and that **won't match** the user inside the container. Make sure that the user _Kuvasz_ connects with can authenticate with a password there, e.g.:
+
+    ```
+    local   kuvasz   change_me   scram-sha-256
+    ```
+
+    The user inside the container also needs access to the socket file, which the default permissions of _PostgreSQL_ usually allow.
+
+If you configure the `datasources.default.url` in your _YAML_ file instead, you can point it to the socket by setting the connection properties below, while the host and port in the URL are ignored:
+
+```yaml title="kuvasz.yml"
+datasources:
+  default:
+    url: jdbc:postgresql://localhost:5432/kuvasz
+    data-source-properties:
+      socketFactory: com.kuvaszuptime.kuvasz.database.PostgresUnixSocketFactory
+      socketFactoryArg: /var/run/postgresql/.s.PGSQL.5432
+```
 
 ### Port
 
