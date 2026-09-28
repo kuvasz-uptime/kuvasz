@@ -189,6 +189,11 @@ As an alternative to the built-in username/password form, you can configure an O
 
     When OIDC is enabled, the `ADMIN_USER` and `ADMIN_PASSWORD` properties are **no longer needed** (and are ignored), since the built-in username/password login is disabled. If you still want API key-based programmatic access to the REST API, configure `ADMIN_API_KEY` — it works independently of the chosen interactive login method.
 
+!!! warning "Running behind a reverse proxy"
+    The redirect URI _Kuvasz_ sends to your provider during the login (and the post-logout redirect URI) is built **on the server side**, from the headers of the incoming request, while the Settings page displays them based on the address in your browser. If a reverse proxy terminates TLS in front of _Kuvasz_ and the original host and scheme aren't resolved properly, the two can differ: _Kuvasz_ will send `http://...` instead of `https://...`, and providers that strictly match the registered redirect URI (e.g. _Authentik_) will reject the login with a _"Redirect URI Error"_.
+
+    Forwarding only the `Host` and `X-Forwarded-Proto` headers is **not enough** by default. Check out the [**Running Kuvasz behind a reverse proxy**](../management/examples.md#running-kuvasz-behind-a-reverse-proxy) recipe for the required setup.
+
 #### Enable OIDC
 
 <!-- md:version 4.0.0 -->

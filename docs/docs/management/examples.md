@@ -208,6 +208,56 @@ binary_sensor:
 
 ![HA connectivity](../images/examples/ha_connectivity.webp)
 
+## Running Kuvasz behind a reverse proxy
+
+If you put _Kuvasz_ behind a reverse proxy (e.g. _Nginx_, _Caddy_, _Traefik_, etc.), especially one that terminates TLS, _Kuvasz_ has to know the **original host and scheme** the browser used, because it builds certain absolute URLs on the server side, from the headers of the incoming request. The most notable ones are the **redirect URI** and the **post-logout redirect URI** that are sent to your provider during the [OIDC](../setup/configuration.md#oidc-authentication-optional) login and logout flows. If these are resolved incorrectly (e.g. `http://...` instead of `https://...`), providers that strictly match the registered redirect URI (e.g. _Authentik_) will reject the login with a _"Redirect URI Error"_.
+
+!!! warning "Forwarding `Host` and `X-Forwarded-Proto` is not enough on its own"
+    By default, the original scheme (`X-Forwarded-Proto`) is **only taken into account if the original host is forwarded too**, either via `X-Forwarded-Host`, or via the standard `Forwarded` header. The widespread _Nginx_ setup that only forwards `Host` and `X-Forwarded-Proto` will make _Kuvasz_ fall back to the scheme of the proxy → _Kuvasz_ connection, which is usually plain `http`.
+
+To get a proper host resolution, **do one of the following**:
+
+### Option 1: Forward the original host via `X-Forwarded-Host`
+
+Make your reverse proxy send the `X-Forwarded-Host` header (or the standard `Forwarded` header, with both the `host` and `proto` parameters) along with `X-Forwarded-Proto`. For example, with _Nginx_:
+
+```nginx
+location / {
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_pass http://{YOUR_KUVASZ_HOST}:8080;
+}
+```
+
+### Option 2: Tell Kuvasz which headers to use
+
+If you can't (or don't want to) change your reverse proxy's configuration, you can explicitly tell _Kuvasz_ which headers carry the original scheme and host:
+
+=== "YAML"
+
+    ```yaml
+    micronaut:
+      server:
+        host-resolution:
+          protocol-header: X-Forwarded-Proto
+          host-header: Host
+    ```
+
+=== "ENV"
+
+    ```bash
+    MICRONAUT_SERVER_HOST_RESOLUTION_PROTOCOL_HEADER=X-Forwarded-Proto
+    MICRONAUT_SERVER_HOST_RESOLUTION_HOST_HEADER=Host
+    ```
+
+!!! note
+    Once these are set, **only the configured headers are used** for the host resolution, the `X-Forwarded-Host` and `Forwarded` headers are ignored.
+
+### Verifying the result
+
+Open your browser's developer tools, click the **"Login (OIDC)"** button on the login page, and check the `redirect_uri` parameter in the `Location` header of the `/oauth/login/oidc` response. It should start with the same `https://your-kuvasz-host` you're using in the browser, and it should be **exactly the same** as the one you registered at your OIDC provider.
+
 ## Exposing status pages on subdomains behind a reverse proxy
 
 If you want to expose your status pages on subdomains (e.g. `status.yourdomain.com`), you can do so by using a reverse proxy (e.g. _Caddy_, _Nginx_, _Traefik_, etc.). Here is an example configuration for _Caddy_:
