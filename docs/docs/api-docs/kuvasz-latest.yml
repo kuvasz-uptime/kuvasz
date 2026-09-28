@@ -6881,6 +6881,7 @@ components:
       - latencyDataRetentionDays
       - updateChecksEnabled
       - version
+      - virtualThreadSchedulingEnabled
       type: object
       properties:
         version:
@@ -6916,6 +6917,9 @@ components:
           type: integer
           description: The maximum number of redirects the HTTP uptime checks follow
           format: int32
+        virtualThreadSchedulingEnabled:
+          type: boolean
+          description: Whether the scheduled checks run on virtual threads (experimental)
     SettingsDto.AppSettingsDto.EditabilityStateDto:
       required:
       - areDnsMonitorsReadOnly

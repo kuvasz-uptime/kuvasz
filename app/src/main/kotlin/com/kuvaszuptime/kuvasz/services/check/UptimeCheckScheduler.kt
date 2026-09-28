@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory
 import java.time.OffsetDateTime
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ScheduledFuture
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * The common ancestor of the check schedulers, taking care of the whole lifecycle of the periodic uptime checks:
@@ -46,6 +47,9 @@ abstract class UptimeCheckScheduler<R : SchedulableMonitorRecord>(
     private val scope = CoroutineScope(SupervisorJob() + dispatcher + coroutineExHandler)
 
     private val scheduledUptimeChecks: ConcurrentHashMap<Long, ScheduledFuture<*>> = ConcurrentHashMap()
+
+    @Volatile
+    private var isClosing = false
 
     // Can't be a simple val, because monitorType is not initialized yet when the base class is constructed
     private val checkTypeLabel: String
@@ -181,9 +185,11 @@ abstract class UptimeCheckScheduler<R : SchedulableMonitorRecord>(
                 runCheck(monitor) { checkedMonitor ->
                     // Re-applying the original check interval which acts like kind of a synchronization to
                     // minimize the chance of overlapping requests
-                    if (checkedMonitor.enabled) reScheduleUptimeCheckForMonitor(checkedMonitor)
+                    if (checkedMonitor.enabled && !isClosing) reScheduleUptimeCheckForMonitor(checkedMonitor)
                 }
             }
+        } catch (ex: CancellationException) {
+            throw ex
         } catch (ex: Exception) {
             // Better to catch and swallow everything that wasn't caught before to prevent
             // the accidental cancellation of the parent coroutine
@@ -209,7 +215,9 @@ abstract class UptimeCheckScheduler<R : SchedulableMonitorRecord>(
 
     @PreDestroy
     final override fun close() {
+        isClosing = true
         cancelAllAdditionalChecks()
-        initiateShutdown(scheduledUptimeChecks, lockRegistry)
+        scheduledUptimeChecks.forEach { it.value.gracefulCancel() }
+        lockRegistry.drain()
     }
 }

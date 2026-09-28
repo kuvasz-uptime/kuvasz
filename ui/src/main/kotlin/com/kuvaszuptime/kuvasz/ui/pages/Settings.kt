@@ -76,6 +76,10 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto, dockerHosts: List
                         value = settings.app.httpCheckMaxRedirects.toString()
                     )
                     settingsToggle(label = Messages.eventLogging(), checked = settings.app.eventLoggingEnabled)
+                    settingsToggle(
+                        label = Messages.virtualThreadScheduling(),
+                        checked = settings.app.virtualThreadSchedulingEnabled,
+                    )
                 }
             }
             // Editability

@@ -5,8 +5,13 @@ import com.kuvaszuptime.kuvasz.services.check.UptimeCheckLockRegistry
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.comparables.shouldBeGreaterThanOrEqualTo
+import io.kotest.matchers.comparables.shouldBeLessThan
 import kotlinx.coroutines.delay
+import java.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.measureTime
 
 class UptimeCheckLockRegistryTest : BehaviorSpec({
 
@@ -64,6 +69,46 @@ class UptimeCheckLockRegistryTest : BehaviorSpec({
             then("it should allow acquiring the lock again") {
 
                 lockRegistry.tryAcquire(4).shouldBeTrue()
+            }
+        }
+    }
+
+    given("the draining logic") {
+
+        fun newRegistry() = UptimeCheckLockRegistry(AppConfig())
+
+        `when`("there are running checks") {
+
+            then("it should wait for them to finish, and it should not let any new check start") {
+                val registry = newRegistry()
+                registry.tryAcquire(1).shouldBeTrue()
+                Thread.ofVirtual().start {
+                    Thread.sleep(300)
+                    registry.release(1)
+                }
+
+                measureTime { registry.drain(Duration.ofSeconds(5)) } shouldBeLessThan 5.seconds
+
+                registry.tryAcquire(1).shouldBeFalse()
+                registry.tryAcquire(2).shouldBeFalse()
+            }
+        }
+
+        `when`("a running check does not finish within the grace period") {
+
+            then("it should stop waiting, and the subsequent calls should not restart the grace period") {
+                val registry = newRegistry()
+                registry.tryAcquire(1).shouldBeTrue()
+
+                measureTime { registry.drain(Duration.ofMillis(500)) } shouldBeGreaterThanOrEqualTo 500.milliseconds
+                measureTime { registry.drain(Duration.ofSeconds(5)) } shouldBeLessThan 1.seconds
+            }
+        }
+
+        `when`("there are no running checks") {
+
+            then("it should return immediately") {
+                measureTime { newRegistry().drain(Duration.ofSeconds(5)) } shouldBeLessThan 1.seconds
             }
         }
     }

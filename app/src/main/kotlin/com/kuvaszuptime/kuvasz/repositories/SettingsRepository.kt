@@ -70,6 +70,7 @@ class SettingsRepository(
                 updateChecksEnabled = appConfig.checkUpdates,
                 httpCheckTimeoutSeconds = appConfig.httpCheckTimeoutSeconds,
                 httpCheckMaxRedirects = appConfig.httpCheckMaxRedirects,
+                virtualThreadSchedulingEnabled = appConfig.useVirtualThreadScheduling,
             ),
             smtp = smtpMailerConfig?.let { smtpConfig ->
                 SettingsDto.SmtpConfigDto(

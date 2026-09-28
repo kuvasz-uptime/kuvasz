@@ -15,10 +15,12 @@ import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.check.http.HttpUptimeChecker
 import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.test.TestCase
 import io.kotest.engine.test.TestResult
 import io.kotest.inspectors.forNone
 import io.kotest.inspectors.forOne
+import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.comparables.shouldBeGreaterThan
@@ -33,6 +35,8 @@ import io.mockk.coEvery
 import io.mockk.spyk
 import io.reactivex.rxjava3.subscribers.TestSubscriber
 import java.net.URI
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.coroutines.cancellation.CancellationException
 
 @MicronautTest(startApplication = false)
 class HttpUptimeCheckerTest(
@@ -120,6 +124,22 @@ class HttpUptimeCheckerTest(
 
                     val expectedEvent = subscriber.awaitCount(1).values().first()
                     expectedEvent.monitor.id shouldBe monitor.id
+                }
+            }
+
+            `when`("its check gets cancelled while waiting for the response") {
+                val monitor = createHttpMonitor(monitorRepository)
+                val doAfterCalled = AtomicBoolean(false)
+                coEvery {
+                    uptimeCheckerSpy.sendHttpRequest(any<HttpMonitorRecord>(), any<URI>())
+                } throws CancellationException("The task was rejected")
+
+                then("it should propagate the cancellation, instead of recording it as a failed check") {
+                    shouldThrow<CancellationException> {
+                        uptimeCheckerSpy.check(monitor, doAfter = { doAfterCalled.set(true) })
+                    }
+                    uptimeEventRepository.fetchByMonitorId(monitor.id).shouldBeEmpty()
+                    doAfterCalled.get().shouldBeFalse()
                 }
             }
 

@@ -74,6 +74,11 @@ data class SettingsDto(
             required = true,
         )
         val httpCheckMaxRedirects: Int,
+        @param:Schema(
+            description = "Whether the scheduled checks run on virtual threads (experimental)",
+            required = true,
+        )
+        val virtualThreadSchedulingEnabled: Boolean,
     ) {
         data class EditabilityStateDto(
             @param:Schema(description = "Whether the HTTP monitors are in read-only mode", required = true)
