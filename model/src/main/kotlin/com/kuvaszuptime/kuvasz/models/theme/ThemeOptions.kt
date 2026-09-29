@@ -11,7 +11,14 @@ enum class ThemeBase : ThemeOption {
     SLATE,
     ZINC,
     NEUTRAL,
-    STONE;
+    STONE,
+    VIOLET,
+    MIDNIGHT,
+    FROST,
+    OCEAN,
+    SAGE,
+    MOCHA,
+    ROSE;
 
     companion object {
         // Tabler switched to the neutral palette in 1.6, but the blue-tinted one it used before is kept as the default.

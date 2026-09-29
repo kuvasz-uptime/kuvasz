@@ -4,11 +4,14 @@ import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.theme.ThemeBase
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.uitest.pages.DashboardPage
 import com.kuvaszuptime.kuvasz.uitest.pages.settings.SettingsAppearancePage
 import com.kuvaszuptime.kuvasz.uitest.pages.statuspage.PublicStatusPage
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
+import io.kotest.matchers.maps.shouldBeEmpty
+import io.kotest.matchers.string.shouldNotBeBlank
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 
 private const val DATA_ATTRIBUTE = "data-bs-theme"
@@ -103,6 +106,23 @@ class ThemeToggleUiTest(private val httpMonitorRepository: HttpMonitorRepository
             DashboardPage(page).navigate()
             assertThat(page.htmlRoot).hasAttribute(BASE_ATTRIBUTE, "slate")
             assertThat(page.htmlRoot).hasAttribute(PRIMARY_ATTRIBUTE, "teal")
+        }
+
+        "every gray palette of the Settings page comes with its own grays" {
+            val page = newPage()
+            val settings = SettingsAppearancePage(page)
+            settings.navigate()
+
+            // A palette without its CSS rules would fall back to the grays of another one
+            val grays = ThemeBase.entries.associateWith { themeBase ->
+                settings.pick("base", themeBase.value)
+                assertThat(page.htmlRoot).hasAttribute(BASE_ATTRIBUTE, themeBase.value)
+                page.evaluate(
+                    "getComputedStyle(document.documentElement).getPropertyValue('--tblr-gray-900')"
+                ) as String
+            }
+            grays.values.forEach { it.shouldNotBeBlank() }
+            grays.entries.groupBy({ it.value }, { it.key }).filterValues { it.size > 1 }.shouldBeEmpty()
         }
 
         "an unknown saved theme option is ignored" {
