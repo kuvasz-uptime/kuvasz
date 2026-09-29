@@ -6,6 +6,8 @@ import com.kuvaszuptime.kuvasz.models.dto.docker.DockerHostAuthMethod
 import com.kuvaszuptime.kuvasz.models.dto.docker.DockerHostDto
 import com.kuvaszuptime.kuvasz.models.dto.settings.SettingsDto
 import com.kuvaszuptime.kuvasz.models.settings.ConnectivityState
+import com.kuvaszuptime.kuvasz.models.theme.ThemeOption
+import com.kuvaszuptime.kuvasz.models.theme.ThemePrimary
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
@@ -46,6 +48,31 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto, dockerHosts: List
         div {
             classes(ROW, ROW_CARDS)
             enableMasonry()
+            // Appearance, which is a preference of the browser, unlike the rest of the settings
+            settingsCard(
+                title = Messages.appearanceSettings(),
+                icon = Icon.PALETTE,
+                id = "appearance-settings",
+                description = Messages.appearanceSettingsDescription(),
+            ) {
+                div {
+                    xData("appearanceSettings('${ThemePrimary.DEFAULT.value}')")
+                    themeBasePicker(
+                        ThemePickerBinding(
+                            xModelName = "base",
+                            radioValue = ThemeOption::value,
+                            xOnChange = "setThemeOption('base', \$event.target.value)",
+                        )
+                    )
+                    themePrimaryPicker(
+                        ThemePickerBinding(
+                            xModelName = "primary",
+                            radioValue = ThemeOption::value,
+                            xOnChange = "setThemeOption('primary', \$event.target.value)",
+                        )
+                    )
+                }
+            }
             // App settings
             settingsCard(
                 title = Messages.applicationSettings(),
@@ -524,6 +551,7 @@ private fun FlowContent.settingsCard(
     title: String,
     icon: Icon,
     id: String? = null,
+    description: String? = null,
     content: FlowContent.() -> Unit,
 ) {
     div {
@@ -541,8 +569,15 @@ private fun FlowContent.settingsCard(
             div {
                 classes(CARD_BODY)
                 div {
-                    classes(CARD_TITLE)
+                    classes(CARD_TITLE, D_FLEX, ALIGN_ITEMS_CENTER)
                     +title
+                    description?.let { tooltipText ->
+                        span {
+                            classes(MS_2, D_FLEX)
+                            tooltip(title = tooltipText, location = TooltipLocation.RIGHT)
+                            icon(Icon.INFO_CIRCLE)
+                        }
+                    }
                 }
                 content()
             }

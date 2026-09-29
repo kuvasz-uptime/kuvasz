@@ -7292,6 +7292,11 @@ components:
             \ the monitors of the page, and the per-category statuses are calculated\
             \ and returned either way"
           default: true
+        themeBase:
+          description: The gray palette of the status page
+          allOf:
+          - $ref: "#/components/schemas/ThemeBase"
+          default: GRAY
     StatusPageDetailsDto:
       required:
       - activeMaintenanceWindows
@@ -7305,6 +7310,7 @@ components:
       - public
       - slug
       - systemStatus
+      - themeBase
       - title
       - upcomingMaintenanceWindows
       type: object
@@ -7361,6 +7367,10 @@ components:
             \ on the page. It only affects the rendering: the categories still select\
             \ the monitors of the page, and the per-category statuses are calculated\
             \ and returned either way"
+        themeBase:
+          description: The gray palette of the status page
+          allOf:
+          - $ref: "#/components/schemas/ThemeBase"
         activeMaintenanceWindows:
           type: array
           description: The maintenance windows that are shown on the status page and
@@ -7417,6 +7427,7 @@ components:
       - monitors
       - public
       - slug
+      - themeBase
       - title
       - updatedAt
       type: object
@@ -7465,6 +7476,10 @@ components:
             \ on the page. It only affects the rendering: the categories still select\
             \ the monitors of the page, and the per-category statuses are calculated\
             \ and returned either way"
+        themeBase:
+          description: The gray palette of the status page
+          allOf:
+          - $ref: "#/components/schemas/ThemeBase"
         createdAt:
           type: string
           description: Timestamp of when the status page was created
@@ -7771,6 +7786,10 @@ components:
             \ the monitors of the page, and the per-category statuses are calculated\
             \ and returned either way"
           nullable: false
+        themeBase:
+          description: The gray palette of the status page
+          allOf:
+          - $ref: "#/components/schemas/ThemeBase"
     SystemStatus:
       type: string
       enum:
@@ -8351,6 +8370,21 @@ components:
         chatId:
           type: string
           description: The chat ID for Telegram notifications
+    ThemeBase:
+      type: string
+      enum:
+      - GRAY
+      - SLATE
+      - ZINC
+      - NEUTRAL
+      - STONE
+      - VIOLET
+      - MIDNIGHT
+      - FROST
+      - OCEAN
+      - SAGE
+      - MOCHA
+      - ROSE
     UptimeStatus:
       type: string
       enum:

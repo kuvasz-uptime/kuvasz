@@ -14,6 +14,7 @@ import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageTcpMonitorDetails
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.statuspage.SystemStatus
+import com.kuvaszuptime.kuvasz.models.theme.ThemeBase
 import com.kuvaszuptime.kuvasz.repositories.MaintenanceWindowRepository
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.services.check.dns.DnsMonitorActions
@@ -142,6 +143,7 @@ class StatusPageDataActionsTest(
                 result.title shouldBe "Custom System Status"
                 result.customLogoUrl shouldBe "https://custom.logo"
                 result.customFaviconUrl shouldBe "https://custom.favicon"
+                result.themeBase shouldBe ThemeBase.STONE
                 result.systemStatus shouldBe SystemStatus.PENDING
             }
         }
@@ -803,6 +805,7 @@ class StatusPageDataActionsTest(
             // A record coming from the DB never has a null here, the column is NOT NULL with an empty default
             categories = emptyArray()
             displayCategories = true
+            themeBase = ThemeBase.NEUTRAL
             createdAt = getCurrentTimestamp()
             updatedAt = getCurrentTimestamp()
         }
@@ -897,6 +900,7 @@ class StatusPageDataActionsTest(
                 result.title shouldBe "Something custom"
                 result.customLogoUrl shouldBe "https://custom.logo"
                 result.customFaviconUrl shouldBe "https://custom.favicon"
+                result.themeBase shouldBe ThemeBase.NEUTRAL
                 result.systemStatus shouldBe SystemStatus.PENDING
             }
         }

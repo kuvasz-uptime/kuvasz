@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.config
 
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDefaults
 import com.kuvaszuptime.kuvasz.models.statuspage.StatusPageCreator
+import com.kuvaszuptime.kuvasz.models.theme.ThemeBase
 import io.micronaut.context.annotation.ConfigurationProperties
 import io.micronaut.context.annotation.EachProperty
 import io.micronaut.core.annotation.Introspected
@@ -14,6 +15,7 @@ import io.micronaut.core.bind.annotation.Bindable
  *   custom-logo-url: "https://example.com/logo.png"
  *   custom-favicon-url: "https://example.com/favicon.png"
  *   display-categories: true
+ *   theme-base: "SLATE"
  */
 @ConfigurationProperties(DefaultStatusPageConfig.CONFIG_PREFIX)
 interface DefaultStatusPageConfig {
@@ -30,6 +32,9 @@ interface DefaultStatusPageConfig {
 
     @get:Bindable(defaultValue = StatusPageDefaults.DISPLAY_CATEGORIES.toString())
     val displayCategories: Boolean
+
+    @get:Bindable(defaultValue = ThemeBase.DEFAULT_NAME)
+    val themeBase: ThemeBase
 
     companion object {
         private const val CONFIG_PREFIX = "default-status-page"
@@ -49,6 +54,7 @@ interface DefaultStatusPageConfig {
  *     categories:
  *       - "Payments"
  *     display-categories: true
+ *     theme-base: "SLATE"
  */
 @EachProperty(StatusPageConfig.CONFIG_PREFIX, list = true)
 @Introspected
@@ -68,6 +74,9 @@ interface StatusPageConfig : StatusPageCreator {
 
     @get:Bindable(defaultValue = StatusPageDefaults.DISPLAY_CATEGORIES.toString())
     override val displayCategories: Boolean
+
+    @get:Bindable(defaultValue = ThemeBase.DEFAULT_NAME)
+    override val themeBase: ThemeBase
 
     @get:Bindable(defaultValue = StatusPageDefaults.CUSTOM_PAGE_PUBLIC.toString())
     override val public: Boolean

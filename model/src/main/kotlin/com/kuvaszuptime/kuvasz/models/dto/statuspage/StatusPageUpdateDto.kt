@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.models.dto.statuspage
 import com.kuvaszuptime.kuvasz.models.dto.StatusPageValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.theme.ThemeBase
 import io.micronaut.core.annotation.Introspected
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
@@ -39,4 +40,8 @@ data class StatusPageUpdateDto(
     @get:NotNull
     @param:Schema(description = StatusPageDocs.DISPLAY_CATEGORIES, required = false, nullable = false)
     val displayCategories: Boolean?,
+
+    @get:NotNull
+    @param:Schema(description = StatusPageDocs.THEME_BASE, required = false, nullable = false)
+    val themeBase: ThemeBase?,
 )

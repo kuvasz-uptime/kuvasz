@@ -1,6 +1,9 @@
 package com.kuvaszuptime.kuvasz.ui
 
 import com.kuvaszuptime.kuvasz.AppGlobals
+import com.kuvaszuptime.kuvasz.models.theme.ThemeBase
+import com.kuvaszuptime.kuvasz.models.theme.ThemeOption
+import com.kuvaszuptime.kuvasz.models.theme.ThemePrimary
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.fragments.layout.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
@@ -22,16 +25,18 @@ internal fun withLayout(
     return DOCTYPE_NOTATION +
         createHTML(prettyPrint = false, xhtmlCompatible = false)
             .html {
+                withThemeBase()
                 head {
                     commonHeadElements(
                         appVersion = globals.appVersion,
+                        applyThemePreferences = true,
                         faviconsAndManifest = { defaultFaviconsAndManifest() },
                     )
                     title {
                         title?.let { +"$it | $DEFAULT_TITLE" } ?: +DEFAULT_TITLE
                     }
                     link(rel = "stylesheet", href = "/public/ext/css/tomselect.2.6.2.bootstrap5.min.css")
-                    link(rel = "stylesheet", href = "/public/ext/css/tabler-vendors.1.5.1.min.css")
+                    link(rel = "stylesheet", href = "/public/ext/css/tabler-vendors.1.6.1.min.css")
                     script(src = "/public/ext/js/apexcharts.7.1.0.min.js") {}
                     script(src = "/public/ext/js/tomselect.2.6.2.complete.min.js") {}
                 }
@@ -82,16 +87,23 @@ internal fun withLayout(
                             }
                         }
                     }
+                    // Tabler's datepicker is a wrapper around Vanilla Calendar Pro, which has to be loaded before it
+                    script(src = "/public/ext/js/vanilla-calendar-pro.3.4.0.min.js") {}
                     commonScripts(globals.appVersion)
                     script(src = "/public/ext/js/htmx.2.0.10.min.js") {}
-                    script(src = "/public/ext/js/alpine.3.17.3.min.js") {}
+                    script(src = "/public/ext/js/alpine.3.17.4.min.js") {}
                     script(src = "/public/ext/js/masonry.4.2.2.min.js") {}
                 }
             }
 }
 
+/**
+ * @param applyThemePreferences whether the gray palette and the accent color picked on the Settings page are applied,
+ * which isn't the case for the public status pages, as they come with their own theme
+ **/
 internal fun FlowOrMetaDataOrPhrasingContent.commonHeadElements(
     appVersion: String,
+    applyThemePreferences: Boolean = false,
     faviconsAndManifest: FlowOrMetaDataOrPhrasingContent.() -> Unit,
 ) {
     meta(charset = "utf-8")
@@ -106,14 +118,36 @@ internal fun FlowOrMetaDataOrPhrasingContent.commonHeadElements(
                 document.documentElement.setAttribute('data-bs-theme', savedTheme);
             })();
             """.trimIndent()
+            if (applyThemePreferences) {
+                +themePreferenceLoader("base", ThemeBase.entries)
+                +themePreferenceLoader("primary", ThemePrimary.entries)
+            }
         }
     }
-    link(rel = "stylesheet", href = "/public/ext/css/tabler.1.5.1.min.css")
+    link(rel = "stylesheet", href = "/public/ext/css/tabler.1.6.1.min.css")
+    link(rel = "stylesheet", href = "/public/ext/css/tabler-themes.1.6.1.min.css")
     link(rel = "stylesheet", href = "/public/css/kuvasz.css?cb=$appVersion")
 }
 
+// Applies a saved theme option (see setThemeOption in kuvasz.js), unless it's not one of the known values anymore
+private fun themePreferenceLoader(option: String, values: List<ThemeOption>): String {
+    val knownValues = values.joinToString(", ") { "'${it.value}'" }
+    return """
+        (function() {
+            const saved = localStorage.getItem('kuvasz-theme-$option');
+            if ([$knownValues].includes(saved)) {
+                document.documentElement.setAttribute('data-bs-theme-$option', saved);
+            }
+        })();
+    """.trimIndent()
+}
+
+internal fun HTML.withThemeBase(base: ThemeBase = ThemeBase.DEFAULT) {
+    attributes["data-bs-theme-base"] = base.value
+}
+
 internal fun FlowOrMetaDataOrPhrasingContent.commonScripts(appVersion: String) {
-    script(src = "/public/ext/js/tabler.1.5.1.min.js") {}
+    script(src = "/public/ext/js/tabler.1.6.1.min.js") {}
     script(src = "/public/dist/js/kuvasz.min.js?cb=$appVersion") {}
 }
 

@@ -11,6 +11,7 @@ import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.theme.ThemeBase
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
@@ -110,6 +111,22 @@ class StatusPageToolsTest(
                     pageList.statusPages.forOne { statusPage ->
                         statusPage.displayCategories shouldBe false
                         statusPage.categories shouldContainExactlyInAnyOrder setOf("Payments")
+                    }
+                }
+            }
+
+            `when`("a status page has a gray palette") {
+                createStatusPage(dslContext, themeBase = ThemeBase.SLATE)
+                createStatusPage(dslContext)
+                val response = callToolWithMcpClient(LIST_STATUS_PAGES)
+
+                then("it is exposed, the default one included") {
+                    val pageList = response.structuredContentAs<StatusPageListSchema>().shouldNotBeNull()
+                    pageList.statusPages.forOne { statusPage ->
+                        statusPage.themeBase shouldBe ThemeBase.SLATE
+                    }
+                    pageList.statusPages.forOne { statusPage ->
+                        statusPage.themeBase shouldBe ThemeBase.DEFAULT
                     }
                 }
             }

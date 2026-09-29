@@ -32,10 +32,10 @@ class DockerMonitorFormModal(page: Page) : ModalView(page) {
     val selectedContainer: Locator get() = containerField.locator(".ts-control .item")
 
     /** The hint shown when the daemon could not produce a container listing. */
-    val containerLoadFailedHint: Locator get() = containerField.locator(".form-hint.text-warning")
+    val containerLoadFailedHint: Locator get() = containerField.locator(".form-text.text-warning")
 
     /** The hint shown when the instance has no Docker host configured at all. */
-    val noHostsConfiguredHint: Locator get() = dockerHostField.locator(".form-hint.text-danger")
+    val noHostsConfiguredHint: Locator get() = dockerHostField.locator(".form-text.text-danger")
 
     val offeredDockerHosts: List<String> get() = openedDropdownOptionsOf(dockerHostField)
 

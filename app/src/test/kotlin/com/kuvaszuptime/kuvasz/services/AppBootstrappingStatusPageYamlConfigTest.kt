@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.jooq.tables.records.StatusPageRecord
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.theme.ThemeBase
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.resetDatabase
 import com.kuvaszuptime.kuvasz.testAppContext
@@ -87,6 +88,8 @@ class AppBootstrappingStatusPageYamlConfigTest : StringSpec({
             firstPage.categories.shouldBeEmpty()
             // ...and an absent `display-categories` falls back to the default
             firstPage.displayCategories shouldBe true
+            // ...just like an absent `theme-base`
+            firstPage.themeBase shouldBe ThemeBase.DEFAULT
         }
 
         pagesInDb.forOne { secondPage ->
@@ -98,6 +101,7 @@ class AppBootstrappingStatusPageYamlConfigTest : StringSpec({
             )
             secondPage.categories shouldContainExactlyInAnyOrder arrayOf("Payments", "Search")
             secondPage.displayCategories shouldBe false
+            secondPage.themeBase shouldBe ThemeBase.SLATE
         }
 
         pagesInDb.forOne { thirdPage ->
@@ -211,6 +215,7 @@ class AppBootstrappingStatusPageYamlConfigTest : StringSpec({
                 slug = "manual_page"
                 title = "Manual Page"
                 public = true
+                themeBase = ThemeBase.DEFAULT
                 monitors = listOf(
                     MonitorID(MonitorType.HTTP_SSL, "test1"),
                     MonitorID(MonitorType.HTTP_SSL, "test4"),

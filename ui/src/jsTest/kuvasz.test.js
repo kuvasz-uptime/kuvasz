@@ -16,6 +16,13 @@ const {
     isValidIsoDuration,
     isoDurationToMillis,
     toDateTimeLocalValue,
+    isValidIsoDate,
+    isValidTime,
+    formatStartValue,
+    parseStartValue,
+    toRgbColor,
+    hueOf,
+    distinctSeriesColor,
     resolveMaintenanceWindowType,
     createRandomSecret,
 } = require('../main/resources/js/kuvasz.js');
@@ -117,6 +124,110 @@ test('toDateTimeLocalValue', () => {
     const expected = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
         `T${pad(d.getHours())}:${pad(d.getMinutes())}`;
     assert.equal(toDateTimeLocalValue(iso), expected);
+});
+
+test('isValidIsoDate', () => {
+    assert.equal(isValidIsoDate('2030-01-05'), true);
+    assert.equal(isValidIsoDate('2028-02-29'), true);
+    assert.equal(isValidIsoDate(''), false);
+    assert.equal(isValidIsoDate(null), false);
+    assert.equal(isValidIsoDate('2030-1-5'), false);
+    assert.equal(isValidIsoDate('05/01/2030'), false);
+    assert.equal(isValidIsoDate('2030-01-05T10:00'), false);
+    // Well-formed, but not an existing calendar day
+    assert.equal(isValidIsoDate('2030-02-29'), false);
+    assert.equal(isValidIsoDate('2030-13-01'), false);
+});
+
+test('isValidTime', () => {
+    assert.equal(isValidTime('00:00'), true);
+    assert.equal(isValidTime('23:59'), true);
+    assert.equal(isValidTime(''), false);
+    assert.equal(isValidTime(null), false);
+    assert.equal(isValidTime('24:00'), false);
+    assert.equal(isValidTime('10:60'), false);
+    assert.equal(isValidTime('9:30'), false);
+    assert.equal(isValidTime('10:30:00'), false);
+});
+
+test('formatStartValue', () => {
+    assert.equal(formatStartValue('2030-01-05', '10:30'), '2030-01-05 10:30');
+    assert.equal(formatStartValue('2030-01-05', ''), '2030-01-05');
+    assert.equal(formatStartValue('', '10:30'), '10:30');
+    assert.equal(formatStartValue('', ''), '');
+});
+
+test('parseStartValue', () => {
+    assert.deepEqual(parseStartValue('2030-01-05 10:30'), {date: '2030-01-05', time: '10:30'});
+    // Extra whitespace and the ISO separator are tolerated
+    assert.deepEqual(parseStartValue('  2030-01-05   10:30 '), {date: '2030-01-05', time: '10:30'});
+    assert.deepEqual(parseStartValue('2030-01-05T10:30'), {date: '2030-01-05', time: '10:30'});
+    assert.deepEqual(parseStartValue('2030-01-05'), {date: '2030-01-05', time: ''});
+    assert.deepEqual(parseStartValue(''), {date: '', time: ''});
+    assert.deepEqual(parseStartValue(null), {date: '', time: ''});
+});
+
+test('toRgbColor', () => {
+    assert.equal(toRgbColor([6, 111, 209]), '#066fd1');
+    assert.equal(toRgbColor([0, 0, 0, 255]), '#000000');
+    assert.equal(toRgbColor([6, 111, 209], 0.16), 'rgba(6, 111, 209, 0.16)');
+});
+
+test('hueOf', () => {
+    assert.equal(hueOf('#ff0000'), 0);
+    assert.equal(hueOf('#00ff00'), 120);
+    assert.equal(hueOf('#0000ff'), 240);
+    assert.equal(hueOf('#ff00ff'), 300);
+    assert.equal(Math.round(hueOf('#066fd1')), 209);
+    // Grays, like the inverted accent, have no hue
+    assert.equal(hueOf('#ffffff'), null);
+    assert.equal(hueOf('#1f2937'), null);
+});
+
+// The sRGB values of Tabler's palette
+const TABLER = {
+    blue: '#066fd1',
+    azure: '#4299e1',
+    green: '#2fb344',
+    lime: '#74b816',
+    teal: '#0ca678',
+    red: '#d63939',
+    pink: '#d6336c',
+    orange: '#f76707',
+    yellow: '#f59f00',
+    purple: '#ae3ec9',
+    gray500: '#737373',
+};
+
+test('distinctSeriesColor keeps the preferred color when it is distinct from the taken ones', () => {
+    assert.equal(distinctSeriesColor([TABLER.blue], [TABLER.orange, TABLER.purple]), TABLER.orange);
+    assert.equal(distinctSeriesColor([TABLER.purple], [TABLER.orange, TABLER.purple]), TABLER.orange);
+    // Purple and pink are close in name only
+    assert.equal(distinctSeriesColor([TABLER.pink], [TABLER.purple, TABLER.orange]), TABLER.purple);
+});
+
+test('distinctSeriesColor skips the candidates close to the accent', () => {
+    [TABLER.green, TABLER.lime, TABLER.teal].forEach((accent) =>
+        assert.equal(distinctSeriesColor([accent], [TABLER.green, TABLER.purple, TABLER.orange]), TABLER.purple));
+    [TABLER.orange, TABLER.red, TABLER.yellow, TABLER.pink].forEach((accent) =>
+        assert.equal(distinctSeriesColor([accent], [TABLER.orange, TABLER.purple]), TABLER.purple));
+    assert.equal(distinctSeriesColor([TABLER.azure], [TABLER.blue, TABLER.green]), TABLER.green);
+});
+
+test('distinctSeriesColor keeps the series apart from each other too', () => {
+    assert.equal(distinctSeriesColor([TABLER.blue, TABLER.green], [TABLER.red, TABLER.gray500]), TABLER.red);
+    assert.equal(distinctSeriesColor([TABLER.green, TABLER.purple], [TABLER.red, TABLER.gray500]), TABLER.red);
+    assert.equal(distinctSeriesColor([TABLER.orange, TABLER.green], [TABLER.red, TABLER.gray500]), TABLER.gray500);
+    assert.equal(distinctSeriesColor([TABLER.blue, TABLER.pink], [TABLER.red, TABLER.gray500]), TABLER.gray500);
+});
+
+test('distinctSeriesColor ignores the hue of a gray accent', () => {
+    assert.equal(distinctSeriesColor(['#fafafa'], [TABLER.orange, TABLER.purple]), TABLER.orange);
+    assert.equal(distinctSeriesColor(['#1f2937'], [TABLER.green, TABLER.purple]), TABLER.green);
+});
+
+test('distinctSeriesColor falls back to the last candidate when none of them are distinct', () => {
+    assert.equal(distinctSeriesColor([TABLER.red], [TABLER.orange, TABLER.pink]), TABLER.pink);
 });
 
 test('resolveMaintenanceWindowType', () => {

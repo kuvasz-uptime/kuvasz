@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.models.dto.importing
 
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageExportDto
 import com.kuvaszuptime.kuvasz.models.statuspage.StatusPageCreator
+import com.kuvaszuptime.kuvasz.models.theme.ThemeBase
 import io.micronaut.core.annotation.Introspected
 
 @Introspected
@@ -14,4 +15,5 @@ class StatusPageImportAdapter(dto: StatusPageExportDto) : StatusPageCreator {
     override val monitors: List<String> = dto.monitors.map { it.toString() }
     override val categories: List<String> = dto.categories.toList()
     override val displayCategories: Boolean = dto.displayCategories
+    override val themeBase: ThemeBase = dto.themeBase
 }

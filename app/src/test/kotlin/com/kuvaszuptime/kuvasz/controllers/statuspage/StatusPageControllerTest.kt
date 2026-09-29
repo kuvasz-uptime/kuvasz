@@ -1,5 +1,8 @@
 package com.kuvaszuptime.kuvasz.controllers.statuspage
 
+import com.kuvaszuptime.kuvasz.jooq.tables.StatusPage.STATUS_PAGE
+import com.kuvaszuptime.kuvasz.models.theme.ThemeBase
+import org.jooq.impl.DSL
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.config.DefaultStatusPageConfig
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
@@ -149,6 +152,7 @@ class StatusPageControllerTest(
                     val persisted = statusPageRepository.findBySlug("legacy").shouldNotBeNull()
                     persisted.categories.toList().shouldBeEmpty()
                     persisted.displayCategories shouldBe StatusPageDefaults.DISPLAY_CATEGORIES
+                    persisted.themeBase shouldBe ThemeBase.DEFAULT
                 }
             }
 
@@ -196,6 +200,7 @@ class StatusPageControllerTest(
                     ),
                     categories = listOf("Payments", "Search"),
                     displayCategories = false,
+                    themeBase = ThemeBase.SLATE,
                 )
                 val statusPage2 = createStatusPage(
                     dslContext,
@@ -246,6 +251,7 @@ class StatusPageControllerTest(
                         )
                         page1.categories shouldContainExactlyInAnyOrder listOf("Payments", "Search")
                         page1.displayCategories shouldBe false
+                        page1.themeBase shouldBe ThemeBase.SLATE
                     }
                     parsedPages.forOne { page2 ->
                         page2.title shouldBe statusPage2.title
@@ -255,6 +261,7 @@ class StatusPageControllerTest(
                         page2.public shouldBe statusPage2.public
                         page2.monitors.shouldBeEmpty()
                         page2.categories.shouldBeEmpty()
+                        page2.themeBase shouldBe ThemeBase.DEFAULT
                     }
                     parsedPages.forOne { page3 ->
                         page3.title shouldBe statusPage3.title
@@ -423,6 +430,21 @@ class StatusPageControllerTest(
                 }
             }
 
+            `when`("the page has a gray palette stored that is not known anymore") {
+                val statusPage = createStatusPage(dslContext, themeBase = ThemeBase.SLATE)
+                // What a removed theme option leaves behind in the DB
+                dslContext.update(STATUS_PAGE)
+                    .set(DSL.field(STATUS_PAGE.THEME_BASE.name, String::class.java), "REMOVED")
+                    .where(STATUS_PAGE.ID.eq(statusPage.id))
+                    .execute()
+
+                val response = statusPageClient.getStatusPage(statusPageId = statusPage.id)
+
+                then("it should be read as the default one") {
+                    response.themeBase shouldBe ThemeBase.DEFAULT
+                }
+            }
+
             `when`("there is no status page with the given ID in the database") {
                 val response = shouldThrow<HttpClientResponseException> {
                     client.exchange("/api/v2/status-pages/1232132432").awaitFirst()
@@ -471,6 +493,7 @@ class StatusPageControllerTest(
                         CategoryStatusDto(null, SystemStatus.PENDING),
                     ),
                     displayCategories = false,
+                    themeBase = ThemeBase.ZINC,
                     activeMaintenanceWindows = listOf(
                         StatusPageMaintenanceWindowDto(
                             name = "Ongoing maintenance",
@@ -513,6 +536,7 @@ class StatusPageControllerTest(
                     response.categoryStatus shouldBe mockDataResponse.categoryStatus
                     // Display-only: the per-category statuses are returned even when the page does not render them
                     response.displayCategories shouldBe false
+                    response.themeBase shouldBe ThemeBase.ZINC
 
                     response.systemStatus shouldBe mockDataResponse.systemStatus
                     response.generatedAt shouldBe mockDataResponse.generatedAt
@@ -557,6 +581,7 @@ class StatusPageControllerTest(
                         CategoryStatusDto(null, SystemStatus.PENDING),
                     ),
                     displayCategories = false,
+                    themeBase = ThemeBase.ZINC,
                     activeMaintenanceWindows = listOf(
                         StatusPageMaintenanceWindowDto(
                             name = "Ongoing maintenance",
@@ -598,6 +623,7 @@ class StatusPageControllerTest(
                     }
                     response.categoryStatus shouldBe mockDataResponse.categoryStatus
                     response.displayCategories shouldBe false
+                    response.themeBase shouldBe ThemeBase.ZINC
 
                     response.systemStatus shouldBe mockDataResponse.systemStatus
                     response.generatedAt shouldBe mockDataResponse.generatedAt
@@ -657,6 +683,8 @@ class StatusPageControllerTest(
                     pageInDb.monitors.shouldBeEmpty()
                     pageInDb.categories.shouldBeEmpty()
                     pageInDb.displayCategories shouldBe true
+                    pageInDb.themeBase shouldBe ThemeBase.DEFAULT
+                    createdMonitor.themeBase shouldBe ThemeBase.DEFAULT
                 }
             }
 
@@ -695,6 +723,37 @@ class StatusPageControllerTest(
                     )
                     pageInDb.categories shouldContainExactlyInAnyOrder arrayOf("Payments", "Search")
                     createdPage.categories shouldContainExactlyInAnyOrder setOf("Payments", "Search")
+                }
+            }
+
+            `when`("it is called with a gray palette") {
+                val pageToCreate = StatusPageCreateDto(
+                    title = "Status Page 1",
+                    slug = "status-page-1",
+                    themeBase = ThemeBase.STONE,
+                )
+                val createdPage = statusPageClient.createStatuspage(pageToCreate)
+
+                then("it should be persisted") {
+                    val pageInDb = statusPageRepository.findById(createdPage.id).shouldNotBeNull()
+                    pageInDb.themeBase shouldBe ThemeBase.STONE
+                    createdPage.themeBase shouldBe ThemeBase.STONE
+                }
+            }
+
+            `when`("it is called with an unknown gray palette") {
+                val body = mapOf(
+                    "title" to "Status Page 1",
+                    "slug" to "status-page-1",
+                    "themeBase" to "PLAID",
+                )
+
+                then("it should return a 400 without creating the page") {
+                    val exception = shouldThrow<HttpClientResponseException> {
+                        client.exchange(HttpRequest.POST("/api/v2/status-pages", body)).awaitFirst()
+                    }
+                    exception.status shouldBe HttpStatus.BAD_REQUEST
+                    statusPageRepository.findBySlug("status-page-1").shouldBeNull()
                 }
             }
 
@@ -1042,6 +1101,60 @@ class StatusPageControllerTest(
                     updatedPage.displayCategories shouldBe false
                     statusPageInDb.displayCategories shouldBe false
                     statusPageInDb.categories shouldContainExactly arrayOf("Payments")
+                }
+            }
+
+            `when`("the gray palette is set via a partial update") {
+                val statusPage = createStatusPage(dslContext, title = "Status Page 1", slug = "status-page-1")
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .put(StatusPageUpdateDto::themeBase.name, ThemeBase.SLATE.name)
+
+                val updatedPage = statusPageClient.updateStatusPage(statusPage.id, updateDto)
+                val statusPageInDb = statusPageRepository.findById(statusPage.id).shouldNotBeNull()
+
+                then("it should be persisted") {
+                    updatedPage.themeBase shouldBe ThemeBase.SLATE
+                    statusPageInDb.themeBase shouldBe ThemeBase.SLATE
+                }
+            }
+
+            `when`("it is called with an explicit null on the gray palette") {
+                val statusPage = createStatusPage(
+                    dslContext,
+                    title = "Status Page 1",
+                    slug = "status-page-1",
+                    themeBase = ThemeBase.SLATE,
+                )
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .putNull(StatusPageUpdateDto::themeBase.name)
+
+                then("it should return a 400 and leave the page untouched, the palette is not nullable") {
+                    val exception = shouldThrow<HttpClientResponseException> {
+                        statusPageClient.updateStatusPage(statusPage.id, updateDto)
+                    }
+                    exception.status shouldBe HttpStatus.BAD_REQUEST
+                    statusPageRepository.findById(statusPage.id).shouldNotBeNull()
+                        .themeBase shouldBe ThemeBase.SLATE
+                }
+            }
+
+            `when`("it is called with an unknown gray palette") {
+                val statusPage = createStatusPage(
+                    dslContext,
+                    title = "Status Page 1",
+                    slug = "status-page-1",
+                    themeBase = ThemeBase.SLATE,
+                )
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .put(StatusPageUpdateDto::themeBase.name, "PLAID")
+
+                then("it should return a 400 and leave the page untouched") {
+                    val exception = shouldThrow<HttpClientResponseException> {
+                        statusPageClient.updateStatusPage(statusPage.id, updateDto)
+                    }
+                    exception.status shouldBe HttpStatus.BAD_REQUEST
+                    statusPageRepository.findById(statusPage.id).shouldNotBeNull()
+                        .themeBase shouldBe ThemeBase.SLATE
                 }
             }
 

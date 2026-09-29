@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.models.dto.statuspage.CategoryStatusDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDataDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageMaintenanceWindowDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.themeBaseOrDefault
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.statuspage.SystemStatus
 import com.kuvaszuptime.kuvasz.repositories.MaintenanceWindowRepository
@@ -56,6 +57,7 @@ class StatusPageDataActions(
             systemStatus = SystemStatus.fromMonitors(monitors),
             categoryStatus = calculateCategoryStatus(monitors),
             displayCategories = defaultStatusPageConfig.displayCategories,
+            themeBase = defaultStatusPageConfig.themeBase,
             generatedAt = getCurrentTimestamp(),
             monitors = monitors,
             activeMaintenanceWindows = activeAndUpcomingWindows.active,
@@ -113,6 +115,7 @@ class StatusPageDataActions(
             systemStatus = SystemStatus.fromMonitors(monitors),
             categoryStatus = calculateCategoryStatus(monitors),
             displayCategories = statusPage.displayCategories,
+            themeBase = statusPage.themeBaseOrDefault,
             monitors = monitors,
             activeMaintenanceWindows = activeAndUpcomingWindows.active,
             upcomingMaintenanceWindows = activeAndUpcomingWindows.upcoming,

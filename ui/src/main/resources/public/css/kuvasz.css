@@ -85,13 +85,253 @@ div.ts-wrapper.disabled .ts-control {
     color: var(--tblr-secondary) !important;
 }
 
-/* Native date/time inputs: hide the browser's calendar icon and open the picker on a click anywhere in the field */
-.native-datetime-input::-webkit-calendar-picker-indicator {
-    display: none;
+/* The time picker of the datepicker, which Tabler doesn't style: the hour and minute inputs next to their sliders */
+[data-vc=time] {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: .75rem;
+    margin-top: .5rem;
+    padding-top: .75rem;
+    border-top: var(--tblr-border-width) solid var(--tblr-border-color);
 }
 
-.native-datetime-input:not(:disabled) {
+[data-vc-time=content] {
+    display: flex;
+    align-items: center;
+    gap: .25rem;
+}
+
+[data-vc-time-input=hour]::after {
+    content: ":";
+    margin-left: .25rem;
+    font-weight: var(--tblr-font-weight-medium);
+}
+
+[data-vc-time-input=hour],
+[data-vc-time-input=minute] {
+    display: flex;
+    align-items: center;
+}
+
+[data-vc-time-input] input {
+    width: 2.25rem;
+    padding: .125rem;
+    text-align: center;
+    font-weight: var(--tblr-font-weight-medium);
+    color: var(--tblr-body-color);
+    background-color: var(--tblr-bg-forms);
+    border: var(--tblr-border-width) solid var(--tblr-border-color);
+    border-radius: var(--tblr-border-radius);
+}
+
+[data-vc-time-input] input:focus-visible,
+[data-vc-time-input] input[data-vc-input-focus] {
+    border-color: var(--tblr-primary);
+    outline: 0;
+}
+
+[data-vc-time=ranges] {
+    display: grid;
+    gap: .25rem;
+}
+
+/* The sliders get the looks of Tabler's .form-range, as the calendar renders them without any class */
+[data-vc-time-range] input {
+    display: block;
+    width: 100%;
+    height: 1.25rem;
+    margin: 0;
+    padding: 0;
+    appearance: none;
+    background-color: transparent;
+}
+
+[data-vc-time-range] input:focus {
+    outline: 0;
+}
+
+[data-vc-time-range] input::-webkit-slider-thumb {
+    width: 1rem;
+    height: 1rem;
+    margin-top: -.375rem;
+    appearance: none;
+    background-color: var(--tblr-primary);
+    border: 2px var(--tblr-border-style) #fff;
+    border-radius: 1rem;
+    box-shadow: 0 .1rem .25rem color-mix(in oklab, var(--tblr-black) 10%, transparent);
+    outline-color: transparent;
+}
+
+[data-vc-time-range] input::-moz-range-thumb {
+    width: 1rem;
+    height: 1rem;
+    appearance: none;
+    background-color: var(--tblr-primary);
+    border: 2px var(--tblr-border-style) #fff;
+    border-radius: 1rem;
+    box-shadow: 0 .1rem .25rem color-mix(in oklab, var(--tblr-black) 10%, transparent);
+    outline-color: transparent;
+}
+
+[data-vc-time-range] input:focus::-webkit-slider-thumb {
+    outline: var(--tblr-focus-ring, var(--tblr-focus-ring-width) solid var(--tblr-focus-ring-color));
+    outline-offset: var(--tblr-focus-ring-offset);
+}
+
+[data-vc-time-range] input:focus::-moz-range-thumb {
+    outline: var(--tblr-focus-ring, var(--tblr-focus-ring-width) solid var(--tblr-focus-ring-color));
+    outline-offset: var(--tblr-focus-ring-offset);
+}
+
+[data-vc-time-range] input:active::-webkit-slider-thumb {
+    background-color: color-mix(in oklab, var(--tblr-white) 70%, var(--tblr-primary));
+}
+
+[data-vc-time-range] input:active::-moz-range-thumb {
+    background-color: color-mix(in oklab, var(--tblr-white) 70%, var(--tblr-primary));
+}
+
+[data-vc-time-range] input::-webkit-slider-runnable-track {
+    width: 100%;
+    height: .25rem;
     cursor: pointer;
+    background-color: var(--tblr-border-color);
+    border-color: transparent;
+    border-radius: 1rem;
+}
+
+[data-vc-time-range] input::-moz-range-track {
+    width: 100%;
+    height: .25rem;
+    cursor: pointer;
+    background-color: var(--tblr-border-color);
+    border-color: transparent;
+    border-radius: 1rem;
+}
+
+/* Gray palettes on top of the ones of Tabler. Their lightness steps are the ones of `gray`, and their chroma is kept
+   low on the light steps, so that the light mode stays close to white, while the dark mode takes on the tint */
+[data-bs-theme-base=violet], [data-theme-base=violet] {
+    --tblr-gray-50: oklch(98.46% 0.004 290deg);
+    --tblr-gray-100: oklch(96.7% 0.008 290deg);
+    --tblr-gray-200: oklch(92.76% 0.014 290deg);
+    --tblr-gray-300: oklch(87.17% 0.022 290deg);
+    --tblr-gray-400: oklch(71.37% 0.040 290deg);
+    --tblr-gray-500: oklch(55.1% 0.050 290deg);
+    --tblr-gray-600: oklch(44.61% 0.055 290deg);
+    --tblr-gray-700: oklch(37.29% 0.060 290deg);
+    --tblr-gray-800: oklch(27.81% 0.060 290deg);
+    --tblr-gray-900: oklch(21.01% 0.058 290deg);
+    --tblr-gray-950: oklch(12.96% 0.050 290deg);
+}
+
+[data-bs-theme-base=midnight], [data-theme-base=midnight] {
+    --tblr-gray-50: oklch(98.46% 0.004 265deg);
+    --tblr-gray-100: oklch(96.7% 0.008 265deg);
+    --tblr-gray-200: oklch(92.76% 0.014 265deg);
+    --tblr-gray-300: oklch(87.17% 0.022 265deg);
+    --tblr-gray-400: oklch(71.37% 0.040 265deg);
+    --tblr-gray-500: oklch(55.1% 0.052 265deg);
+    --tblr-gray-600: oklch(44.61% 0.058 265deg);
+    --tblr-gray-700: oklch(37.29% 0.064 265deg);
+    --tblr-gray-800: oklch(27.81% 0.066 265deg);
+    --tblr-gray-900: oklch(21.01% 0.064 265deg);
+    --tblr-gray-950: oklch(12.96% 0.055 265deg);
+}
+
+[data-bs-theme-base=frost], [data-theme-base=frost] {
+    --tblr-gray-50: oklch(98.46% 0.003 235deg);
+    --tblr-gray-100: oklch(96.7% 0.007 235deg);
+    --tblr-gray-200: oklch(92.76% 0.012 235deg);
+    --tblr-gray-300: oklch(87.17% 0.020 235deg);
+    --tblr-gray-400: oklch(71.37% 0.034 235deg);
+    --tblr-gray-500: oklch(55.1% 0.042 235deg);
+    --tblr-gray-600: oklch(44.61% 0.046 235deg);
+    --tblr-gray-700: oklch(37.29% 0.050 235deg);
+    --tblr-gray-800: oklch(27.81% 0.050 235deg);
+    --tblr-gray-900: oklch(21.01% 0.048 235deg);
+    --tblr-gray-950: oklch(12.96% 0.040 235deg);
+}
+
+[data-bs-theme-base=ocean], [data-theme-base=ocean] {
+    --tblr-gray-50: oklch(98.46% 0.004 205deg);
+    --tblr-gray-100: oklch(96.7% 0.008 205deg);
+    --tblr-gray-200: oklch(92.76% 0.014 205deg);
+    --tblr-gray-300: oklch(87.17% 0.022 205deg);
+    --tblr-gray-400: oklch(71.37% 0.036 205deg);
+    --tblr-gray-500: oklch(55.1% 0.044 205deg);
+    --tblr-gray-600: oklch(44.61% 0.048 205deg);
+    --tblr-gray-700: oklch(37.29% 0.050 205deg);
+    --tblr-gray-800: oklch(27.81% 0.050 205deg);
+    --tblr-gray-900: oklch(21.01% 0.046 205deg);
+    --tblr-gray-950: oklch(12.96% 0.038 205deg);
+}
+
+[data-bs-theme-base=sage], [data-theme-base=sage] {
+    --tblr-gray-50: oklch(98.46% 0.003 140deg);
+    --tblr-gray-100: oklch(96.7% 0.006 140deg);
+    --tblr-gray-200: oklch(92.76% 0.011 140deg);
+    --tblr-gray-300: oklch(87.17% 0.017 140deg);
+    --tblr-gray-400: oklch(71.37% 0.028 140deg);
+    --tblr-gray-500: oklch(55.1% 0.034 140deg);
+    --tblr-gray-600: oklch(44.61% 0.036 140deg);
+    --tblr-gray-700: oklch(37.29% 0.038 140deg);
+    --tblr-gray-800: oklch(27.81% 0.036 140deg);
+    --tblr-gray-900: oklch(21.01% 0.032 140deg);
+    --tblr-gray-950: oklch(12.96% 0.026 140deg);
+}
+
+[data-bs-theme-base=mocha], [data-theme-base=mocha] {
+    --tblr-gray-50: oklch(98.46% 0.004 60deg);
+    --tblr-gray-100: oklch(96.7% 0.007 60deg);
+    --tblr-gray-200: oklch(92.76% 0.012 60deg);
+    --tblr-gray-300: oklch(87.17% 0.019 60deg);
+    --tblr-gray-400: oklch(71.37% 0.030 60deg);
+    --tblr-gray-500: oklch(55.1% 0.036 60deg);
+    --tblr-gray-600: oklch(44.61% 0.038 60deg);
+    --tblr-gray-700: oklch(37.29% 0.040 60deg);
+    --tblr-gray-800: oklch(27.81% 0.038 60deg);
+    --tblr-gray-900: oklch(21.01% 0.034 60deg);
+    --tblr-gray-950: oklch(12.96% 0.028 60deg);
+}
+
+[data-bs-theme-base=rose], [data-theme-base=rose] {
+    --tblr-gray-50: oklch(98.46% 0.004 355deg);
+    --tblr-gray-100: oklch(96.7% 0.008 355deg);
+    --tblr-gray-200: oklch(92.76% 0.014 355deg);
+    --tblr-gray-300: oklch(87.17% 0.022 355deg);
+    --tblr-gray-400: oklch(71.37% 0.036 355deg);
+    --tblr-gray-500: oklch(55.1% 0.044 355deg);
+    --tblr-gray-600: oklch(44.61% 0.048 355deg);
+    --tblr-gray-700: oklch(37.29% 0.052 355deg);
+    --tblr-gray-800: oklch(27.81% 0.052 355deg);
+    --tblr-gray-900: oklch(21.01% 0.048 355deg);
+    --tblr-gray-950: oklch(12.96% 0.040 355deg);
+}
+
+/* The swatches of the appearance settings, showing the colors of the theme option they're scoped to */
+.theme-swatch-base {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border: var(--tblr-border-width) solid var(--tblr-border-color);
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--tblr-gray-300) 50%, var(--tblr-gray-800) 50%);
+}
+
+.theme-swatch-primary {
+    background-color: var(--tblr-primary);
+}
+
+/* Tabler only turns the inverted accent color light in the dark mode when it's set on the root element, and the
+   checkmark has to be dark on it then */
+[data-bs-theme=dark] .theme-swatch-primary[data-bs-theme-primary=inverted] {
+    background-color: var(--tblr-light);
+}
+
+[data-bs-theme=dark] .theme-swatch-primary[data-bs-theme-primary=inverted]::before {
+    filter: invert(1);
 }
 
 /* Image preview form element */

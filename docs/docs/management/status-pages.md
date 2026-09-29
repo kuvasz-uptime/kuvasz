@@ -15,6 +15,7 @@
       title: "Status - Kuvasz Uptime"
       custom-logo-url: "https://example.com/logo.png"
       custom-favicon-url: "https://example.com/favicon.png"
+      theme-base: "SLATE"
     status-pages: # (2)!
       - title: "Example Status Page" # (3)!
         slug: "example-status" # (4)!
@@ -32,6 +33,7 @@
         categories: # (9)!
           - "Payments"
         display-categories: true # (10)!
+        theme-base: "SLATE" # (11)!
       # ... other status pages
     ```
 
@@ -45,6 +47,7 @@
     8. The `monitors` field is a list of monitors to be displayed on the status page. You can reference monitors by their type and name, in the format `<type>:<name>`, e.g., `http:My HTTP Monitor`, `push:My backup 1`, `icmp:My ICMP Monitor`, `tcp:My TCP Monitor`, `dns:My DNS Monitor`, `docker:My Docker Monitor`.
     9. The `categories` field is a list of monitor categories. Every monitor belonging to one of them is displayed on the page, in addition to the ones listed under `monitors`.
     10. The `display-categories` field decides whether the monitors are shown grouped into their categories. It only affects the rendering, not which monitors the page contains.
+    11. The `theme-base` field is the gray palette of the page, one of `GRAY`, `SLATE`, `ZINC`, `NEUTRAL`, `STONE`, `VIOLET`, `MIDNIGHT`, `FROST`, `OCEAN`, `SAGE`, `MOCHA` or `ROSE`. It's `GRAY` when it's not set.
 
     !!!info "Consequences of describing your status pages as YAML"
 
@@ -236,6 +239,30 @@ The URL of the **custom favicon** to be used for the default status page. If not
 
 Whether the default status page **displays its monitors grouped into their categories**. Turning it off shows a single, ungrouped list instead. It only affects the rendering, see the [same setting](#display-categories_1) of the custom status pages for the details.
 
+### Gray palette
+
+<!-- md:version 4.5.0 -->
+<!-- md:default GRAY -->
+<!-- md:type enum: `GRAY`, `SLATE`, `ZINC`, `NEUTRAL`, `STONE`, `VIOLET`, `MIDNIGHT`, `FROST`, `OCEAN`, `SAGE`, `MOCHA`, `ROSE` -->
+<!-- md:yaml_prop `theme-base` -->
+
+=== "YAML"
+
+    ```yaml hl_lines="3"
+    default-status-page:
+      # ...
+      theme-base: "SLATE"
+      # ...
+    ```
+
+=== "ENV"
+
+    ```bash
+    DEFAULT_STATUS_PAGE_THEME_BASE=SLATE
+    ```
+
+The **gray palette** of the default status page, see the [same setting](#gray-palette_1) of the custom status pages for the possible values.
+
 ## Custom status pages
 
 You can create **multiple custom status pages**, each with its own configuration and set of monitors. Custom status pages can be created, modified, and deleted via the _Web UI_, the _REST API_, or by defining them in the _YAML_ configuration file.
@@ -339,6 +366,17 @@ Whether the page **displays its monitors grouped into their categories**, each g
 This is a **display-only switch**. It changes nothing about which monitors the page contains or how their statuses are calculated: the [**categories**](#categories) still select monitors, monitors keep the categories they inherit, and the per-category statuses are still returned by the API and the MCP server. It only decides what the visitors of the page get to see.
 
 It is useful when you group your monitors for your own sake — to select them onto pages and into maintenance windows — but you'd rather not reveal that internal structure publicly.
+
+### Gray palette
+
+<!-- md:version 4.5.0 -->
+<!-- md:default GRAY -->
+<!-- md:type enum: `GRAY`, `SLATE`, `ZINC`, `NEUTRAL`, `STONE`, `VIOLET`, `MIDNIGHT`, `FROST`, `OCEAN`, `SAGE`, `MOCHA`, `ROSE` -->
+<!-- md:yaml_prop `theme-base` -->
+
+The **gray palette** of the page: the tint of its backgrounds, borders and secondary texts, in both the dark and the light mode. The possible values are `GRAY` (blue-tinted, the default), `SLATE`, `ZINC`, `NEUTRAL` and `STONE`, and the more tinted `VIOLET` (purple), `MIDNIGHT` (navy), `FROST` (blue-teal), `OCEAN` (teal), `SAGE` (green), `MOCHA` (brown) and `ROSE` (pink). The tint of the latter ones is the strongest in the dark mode. The pages that were created before this setting existed got the default one.
+
+A status page always uses its own palette: the appearance preferences you pick on the _Settings_ page of the Web UI only style the Web UI itself, in your own browser.
 
 ## Caching
 

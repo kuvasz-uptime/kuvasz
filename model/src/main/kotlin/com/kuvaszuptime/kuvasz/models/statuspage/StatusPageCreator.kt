@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.StatusPageRecord
 import com.kuvaszuptime.kuvasz.models.dto.StatusPageValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.theme.ThemeBase
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Pattern
 
@@ -20,6 +21,7 @@ interface StatusPageCreator {
     val monitors: List<String>?
     val categories: List<String>?
     val displayCategories: Boolean
+    val themeBase: ThemeBase
 }
 
 fun StatusPageCreator.toStatusPageRecord(
@@ -35,3 +37,4 @@ fun StatusPageCreator.toStatusPageRecord(
         .setMonitors(validatedMonitors.toTypedArray())
         .setCategories(validatedCategories.toTypedArray())
         .setDisplayCategories(displayCategories)
+        .setThemeBase(themeBase)

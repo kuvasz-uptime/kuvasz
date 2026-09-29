@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.importing.StatusPageImportAdapter
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageExportDto
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.theme.ThemeBase
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -104,6 +105,32 @@ class StatusPageImporterTest(
                     val persisted = statusPageRepository.findBySlug("with-categories").shouldNotBeNull()
                     persisted.categories.toList() shouldContainExactlyInAnyOrder listOf("Payments", "Nobody uses me")
                     result.ignoredMonitors.shouldBeEmpty()
+                }
+            }
+
+            `when`("a status page comes with a gray palette") {
+                val existing = createStatusPage(dslContext, slug = "themed")
+                val themed = exportDto(slug = "themed").copy(themeBase = ThemeBase.ZINC)
+                statusPageImporter.importStatusPageConfigs(listOf(StatusPageImportAdapter(themed)), dryRun = false)
+
+                then("it overwrites the existing one") {
+                    val persisted = statusPageRepository.findBySlug("themed").shouldNotBeNull()
+                    persisted.id shouldBe existing.id
+                    persisted.themeBase shouldBe ThemeBase.ZINC
+                }
+            }
+
+            `when`("a status page comes without a gray palette") {
+                val existing = createStatusPage(dslContext, slug = "unthemed", themeBase = ThemeBase.ZINC)
+                statusPageImporter.importStatusPageConfigs(
+                    listOf(StatusPageImportAdapter(exportDto(slug = "unthemed"))),
+                    dryRun = false,
+                )
+
+                then("the existing one is reset to the default") {
+                    val persisted = statusPageRepository.findBySlug("unthemed").shouldNotBeNull()
+                    persisted.id shouldBe existing.id
+                    persisted.themeBase shouldBe ThemeBase.DEFAULT
                 }
             }
         }

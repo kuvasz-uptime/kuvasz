@@ -32,6 +32,11 @@ const {
     dnsMetricsBlock,
     buildIncidentAnnotations,
     formatChartTimestamp,
+    toDateTimeLocalValue,
+    anchorPopupToModal,
+    setTheme,
+    setThemeOption,
+    appearanceSettings,
 } = require('../main/resources/js/kuvasz.js');
 
 // --------- #1: isValidHttpHeaderName (regex) ---------
@@ -59,7 +64,7 @@ test('buildRequestBody nulls out non-MANUAL fields for a MANUAL window', () => {
     Object.assign(form, {
         type: MAINTENANCE_WINDOW_TYPES.MANUAL,
         name: 'MW', description: 'desc', enabled: true, global: false, showOnStatusPages: true,
-        cron: '0 0 * * *', start: '2024-01-01T10:00', duration: 'PT1H',
+        cron: '0 0 * * *', startDate: '2024-01-01', startTime: '10:00', duration: 'PT1H',
         selectedMonitors: ['http:1'], integrations: ['slack'],
     });
     const body = form.buildRequestBody();
@@ -78,7 +83,7 @@ test('buildRequestBody keeps cron and duration but drops start for a CRON window
     const form = upsertMaintenanceWindowForm(null, {}, 'select', []);
     Object.assign(form, {
         type: MAINTENANCE_WINDOW_TYPES.CRON,
-        name: 'MW', cron: '0 0 * * *', start: '2024-01-01T10:00', duration: 'PT2H',
+        name: 'MW', cron: '0 0 * * *', startDate: '2024-01-01', startTime: '10:00', duration: 'PT2H',
         selectedMonitors: [], integrations: [],
     });
     const body = form.buildRequestBody();
@@ -91,23 +96,412 @@ test('buildRequestBody converts start to ISO and drops cron for a SINGLE window'
     const form = upsertMaintenanceWindowForm(null, {}, 'select', []);
     Object.assign(form, {
         type: MAINTENANCE_WINDOW_TYPES.SINGLE,
-        name: 'MW', cron: '0 0 * * *', start: '2024-01-01T10:00', duration: 'PT30M',
+        name: 'MW', cron: '0 0 * * *', startDate: '2024-01-01', startTime: '10:00', duration: 'PT30M',
         selectedMonitors: [], integrations: [],
     });
     const body = form.buildRequestBody();
     assert.equal(body.cron, null);
     assert.equal(body.duration, 'PT30M');
-    // A datetime-local value is converted to an absolute ISO instant
+    // The local date and time are converted to an absolute ISO instant
     assert.equal(body.start, new Date('2024-01-01T10:00').toISOString());
 });
 
-test('buildRequestBody leaves start null for a SINGLE window without a value', () => {
+test('buildRequestBody leaves start null for a SINGLE window without a date or a time', () => {
     const form = upsertMaintenanceWindowForm(null, {}, 'select', []);
     Object.assign(form, {
-        type: MAINTENANCE_WINDOW_TYPES.SINGLE, name: 'MW', start: '', duration: 'PT30M',
+        type: MAINTENANCE_WINDOW_TYPES.SINGLE, name: 'MW', startDate: '', startTime: '10:00', duration: 'PT30M',
         selectedMonitors: [], integrations: [],
     });
     assert.equal(form.buildRequestBody().start, null);
+
+    Object.assign(form, {startDate: '2024-01-01', startTime: ''});
+    assert.equal(form.buildRequestBody().start, null);
+});
+
+test('validateStart requires a valid date and time, only for a SINGLE window', () => {
+    const form = upsertMaintenanceWindowForm(null, {startRequired: 'REQUIRED', startInvalid: 'INVALID'}, 'select', []);
+    Object.assign(form, {type: MAINTENANCE_WINDOW_TYPES.SINGLE, startDate: '', startTime: '', errors: {}});
+
+    form.validateStart();
+    assert.equal(form.errors.start, 'REQUIRED');
+
+    form.startDate = '2030-01-01';
+    form.validateStart();
+    assert.equal(form.errors.start, 'REQUIRED');
+
+    form.startTime = '10:00';
+    form.validateStart();
+    assert.equal(form.errors.start, null);
+
+    form.startDate = '2030-02-30';
+    form.validateStart();
+    assert.equal(form.errors.start, 'INVALID');
+
+    form.startDate = '2030-02-28';
+    form.startTime = '24:00';
+    form.validateStart();
+    assert.equal(form.errors.start, 'INVALID');
+
+    form.type = MAINTENANCE_WINDOW_TYPES.CRON;
+    form.validateStart();
+    assert.equal(form.errors.start, null);
+});
+
+test('onTypeChange clears the start date and time when leaving a SINGLE window', () => {
+    const form = upsertMaintenanceWindowForm(null, {}, 'select', []);
+    Object.assign(form, {
+        type: MAINTENANCE_WINDOW_TYPES.CRON, name: 'MW', cron: '0 0 * * *', startDate: '2030-01-01',
+        startTime: '10:00', duration: 'PT1H', errors: {},
+    });
+    form.onTypeChange();
+    assert.equal(form.startDate, '');
+    assert.equal(form.startTime, '');
+});
+
+test('populateFrom splits the start of a SINGLE window into a local date and time', () => {
+    const form = upsertMaintenanceWindowForm(null, {}, 'monitor-select', [], 'categories-select');
+    const start = '2030-01-01T10:30:00Z';
+    form.populateFrom({name: 'MW', start, duration: 'PT1H'});
+
+    const [expectedDate, expectedTime] = toDateTimeLocalValue(start).split('T');
+    assert.equal(form.type, MAINTENANCE_WINDOW_TYPES.SINGLE);
+    assert.equal(form.startDate, expectedDate);
+    assert.equal(form.startTime, expectedTime);
+
+    form.populateFrom(null);
+    assert.equal(form.startDate, '');
+    assert.equal(form.startTime, '');
+});
+
+// Stubs the root element (with the given theme attributes) and the local storage for the theme preference helpers
+const stubThemeEnvironment = (t, attributes = {}) => {
+    const originalDocumentElement = globalThis.document.documentElement;
+    const originalLocalStorage = globalThis.localStorage;
+    const storage = {};
+    globalThis.document.documentElement = {
+        getAttribute: (name) => attributes[name] ?? null,
+        setAttribute: (name, value) => attributes[name] = value,
+    };
+    globalThis.localStorage = {setItem: (key, value) => storage[key] = value};
+    t.after(() => {
+        globalThis.document.documentElement = originalDocumentElement;
+        globalThis.localStorage = originalLocalStorage;
+    });
+    return {attributes, storage};
+};
+
+test('setThemeOption applies the option on the root element and saves it for the next page loads', (t) => {
+    const {attributes, storage} = stubThemeEnvironment(t);
+
+    setThemeOption('base', 'slate');
+    setThemeOption('primary', 'teal');
+
+    assert.deepEqual(attributes, {'data-bs-theme-base': 'slate', 'data-bs-theme-primary': 'teal'});
+    assert.deepEqual(storage, {'kuvasz-theme-base': 'slate', 'kuvasz-theme-primary': 'teal'});
+});
+
+test('appearanceSettings preselects the applied options, falling back to the default accent color', (t) => {
+    stubThemeEnvironment(t, {'data-bs-theme-base': 'gray'});
+    const settings = appearanceSettings('blue');
+    assert.equal(settings.base, 'gray');
+    assert.equal(settings.primary, 'blue');
+});
+
+test('appearanceSettings preselects a saved accent color', (t) => {
+    stubThemeEnvironment(t, {'data-bs-theme-base': 'zinc', 'data-bs-theme-primary': 'purple'});
+    const settings = appearanceSettings('blue');
+    assert.equal(settings.base, 'zinc');
+    assert.equal(settings.primary, 'purple');
+});
+
+test('anchorPopupToModal moves the datepicker popup into the modal, translating its page coordinates', (t) => {
+    const originalWindow = globalThis.window;
+    globalThis.window = {scrollX: 5, scrollY: 100};
+    t.after(() => { globalThis.window = originalWindow; });
+
+    const appended = [];
+    const modal = {
+        scrollTop: 250,
+        scrollLeft: 0,
+        getBoundingClientRect: () => ({top: 10, left: 20}),
+        append: (element) => {
+            appended.push(element);
+            popup.parentElement = modal;
+        },
+    };
+    const input = {closest: (selector) => selector === '.modal' ? modal : null};
+    const popup = {parentElement: {}, style: {top: '400px', left: '305px'}, dataset: {}};
+
+    anchorPopupToModal(input, popup);
+    assert.deepEqual(appended, [popup]);
+    // 400 - 100 (page scroll) - 10 (modal offset) + 250 (modal scroll), and 305 - 5 - 20 + 0
+    assert.deepEqual(popup.style, {top: '540px', left: '280px'});
+
+    // An already anchored position isn't translated again
+    anchorPopupToModal(input, popup);
+    assert.deepEqual(popup.style, {top: '540px', left: '280px'});
+
+    // Once it's in the modal, it's only translated again when the calendar has repositioned it in page coordinates
+    popup.style = {top: '400px', left: '305px'};
+    anchorPopupToModal(input, popup);
+    assert.equal(appended.length, 1);
+    assert.deepEqual(popup.style, {top: '540px', left: '280px'});
+});
+
+test('onStartTyped splits the typed start into a date and a time, and validates them', () => {
+    const form = upsertMaintenanceWindowForm(null, {startRequired: 'REQUIRED', startInvalid: 'INVALID'}, 'select', []);
+    Object.assign(form, {type: MAINTENANCE_WINDOW_TYPES.SINGLE, startDate: '', startTime: '', errors: {}});
+
+    form.onStartTyped(' 2030-01-05 10:30 ');
+    assert.equal(form.startDate, '2030-01-05');
+    assert.equal(form.startTime, '10:30');
+    assert.equal(form.errors.start, null);
+
+    form.onStartTyped('2030-01-05');
+    assert.equal(form.startTime, '');
+    assert.equal(form.errors.start, 'REQUIRED');
+
+    form.onStartTyped('2030-01-05 25:00');
+    assert.equal(form.errors.start, 'INVALID');
+});
+
+test('initStartDatepicker keeps the Tabler datepicker and the start in sync', async (t) => {
+    const datepickers = [];
+    const originalTabler = globalThis.tabler;
+    globalThis.tabler = {
+        Datepicker: class {
+            constructor(element, config) {
+                this.element = element;
+                this.config = config;
+                this.selectedDates = [];
+                this.setCalls = [];
+                this.calendarUpdates = [];
+                this.calendar = {
+                    context: {selectedTime: '08:15', mainElement: popup},
+                    update: (resets) => this.calendarUpdates.push(resets),
+                };
+                datepickers.push(this);
+            }
+            getSelectedDates() { return [...this.selectedDates]; }
+            setSelectedDates(dates) {
+                this.selectedDates = dates;
+                this.setCalls.push(dates);
+                // Like Tabler, the input is written with the selection
+                this.element.value = dates.length > 0 ? this.config.dateFormat(new Date(`${dates[0]}T00:00`)) : '';
+            }
+        },
+    };
+    const originalWindow = globalThis.window;
+    const originalRequestAnimationFrame = globalThis.requestAnimationFrame;
+    const windowListeners = {};
+    globalThis.window = {scrollX: 0, scrollY: 0, addEventListener: (name, listener) => windowListeners[name] = listener};
+    globalThis.requestAnimationFrame = (callback) => callback();
+    t.after(() => {
+        globalThis.tabler = originalTabler;
+        globalThis.window = originalWindow;
+        globalThis.requestAnimationFrame = originalRequestAnimationFrame;
+    });
+
+    const popup = {parentElement: null, style: {top: '500px', left: '40px'}, dataset: {}};
+    let modal = null;
+    const listeners = {};
+    const element = {addEventListener: (name, listener) => listeners[name] = listener, closest: () => modal};
+    const watchers = {};
+    const form = upsertMaintenanceWindowForm(null, {startRequired: 'REQUIRED'}, 'select', []);
+    Object.assign(form, {
+        type: MAINTENANCE_WINDOW_TYPES.SINGLE, startDate: '', startTime: '', errors: {},
+        $watch: (property, callback) => watchers[property] = callback,
+    });
+
+    form.initStartDatepicker(element);
+    const [datepicker] = datepickers;
+    assert.equal(datepicker.element, element);
+    assert.equal(datepicker.config.vcpOptions.selectionTimeMode, 24);
+    assert.equal(datepicker.config.placement, 'auto');
+    // Without a valid time the calendar's own default is kept
+    assert.equal('selectedTime' in datepicker.config.vcpOptions, false);
+
+    // Outside of a modal the popup is left where Tabler put it
+    listeners['shown.bs.datepicker']();
+    assert.deepEqual(popup.style, {top: '500px', left: '40px'});
+    listeners['hidden.bs.datepicker']();
+
+    modal = {
+        scrollTop: 100,
+        scrollLeft: 0,
+        getBoundingClientRect: () => ({top: 0, left: 0}),
+        append: (child) => child.parentElement = modal,
+    };
+    // Before the popup is shown (when the calendar's main element is still the input), a resize leaves it in place
+    windowListeners.resize();
+    assert.equal(popup.parentElement, null);
+    assert.deepEqual(popup.style, {top: '500px', left: '40px'});
+
+    // In a modal, the popup is anchored to it whenever the calendar has put it in page coordinates
+    listeners['shown.bs.datepicker']();
+    assert.deepEqual(popup.style, {top: '600px', left: '40px'});
+
+    // ...e.g. after the calendar repositions it on a resize
+    popup.style = {top: '520px', left: '40px'};
+    windowListeners.resize();
+    assert.deepEqual(popup.style, {top: '620px', left: '40px'});
+
+    // ...but not while it's hidden
+    listeners['hidden.bs.datepicker']();
+    popup.style = {top: '520px', left: '40px'};
+    windowListeners.resize();
+    assert.deepEqual(popup.style, {top: '520px', left: '40px'});
+    listeners['shown.bs.datepicker']();
+
+    // A picked day lands in the model, taking over the time shown by the time picker when there's none yet
+    listeners['change.bs.datepicker']({dates: ['2030-01-05']});
+    assert.equal(form.startDate, '2030-01-05');
+    assert.equal(form.startTime, '08:15');
+    assert.equal(form.errors.start, null);
+    // Tabler writes the input with the time included
+    assert.equal(datepicker.config.dateFormat(new Date(2030, 0, 5)), '2030-01-05 08:15');
+
+    // ...and the popup stays open right after, so the time can be adjusted, but it can be closed after that
+    const hideAfterPick = {defaultPrevented: false, preventDefault() { this.defaultPrevented = true; }};
+    listeners['hide.bs.datepicker'](hideAfterPick);
+    assert.equal(hideAfterPick.defaultPrevented, true);
+    // Tabler reopens the popup in page coordinates right after the prevented hide, which gets anchored again
+    popup.style = {top: '510px', left: '40px'};
+    await Promise.resolve();
+    assert.deepEqual(popup.style, {top: '610px', left: '40px'});
+    const laterHide = {defaultPrevented: false, preventDefault() { this.defaultPrevented = true; }};
+    listeners['hide.bs.datepicker'](laterHide);
+    assert.equal(laterHide.defaultPrevented, false);
+
+    // An already set time is kept when another day is picked
+    form.startTime = '10:30';
+    listeners['change.bs.datepicker']({dates: ['2030-01-06']});
+    assert.equal(form.startTime, '10:30');
+
+    // A picked time lands in the model
+    datepicker.config.vcpOptions.onChangeTime({context: {selectedTime: '11:45'}});
+    assert.equal(form.startTime, '11:45');
+
+    // A typed (or loaded) valid day is selected in the calendar, an invalid one clears it
+    form.startDate = '2030-02-10';
+    watchers.startDate(form.startDate);
+    assert.equal(element.value, '2030-02-10 11:45');
+    form.startDate = '2030-02-1';
+    watchers.startDate(form.startDate);
+    assert.deepEqual(datepicker.setCalls, [['2030-02-10'], []]);
+    // ...but the typed value is kept in the input, instead of what Tabler writes there
+    assert.equal(element.value, '2030-02-1 11:45');
+    // The calendar isn't reset when it already shows the same day, e.g. right after it was picked there
+    datepicker.selectedDates = ['2030-03-01'];
+    watchers.startDate('2030-03-01');
+    assert.equal(datepicker.setCalls.length, 2);
+
+    // A typed (or loaded) valid time is set in the calendar, without touching its dates
+    watchers.startTime('14:00');
+    assert.equal(datepicker.calendar.selectedTime, '14:00');
+    assert.deepEqual(datepicker.calendarUpdates, [{dates: false, month: false, year: false}]);
+    // ...unless it shows that time already (e.g. it was just picked there), or the time is invalid
+    watchers.startTime('08:15');
+    watchers.startTime('8:1');
+    assert.equal(datepicker.calendarUpdates.length, 1);
+    assert.equal(datepicker.calendar.selectedTime, '08:15');
+
+    // A cleared selection clears the date and lets the popup close
+    listeners['change.bs.datepicker']({dates: []});
+    assert.equal(form.startDate, '');
+    const hideAfterClear = {defaultPrevented: false, preventDefault() { this.defaultPrevented = true; }};
+    listeners['hide.bs.datepicker'](hideAfterClear);
+    assert.equal(hideAfterClear.defaultPrevented, false);
+});
+
+// A Tabler datepicker that parsed the given dates from the input (or nothing, if it couldn't)
+const stubDatepicker = (t, parsedDates) => {
+    const datepickers = [];
+    const originalTabler = globalThis.tabler;
+    const originalWindow = globalThis.window;
+    globalThis.tabler = {
+        Datepicker: class {
+            constructor(element, config) {
+                this.element = element;
+                this.config = config;
+                this.selectedDates = parsedDates;
+                this.setCalls = [];
+                this.listeners = {};
+                element.addEventListener = (name, listener) => this.listeners[name] = listener;
+                this.calendar = {
+                    selectedTime: config.vcpOptions.selectedTime,
+                    context: {selectedTime: config.vcpOptions.selectedTime ?? '00:00'},
+                    // Like the calendar, the time is reset from the options, falling back to its default
+                    update() { this.context.selectedTime = this.selectedTime ?? '00:00'; },
+                };
+                datepickers.push(this);
+            }
+            getSelectedDates() { return [...this.selectedDates]; }
+            setSelectedDates(dates) {
+                this.selectedDates = dates;
+                this.setCalls.push(dates);
+                this.element.value = '';
+            }
+        },
+    };
+    globalThis.window = {addEventListener() {}};
+    t.after(() => {
+        globalThis.tabler = originalTabler;
+        globalThis.window = originalWindow;
+    });
+    return datepickers;
+};
+
+// A maintenance window form with a loaded start, and the watchers it registered
+const startFormOf = (startDate, startTime) => {
+    const watchers = {};
+    const form = upsertMaintenanceWindowForm(null, {}, 'select', []);
+    Object.assign(form, {
+        type: MAINTENANCE_WINDOW_TYPES.SINGLE, startDate, startTime, errors: {},
+        $watch: (property, callback) => watchers[property] = callback,
+    });
+    return {form, watchers};
+};
+
+test('initStartDatepicker preselects a loaded start in the calendar, even if Tabler could not parse it', (t) => {
+    const datepickers = stubDatepicker(t, []);
+    const {form} = startFormOf('2030-01-05', '10:30');
+    const element = {value: '2030-01-05 10:30'};
+
+    form.initStartDatepicker(element);
+    const [datepicker] = datepickers;
+    assert.equal(datepicker.config.vcpOptions.selectedTime, '10:30');
+    assert.deepEqual(datepicker.setCalls, [['2030-01-05']]);
+    // ...keeping the time in the input, which Tabler would write without it
+    assert.equal(element.value, '2030-01-05 10:30');
+});
+
+test('initStartDatepicker leaves the calendar alone when Tabler parsed the loaded start already', (t) => {
+    const datepickers = stubDatepicker(t, ['2030-01-05']);
+    const {form} = startFormOf('2030-01-05', '10:30');
+
+    form.initStartDatepicker({value: '2030-01-05 10:30'});
+    assert.deepEqual(datepickers[0].setCalls, []);
+});
+
+test('initStartDatepicker does not take over the time of a previous session of a reset form', (t) => {
+    const datepickers = stubDatepicker(t, []);
+    const {form, watchers} = startFormOf('', '');
+    form.initStartDatepicker({});
+    const [datepicker] = datepickers;
+
+    // A time is picked, then the form is cancelled and opened again
+    datepicker.config.vcpOptions.onChangeTime({context: {selectedTime: '23:30'}});
+    watchers.startTime(form.startTime);
+    datepicker.calendar.context.selectedTime = '23:30';
+    form.resetState();
+    assert.equal(form.startTime, '');
+    watchers.startTime(form.startTime);
+    assert.equal(datepicker.calendar.selectedTime, undefined);
+
+    // A picked day takes over the calendar's default time instead
+    datepicker.listeners['change.bs.datepicker']({dates: ['2030-01-05']});
+    assert.equal(form.startTime, '00:00');
 });
 
 // --------- #3: metrics blocks ---------
@@ -245,6 +639,68 @@ test('transformData displays the selected period up to the current time', () => 
     assert.deepEqual(result.range, {start: NOW - 30 * ONE_DAY_IN_MILLIS, end: NOW});
 });
 
+// Stubs the theme colors (hex values, by their CSS custom property), and the canvas they're resolved with
+const stubThemeColors = (t, colors) => {
+    const originalGetComputedStyle = globalThis.getComputedStyle;
+    const originalCreateElement = globalThis.document.createElement;
+    globalThis.getComputedStyle = () => ({getPropertyValue: (name) => colors[name] ?? ''});
+    globalThis.document.body = {};
+    globalThis.document.createElement = () => ({
+        getContext: () => ({
+            fillStyle: '',
+            clearRect() {},
+            fillRect() {},
+            getImageData() {
+                return {data: [1, 3, 5].map((start) => parseInt(this.fillStyle.slice(start, start + 2), 16))};
+            },
+        }),
+    });
+    t.after(() => {
+        globalThis.getComputedStyle = originalGetComputedStyle;
+        globalThis.document.createElement = originalCreateElement;
+        delete globalThis.document.body;
+    });
+};
+
+test('a metrics chart takes the colors of the theme again, when it is switched between dark and light', (t) => {
+    // The inverted accent, in the light mode
+    const colors = {'--tblr-primary': '#1f2937', '--tblr-orange': '#f76707', '--tblr-purple': '#ae3ec9'};
+    stubThemeColors(t, colors);
+    stubThemeEnvironment(t);
+    const originalWindow = globalThis.window;
+    const originalApexCharts = globalThis.ApexCharts;
+    const windowListeners = {};
+    globalThis.window = {
+        addEventListener: (name, listener) => windowListeners[name] = listener,
+        dispatchEvent: (event) => windowListeners[event.type]?.(event),
+    };
+    const charts = [];
+    globalThis.ApexCharts = class {
+        constructor(element, options) {
+            this.options = options;
+            this.updates = [];
+            charts.push(this);
+        }
+        render() {}
+        updateOptions(options) { this.updates.push(options); }
+    };
+    t.after(() => {
+        globalThis.window = originalWindow;
+        globalThis.ApexCharts = originalApexCharts;
+    });
+    stubFetch(t, () => new Promise(() => {}));
+
+    const block = icmpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
+    block.$watch = () => {};
+    block.init();
+    const [chart] = charts;
+    assert.deepEqual(chart.options.colors, ['#1f2937', '#f76707']);
+
+    colors['--tblr-primary'] = '#fafafa';
+    setTheme('dark');
+    assert.deepEqual(chart.updates, [{colors: ['#fafafa', '#f76707'], fill: {type: 'solid', opacity: [0.16, 1]}}]);
+});
+
 test('updateChart spans the time axis over the displayed range', () => {
     const block = metricsBlockAt(tcpMetricsBlock, NOW);
     const updates = [];
@@ -353,7 +809,10 @@ test('the metrics blocks fetch their stats and incidents for the selected period
     }
 });
 
-test('changing the period drops the previous data and polls the metrics right away', () => {
+test('changing the period drops the previous data and polls the metrics right away', (t) => {
+    const originalWindow = globalThis.window;
+    globalThis.window = {addEventListener() {}};
+    t.after(() => { globalThis.window = originalWindow; });
     const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
     const watchers = {};
     let polls = 0;
@@ -1753,11 +2212,27 @@ test('Push editFrom keeps the client secret of the monitor, while cloneFrom gene
     assert.notEqual(cloned.clientSecret, sourceMonitor.clientSecret);
 });
 
+test('the status page form sends the picked gray palette', (t) => {
+    stubBrowser(t);
+    const form = upsertStatusPageForm(
+        {id: 2, title: 'Status', slug: 'status', themeBase: 'SLATE'},
+        {}, 'monitor-select', [], 'categories-select', 'GRAY',
+    );
+    form.resetState();
+    assert.equal(form.buildRequestBody().themeBase, 'SLATE');
+
+    form.themeBase = 'ZINC';
+
+    assert.equal(form.buildRequestBody().themeBase, 'ZINC');
+});
+
 // --------- Editing a status page or a maintenance window through the upsert modal of its list ---------
 
 const listEditedEntities = {
     'status-pages': {
-        createForm: (entity = null) => upsertStatusPageForm(entity, {}, 'monitor-select', [], 'categories-select'),
+        createForm: (entity = null) => upsertStatusPageForm(
+            entity, {}, 'monitor-select', [], 'categories-select', 'GRAY',
+        ),
         clonedFields: {title: 'Copy of Source', slug: 'source-copy', public: false},
         source: {
             id: 7,
@@ -1766,6 +2241,7 @@ const listEditedEntities = {
             monitors: ['http:Site'],
             categories: ['Payments'],
             displayCategories: false,
+            themeBase: 'SLATE',
             public: true,
         },
         rendered: {id: 3, title: 'Rendered', slug: 'rendered'},
@@ -1775,11 +2251,14 @@ const listEditedEntities = {
             assert.deepEqual(form.selectedMonitors, ['http:Site']);
             assert.deepEqual(form.selectedCategories, ['Payments']);
             assert.equal(form.displayCategories, false);
+            assert.equal(form.themeBase, 'SLATE');
             assert.equal(form.public, true);
         },
         assertBlank: (form) => {
             assert.equal(form.title, '');
             assert.deepEqual(form.selectedCategories, []);
+            // An unset palette is preselected with the default it falls back to
+            assert.equal(form.themeBase, 'GRAY');
         },
         assertRendered: (form) => assert.equal(form.title, 'Rendered'),
     },
@@ -1810,6 +2289,8 @@ const listEditedEntities = {
         assertBlank: (form) => {
             assert.equal(form.name, '');
             assert.equal(form.type, MAINTENANCE_WINDOW_TYPES.MANUAL);
+            assert.equal(form.startDate, '');
+            assert.equal(form.startTime, '');
             assert.deepEqual(form.selectedCategories, []);
         },
         assertRendered: (form) => assert.equal(form.name, 'Rendered'),

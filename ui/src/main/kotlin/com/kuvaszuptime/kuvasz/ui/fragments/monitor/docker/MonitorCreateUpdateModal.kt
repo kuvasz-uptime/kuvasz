@@ -157,7 +157,7 @@ private fun FlowContent.dockerHostSelector(
     selectErrorFeedback("dockerHost")
     if (configuredHosts.isEmpty()) {
         div {
-            classes(FORM_HINT, TEXT_DANGER)
+            classes(FORM_TEXT, TEXT_DANGER)
             +Messages.dockerHostNoneConfigured()
         }
     }
@@ -208,7 +208,7 @@ private fun FlowContent.containerSelector(
     templateTag {
         xIf("containerLoadFailed")
         div {
-            classes(FORM_HINT, TEXT_WARNING)
+            classes(FORM_TEXT, TEXT_WARNING)
             +Messages.dockerContainerLoadFailed()
         }
     }

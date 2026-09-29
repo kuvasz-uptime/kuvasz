@@ -47,6 +47,7 @@ import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import com.kuvaszuptime.kuvasz.models.monitor.dns.toJsonNode
 import com.kuvaszuptime.kuvasz.models.monitor.http.toJsonNode
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.CertificateInfo
+import com.kuvaszuptime.kuvasz.models.theme.ThemeBase
 import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.DockerMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
@@ -238,6 +239,7 @@ fun createStatusPage(
     displayCategories: Boolean = StatusPageDefaults.DISPLAY_CATEGORIES,
     customLogoUrl: String? = null,
     customFaviconUrl: String? = null,
+    themeBase: ThemeBase = ThemeBase.DEFAULT,
 ) = dslContext
     .insertInto(STATUS_PAGE)
     .set(
@@ -250,6 +252,7 @@ fun createStatusPage(
             .setMonitors(monitors.toTypedArray())
             .setCategories(categories.toTypedArray())
             .setDisplayCategories(displayCategories)
+            .setThemeBase(themeBase)
     )
     .returning(STATUS_PAGE.asterisk())
     .fetchOneOrThrow<StatusPageRecord>()

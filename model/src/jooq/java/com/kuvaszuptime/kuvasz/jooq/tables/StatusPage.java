@@ -10,6 +10,7 @@ import com.kuvaszuptime.kuvasz.jooq.Kuvasz;
 import com.kuvaszuptime.kuvasz.jooq.TextArrayToMonitorIdArrayConverter;
 import com.kuvaszuptime.kuvasz.jooq.tables.records.StatusPageRecord;
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID;
+import com.kuvaszuptime.kuvasz.models.theme.ThemeBase;
 
 import java.time.OffsetDateTime;
 import java.util.Arrays;
@@ -32,6 +33,7 @@ import org.jooq.TableLike;
 import org.jooq.TableOptions;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
+import org.jooq.impl.EnumConverter;
 import org.jooq.impl.Internal;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
@@ -112,6 +114,11 @@ public class StatusPage extends TableImpl<StatusPageRecord> {
      * The column <code>kuvasz.status_page.display_categories</code>.
      */
     public final TableField<StatusPageRecord, Boolean> DISPLAY_CATEGORIES = createField(DSL.name("display_categories"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("true"), SQLDataType.BOOLEAN)), this, "");
+
+    /**
+     * The column <code>kuvasz.status_page.theme_base</code>.
+     */
+    public final TableField<StatusPageRecord, ThemeBase> THEME_BASE = createField(DSL.name("theme_base"), SQLDataType.CLOB.nullable(false), this, "", new EnumConverter<String, ThemeBase>(String.class, ThemeBase.class));
 
     private StatusPage(Name alias, Table<StatusPageRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);

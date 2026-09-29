@@ -11,6 +11,7 @@ import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPagePushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.WithLatency
 import com.kuvaszuptime.kuvasz.models.statuspage.SystemStatus
+import com.kuvaszuptime.kuvasz.models.theme.ThemeBase
 import io.micronaut.core.annotation.Introspected
 import io.micronaut.jsonschema.JsonSchema
 import java.time.LocalDate
@@ -30,6 +31,7 @@ data class StatusPageSchema(
     val monitorCount: Int,
     val categories: Set<String>,
     val displayCategories: Boolean,
+    val themeBase: ThemeBase,
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime,
 ) {
@@ -42,6 +44,7 @@ data class StatusPageSchema(
             monitorCount = dto.monitors.size,
             categories = dto.categories,
             displayCategories = dto.displayCategories,
+            themeBase = dto.themeBase,
             createdAt = dto.createdAt,
             updatedAt = dto.updatedAt,
         )

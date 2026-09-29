@@ -29,6 +29,15 @@ class StatusPageFormModal(page: Page) : ModalView(page) {
         if (value) displayCategoriesToggle.check() else displayCategoriesToggle.uncheck()
     }
 
+    // The radio of a gray palette, by its API value (e.g. "SLATE")
+    fun themeBaseRadio(value: String): Locator =
+        modal.getByTestId("theme-base-picker").locator("input[value='$value']")
+
+    // The radios are visually hidden behind their pills, so they need a forced check.
+    fun pickThemeBase(value: String): StatusPageFormModal = apply {
+        themeBaseRadio(value).check(Locator.CheckOptions().setForce(true))
+    }
+
     fun save() {
         saveButton.click()
     }

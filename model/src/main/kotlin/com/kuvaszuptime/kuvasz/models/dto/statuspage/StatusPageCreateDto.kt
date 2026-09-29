@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.models.dto.statuspage
 
 import com.kuvaszuptime.kuvasz.models.statuspage.StatusPageCreator
+import com.kuvaszuptime.kuvasz.models.theme.ThemeBase
 import io.micronaut.core.annotation.Introspected
 import io.swagger.v3.oas.annotations.media.Schema
 
@@ -30,4 +31,6 @@ data class StatusPageCreateDto(
         defaultValue = StatusPageDefaults.DISPLAY_CATEGORIES.toString(),
     )
     override val displayCategories: Boolean = StatusPageDefaults.DISPLAY_CATEGORIES,
+    @param:Schema(description = StatusPageDocs.THEME_BASE, required = false, defaultValue = ThemeBase.DEFAULT_NAME)
+    override val themeBase: ThemeBase = ThemeBase.DEFAULT,
 ) : StatusPageCreator

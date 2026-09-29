@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.config
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.models.dto.StatusPageValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDefaults
+import com.kuvaszuptime.kuvasz.models.theme.ThemeBase
 import com.kuvaszuptime.kuvasz.testAppContext
 import com.kuvaszuptime.kuvasz.testutils.getBean
 import io.kotest.assertions.throwables.shouldNotThrowAny
@@ -98,10 +99,12 @@ class StatusPageConfigDefaultValuesTest(applicationContext: ApplicationContext) 
                 statusPageConfig.customLogoUrl.shouldBeNull()
                 statusPageConfig.customFaviconUrl.shouldBeNull()
                 statusPageConfig.monitors.shouldBeNull()
+                statusPageConfig.themeBase shouldBe ThemeBase.DEFAULT
 
                 val statusPageDefaultConfig = applicationContext.getBean<DefaultStatusPageConfig>()
                 statusPageDefaultConfig.public shouldBe StatusPageDefaults.DEFAULT_PAGE_PUBLIC
                 statusPageDefaultConfig.title shouldBe StatusPageDefaults.TITLE
+                statusPageDefaultConfig.themeBase shouldBe ThemeBase.DEFAULT
             }
         }
     }
@@ -115,6 +118,7 @@ class StatusPageConfigDefaultValuesTest(applicationContext: ApplicationContext) 
 @Property(name = "default-status-page.title", value = "Something custom")
 @Property(name = "default-status-page.custom-logo-url", value = "https://example.com/logo.png")
 @Property(name = "default-status-page.custom-favicon-url", value = "https://example.com/favicon.png")
+@Property(name = "default-status-page.theme-base", value = "ZINC")
 class DefaultStatusPageConfigTest(applicationContext: ApplicationContext) : BehaviorSpec({
 
     given("the DefaultStatusPagesConfig bean") {
@@ -127,6 +131,7 @@ class DefaultStatusPageConfigTest(applicationContext: ApplicationContext) : Beha
                 statusPageDefaultConfig.title shouldBe "Something custom"
                 statusPageDefaultConfig.customLogoUrl shouldBe "https://example.com/logo.png"
                 statusPageDefaultConfig.customFaviconUrl shouldBe "https://example.com/favicon.png"
+                statusPageDefaultConfig.themeBase shouldBe ThemeBase.ZINC
             }
         }
     }
