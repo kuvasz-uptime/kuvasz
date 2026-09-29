@@ -88,8 +88,8 @@ class AppBootstrappingStatusPageYamlConfigTest : StringSpec({
             firstPage.categories.shouldBeEmpty()
             // ...and an absent `display-categories` falls back to the default
             firstPage.displayCategories shouldBe true
-            // ...just like the absent theme options, which are left unset
-            firstPage.themeBase shouldBe null
+            // ...just like an absent `theme-base`
+            firstPage.themeBase shouldBe ThemeBase.DEFAULT
         }
 
         pagesInDb.forOne { secondPage ->
@@ -215,6 +215,7 @@ class AppBootstrappingStatusPageYamlConfigTest : StringSpec({
                 slug = "manual_page"
                 title = "Manual Page"
                 public = true
+                themeBase = ThemeBase.DEFAULT
                 monitors = listOf(
                     MonitorID(MonitorType.HTTP_SSL, "test1"),
                     MonitorID(MonitorType.HTTP_SSL, "test4"),

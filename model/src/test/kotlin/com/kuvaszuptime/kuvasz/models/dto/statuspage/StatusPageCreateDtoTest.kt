@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.models.dto.statuspage
 import com.kuvaszuptime.kuvasz.models.dto.StatusPageValidationMessages
 import com.kuvaszuptime.kuvasz.models.shouldHaveError
 import com.kuvaszuptime.kuvasz.models.shouldHaveSingleError
+import com.kuvaszuptime.kuvasz.models.theme.ThemeBase
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
@@ -84,7 +85,7 @@ class StatusPageCreateDtoDefaultsTest : BehaviorSpec({
             dto.displayCategories shouldBe StatusPageDefaults.DISPLAY_CATEGORIES
             dto.customLogoUrl shouldBe null
             dto.customFaviconUrl shouldBe null
-            dto.themeBase shouldBe null
+            dto.themeBase shouldBe ThemeBase.DEFAULT
         }
     }
 })

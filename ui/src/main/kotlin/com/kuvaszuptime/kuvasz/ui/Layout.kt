@@ -142,8 +142,8 @@ private fun themePreferenceLoader(option: String, values: List<ThemeOption>): St
     """.trimIndent()
 }
 
-internal fun HTML.withThemeBase(base: ThemeBase? = null) {
-    attributes["data-bs-theme-base"] = (base ?: ThemeBase.DEFAULT).value
+internal fun HTML.withThemeBase(base: ThemeBase = ThemeBase.DEFAULT) {
+    attributes["data-bs-theme-base"] = base.value
 }
 
 internal fun FlowOrMetaDataOrPhrasingContent.commonScripts(appVersion: String) {

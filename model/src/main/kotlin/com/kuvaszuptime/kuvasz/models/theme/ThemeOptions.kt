@@ -14,8 +14,10 @@ enum class ThemeBase : ThemeOption {
     STONE;
 
     companion object {
-        // Tabler switched to the neutral palette in 1.6, but the blue-tinted one it used before is kept as the default
-        val DEFAULT = GRAY
+        // Tabler switched to the neutral palette in 1.6, but the blue-tinted one it used before is kept as the default.
+        // Its name is a constant too, for the annotations of the configuration
+        const val DEFAULT_NAME = "GRAY"
+        val DEFAULT = valueOf(DEFAULT_NAME)
     }
 }
 

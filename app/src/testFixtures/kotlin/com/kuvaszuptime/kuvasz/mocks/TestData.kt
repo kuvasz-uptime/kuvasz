@@ -239,7 +239,7 @@ fun createStatusPage(
     displayCategories: Boolean = StatusPageDefaults.DISPLAY_CATEGORIES,
     customLogoUrl: String? = null,
     customFaviconUrl: String? = null,
-    themeBase: ThemeBase? = null,
+    themeBase: ThemeBase = ThemeBase.DEFAULT,
 ) = dslContext
     .insertInto(STATUS_PAGE)
     .set(

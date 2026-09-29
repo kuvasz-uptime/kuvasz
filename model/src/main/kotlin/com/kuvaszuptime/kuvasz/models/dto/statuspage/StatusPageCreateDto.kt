@@ -31,6 +31,6 @@ data class StatusPageCreateDto(
         defaultValue = StatusPageDefaults.DISPLAY_CATEGORIES.toString(),
     )
     override val displayCategories: Boolean = StatusPageDefaults.DISPLAY_CATEGORIES,
-    @param:Schema(description = StatusPageDocs.THEME_BASE, required = false)
-    override val themeBase: ThemeBase? = null,
+    @param:Schema(description = StatusPageDocs.THEME_BASE, required = false, defaultValue = ThemeBase.DEFAULT_NAME)
+    override val themeBase: ThemeBase = ThemeBase.DEFAULT,
 ) : StatusPageCreator

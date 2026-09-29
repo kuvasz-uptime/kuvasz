@@ -99,13 +99,12 @@ class StatusPageConfigDefaultValuesTest(applicationContext: ApplicationContext) 
                 statusPageConfig.customLogoUrl.shouldBeNull()
                 statusPageConfig.customFaviconUrl.shouldBeNull()
                 statusPageConfig.monitors.shouldBeNull()
-                statusPageConfig.themeBase.shouldBeNull()
+                statusPageConfig.themeBase shouldBe ThemeBase.DEFAULT
 
                 val statusPageDefaultConfig = applicationContext.getBean<DefaultStatusPageConfig>()
                 statusPageDefaultConfig.public shouldBe StatusPageDefaults.DEFAULT_PAGE_PUBLIC
                 statusPageDefaultConfig.title shouldBe StatusPageDefaults.TITLE
-                // The empty fallbacks of the env vars in application.yml leave them unset
-                statusPageDefaultConfig.themeBase.shouldBeNull()
+                statusPageDefaultConfig.themeBase shouldBe ThemeBase.DEFAULT
             }
         }
     }

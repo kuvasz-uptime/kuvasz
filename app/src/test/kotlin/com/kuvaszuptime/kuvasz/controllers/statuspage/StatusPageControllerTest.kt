@@ -152,7 +152,7 @@ class StatusPageControllerTest(
                     val persisted = statusPageRepository.findBySlug("legacy").shouldNotBeNull()
                     persisted.categories.toList().shouldBeEmpty()
                     persisted.displayCategories shouldBe StatusPageDefaults.DISPLAY_CATEGORIES
-                    persisted.themeBase.shouldBeNull()
+                    persisted.themeBase shouldBe ThemeBase.DEFAULT
                 }
             }
 
@@ -261,7 +261,7 @@ class StatusPageControllerTest(
                         page2.public shouldBe statusPage2.public
                         page2.monitors.shouldBeEmpty()
                         page2.categories.shouldBeEmpty()
-                        page2.themeBase.shouldBeNull()
+                        page2.themeBase shouldBe ThemeBase.DEFAULT
                     }
                     parsedPages.forOne { page3 ->
                         page3.title shouldBe statusPage3.title
@@ -440,8 +440,8 @@ class StatusPageControllerTest(
 
                 val response = statusPageClient.getStatusPage(statusPageId = statusPage.id)
 
-                then("it should be read as unset, so the page falls back to the default") {
-                    response.themeBase.shouldBeNull()
+                then("it should be read as the default one") {
+                    response.themeBase shouldBe ThemeBase.DEFAULT
                 }
             }
 
@@ -683,8 +683,8 @@ class StatusPageControllerTest(
                     pageInDb.monitors.shouldBeEmpty()
                     pageInDb.categories.shouldBeEmpty()
                     pageInDb.displayCategories shouldBe true
-                    pageInDb.themeBase.shouldBeNull()
-                    createdMonitor.themeBase.shouldBeNull()
+                    pageInDb.themeBase shouldBe ThemeBase.DEFAULT
+                    createdMonitor.themeBase shouldBe ThemeBase.DEFAULT
                 }
             }
 
@@ -1128,12 +1128,13 @@ class StatusPageControllerTest(
                 val updateDto = JsonNodeFactory.instance.objectNode()
                     .putNull(StatusPageUpdateDto::themeBase.name)
 
-                val updatedPage = statusPageClient.updateStatusPage(statusPage.id, updateDto)
-                val statusPageInDb = statusPageRepository.findById(statusPage.id).shouldNotBeNull()
-
-                then("it should be reset, so that the page falls back to the default") {
-                    updatedPage.themeBase.shouldBeNull()
-                    statusPageInDb.themeBase.shouldBeNull()
+                then("it should return a 400 and leave the page untouched, the palette is not nullable") {
+                    val exception = shouldThrow<HttpClientResponseException> {
+                        statusPageClient.updateStatusPage(statusPage.id, updateDto)
+                    }
+                    exception.status shouldBe HttpStatus.BAD_REQUEST
+                    statusPageRepository.findById(statusPage.id).shouldNotBeNull()
+                        .themeBase shouldBe ThemeBase.SLATE
                 }
             }
 

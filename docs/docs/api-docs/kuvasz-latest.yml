@@ -7293,11 +7293,10 @@ components:
             \ and returned either way"
           default: true
         themeBase:
-          description: The gray palette of the status page. The default one is used
-            when it's not set
-          nullable: true
+          description: The gray palette of the status page
           allOf:
           - $ref: "#/components/schemas/ThemeBase"
+          default: GRAY
     StatusPageDetailsDto:
       required:
       - activeMaintenanceWindows
@@ -7369,9 +7368,7 @@ components:
             \ the monitors of the page, and the per-category statuses are calculated\
             \ and returned either way"
         themeBase:
-          description: The gray palette of the status page. The default one is used
-            when it's not set
-          nullable: true
+          description: The gray palette of the status page
           allOf:
           - $ref: "#/components/schemas/ThemeBase"
         activeMaintenanceWindows:
@@ -7480,9 +7477,7 @@ components:
             \ the monitors of the page, and the per-category statuses are calculated\
             \ and returned either way"
         themeBase:
-          description: The gray palette of the status page. The default one is used
-            when it's not set
-          nullable: true
+          description: The gray palette of the status page
           allOf:
           - $ref: "#/components/schemas/ThemeBase"
         createdAt:
@@ -7792,9 +7787,7 @@ components:
             \ and returned either way"
           nullable: false
         themeBase:
-          description: The gray palette of the status page. The default one is used
-            when it's not set
-          nullable: true
+          description: The gray palette of the status page
           allOf:
           - $ref: "#/components/schemas/ThemeBase"
     SystemStatus:

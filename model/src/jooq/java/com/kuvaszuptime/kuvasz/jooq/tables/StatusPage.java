@@ -118,7 +118,7 @@ public class StatusPage extends TableImpl<StatusPageRecord> {
     /**
      * The column <code>kuvasz.status_page.theme_base</code>.
      */
-    public final TableField<StatusPageRecord, ThemeBase> THEME_BASE = createField(DSL.name("theme_base"), SQLDataType.CLOB, this, "", new EnumConverter<String, ThemeBase>(String.class, ThemeBase.class));
+    public final TableField<StatusPageRecord, ThemeBase> THEME_BASE = createField(DSL.name("theme_base"), SQLDataType.CLOB.nullable(false), this, "", new EnumConverter<String, ThemeBase>(String.class, ThemeBase.class));
 
     private StatusPage(Name alias, Table<StatusPageRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);

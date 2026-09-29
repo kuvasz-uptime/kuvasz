@@ -47,7 +47,7 @@
     8. The `monitors` field is a list of monitors to be displayed on the status page. You can reference monitors by their type and name, in the format `<type>:<name>`, e.g., `http:My HTTP Monitor`, `push:My backup 1`, `icmp:My ICMP Monitor`, `tcp:My TCP Monitor`, `dns:My DNS Monitor`, `docker:My Docker Monitor`.
     9. The `categories` field is a list of monitor categories. Every monitor belonging to one of them is displayed on the page, in addition to the ones listed under `monitors`.
     10. The `display-categories` field decides whether the monitors are shown grouped into their categories. It only affects the rendering, not which monitors the page contains.
-    11. The `theme-base` field is the gray palette of the page, one of `GRAY`, `SLATE`, `ZINC`, `NEUTRAL` or `STONE`. The default `GRAY` palette is used when it's not set.
+    11. The `theme-base` field is the gray palette of the page, one of `GRAY`, `SLATE`, `ZINC`, `NEUTRAL` or `STONE`. It's `GRAY` when it's not set.
 
     !!!info "Consequences of describing your status pages as YAML"
 
@@ -374,7 +374,7 @@ It is useful when you group your monitors for your own sake — to select them o
 <!-- md:type enum: `GRAY`, `SLATE`, `ZINC`, `NEUTRAL`, `STONE` -->
 <!-- md:yaml_prop `theme-base` -->
 
-The **gray palette** of the page: the tint of its backgrounds, borders and secondary texts, in both the dark and the light mode. The possible values are `GRAY` (blue-tinted, the default), `SLATE`, `ZINC`, `NEUTRAL` and `STONE`. If it's not set, the page follows the default one, including the pages that were created before this setting existed.
+The **gray palette** of the page: the tint of its backgrounds, borders and secondary texts, in both the dark and the light mode. The possible values are `GRAY` (blue-tinted, the default), `SLATE`, `ZINC`, `NEUTRAL` and `STONE`. The pages that were created before this setting existed got the default one.
 
 A status page always uses its own palette: the appearance preferences you pick on the _Settings_ page of the Web UI only style the Web UI itself, in your own browser.
 

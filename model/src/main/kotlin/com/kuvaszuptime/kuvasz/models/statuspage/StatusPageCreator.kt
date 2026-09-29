@@ -21,7 +21,7 @@ interface StatusPageCreator {
     val monitors: List<String>?
     val categories: List<String>?
     val displayCategories: Boolean
-    val themeBase: ThemeBase?
+    val themeBase: ThemeBase
 }
 
 fun StatusPageCreator.toStatusPageRecord(

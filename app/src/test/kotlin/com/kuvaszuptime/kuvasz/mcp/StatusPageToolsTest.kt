@@ -120,13 +120,13 @@ class StatusPageToolsTest(
                 createStatusPage(dslContext)
                 val response = callToolWithMcpClient(LIST_STATUS_PAGES)
 
-                then("it is exposed, while an unset one is left out") {
+                then("it is exposed, the default one included") {
                     val pageList = response.structuredContentAs<StatusPageListSchema>().shouldNotBeNull()
                     pageList.statusPages.forOne { statusPage ->
                         statusPage.themeBase shouldBe ThemeBase.SLATE
                     }
                     pageList.statusPages.forOne { statusPage ->
-                        statusPage.themeBase shouldBe null
+                        statusPage.themeBase shouldBe ThemeBase.DEFAULT
                     }
                 }
             }

@@ -214,4 +214,4 @@ default-status-page:
   custom-logo-url: ${DEFAULT_STATUS_PAGE_LOGO_URL:}
   custom-favicon-url: ${DEFAULT_STATUS_PAGE_FAVICON_URL:}
   display-categories: ${DEFAULT_STATUS_PAGE_DISPLAY_CATEGORIES:`true`}
-  theme-base: ${DEFAULT_STATUS_PAGE_THEME_BASE:}
+  theme-base: ${DEFAULT_STATUS_PAGE_THEME_BASE:`GRAY`}

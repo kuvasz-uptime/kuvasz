@@ -31,7 +31,7 @@ data class StatusPageSchema(
     val monitorCount: Int,
     val categories: Set<String>,
     val displayCategories: Boolean,
-    val themeBase: ThemeBase?,
+    val themeBase: ThemeBase,
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime,
 ) {

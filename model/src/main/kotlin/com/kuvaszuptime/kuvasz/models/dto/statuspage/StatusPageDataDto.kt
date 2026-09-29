@@ -20,7 +20,7 @@ data class StatusPageDataDto(
     val activeMaintenanceWindows: List<StatusPageMaintenanceWindowDto> = emptyList(),
     val upcomingMaintenanceWindows: List<StatusPageMaintenanceWindowDto> = emptyList(),
     val displayCategories: Boolean = StatusPageDefaults.DISPLAY_CATEGORIES,
-    val themeBase: ThemeBase? = null,
+    val themeBase: ThemeBase = ThemeBase.DEFAULT,
 )
 
 /**

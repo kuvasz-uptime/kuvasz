@@ -30,8 +30,8 @@ data class StatusPageDetailsDto(
     val categoryStatus: List<CategoryStatusDto> = emptyList(),
     @param:Schema(description = StatusPageDocs.DISPLAY_CATEGORIES, required = true)
     val displayCategories: Boolean = StatusPageDefaults.DISPLAY_CATEGORIES,
-    @param:Schema(description = StatusPageDocs.THEME_BASE, required = true, nullable = true)
-    val themeBase: ThemeBase? = null,
+    @param:Schema(description = StatusPageDocs.THEME_BASE, required = true)
+    val themeBase: ThemeBase = ThemeBase.DEFAULT,
     @param:Schema(description = StatusPageDocs.ACTIVE_MAINTENANCE_WINDOWS, required = true)
     val activeMaintenanceWindows: List<StatusPageMaintenanceWindowDto> = emptyList(),
     @param:Schema(description = StatusPageDocs.UPCOMING_MAINTENANCE_WINDOWS, required = true)

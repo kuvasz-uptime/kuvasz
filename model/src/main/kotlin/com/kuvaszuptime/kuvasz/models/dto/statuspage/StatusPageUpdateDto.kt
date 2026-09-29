@@ -41,6 +41,7 @@ data class StatusPageUpdateDto(
     @param:Schema(description = StatusPageDocs.DISPLAY_CATEGORIES, required = false, nullable = false)
     val displayCategories: Boolean?,
 
-    @param:Schema(description = StatusPageDocs.THEME_BASE, required = false, nullable = true)
+    @get:NotNull
+    @param:Schema(description = StatusPageDocs.THEME_BASE, required = false, nullable = false)
     val themeBase: ThemeBase?,
 )

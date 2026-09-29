@@ -130,7 +130,7 @@ class StatusPageImporterTest(
                 then("the existing one is reset to the default") {
                     val persisted = statusPageRepository.findBySlug("unthemed").shouldNotBeNull()
                     persisted.id shouldBe existing.id
-                    persisted.themeBase shouldBe null
+                    persisted.themeBase shouldBe ThemeBase.DEFAULT
                 }
             }
         }

@@ -12,7 +12,7 @@ object StatusPageDocs {
     const val DISPLAY_CATEGORIES = "Whether the monitors are displayed grouped into their categories on the page. " +
         "It only affects the rendering: the categories still select the monitors of the page, and the per-category " +
         "statuses are calculated and returned either way"
-    const val THEME_BASE = "The gray palette of the status page. The default one is used when it's not set"
+    const val THEME_BASE = "The gray palette of the status page"
     const val CATEGORIES = "Set of monitor categories that are included in the status page. It is additive with " +
         "'monitors': the page shows the monitors listed there plus every monitor belonging to one of these " +
         "categories. A category that is not in use by any monitor is kept, it simply contributes nothing."

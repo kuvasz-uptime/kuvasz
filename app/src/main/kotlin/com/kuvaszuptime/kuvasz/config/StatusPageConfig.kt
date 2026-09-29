@@ -33,7 +33,8 @@ interface DefaultStatusPageConfig {
     @get:Bindable(defaultValue = StatusPageDefaults.DISPLAY_CATEGORIES.toString())
     val displayCategories: Boolean
 
-    val themeBase: ThemeBase?
+    @get:Bindable(defaultValue = ThemeBase.DEFAULT_NAME)
+    val themeBase: ThemeBase
 
     companion object {
         private const val CONFIG_PREFIX = "default-status-page"
@@ -74,7 +75,8 @@ interface StatusPageConfig : StatusPageCreator {
     @get:Bindable(defaultValue = StatusPageDefaults.DISPLAY_CATEGORIES.toString())
     override val displayCategories: Boolean
 
-    override val themeBase: ThemeBase?
+    @get:Bindable(defaultValue = ThemeBase.DEFAULT_NAME)
+    override val themeBase: ThemeBase
 
     @get:Bindable(defaultValue = StatusPageDefaults.CUSTOM_PAGE_PUBLIC.toString())
     override val public: Boolean
