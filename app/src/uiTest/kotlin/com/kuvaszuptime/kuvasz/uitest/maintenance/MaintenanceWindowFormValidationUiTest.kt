@@ -236,6 +236,24 @@ class MaintenanceWindowFormValidationUiTest : UiTestSpec() {
             assertThat(modal.datepicker.locator("[data-vc-time-input='minute'] input")).hasValue("30")
         }
 
+        "a day picked in a reopened form doesn't take over the time picked in the abandoned one" {
+            val page = newPage()
+            val list = MaintenanceWindowListPage(page)
+            list.navigate()
+            val pickedDay = LocalDate.now().withDayOfMonth(1).toString()
+
+            val abandoned = list.openCreateModal()
+            abandoned.selectType(MaintenanceWindowType.SINGLE)
+            abandoned.startInput.click()
+            abandoned.pickStartTime(hour = "23", minute = "30")
+            abandoned.dismiss()
+
+            val reopened = list.openCreateModal()
+            reopened.selectType(MaintenanceWindowType.SINGLE).pickStartDay(pickedDay)
+            // The calendar's default time
+            assertThat(reopened.startInput).hasValue("$pickedDay 00:00")
+        }
+
         "the datepicker fits into the viewport and stays attached to its input when the modal is scrolled" {
             // Short enough that the popup doesn't fit below the input
             val modal = openCreateModal(viewportHeight = SHORT_VIEWPORT_HEIGHT)

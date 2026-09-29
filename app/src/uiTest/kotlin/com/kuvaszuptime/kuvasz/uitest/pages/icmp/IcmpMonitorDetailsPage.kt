@@ -18,6 +18,10 @@ class IcmpMonitorDetailsPage(private val page: Page) {
     // ApexCharts container of latency and packet loss; once rendered it holds an `<svg>`.
     val metricsChartSvg: Locator get() = page.locator("#icmp-monitor-details-metrics-chart svg")
 
+    // The line of the latency, the only series of the chart drawn as an area (the other path of which is its fill)
+    val latencyLine: Locator get() =
+        page.locator("#icmp-monitor-details-metrics-chart .apexcharts-area-series path.apexcharts-area[fill=none]")
+
     // The markers of the incidents' starts and ends on the chart, and the tooltip shown when one of them is hovered
     val incidentMarkers: Locator get() =
         page.locator("#icmp-monitor-details-metrics-chart .apexcharts-point-annotation-marker")

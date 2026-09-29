@@ -21,6 +21,8 @@ const {
     formatStartValue,
     parseStartValue,
     toRgbColor,
+    hueOf,
+    distinctSeriesColor,
     resolveMaintenanceWindowType,
     createRandomSecret,
 } = require('../main/resources/js/kuvasz.js');
@@ -169,6 +171,63 @@ test('toRgbColor', () => {
     assert.equal(toRgbColor([6, 111, 209]), '#066fd1');
     assert.equal(toRgbColor([0, 0, 0, 255]), '#000000');
     assert.equal(toRgbColor([6, 111, 209], 0.16), 'rgba(6, 111, 209, 0.16)');
+});
+
+test('hueOf', () => {
+    assert.equal(hueOf('#ff0000'), 0);
+    assert.equal(hueOf('#00ff00'), 120);
+    assert.equal(hueOf('#0000ff'), 240);
+    assert.equal(hueOf('#ff00ff'), 300);
+    assert.equal(Math.round(hueOf('#066fd1')), 209);
+    // Grays, like the inverted accent, have no hue
+    assert.equal(hueOf('#ffffff'), null);
+    assert.equal(hueOf('#1f2937'), null);
+});
+
+// The sRGB values of Tabler's palette
+const TABLER = {
+    blue: '#066fd1',
+    azure: '#4299e1',
+    green: '#2fb344',
+    lime: '#74b816',
+    teal: '#0ca678',
+    red: '#d63939',
+    pink: '#d6336c',
+    orange: '#f76707',
+    yellow: '#f59f00',
+    purple: '#ae3ec9',
+    gray500: '#737373',
+};
+
+test('distinctSeriesColor keeps the preferred color when it is distinct from the taken ones', () => {
+    assert.equal(distinctSeriesColor([TABLER.blue], [TABLER.orange, TABLER.purple]), TABLER.orange);
+    assert.equal(distinctSeriesColor([TABLER.purple], [TABLER.orange, TABLER.purple]), TABLER.orange);
+    // Purple and pink are close in name only
+    assert.equal(distinctSeriesColor([TABLER.pink], [TABLER.purple, TABLER.orange]), TABLER.purple);
+});
+
+test('distinctSeriesColor skips the candidates close to the accent', () => {
+    [TABLER.green, TABLER.lime, TABLER.teal].forEach((accent) =>
+        assert.equal(distinctSeriesColor([accent], [TABLER.green, TABLER.purple, TABLER.orange]), TABLER.purple));
+    [TABLER.orange, TABLER.red, TABLER.yellow, TABLER.pink].forEach((accent) =>
+        assert.equal(distinctSeriesColor([accent], [TABLER.orange, TABLER.purple]), TABLER.purple));
+    assert.equal(distinctSeriesColor([TABLER.azure], [TABLER.blue, TABLER.green]), TABLER.green);
+});
+
+test('distinctSeriesColor keeps the series apart from each other too', () => {
+    assert.equal(distinctSeriesColor([TABLER.blue, TABLER.green], [TABLER.red, TABLER.gray500]), TABLER.red);
+    assert.equal(distinctSeriesColor([TABLER.green, TABLER.purple], [TABLER.red, TABLER.gray500]), TABLER.red);
+    assert.equal(distinctSeriesColor([TABLER.orange, TABLER.green], [TABLER.red, TABLER.gray500]), TABLER.gray500);
+    assert.equal(distinctSeriesColor([TABLER.blue, TABLER.pink], [TABLER.red, TABLER.gray500]), TABLER.gray500);
+});
+
+test('distinctSeriesColor ignores the hue of a gray accent', () => {
+    assert.equal(distinctSeriesColor(['#fafafa'], [TABLER.orange, TABLER.purple]), TABLER.orange);
+    assert.equal(distinctSeriesColor(['#1f2937'], [TABLER.green, TABLER.purple]), TABLER.green);
+});
+
+test('distinctSeriesColor falls back to the last candidate when none of them are distinct', () => {
+    assert.equal(distinctSeriesColor([TABLER.red], [TABLER.orange, TABLER.pink]), TABLER.pink);
 });
 
 test('resolveMaintenanceWindowType', () => {

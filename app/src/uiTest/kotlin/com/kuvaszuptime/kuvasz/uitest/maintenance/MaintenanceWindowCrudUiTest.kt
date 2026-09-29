@@ -14,6 +14,9 @@ import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldEndWith
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneOffset
 
 @MicronautTest(environments = [PlaywrightSupport.UI_TEST_ENV])
 class MaintenanceWindowCrudUiTest(private val httpMonitorRepository: HttpMonitorRepository) : UiTestSpec() {
@@ -253,6 +256,26 @@ class MaintenanceWindowCrudUiTest(private val httpMonitorRepository: HttpMonitor
             assertThat(details.heading(name)).isVisible()
         }
 
+        "the datepicker of an edited one-off window opens with its saved start selected" {
+            // A month the calendar doesn't open with on its own, at noon, so it's the same day in every time zone
+            val startDay = LocalDate.now().plusMonths(START_MONTHS_AHEAD).withDayOfMonth(START_DAY_OF_MONTH)
+            val name = "Scheduled One-off Window"
+            createMaintenanceWindow(
+                dslContext,
+                name = name,
+                start = startDay.atTime(LocalTime.NOON).atOffset(ZoneOffset.UTC),
+                duration = "PT1H",
+            )
+
+            val page = newPage()
+            val list = MaintenanceWindowListPage(page)
+            list.navigate()
+            val modal = list.configureMaintenanceWindow(name)
+            modal.startInput.click()
+
+            assertThat(modal.datepicker.locator("[data-vc-date='$startDay'][data-vc-date-selected]")).isVisible()
+        }
+
         "an abandoned create form is reset when the modal is reopened" {
             createHttpMonitor(httpMonitorRepository, monitorName = "Abandoned Selection")
 
@@ -377,5 +400,10 @@ class MaintenanceWindowCrudUiTest(private val httpMonitorRepository: HttpMonitor
             assertThat(modal.selectedOptions).hasCount(1)
             assertThat(modal.selectedOptions).containsText("Selectable Monitor")
         }
+    }
+
+    companion object {
+        private const val START_MONTHS_AHEAD = 2L
+        private const val START_DAY_OF_MONTH = 15
     }
 }

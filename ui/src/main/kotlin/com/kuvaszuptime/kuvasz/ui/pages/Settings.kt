@@ -571,10 +571,10 @@ private fun FlowContent.settingsCard(
                 div {
                     classes(CARD_TITLE, D_FLEX, ALIGN_ITEMS_CENTER)
                     +title
-                    description?.let {
+                    description?.let { tooltipText ->
                         span {
                             classes(MS_2, D_FLEX)
-                            tooltip(title = it, location = TooltipLocation.RIGHT)
+                            tooltip(title = tooltipText, location = TooltipLocation.RIGHT)
                             icon(Icon.INFO_CIRCLE)
                         }
                     }

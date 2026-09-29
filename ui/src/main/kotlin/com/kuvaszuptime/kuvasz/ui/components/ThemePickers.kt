@@ -25,10 +25,6 @@ internal class ThemePickerBinding(
     val isDisabled: Boolean = false,
 )
 
-/**
- * The picker of the gray palettes, which only differ in their tint, so they're picked by their names, with a light and
- * a dark shade of each
- **/
 internal fun FlowContent.themeBasePicker(binding: ThemePickerBinding) {
     themeOptionGroup(BASE_OPTION, Messages.themeBaseLabel()) {
         div {
@@ -51,9 +47,6 @@ internal fun FlowContent.themeBasePicker(binding: ThemePickerBinding) {
     }
 }
 
-/**
- * The picker of the accent colors
- **/
 internal fun FlowContent.themePrimaryPicker(binding: ThemePickerBinding) {
     themeOptionGroup(PRIMARY_OPTION, Messages.themePrimaryLabel()) {
         div {
@@ -96,7 +89,6 @@ private fun FlowContent.themeOptionRadio(binding: ThemePickerBinding, themeOptio
     }
 }
 
-// Shows the colors of the option by being scoped to the theme attribute it stands for
 private fun FlowContent.themeSwatch(option: String, themeOption: ThemeOption, vararg swatchClasses: CSSClass) {
     span {
         classes(*swatchClasses)

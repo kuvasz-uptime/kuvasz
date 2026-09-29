@@ -34,6 +34,7 @@ const {
     formatChartTimestamp,
     toDateTimeLocalValue,
     anchorPopupToModal,
+    setTheme,
     setThemeOption,
     appearanceSettings,
 } = require('../main/resources/js/kuvasz.js');
@@ -413,21 +414,94 @@ test('initStartDatepicker keeps the Tabler datepicker and the start in sync', as
     assert.equal(hideAfterClear.defaultPrevented, false);
 });
 
-test('initStartDatepicker preselects a valid time in the time picker', (t) => {
+// A Tabler datepicker that parsed the given dates from the input (or nothing, if it couldn't)
+const stubDatepicker = (t, parsedDates) => {
+    const datepickers = [];
     const originalTabler = globalThis.tabler;
     const originalWindow = globalThis.window;
-    let config = null;
-    globalThis.tabler = {Datepicker: class { constructor(element, options) { config = options; } }};
+    globalThis.tabler = {
+        Datepicker: class {
+            constructor(element, config) {
+                this.element = element;
+                this.config = config;
+                this.selectedDates = parsedDates;
+                this.setCalls = [];
+                this.listeners = {};
+                element.addEventListener = (name, listener) => this.listeners[name] = listener;
+                this.calendar = {
+                    selectedTime: config.vcpOptions.selectedTime,
+                    context: {selectedTime: config.vcpOptions.selectedTime ?? '00:00'},
+                    // Like the calendar, the time is reset from the options, falling back to its default
+                    update() { this.context.selectedTime = this.selectedTime ?? '00:00'; },
+                };
+                datepickers.push(this);
+            }
+            getSelectedDates() { return [...this.selectedDates]; }
+            setSelectedDates(dates) {
+                this.selectedDates = dates;
+                this.setCalls.push(dates);
+                this.element.value = '';
+            }
+        },
+    };
     globalThis.window = {addEventListener() {}};
     t.after(() => {
         globalThis.tabler = originalTabler;
         globalThis.window = originalWindow;
     });
+    return datepickers;
+};
 
+// A maintenance window form with a loaded start, and the watchers it registered
+const startFormOf = (startDate, startTime) => {
+    const watchers = {};
     const form = upsertMaintenanceWindowForm(null, {}, 'select', []);
-    Object.assign(form, {startDate: '2030-01-05', startTime: '10:30', $watch: () => {}});
-    form.initStartDatepicker({addEventListener() {}});
-    assert.equal(config.vcpOptions.selectedTime, '10:30');
+    Object.assign(form, {
+        type: MAINTENANCE_WINDOW_TYPES.SINGLE, startDate, startTime, errors: {},
+        $watch: (property, callback) => watchers[property] = callback,
+    });
+    return {form, watchers};
+};
+
+test('initStartDatepicker preselects a loaded start in the calendar, even if Tabler could not parse it', (t) => {
+    const datepickers = stubDatepicker(t, []);
+    const {form} = startFormOf('2030-01-05', '10:30');
+    const element = {value: '2030-01-05 10:30'};
+
+    form.initStartDatepicker(element);
+    const [datepicker] = datepickers;
+    assert.equal(datepicker.config.vcpOptions.selectedTime, '10:30');
+    assert.deepEqual(datepicker.setCalls, [['2030-01-05']]);
+    // ...keeping the time in the input, which Tabler would write without it
+    assert.equal(element.value, '2030-01-05 10:30');
+});
+
+test('initStartDatepicker leaves the calendar alone when Tabler parsed the loaded start already', (t) => {
+    const datepickers = stubDatepicker(t, ['2030-01-05']);
+    const {form} = startFormOf('2030-01-05', '10:30');
+
+    form.initStartDatepicker({value: '2030-01-05 10:30'});
+    assert.deepEqual(datepickers[0].setCalls, []);
+});
+
+test('initStartDatepicker does not take over the time of a previous session of a reset form', (t) => {
+    const datepickers = stubDatepicker(t, []);
+    const {form, watchers} = startFormOf('', '');
+    form.initStartDatepicker({});
+    const [datepicker] = datepickers;
+
+    // A time is picked, then the form is cancelled and opened again
+    datepicker.config.vcpOptions.onChangeTime({context: {selectedTime: '23:30'}});
+    watchers.startTime(form.startTime);
+    datepicker.calendar.context.selectedTime = '23:30';
+    form.resetState();
+    assert.equal(form.startTime, '');
+    watchers.startTime(form.startTime);
+    assert.equal(datepicker.calendar.selectedTime, undefined);
+
+    // A picked day takes over the calendar's default time instead
+    datepicker.listeners['change.bs.datepicker']({dates: ['2030-01-05']});
+    assert.equal(form.startTime, '00:00');
 });
 
 // --------- #3: metrics blocks ---------
@@ -565,6 +639,68 @@ test('transformData displays the selected period up to the current time', () => 
     assert.deepEqual(result.range, {start: NOW - 30 * ONE_DAY_IN_MILLIS, end: NOW});
 });
 
+// Stubs the theme colors (hex values, by their CSS custom property), and the canvas they're resolved with
+const stubThemeColors = (t, colors) => {
+    const originalGetComputedStyle = globalThis.getComputedStyle;
+    const originalCreateElement = globalThis.document.createElement;
+    globalThis.getComputedStyle = () => ({getPropertyValue: (name) => colors[name] ?? ''});
+    globalThis.document.body = {};
+    globalThis.document.createElement = () => ({
+        getContext: () => ({
+            fillStyle: '',
+            clearRect() {},
+            fillRect() {},
+            getImageData() {
+                return {data: [1, 3, 5].map((start) => parseInt(this.fillStyle.slice(start, start + 2), 16))};
+            },
+        }),
+    });
+    t.after(() => {
+        globalThis.getComputedStyle = originalGetComputedStyle;
+        globalThis.document.createElement = originalCreateElement;
+        delete globalThis.document.body;
+    });
+};
+
+test('a metrics chart takes the colors of the theme again, when it is switched between dark and light', (t) => {
+    // The inverted accent, in the light mode
+    const colors = {'--tblr-primary': '#1f2937', '--tblr-orange': '#f76707', '--tblr-purple': '#ae3ec9'};
+    stubThemeColors(t, colors);
+    stubThemeEnvironment(t);
+    const originalWindow = globalThis.window;
+    const originalApexCharts = globalThis.ApexCharts;
+    const windowListeners = {};
+    globalThis.window = {
+        addEventListener: (name, listener) => windowListeners[name] = listener,
+        dispatchEvent: (event) => windowListeners[event.type]?.(event),
+    };
+    const charts = [];
+    globalThis.ApexCharts = class {
+        constructor(element, options) {
+            this.options = options;
+            this.updates = [];
+            charts.push(this);
+        }
+        render() {}
+        updateOptions(options) { this.updates.push(options); }
+    };
+    t.after(() => {
+        globalThis.window = originalWindow;
+        globalThis.ApexCharts = originalApexCharts;
+    });
+    stubFetch(t, () => new Promise(() => {}));
+
+    const block = icmpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
+    block.$watch = () => {};
+    block.init();
+    const [chart] = charts;
+    assert.deepEqual(chart.options.colors, ['#1f2937', '#f76707']);
+
+    colors['--tblr-primary'] = '#fafafa';
+    setTheme('dark');
+    assert.deepEqual(chart.updates, [{colors: ['#fafafa', '#f76707'], fill: {type: 'solid', opacity: [0.16, 1]}}]);
+});
+
 test('updateChart spans the time axis over the displayed range', () => {
     const block = metricsBlockAt(tcpMetricsBlock, NOW);
     const updates = [];
@@ -673,7 +809,10 @@ test('the metrics blocks fetch their stats and incidents for the selected period
     }
 });
 
-test('changing the period drops the previous data and polls the metrics right away', () => {
+test('changing the period drops the previous data and polls the metrics right away', (t) => {
+    const originalWindow = globalThis.window;
+    globalThis.window = {addEventListener() {}};
+    t.after(() => { globalThis.window = originalWindow; });
     const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
     const watchers = {};
     let polls = 0;

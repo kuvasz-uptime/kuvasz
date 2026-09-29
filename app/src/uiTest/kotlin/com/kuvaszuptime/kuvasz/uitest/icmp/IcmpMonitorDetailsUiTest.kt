@@ -11,6 +11,7 @@ import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.uitest.PlaywrightSupport
 import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
+import com.kuvaszuptime.kuvasz.uitest.lightThemeToggle
 import com.kuvaszuptime.kuvasz.uitest.pages.icmp.IcmpMonitorDetailsPage
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.microsoft.playwright.Page
@@ -64,6 +65,29 @@ class IcmpMonitorDetailsUiTest(private val icmpMonitorRepository: IcmpMonitorRep
             assertThat(details.incidentMarkers).hasCount(2)
             details.incidentMarkers.first().hover()
             assertThat(details.incidentMarkerTooltip).containsText("Request timed out")
+        }
+
+        "the chart takes the colors of the theme again, when it is switched between dark and light" {
+            val monitor = createIcmpMonitor(icmpMonitorRepository, monitorName = "ICMP Theme Monitor")
+            val now = getCurrentTimestamp()
+            for (index in 0 until METRICS_LOG_COUNT) {
+                createIcmpMetricsLogRecord(
+                    dslContext,
+                    monitor.id,
+                    createdAt = now.minusMinutes(index * METRICS_LOG_INTERVAL_MINUTES),
+                )
+            }
+
+            val page = newPage()
+            val details = IcmpMonitorDetailsPage(page)
+            details.navigate(monitor.id)
+            // The inverted accent is the one that differs between the dark and the light mode
+            page.evaluate("localStorage.setItem('kuvasz-theme-primary', 'inverted')")
+            page.reload()
+            assertThat(details.latencyLine).hasAttribute("stroke", INVERTED_ACCENT_IN_DARK_MODE)
+
+            page.lightThemeToggle.click()
+            assertThat(details.latencyLine).hasAttribute("stroke", INVERTED_ACCENT_IN_LIGHT_MODE)
         }
 
         "changing the metrics period refreshes the metrics of the new period without reloading the page" {
@@ -157,6 +181,8 @@ class IcmpMonitorDetailsUiTest(private val icmpMonitorRepository: IcmpMonitorRep
         private const val INCIDENT_ENDED_MINUTES_AGO = 20L
         private const val DEFAULT_PERIOD = "PT24H"
         private const val SEVEN_DAYS_PERIOD = "PT168H"
+        private const val INVERTED_ACCENT_IN_DARK_MODE = "#fafafa"
+        private const val INVERTED_ACCENT_IN_LIGHT_MODE = "#1f2937"
 
         /**
          * Holds back the stats requests of the monitor for the given [period]: the last one of them is kept in the

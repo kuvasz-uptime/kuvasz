@@ -1,7 +1,10 @@
+const THEME_CHANGE_EVENT = 'kuvasz:theme-change';
+
 // Dark/light mode toggle
 const setTheme = (theme) => {
     document.documentElement.setAttribute('data-bs-theme', theme);
     localStorage.setItem('kuvasz-theme', theme);
+    window.dispatchEvent(new Event(THEME_CHANGE_EVENT));
 };
 
 // Gray palette ('base') and accent color ('primary') of tabler-themes.css, applied eagerly on the next page loads
@@ -400,6 +403,38 @@ const themeColor = (name, opacity = 1) => {
     return toRgbColor(themeColorContext.getImageData(0, 0, 1, 1).data, opacity);
 };
 
+// Hue (0-360) of a #rrggbb color, or null for a gray (e.g. the inverted accent), which doesn't have one
+const hueOf = (hexColor) => {
+    const [red, green, blue] = [1, 3, 5].map((start) => parseInt(hexColor.slice(start, start + 2), 16) / 255);
+    const max = Math.max(red, green, blue);
+    const chroma = max - Math.min(red, green, blue);
+    if (chroma < 0.15) return null;
+    let hue;
+    if (max === red) hue = ((green - blue) / chroma) % 6;
+    else if (max === green) hue = (blue - red) / chroma + 2;
+    else hue = (red - green) / chroma + 4;
+    return (hue * 60 + 360) % 360;
+};
+
+// Keeps e.g. red, orange and pink apart, or green, lime and teal, while purple and pink still count as distinct
+const MIN_SERIES_HUE_DISTANCE = 50;
+
+const areHuesClose = (color, otherColor) => {
+    const [hue, otherHue] = [hueOf(color), hueOf(otherColor)];
+    if (hue === null || otherHue === null) return false;
+    const distance = Math.abs(hue - otherHue);
+    return Math.min(distance, 360 - distance) < MIN_SERIES_HUE_DISTANCE;
+};
+
+/*
+ The first series of a chart is drawn in the accent color, which the user can pick freely, so the color of another
+ series may be hard to tell apart from it. The first candidate distinct from every taken color is used, or the last
+ one if none of them are.
+*/
+const distinctSeriesColor = (takenColors, candidates) =>
+    candidates.find((candidate) => takenColors.every((taken) => !areHuesClose(candidate, taken)))
+    ?? candidates.at(-1);
+
 // Shared ApexCharts config for the metrics charts on the monitor detail pages
 const baseAreaChartOptions = (noDataLabel, tooltipFormatter) => ({
     chart: {
@@ -614,6 +649,8 @@ const metricsBlock = ({
 
         init() {
             this.initializeChart();
+            // The inverted accent is dark in the light mode and light in the dark one
+            window.addEventListener(THEME_CHANGE_EVENT, () => this.applyThemeColors());
             this.startPolling();
             if (!this.isAutoRefreshEnabled) {
                 this.stopPolling();
@@ -661,6 +698,12 @@ const metricsBlock = ({
             };
             this.chart = new ApexCharts(document.getElementById(chartElementId), buildChartOptions(this.chartLabels));
             this.chart.render();
+        },
+
+        // The colors are resolved upfront for ApexCharts, so they have to be resolved again when the theme changes
+        applyThemeColors() {
+            const {colors, fill} = buildChartOptions(this.chartLabels);
+            this.chart.updateOptions({colors, fill});
         },
 
         // The incidents are only decoration on the chart, so failing to fetch them must not block the metrics
@@ -759,10 +802,11 @@ const httpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, char
 // Latency and packet loss share a single chart, each of them with an axis of its own
 const icmpChartOptions = (chartLabels) => {
     const options = baseAreaChartOptions(chartLabels.noData, null);
+    const latencyColor = themeColor("primary");
     return {
         ...options,
         chart: {...options.chart, type: "line"},
-        colors: [themeColor("primary"), themeColor("orange")],
+        colors: [latencyColor, distinctSeriesColor([latencyColor], [themeColor("orange"), themeColor("purple")])],
         fill: {
             type: "solid",
             opacity: [0.16, 1],
@@ -853,14 +897,19 @@ const bytesToMib = (bytes) => bytes != null ? parseFloat((bytes / BYTES_IN_MIB).
 */
 const dockerResourceChartOptions = (chartLabels) => {
     const options = baseAreaChartOptions(chartLabels.noData, null);
+    const cpuUsageColor = themeColor("primary");
+    const memoryUsageColor = distinctSeriesColor(
+        [cpuUsageColor],
+        [themeColor("green"), themeColor("purple"), themeColor("orange")],
+    );
+    const memoryLimitColor = distinctSeriesColor(
+        [cpuUsageColor, memoryUsageColor],
+        [themeColor("red"), themeColor("gray-500")],
+    );
     return {
         ...options,
         chart: {...options.chart, type: "line"},
-        colors: [
-            themeColor("primary"),
-            themeColor("green"),
-            themeColor("red"),
-        ],
+        colors: [cpuUsageColor, memoryUsageColor, memoryLimitColor],
         fill: {
             type: "solid",
             opacity: [0.16, 1, 1],
@@ -1866,7 +1915,7 @@ const upsertStatusPageForm = (
         this.selectedMonitors = source?.monitors || [];
         this.selectedCategories = source?.categories || [];
         this.displayCategories = source?.displayCategories ?? true;
-        // Preselected with the default an unset palette falls back to
+        // A new page starts with the default palette
         this.themeBase = source?.themeBase || defaultThemeBase;
         this.public = source?.public ?? false;
         this.errors = {};
@@ -2603,18 +2652,24 @@ const upsertMaintenanceWindowForm = (
             this.startTime = this.startTime || datepicker.calendar.context.selectedTime;
             this.validateStart();
         });
-        this.$watch('startDate', (value) => {
+        const selectStartDate = (value) => {
             const selectedDates = isValidIsoDate(value) ? [value] : [];
             if (selectedDates[0] !== datepicker.getSelectedDates()[0]) {
                 datepicker.setSelectedDates(selectedDates);
                 // Tabler writes the input with the selection too, which would wipe a typed but invalid start
                 element.value = formatStartValue(this.startDate, this.startTime);
             }
-        });
+        };
+        // The start is loaded before the watcher is registered, and Tabler's own parsing of the input's
+        // YYYY-MM-DD HH:mm value can't be relied on, as not every browser's Date parses that format
+        selectStartDate(this.startDate);
+        this.$watch('startDate', selectStartDate);
         this.$watch('startTime', (value) => {
-            if (!isValidTime(value)) return;
-            // Kept in the options too, because every later update of the calendar resets the time from there
-            datepicker.calendar.selectedTime = value;
+            if (value !== '' && !isValidTime(value)) return;
+            // Kept in the options too, because every later update of the calendar resets the time from there. A
+            // cleared time (e.g. of a reset form) resets the time picker to its default, instead of keeping the
+            // previous one, which a picked day would take over
+            datepicker.calendar.selectedTime = value || undefined;
             if (value !== datepicker.calendar.context.selectedTime) {
                 datepicker.calendar.update({dates: false, month: false, year: false});
             }
@@ -2682,6 +2737,8 @@ if (typeof module !== 'undefined' && module.exports) {
         hasNonNullValue,
         bytesToMib,
         toRgbColor,
+        hueOf,
+        distinctSeriesColor,
         anchorPopupToModal,
         formatChartTimestamp,
         buildIncidentAnnotations,
@@ -2701,6 +2758,7 @@ if (typeof module !== 'undefined' && module.exports) {
         resetCategorySelect,
         resetCategoryMultiSelect,
         // Theme preferences
+        setTheme,
         setThemeOption,
         appearanceSettings,
         // Alpine x-data component factories
