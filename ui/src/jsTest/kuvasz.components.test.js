@@ -285,6 +285,8 @@ test('initStartDatepicker keeps the Tabler datepicker and the start in sync', as
             setSelectedDates(dates) {
                 this.selectedDates = dates;
                 this.setCalls.push(dates);
+                // Like Tabler, the input is written with the selection
+                this.element.value = dates.length > 0 ? this.config.dateFormat(new Date(`${dates[0]}T00:00`)) : '';
             }
         },
     };
@@ -380,9 +382,14 @@ test('initStartDatepicker keeps the Tabler datepicker and the start in sync', as
     assert.equal(form.startTime, '11:45');
 
     // A typed (or loaded) valid day is selected in the calendar, an invalid one clears it
-    watchers.startDate('2030-02-10');
-    watchers.startDate('2030-02-1');
+    form.startDate = '2030-02-10';
+    watchers.startDate(form.startDate);
+    assert.equal(element.value, '2030-02-10 11:45');
+    form.startDate = '2030-02-1';
+    watchers.startDate(form.startDate);
     assert.deepEqual(datepicker.setCalls, [['2030-02-10'], []]);
+    // ...but the typed value is kept in the input, instead of what Tabler writes there
+    assert.equal(element.value, '2030-02-1 11:45');
     // The calendar isn't reset when it already shows the same day, e.g. right after it was picked there
     datepicker.selectedDates = ['2030-03-01'];
     watchers.startDate('2030-03-01');

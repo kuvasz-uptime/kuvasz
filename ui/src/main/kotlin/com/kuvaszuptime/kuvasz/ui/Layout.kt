@@ -36,7 +36,7 @@ internal fun withLayout(
                         title?.let { +"$it | $DEFAULT_TITLE" } ?: +DEFAULT_TITLE
                     }
                     link(rel = "stylesheet", href = "/public/ext/css/tomselect.2.6.2.bootstrap5.min.css")
-                    link(rel = "stylesheet", href = "/public/ext/css/tabler-vendors.1.6.0.min.css")
+                    link(rel = "stylesheet", href = "/public/ext/css/tabler-vendors.1.6.1.min.css")
                     script(src = "/public/ext/js/apexcharts.7.1.0.min.js") {}
                     script(src = "/public/ext/js/tomselect.2.6.2.complete.min.js") {}
                 }
@@ -88,7 +88,7 @@ internal fun withLayout(
                         }
                     }
                     // Tabler's datepicker is a wrapper around Vanilla Calendar Pro, which has to be loaded before it
-                    script(src = "/public/ext/js/vanilla-calendar-pro.3.3.2.min.js") {}
+                    script(src = "/public/ext/js/vanilla-calendar-pro.3.4.0.min.js") {}
                     commonScripts(globals.appVersion)
                     script(src = "/public/ext/js/htmx.2.0.10.min.js") {}
                     script(src = "/public/ext/js/alpine.3.17.4.min.js") {}
@@ -124,8 +124,8 @@ internal fun FlowOrMetaDataOrPhrasingContent.commonHeadElements(
             }
         }
     }
-    link(rel = "stylesheet", href = "/public/ext/css/tabler.1.6.0.min.css")
-    link(rel = "stylesheet", href = "/public/ext/css/tabler-themes.1.6.0.min.css")
+    link(rel = "stylesheet", href = "/public/ext/css/tabler.1.6.1.min.css")
+    link(rel = "stylesheet", href = "/public/ext/css/tabler-themes.1.6.1.min.css")
     link(rel = "stylesheet", href = "/public/css/kuvasz.css?cb=$appVersion")
 }
 
@@ -147,7 +147,7 @@ internal fun HTML.withThemeBase(base: ThemeBase? = null) {
 }
 
 internal fun FlowOrMetaDataOrPhrasingContent.commonScripts(appVersion: String) {
-    script(src = "/public/ext/js/tabler.1.6.0.min.js") {}
+    script(src = "/public/ext/js/tabler.1.6.1.min.js") {}
     script(src = "/public/dist/js/kuvasz.min.js?cb=$appVersion") {}
 }
 

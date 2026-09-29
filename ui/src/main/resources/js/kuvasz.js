@@ -2590,8 +2590,8 @@ const upsertMaintenanceWindowForm = (
             anchorPopup();
         });
         element.addEventListener('hidden.bs.datepicker', () => isPopupShown = false);
-        // The calendar repositions itself in page coordinates when the window is resized (e.g. by an on-screen
-        // keyboard), so it's anchored again once that's done. Until the popup is first shown, the calendar's main
+        // The calendar and Tabler reposition the popup in page coordinates when the window is resized (e.g. by an
+        // on-screen keyboard), so it's anchored again once they're done. Until the popup is first shown, the calendar's main
         // element is the input itself, which must be left in place
         window.addEventListener('resize', () => requestAnimationFrame(() => {
             if (isPopupShown) anchorPopup();
@@ -2607,6 +2607,8 @@ const upsertMaintenanceWindowForm = (
             const selectedDates = isValidIsoDate(value) ? [value] : [];
             if (selectedDates[0] !== datepicker.getSelectedDates()[0]) {
                 datepicker.setSelectedDates(selectedDates);
+                // Tabler writes the input with the selection too, which would wipe a typed but invalid start
+                element.value = formatStartValue(this.startDate, this.startTime);
             }
         });
         this.$watch('startTime', (value) => {
