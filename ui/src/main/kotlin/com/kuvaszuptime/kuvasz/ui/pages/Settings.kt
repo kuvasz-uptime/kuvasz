@@ -53,13 +53,10 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto, dockerHosts: List
                 title = Messages.appearanceSettings(),
                 icon = Icon.PALETTE,
                 id = "appearance-settings",
+                description = Messages.appearanceSettingsDescription(),
             ) {
                 div {
                     xData("appearanceSettings('${ThemePrimary.DEFAULT.value}')")
-                    p {
-                        classes(TEXT_SECONDARY)
-                        +Messages.appearanceSettingsDescription()
-                    }
                     themeBasePicker(
                         ThemePickerBinding(
                             xModelName = "base",
@@ -554,6 +551,7 @@ private fun FlowContent.settingsCard(
     title: String,
     icon: Icon,
     id: String? = null,
+    description: String? = null,
     content: FlowContent.() -> Unit,
 ) {
     div {
@@ -571,8 +569,15 @@ private fun FlowContent.settingsCard(
             div {
                 classes(CARD_BODY)
                 div {
-                    classes(CARD_TITLE)
+                    classes(CARD_TITLE, D_FLEX, ALIGN_ITEMS_CENTER)
                     +title
+                    description?.let {
+                        span {
+                            classes(MS_2, D_FLEX)
+                            tooltip(title = it, location = TooltipLocation.RIGHT)
+                            icon(Icon.INFO_CIRCLE)
+                        }
+                    }
                 }
                 content()
             }

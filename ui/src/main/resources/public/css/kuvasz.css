@@ -215,7 +215,7 @@ div.ts-wrapper.disabled .ts-control {
     display: inline-block;
     width: 1rem;
     height: 1rem;
-    border: var(--tblr-border-width) solid var(--tblr-border-color-translucent);
+    border: var(--tblr-border-width) solid var(--tblr-border-color);
     border-radius: 50%;
     background: linear-gradient(135deg, var(--tblr-gray-300) 50%, var(--tblr-gray-800) 50%);
 }
