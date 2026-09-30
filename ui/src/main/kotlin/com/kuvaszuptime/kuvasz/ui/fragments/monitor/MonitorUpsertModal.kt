@@ -108,6 +108,7 @@ internal fun FlowContent.monitorUpsertModal(
                             required = true,
                             onInput = "validateName()",
                             disabledIf = "$isReadOnlyMode || isNameLocked",
+                            idPrefix = typeUiConfig.slug,
                         )
                     }
                     // Category

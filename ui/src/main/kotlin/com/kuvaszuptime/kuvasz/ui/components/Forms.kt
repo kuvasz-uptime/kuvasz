@@ -36,6 +36,13 @@ internal fun FlowContent.formLabel(
     }
 }
 
+/**
+ * The id of a form field. [idPrefix] keeps it unique when the same form is rendered for multiple entity types on the
+ * same page, e.g. the create modals of all the monitor types on the dashboard.
+ */
+internal fun fieldId(propName: String, suffix: String, idPrefix: String? = null): String =
+    listOfNotNull(idPrefix, propName, suffix).joinToString("-")
+
 internal fun FlowContent.validatedInput(
     propName: String,
     label: String?,
@@ -49,9 +56,10 @@ internal fun FlowContent.validatedInput(
     dataListItems: Set<String> = emptySet(),
     smallControl: Boolean = false,
     descriptionShownIf: String? = null,
+    idPrefix: String? = null,
 ) {
-    val inputName = "$propName-input"
-    val dataListId = "$propName-datalist"
+    val inputName = fieldId(propName, "input", idPrefix)
+    val dataListId = fieldId(propName, "datalist", idPrefix)
     if (!label.isNullOrEmpty()) {
         formLabel(
             label = label,
@@ -101,8 +109,9 @@ internal fun FlowContent.validatedTextArea(
     required: Boolean = false,
     onInput: String? = null,
     disabledIf: String? = null,
+    idPrefix: String? = null,
 ) {
-    val inputName = "$propName-input"
+    val inputName = fieldId(propName, "input", idPrefix)
     if (!label.isNullOrEmpty()) {
         formLabel(
             label = label,

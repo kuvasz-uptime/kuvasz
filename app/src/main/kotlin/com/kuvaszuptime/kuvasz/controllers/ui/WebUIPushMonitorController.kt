@@ -1,7 +1,6 @@
 package com.kuvaszuptime.kuvasz.controllers.ui
 
 import com.kuvaszuptime.kuvasz.AppGlobals
-import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor.PUSH_MONITOR
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
@@ -10,7 +9,6 @@ import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.security.ui.WebSecured
 import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.check.push.PushMonitorActions
-import com.kuvaszuptime.kuvasz.ui.fragments.dashboard.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.push.*
 import com.kuvaszuptime.kuvasz.ui.pages.monitor.push.*
@@ -36,22 +34,6 @@ class WebUIPushMonitorController(
     private val monitorRepository: PushMonitorRepository,
     private val incidentRepository: IncidentRepository,
 ) {
-
-    @Get("/push-monitors/fragments/stats")
-    @WebSecured
-    @ExecuteOn(TaskExecutors.BLOCKING)
-    @Produces(MediaType.TEXT_HTML)
-    fun pushMonitoringStats(): String {
-        val period = Duration.ofDays(UIDefaults.DASHBOARD_MONITORING_STATS_PERIOD_DAYS)
-
-        return renderPushMonitoringStats(
-            monitoringStats = statCalculator.calculateOverallPushStats(period),
-            downMonitors = monitorActions.getMonitorsWithDetails(
-                enabled = true,
-                uptimeStatus = listOf(UptimeStatus.DOWN),
-            ),
-        )
-    }
 
     @Get("/push-monitors")
     @WebSecured

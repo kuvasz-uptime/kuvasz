@@ -36,6 +36,7 @@ internal fun FlowContent.pushMonitorCreateUpdateModal(
         div {
             classes(MB_3)
             validatedInput(
+                idPrefix = MonitorTypeUiConfig.PUSH.slug,
                 propName = "heartbeatInterval",
                 label = Messages.heartbeatIntervalLabel(),
                 description = Messages.heartbeatIntervalDescription(),
@@ -49,6 +50,7 @@ internal fun FlowContent.pushMonitorCreateUpdateModal(
         div {
             classes(MB_3)
             validatedInput(
+                idPrefix = MonitorTypeUiConfig.PUSH.slug,
                 propName = "gracePeriod",
                 label = Messages.gracePeriodLabel(),
                 description = Messages.gracePeriodDescription(),
@@ -62,6 +64,7 @@ internal fun FlowContent.pushMonitorCreateUpdateModal(
         div {
             classes(MB_3)
             validatedInput(
+                idPrefix = MonitorTypeUiConfig.PUSH.slug,
                 propName = "failureCountThreshold",
                 label = Messages.failureCountThresholdLabel(),
                 description = Messages.failureCountThresholdDescription(),
@@ -79,7 +82,7 @@ internal fun FlowContent.pushMonitorCreateUpdateModal(
                 label = Messages.clientSecretLabel(),
                 description = Messages.clientSecretDescription(),
                 required = true,
-                inputName = "$propName-input",
+                inputName = fieldId(propName, "input", MonitorTypeUiConfig.PUSH.slug),
             )
             div {
                 classes(ROW)
@@ -88,6 +91,7 @@ internal fun FlowContent.pushMonitorCreateUpdateModal(
                     input {
                         type = InputType.text
                         classes(FORM_CONTROL)
+                        id = fieldId(propName, "input", MonitorTypeUiConfig.PUSH.slug)
                         autoComplete = "off"
                         xModel(propName)
                         xBindErrorClass(propName)

@@ -37,6 +37,7 @@ internal fun FlowContent.tcpMonitorCreateUpdateModal(
         div {
             classes(MB_3)
             validatedInput(
+                idPrefix = MonitorTypeUiConfig.TCP.slug,
                 propName = "host",
                 label = Messages.hostLabel(),
                 placeholder = Messages.hostPlaceholder(),
@@ -50,6 +51,7 @@ internal fun FlowContent.tcpMonitorCreateUpdateModal(
         div {
             classes(MB_3)
             validatedInput(
+                idPrefix = MonitorTypeUiConfig.TCP.slug,
                 propName = "port",
                 label = Messages.portLabel(),
                 placeholder = Messages.portPlaceholder(),
@@ -63,6 +65,7 @@ internal fun FlowContent.tcpMonitorCreateUpdateModal(
         div {
             classes(MB_3)
             validatedInput(
+                idPrefix = MonitorTypeUiConfig.TCP.slug,
                 propName = "uptimeCheckInterval",
                 label = Messages.uptimeCheckIntervalLabel(),
                 placeholder = null,
@@ -76,6 +79,7 @@ internal fun FlowContent.tcpMonitorCreateUpdateModal(
         div {
             classes(MB_3)
             validatedInput(
+                idPrefix = MonitorTypeUiConfig.TCP.slug,
                 propName = "timeoutMs",
                 label = Messages.timeoutMsLabel(),
                 placeholder = null,
@@ -89,6 +93,7 @@ internal fun FlowContent.tcpMonitorCreateUpdateModal(
         div {
             classes(MB_3)
             validatedInput(
+                idPrefix = MonitorTypeUiConfig.TCP.slug,
                 propName = "latencyThresholdMs",
                 label = Messages.latencyThresholdLabel(),
                 placeholder = null,
@@ -102,6 +107,7 @@ internal fun FlowContent.tcpMonitorCreateUpdateModal(
         div {
             classes(MB_3)
             validatedInput(
+                idPrefix = MonitorTypeUiConfig.TCP.slug,
                 propName = "failureCountThreshold",
                 label = Messages.failureCountThresholdLabel(),
                 description = Messages.failureCountThresholdDescription(),

@@ -58,6 +58,7 @@ internal fun FlowContent.dockerMonitorCreateUpdateModal(
         div {
             classes(MB_3)
             validatedInput(
+                idPrefix = MonitorTypeUiConfig.DOCKER.slug,
                 propName = "uptimeCheckInterval",
                 label = Messages.uptimeCheckIntervalLabel(),
                 placeholder = null,
@@ -71,6 +72,7 @@ internal fun FlowContent.dockerMonitorCreateUpdateModal(
         div {
             classes(MB_3)
             validatedInput(
+                idPrefix = MonitorTypeUiConfig.DOCKER.slug,
                 propName = "timeoutMs",
                 label = Messages.dockerTimeoutMsLabel(),
                 placeholder = null,
@@ -84,6 +86,7 @@ internal fun FlowContent.dockerMonitorCreateUpdateModal(
         div {
             classes(MB_3)
             validatedInput(
+                idPrefix = MonitorTypeUiConfig.DOCKER.slug,
                 propName = "failureCountThreshold",
                 label = Messages.failureCountThresholdLabel(),
                 description = Messages.failureCountThresholdDescription(),

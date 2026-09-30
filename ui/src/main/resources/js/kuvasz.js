@@ -55,25 +55,55 @@ const sendWindowEvent = (eventName) => {
     window.dispatchEvent(event);
 };
 
-// Reinitialize Bootstrap tooltips (useful after HTMX content swap)
+// Initializes the Bootstrap tooltips that HTMX swapped in
 const reInitTooltips = () => {
-    // First remove all tooltips to prevent burn-ins upon HTMX swaps
-    document.querySelectorAll('div.tooltip.show').forEach(tooltip => tooltip.remove());
-
-    let tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function (tooltipTriggerEl) {
-        // If the tooltip is already initialized, dispose it
-        const tooltipInstance = tabler.Tooltip.getInstance(tooltipTriggerEl);
-        if (tooltipInstance) {
-            tooltipInstance.dispose();
+    // The tooltips of the elements that were swapped out would burn in, as nothing would ever hide them anymore
+    document.querySelectorAll('div.tooltip').forEach(tooltip => {
+        if (!document.querySelector(`[aria-describedby="${tooltip.id}"]`)) {
+            tooltip.remove();
         }
-        let options = {
+    });
+
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(tooltipTriggerEl => {
+        // The existing ones are left alone: disposing a tooltip while it fades out makes the pending callback of
+        // its transition fail on the already disposed instance
+        if (tabler.Tooltip.getInstance(tooltipTriggerEl)) {
+            return;
+        }
+        new tabler.Tooltip(tooltipTriggerEl, {
             delay: {show: 50, hide: 50},
             html: tooltipTriggerEl.getAttribute("data-bs-html") === "true",
             placement: tooltipTriggerEl.getAttribute('data-bs-placement') ?? 'auto'
-        };
-        return new tabler.Tooltip(tooltipTriggerEl, options);
+        });
     });
+};
+
+// Renders the Tabler sparklines that were swapped in by HTMX after the page load
+const initSparklines = () => {
+    document.querySelectorAll('[data-bs-toggle="sparkline"]')
+        .forEach(sparkline => tabler.Sparkline.getOrCreateInstance(sparkline));
+};
+
+// Longer than the show/hide delay and the fade transition of the tooltips together
+const TOOLTIP_DISPOSE_DELAY_MS = 1000;
+
+// Disposes the tooltips and sparklines of the containers HTMX is about to swap out, otherwise their instances would
+// keep the detached elements in memory
+const disposeComponents = (...containers) => {
+    const tooltips = [];
+    containers.filter(Boolean).forEach(container => {
+        container.querySelectorAll('[data-bs-toggle="sparkline"]')
+            .forEach(sparkline => tabler.Sparkline.getInstance(sparkline)?.dispose());
+        container.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(tooltipTriggerEl => {
+            const tooltip = tabler.Tooltip.getInstance(tooltipTriggerEl);
+            if (tooltip) {
+                tooltips.push(tooltip);
+            }
+        });
+    });
+    // Disposing a tooltip while it fades in or out would make the pending callback of its transition fail on the
+    // already disposed instance, so they are only disposed once they are surely over
+    setTimeout(() => tooltips.forEach(tooltip => tooltip.dispose()), TOOLTIP_DISPOSE_DELAY_MS);
 };
 
 // Sanitizes text input by trimming whitespace and converting empty strings to null
@@ -223,14 +253,7 @@ const refreshDockerMonitorList = () => sendHtmxEvent('#docker-monitors-list', 'r
 const refreshStatusPageList = () => sendHtmxEvent('#status-page-list', 'refresh-status-page-list');
 
 // Refreshes the dashboard by triggering an HTMX event
-const refreshDashboard = () => {
-    sendHtmxEvent('#dashboard-empty-state', 'refresh-dashboard');
-    sendHtmxEvent('#http-monitoring-dashboard', 'refresh-dashboard');
-    sendHtmxEvent('#push-monitoring-dashboard', 'refresh-dashboard');
-    sendHtmxEvent('#icmp-monitoring-dashboard', 'refresh-dashboard');
-    sendHtmxEvent('#tcp-monitoring-dashboard', 'refresh-dashboard');
-    sendHtmxEvent('#dns-monitoring-dashboard', 'refresh-dashboard');
-};
+const refreshDashboard = () => sendHtmxEvent('#dashboard-overview', 'refresh-dashboard');
 
 // --------- Alpine.js x-data ---------
 
@@ -2757,6 +2780,11 @@ if (typeof module !== 'undefined' && module.exports) {
         fetchCategories,
         resetCategorySelect,
         resetCategoryMultiSelect,
+        // DOM helpers run after the HTMX swaps
+        reInitTooltips,
+        initSparklines,
+        disposeComponents,
+        TOOLTIP_DISPOSE_DELAY_MS,
         // Theme preferences
         setTheme,
         setThemeOption,

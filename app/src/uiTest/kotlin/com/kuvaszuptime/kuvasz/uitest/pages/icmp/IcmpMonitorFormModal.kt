@@ -7,9 +7,9 @@ import com.microsoft.playwright.Page
 // The Alpine.js-driven create/update modal for ICMP monitors.
 class IcmpMonitorFormModal(page: Page) : ModalView(page) {
 
-    val nameInput: Locator get() = modal.locator("#name-input")
-    val hostInput: Locator get() = modal.locator("#host-input")
-    val uptimeCheckIntervalInput: Locator get() = modal.locator("#uptimeCheckInterval-input")
+    val nameInput: Locator get() = modal.locator("#icmp-name-input")
+    val hostInput: Locator get() = modal.locator("#icmp-host-input")
+    val uptimeCheckIntervalInput: Locator get() = modal.locator("#icmp-uptimeCheckInterval-input")
 
     fun setName(value: String): IcmpMonitorFormModal {
         nameInput.fill(value)

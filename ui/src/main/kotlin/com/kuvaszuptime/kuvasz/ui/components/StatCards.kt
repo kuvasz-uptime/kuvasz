@@ -51,20 +51,6 @@ internal fun FlowContent.statCard(
     }
 }
 
-internal fun FlowContent.numericStatCard(
-    cssClasses: Set<CSSClass>,
-    icon: Icon,
-    iconBackground: CSSClass,
-    value: Long,
-    secondaryText: String,
-) = statCard(
-    cssClasses,
-    icon = icon,
-    iconBackground = if (value > 0) iconBackground else DEFAULT_ICON_COLOR,
-    text = value.toString(),
-    secondaryText = secondaryText,
-)
-
 internal fun FlowContent.incidentsStatsCards(cssClasses: Set<CSSClass>, stats: HistoricalUptimeStatsDto) =
     statCard(
         cssClasses,

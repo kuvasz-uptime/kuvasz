@@ -10,9 +10,9 @@ import com.microsoft.playwright.Page
  */
 class HttpMonitorFormModal(page: Page) : ModalView(page) {
 
-    val nameInput: Locator get() = modal.locator("#name-input")
-    val urlInput: Locator get() = modal.locator("#url-input")
-    val uptimeCheckIntervalInput: Locator get() = modal.locator("#uptimeCheckInterval-input")
+    val nameInput: Locator get() = modal.locator("#http-name-input")
+    val urlInput: Locator get() = modal.locator("#http-url-input")
+    val uptimeCheckIntervalInput: Locator get() = modal.locator("#http-uptimeCheckInterval-input")
     val crossOriginHeaderPropagationToggle: Locator
         get() = modal.locator("input[name='crossOriginHeaderPropagation']")
 
@@ -51,8 +51,8 @@ class HttpMonitorFormModal(page: Page) : ModalView(page) {
     }
 
     // Custom request-headers component
-    val newRequestHeaderKeyInput: Locator get() = modal.locator("#newRequestHeaderKey-input")
-    val newRequestHeaderValueInput: Locator get() = modal.locator("#newRequestHeaderValue-input")
+    val newRequestHeaderKeyInput: Locator get() = modal.locator("#http-newRequestHeaderKey-input")
+    val newRequestHeaderValueInput: Locator get() = modal.locator("#http-newRequestHeaderValue-input")
     val addRequestHeaderButton: Locator get() = modal.getByTestId("add-header-button-requestHeaders")
 
     fun setNewRequestHeaderKey(value: String): HttpMonitorFormModal {

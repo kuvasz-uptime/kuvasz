@@ -10,6 +10,7 @@ import com.microsoft.playwright.Page
  */
 class UpsertModalReadOnlyView(page: Page) : ModalView(page) {
 
-    // A form field by property name, e.g. `field("url")` -> `#url-input`.
-    fun field(propName: String): Locator = modal.locator("#$propName-input")
+    // A form field by property name, e.g. `field("url")` -> `#url-input`. The fields of the monitors are prefixed by
+    // their type too (e.g. `#http-url-input`), because the dashboard renders the create modal of every type at once.
+    fun field(propName: String): Locator = modal.locator("#$propName-input, [id$='-$propName-input']")
 }

@@ -18,7 +18,9 @@ import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createTcpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.dashboard.DashboardIncidentStats
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.monitor.NumericMonitorID
 import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.DockerMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
@@ -32,6 +34,7 @@ import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.testutils.shouldEqualRounded
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.inspectors.forAll
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldBeSortedBy
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
@@ -3054,6 +3057,482 @@ class StatCalculatorTest(
                         period = Duration.ofDays(7),
                         monitorIds = emptyList(),
                     ) shouldBe emptyMap()
+                }
+            }
+        }
+
+        given("the calculateDashboardUptimeStats() method") {
+
+            `when`("there isn't any monitor") {
+
+                val stats = statCalculator.calculateDashboardUptimeStats(Duration.ofDays(7))
+
+                then("it should return empty figures, but a full timeline of the period") {
+                    stats.actual.total shouldBe 0
+                    stats.actual.lastIncident shouldBe null
+                    stats.history.uptimeRatio shouldBe null
+                    stats.history.affectedMonitors shouldBe 0
+                    stats.incidents shouldBe DashboardIncidentStats(ongoing = 0, resolved = 0, null)
+                    stats.downInMaintenance shouldBe 0
+                    stats.byType.shouldBeEmpty()
+                    stats.certificatesWithIssues.shouldBeEmpty()
+                    stats.monitorsInMaintenance.shouldBeEmpty()
+                    stats.leastReliableMonitors.shouldBeEmpty()
+                    stats.timeline shouldHaveSize 28
+                    stats.timeline.forAll { slot ->
+                        slot.uptimeRatio shouldBe null
+                        slot.incidents shouldBe 0
+                    }
+                }
+            }
+
+            `when`("there are monitors of different types") {
+
+                val now = getCurrentTimestamp()
+                val downHttpMonitor = createHttpMonitor(httpMonitorRepository, sslCheckEnabled = false)
+                val upHttpMonitor = createHttpMonitor(httpMonitorRepository, sslCheckEnabled = false)
+                val pushMonitor = createPushMonitor(pushMonitorRepository)
+                createDnsMonitor(dnsMonitorRepository, enabled = false)
+                // 1 day UP + 1 day DOWN in the period
+                createHttpUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = downHttpMonitor.id,
+                    status = UptimeStatus.UP,
+                    startedAt = now.minusDays(3),
+                    endedAt = now.minusDays(1),
+                )
+                createHttpUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = downHttpMonitor.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = now.minusDays(1),
+                    endedAt = null,
+                )
+                // 2 days UP in the period
+                createHttpUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = upHttpMonitor.id,
+                    status = UptimeStatus.UP,
+                    startedAt = now.minusDays(3),
+                    endedAt = null,
+                )
+                // 1 day DOWN + 1 day UP in the period
+                val pushIncidentEndedAt = now.minusDays(1)
+                createPushUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = pushMonitor.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = now.minusDays(3),
+                    endedAt = pushIncidentEndedAt,
+                )
+                createPushUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = pushMonitor.id,
+                    status = UptimeStatus.UP,
+                    startedAt = pushIncidentEndedAt,
+                    endedAt = null,
+                )
+
+                val stats = statCalculator.calculateDashboardUptimeStats(Duration.ofDays(2))
+
+                then("it should merge the actual stats of every type") {
+                    with(stats.actual) {
+                        total shouldBe 4
+                        up shouldBe 2
+                        down shouldBe 1
+                        paused shouldBe 1
+                        inProgress shouldBe 0
+                        inMaintenance shouldBe 0
+                    }
+                    // The ongoing HTTP incident started later than the push one
+                    stats.actual.lastIncident shouldBe
+                        stats.byType.first { it.type == MonitorType.HTTP_SSL }.actual.lastIncident
+                }
+
+                then("it should merge the historical stats of every type") {
+                    // 4 days UP + 2 days DOWN
+                    stats.history.uptimeRatio shouldEqualRounded 4.toDouble() / 6
+                    val expectedDowntimeSeconds = 2 * 24 * 60 * 60L
+                    stats.history.totalDowntimeSeconds shouldBeInRange
+                        expectedDowntimeSeconds - 1..expectedDowntimeSeconds + 1
+                    stats.history.incidents shouldBe 2
+                    // One monitor per type, even if their IDs happen to be the same
+                    stats.history.affectedMonitors shouldBe 2
+                }
+
+                then("it should tell the ongoing incidents from the resolved ones") {
+                    stats.incidents.ongoing shouldBe 1
+                    stats.incidents.resolved shouldBe 1
+                    // The resolved one lasted 2 days, even if it started before the period
+                    stats.incidents.meanTimeToResolveSeconds shouldBe Duration.ofDays(2).seconds
+                }
+
+                then("it should break the stats down to the types that have monitors") {
+                    stats.byType.map { it.type } shouldContainExactlyInAnyOrder
+                        listOf(MonitorType.HTTP_SSL, MonitorType.PUSH, MonitorType.DNS)
+                    with(stats.byType.first { it.type == MonitorType.PUSH }) {
+                        actual.total shouldBe 1
+                        history.uptimeRatio shouldEqualRounded 0.5
+                    }
+                }
+
+                then("every type should have a timeline of its own, adding up to the merged one") {
+                    stats.byType.forAll { it.timeline shouldHaveSize stats.timeline.size }
+                    // The push monitor was down for the whole first half of the period
+                    stats.byType.first { it.type == MonitorType.PUSH }.timeline.first().uptimeRatio shouldBe 0.0
+                    stats.byType.first { it.type == MonitorType.DNS }.timeline.forAll { it.uptimeRatio shouldBe null }
+                    // The push incident started before the period, so it's counted in the first slot
+                    stats.byType.first { it.type == MonitorType.PUSH }.timeline.map { it.incidents }.let { incidents ->
+                        incidents.first() shouldBe 1
+                        incidents.drop(1).forAll { it shouldBe 0 }
+                    }
+                    stats.timeline.sumOf { it.incidents } shouldBe stats.history.incidents
+                    stats.timeline.forEachIndexed { index, slot ->
+                        slot.downtimeSeconds shouldBe stats.byType.sumOf { it.timeline[index].downtimeSeconds }
+                    }
+                }
+            }
+
+            `when`("there were incidents in different slots of the timeline") {
+
+                val now = getCurrentTimestamp()
+                val monitor = createHttpMonitor(httpMonitorRepository)
+                createHttpUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = monitor.id,
+                    status = UptimeStatus.UP,
+                    startedAt = now.minusDays(2),
+                    endedAt = now.minusMinutes(150),
+                )
+                createHttpUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = monitor.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = now.minusMinutes(150),
+                    endedAt = now.minusMinutes(90),
+                )
+                createHttpUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = monitor.id,
+                    status = UptimeStatus.UP,
+                    startedAt = now.minusMinutes(90),
+                    endedAt = null,
+                )
+
+                val timeline = statCalculator.calculateDashboardUptimeStats(Duration.ofDays(1)).timeline
+
+                then("it should slice a day into hourly slots, the last one ending now") {
+                    timeline shouldHaveSize 24
+                    timeline.zipWithNext().forAll { (slot, nextSlot) ->
+                        Duration.between(slot.start, slot.end) shouldBe Duration.ofHours(1)
+                        nextSlot.start shouldBe slot.end
+                    }
+                    Duration.between(timeline.last().end, getCurrentTimestamp()).seconds shouldBeInRange 0L..1L
+                }
+
+                then("it should split the downtime between the slots the incident overlapped") {
+                    // The incident spans the second half of the slot 3-2 hours ago and the first half of the next one
+                    listOf(timeline[21], timeline[22]).forAll { slot ->
+                        slot.downtimeSeconds shouldBeInRange 1795L..1805L
+                        slot.uptimeSeconds shouldBeInRange 1795L..1805L
+                    }
+                    timeline.filterIndexed { index, _ -> index != 21 && index != 22 }.forAll { slot ->
+                        slot.downtimeSeconds shouldBe 0
+                        slot.uptimeRatio shouldBe 1.0
+                    }
+                }
+
+                then("it should count the incident only in the slot it started in") {
+                    timeline[21].incidents shouldBe 1
+                    timeline.filterIndexed { index, _ -> index != 21 }.forAll { it.incidents shouldBe 0 }
+                }
+            }
+
+            `when`("a paused monitor has an event that isn't closed") {
+
+                val now = getCurrentTimestamp()
+                val monitor = createPushMonitor(pushMonitorRepository, enabled = false)
+                createPushUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = monitor.id,
+                    status = UptimeStatus.UP,
+                    startedAt = now.minusHours(10),
+                    endedAt = null,
+                    updatedAt = now.minusHours(5),
+                )
+
+                val timeline = statCalculator.calculateDashboardUptimeStats(Duration.ofDays(1)).timeline
+
+                then("it should only count it until its last update") {
+                    timeline.sumOf { it.uptimeSeconds } shouldBeInRange 5 * 60 * 60L - 1..5 * 60 * 60L + 1
+                }
+            }
+
+            `when`("paused monitors were down when they got paused") {
+
+                val now = getCurrentTimestamp()
+                val pausedInPeriod = createPushMonitor(pushMonitorRepository, enabled = false)
+                val pausedBeforePeriod = createPushMonitor(pushMonitorRepository, enabled = false)
+                createPushUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = pausedInPeriod.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = now.minusHours(10),
+                    endedAt = null,
+                    updatedAt = now.minusHours(5),
+                )
+                createPushUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = pausedBeforePeriod.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = now.minusDays(3),
+                    endedAt = null,
+                    updatedAt = now.minusDays(2),
+                )
+
+                val stats = statCalculator.calculateDashboardUptimeStats(Duration.ofDays(1))
+
+                then("only the one paused in the period should be counted, as neither an ongoing nor a resolved one") {
+                    stats.history.incidents shouldBe 1
+                    stats.timeline.sumOf { it.incidents } shouldBe 1
+                    stats.incidents shouldBe DashboardIncidentStats(ongoing = 0, resolved = 0, null)
+                }
+            }
+
+            `when`("an incident has just started") {
+
+                val now = getCurrentTimestamp()
+                val monitor = createHttpMonitor(httpMonitorRepository)
+                createHttpUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = monitor.id,
+                    status = UptimeStatus.UP,
+                    startedAt = now.minusHours(2),
+                    endedAt = now,
+                )
+                createHttpUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = monitor.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = now,
+                    endedAt = null,
+                    updatedAt = now,
+                )
+
+                val stats = statCalculator.calculateDashboardUptimeStats(Duration.ofHours(1))
+
+                then("it should be counted in the last slot already, even without a whole second of downtime") {
+                    stats.timeline.last().incidents shouldBe 1
+                    stats.timeline.dropLast(1).forAll { it.incidents shouldBe 0 }
+                    stats.incidents.ongoing shouldBe 1
+                }
+            }
+
+            listOf(
+                Duration.ofHours(1) to 24,
+                Duration.ofDays(7) to 28,
+                Duration.ofDays(30) to 30,
+                Duration.ofDays(90) to 60,
+                // A slot is never shorter than a second
+                Duration.ofMillis(10) to 1,
+            ).forEach { (period, expectedSlots) ->
+                `when`("the period is $period") {
+
+                    val timeline = statCalculator.calculateDashboardUptimeStats(period).timeline
+
+                    then("the timeline should consist of $expectedSlots slots covering the whole period") {
+                        timeline shouldHaveSize expectedSlots
+                        Duration.between(timeline.first().start, timeline.last().end) shouldBe period
+                    }
+                }
+            }
+
+            `when`("there are certificates with issues") {
+
+                val now = getCurrentTimestamp()
+                fun createMonitorWithSsl(
+                    status: SslStatus,
+                    validUntil: OffsetDateTime,
+                    enabled: Boolean = true,
+                    sslCheckEnabled: Boolean = true,
+                ) = createHttpMonitor(httpMonitorRepository, enabled = enabled, sslCheckEnabled = sslCheckEnabled)
+                    .also { monitor ->
+                        createSSLEventRecord(
+                            dslContext = dslContext,
+                            monitorId = monitor.id,
+                            status = status,
+                            startedAt = now.minusDays(1),
+                            endedAt = null,
+                            sslExpiryDate = validUntil,
+                        )
+                    }
+
+                val expiresLater = createMonitorWithSsl(SslStatus.WILL_EXPIRE, now.plusDays(20))
+                val expiresSooner = createMonitorWithSsl(SslStatus.WILL_EXPIRE, now.plusDays(5))
+                val invalid = createMonitorWithSsl(SslStatus.INVALID, now.plusDays(90))
+                createMonitorWithSsl(SslStatus.VALID, now.plusDays(90))
+                createMonitorWithSsl(SslStatus.WILL_EXPIRE, now.plusDays(3), enabled = false)
+                createMonitorWithSsl(SslStatus.INVALID, now.plusDays(3), sslCheckEnabled = false)
+
+                val stats = statCalculator.calculateDashboardUptimeStats(Duration.ofDays(7))
+
+                then("it should list the checked ones, the invalid ones first, then the soonest expiring ones") {
+                    stats.certificatesWithIssues.map { it.id } shouldBe
+                        listOf(invalid.id, expiresSooner.id, expiresLater.id)
+                    stats.sslStats.invalid shouldBe 1
+                    stats.sslStats.willExpire shouldBe 2
+                    stats.sslStats.valid shouldBe 1
+                }
+            }
+
+            `when`("some of the monitors went down during the period") {
+
+                val now = getCurrentTimestamp()
+                val pushDown = createPushMonitor(pushMonitorRepository, monitorName = "Push down")
+                val dnsPaused = createDnsMonitor(dnsMonitorRepository, enabled = false, monitorName = "DNS paused")
+                val httpFlaky = createHttpMonitor(httpMonitorRepository, monitorName = "HTTP flaky")
+                val tcpOnce = createTcpMonitor(tcpMonitorRepository, monitorName = "TCP once")
+                val icmpTieA = createIcmpMonitor(icmpMonitorRepository, monitorName = "ICMP tie A")
+                val icmpTieB = createIcmpMonitor(icmpMonitorRepository, monitorName = "ICMP tie B")
+                val httpHealthy = createHttpMonitor(httpMonitorRepository, monitorName = "HTTP healthy")
+                // 3 hours, still ongoing
+                createPushUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = pushDown.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = now.minusHours(3),
+                    endedAt = null,
+                    updatedAt = now,
+                )
+                // 2 hours, before it got paused
+                createDnsUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = dnsPaused.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = now.minusHours(5),
+                    endedAt = now.minusHours(3),
+                )
+                // 2 x 20 minutes
+                listOf(now.minusHours(3), now.minusHours(2)).forEach { startedAt ->
+                    createHttpUptimeEventRecord(
+                        dslContext = dslContext,
+                        monitorId = httpFlaky.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = startedAt,
+                        endedAt = startedAt.plusMinutes(20),
+                    )
+                }
+                createHttpUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = httpFlaky.id,
+                    status = UptimeStatus.UP,
+                    startedAt = now.minusMinutes(100),
+                    endedAt = null,
+                )
+                // 40 minutes at once
+                createTcpUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = tcpOnce.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = now.minusHours(2),
+                    endedAt = now.minusMinutes(80),
+                )
+                createMaintenanceWindow(
+                    dslContext = dslContext,
+                    monitors = listOf(MonitorID(MonitorType.TCP, tcpOnce.name)),
+                )
+                // 10 minutes each
+                listOf(icmpTieB, icmpTieA).forEach { monitor ->
+                    createIcmpUptimeEventRecord(
+                        dslContext = dslContext,
+                        monitorId = monitor.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = now.minusHours(1),
+                        endedAt = now.minusMinutes(50),
+                    )
+                }
+                createHttpUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = httpHealthy.id,
+                    status = UptimeStatus.UP,
+                    startedAt = now.minusDays(2),
+                    endedAt = null,
+                )
+
+                val leastReliableMonitors =
+                    statCalculator.calculateDashboardUptimeStats(Duration.ofDays(1)).leastReliableMonitors
+
+                then("they should be ranked by their downtime, their incidents, then their names, up to the limit") {
+                    leastReliableMonitors shouldHaveSize StatCalculator.LEAST_RELIABLE_MONITORS_LIMIT
+                    leastReliableMonitors.map { it.name } shouldBe
+                        listOf("Push down", "DNS paused", "HTTP flaky", "TCP once", "ICMP tie A")
+                }
+
+                then("every one of them should be identified by its type and ID") {
+                    leastReliableMonitors.map { it.id } shouldBe listOf(
+                        NumericMonitorID(MonitorType.PUSH, pushDown.id),
+                        NumericMonitorID(MonitorType.DNS, dnsPaused.id),
+                        NumericMonitorID(MonitorType.HTTP_SSL, httpFlaky.id),
+                        NumericMonitorID(MonitorType.TCP, tcpOnce.id),
+                        NumericMonitorID(MonitorType.ICMP, icmpTieA.id),
+                    )
+                }
+
+                then("every one of them should tell its current state") {
+                    leastReliableMonitors.map { Triple(it.enabled, it.uptimeStatus, it.inMaintenance) } shouldBe listOf(
+                        Triple(true, UptimeStatus.DOWN, false),
+                        Triple(false, null, false),
+                        Triple(true, UptimeStatus.UP, false),
+                        Triple(true, null, true),
+                        Triple(true, null, false),
+                    )
+                }
+
+                then("every one of them should have its own figures of the period") {
+                    with(leastReliableMonitors.first { it.name == "HTTP flaky" }.history) {
+                        incidents shouldBe 2
+                        totalDowntimeSeconds shouldBeInRange 40 * 60L - 1..40 * 60L + 1
+                        uptimeRatio.shouldNotBeNull()
+                    }
+                }
+            }
+
+            `when`("there are monitors under an active maintenance window") {
+
+                val now = getCurrentTimestamp()
+                val maintainedMonitor = createTcpMonitor(tcpMonitorRepository)
+                val maintainedDownMonitor = createTcpMonitor(tcpMonitorRepository)
+                val downMonitor = createTcpMonitor(tcpMonitorRepository)
+                listOf(maintainedDownMonitor, downMonitor).forEach { monitor ->
+                    createTcpUptimeEventRecord(
+                        dslContext = dslContext,
+                        monitorId = monitor.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = now.minusHours(1),
+                        endedAt = null,
+                    )
+                }
+                createMaintenanceWindow(
+                    dslContext = dslContext,
+                    monitors = listOf(
+                        MonitorID(MonitorType.TCP, maintainedMonitor.name),
+                        MonitorID(MonitorType.TCP, maintainedDownMonitor.name),
+                    ),
+                )
+
+                val stats = statCalculator.calculateDashboardUptimeStats(Duration.ofDays(7))
+
+                then("they should be identified by their type and ID") {
+                    stats.actual.inMaintenance shouldBe 2
+                    stats.monitorsInMaintenance shouldBe setOf(
+                        NumericMonitorID(MonitorType.TCP, maintainedMonitor.id),
+                        NumericMonitorID(MonitorType.TCP, maintainedDownMonitor.id),
+                    )
+                }
+
+                then("the ones that are down should be counted separately") {
+                    stats.actual.down shouldBe 2
+                    stats.downInMaintenance shouldBe 1
                 }
             }
         }

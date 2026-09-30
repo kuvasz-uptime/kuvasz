@@ -1,7 +1,6 @@
 package com.kuvaszuptime.kuvasz.controllers.ui
 
 import com.kuvaszuptime.kuvasz.AppGlobals
-import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.DnsMonitor.DNS_MONITOR
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
@@ -11,7 +10,6 @@ import com.kuvaszuptime.kuvasz.repositories.IncidentRepository
 import com.kuvaszuptime.kuvasz.security.ui.WebSecured
 import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.check.dns.DnsMonitorActions
-import com.kuvaszuptime.kuvasz.ui.fragments.dashboard.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.dns.*
 import com.kuvaszuptime.kuvasz.ui.pages.monitor.dns.*
@@ -38,22 +36,6 @@ class WebUIDnsMonitorController(
     private val incidentRepository: IncidentRepository,
     private val snapshotRepository: DnsResolutionSnapshotRepository,
 ) {
-
-    @Get("/dns-monitors/fragments/stats")
-    @WebSecured
-    @ExecuteOn(TaskExecutors.BLOCKING)
-    @Produces(MediaType.TEXT_HTML)
-    fun dnsMonitoringStats(): String {
-        val period = Duration.ofDays(UIDefaults.DASHBOARD_MONITORING_STATS_PERIOD_DAYS)
-
-        return renderDnsMonitoringStats(
-            monitoringStats = statCalculator.calculateOverallDnsStats(period),
-            downMonitors = monitorActions.getMonitorsWithDetails(
-                enabled = true,
-                uptimeStatus = listOf(UptimeStatus.DOWN),
-            ),
-        )
-    }
 
     @Get("/dns-monitors")
     @WebSecured

@@ -111,6 +111,7 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
                 // Request body
                 div {
                     validatedTextArea(
+                        idPrefix = MonitorTypeUiConfig.HTTP.slug,
                         propName = "requestBody",
                         label = Messages.requestBodyLabel(),
                         description = Messages.requestBodyDescription(),
@@ -149,6 +150,7 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
                 div {
                     classes(MB_3)
                     validatedInput(
+                        idPrefix = MonitorTypeUiConfig.HTTP.slug,
                         propName = "failureCountThreshold",
                         label = Messages.failureCountThresholdLabel(),
                         description = Messages.failureCountThresholdDescription(),
@@ -162,6 +164,7 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
                 div {
                     classes(MB_3)
                     validatedInput(
+                        idPrefix = MonitorTypeUiConfig.HTTP.slug,
                         propName = "expectedKeyword",
                         label = Messages.expectedKeywordLabel(),
                         description = Messages.expectedKeywordDescription(),
@@ -194,6 +197,7 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
                 // Response Time Threshold
                 div {
                     validatedInput(
+                        idPrefix = MonitorTypeUiConfig.HTTP.slug,
                         propName = "responseTimeThresholdMillis",
                         label = Messages.responseTimeThresholdLabel(),
                         description = Messages.responseTimeThresholdDescription(),
@@ -237,6 +241,7 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
                     isDisabled = isReadOnlyMode,
                 )
                 validatedInput(
+                    idPrefix = MonitorTypeUiConfig.HTTP.slug,
                     propName = "sslExpiryThreshold",
                     label = Messages.sslExpiryThresholdLabel(),
                     description = Messages.sslExpiryThresholdDescription(),
@@ -252,6 +257,7 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
         div {
             classes(MB_3)
             validatedInput(
+                idPrefix = MonitorTypeUiConfig.HTTP.slug,
                 propName = "url",
                 label = Messages.monitorUrlLabel(),
                 placeholder = Messages.monitorUrlPlaceholder(),
@@ -273,6 +279,7 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
         div {
             classes(MB_3)
             validatedInput(
+                idPrefix = MonitorTypeUiConfig.HTTP.slug,
                 propName = "uptimeCheckInterval",
                 label = Messages.uptimeCheckIntervalLabel(),
                 placeholder = null,
@@ -403,6 +410,7 @@ private fun FlowContent.headersTable(
             tr {
                 td {
                     validatedInput(
+                        idPrefix = MonitorTypeUiConfig.HTTP.slug,
                         propName = xNewKeyModelName,
                         label = null,
                         placeholder = Messages.headerNameLabel(),
@@ -415,6 +423,7 @@ private fun FlowContent.headersTable(
                 }
                 td {
                     validatedInput(
+                        idPrefix = MonitorTypeUiConfig.HTTP.slug,
                         propName = xNewValueModelName,
                         label = null,
                         placeholder = Messages.headerValueLabel(),

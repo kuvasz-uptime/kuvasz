@@ -3,11 +3,13 @@ package com.kuvaszuptime.kuvasz.ui.pages
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.IncidentType
+import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentDto
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentStatus
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
+import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import com.kuvaszuptime.kuvasz.util.formatAsInterval
@@ -126,17 +128,8 @@ fun renderIncidentsPage(globals: AppGlobals, period: Duration, incidents: List<I
     }
 }
 
-private fun FlowContent.monitorTypeBadge(incidentType: IncidentType) {
-    val icon = when (incidentType) {
-        IncidentType.HTTP -> Icon.WORLD
-        IncidentType.SSL -> Icon.LOCK_OPEN
-        IncidentType.PUSH -> Icon.HEARTBEAT
-        IncidentType.ICMP -> Icon.WAVE_SQUARE
-        IncidentType.TCP -> Icon.NETWORK
-        IncidentType.DNS -> Icon.CLOUD_QUESTION
-        IncidentType.DOCKER -> Icon.BRAND_DOCKER
-    }
-    val label = when (incidentType) {
+internal val IncidentType.label: String
+    get() = when (this) {
         IncidentType.HTTP -> "HTTP"
         IncidentType.SSL -> "SSL"
         IncidentType.PUSH -> "Push"
@@ -145,19 +138,29 @@ private fun FlowContent.monitorTypeBadge(incidentType: IncidentType) {
         IncidentType.DNS -> "DNS"
         IncidentType.DOCKER -> "Docker"
     }
-    val colorClasses = when (incidentType) {
-        IncidentType.HTTP -> mutableSetOf(BG_BLUE_LT, TEXT_BLUE_LT_FG)
-        IncidentType.SSL -> mutableSetOf(BG_YELLOW_LT, TEXT_YELLOW_LT_FG)
-        IncidentType.PUSH -> mutableSetOf(BG_RED_LT, TEXT_RED_LT_FG)
-        IncidentType.ICMP -> mutableSetOf(BG_ORANGE_LT, TEXT_ORANGE_LT_FG)
-        IncidentType.TCP -> mutableSetOf(BG_PURPLE_LT, TEXT_PURPLE_LT_FG)
-        IncidentType.DNS -> mutableSetOf(BG_CYAN_LT, TEXT_CYAN_LT_FG)
-        IncidentType.DOCKER -> mutableSetOf(BG_TEAL_LT, TEXT_TEAL_LT_FG)
+
+internal val IncidentType.monitorType: MonitorType
+    get() = when (this) {
+        IncidentType.HTTP, IncidentType.SSL -> MonitorType.HTTP_SSL
+        IncidentType.PUSH -> MonitorType.PUSH
+        IncidentType.ICMP -> MonitorType.ICMP
+        IncidentType.TCP -> MonitorType.TCP
+        IncidentType.DNS -> MonitorType.DNS
+        IncidentType.DOCKER -> MonitorType.DOCKER
     }
+
+// The same icons and colors as the monitors of the type have, except for the SSL incidents of the HTTP monitors
+internal val IncidentType.icon: Icon
+    get() = if (this == IncidentType.SSL) Icon.LOCK_OPEN else MonitorTypeUiConfig.of(monitorType).icon
+
+internal val IncidentType.color: Color
+    get() = if (this == IncidentType.SSL) Color.YELLOW_LT else MonitorTypeUiConfig.of(monitorType).color
+
+internal fun FlowContent.monitorTypeBadge(incidentType: IncidentType) {
     span {
-        classes(colorClasses.plus(STATUS))
-        tooltip(label)
-        icon(icon)
+        classes(STATUS, incidentType.color.bgColor, incidentType.color.textColor)
+        tooltip(incidentType.label)
+        icon(incidentType.icon)
     }
 }
 
@@ -180,7 +183,7 @@ fun FlowContent.incidentStatusBadge(incident: IncidentDto) {
     }
 }
 
-private fun IncidentDto.getMonitorUrl(): String = when (this.incidentType) {
+internal fun IncidentDto.getMonitorUrl(): String = when (this.incidentType) {
     IncidentType.HTTP -> "/http-monitors/${this.monitorId}"
     IncidentType.SSL -> "/http-monitors/${this.monitorId}#http-monitor-details-ssl-events"
     IncidentType.PUSH -> "/push-monitors/${this.monitorId}"

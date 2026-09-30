@@ -7,8 +7,8 @@ import com.microsoft.playwright.Page
 // The Alpine.js-driven create/update modal for push monitors (the client secret is auto-generated on open).
 class PushMonitorFormModal(page: Page) : ModalView(page) {
 
-    val nameInput: Locator get() = modal.locator("#name-input")
-    val heartbeatIntervalInput: Locator get() = modal.locator("#heartbeatInterval-input")
+    val nameInput: Locator get() = modal.locator("#push-name-input")
+    val heartbeatIntervalInput: Locator get() = modal.locator("#push-heartbeatInterval-input")
 
     val clientSecretInput: Locator get() = modal.locator("input[x-model='clientSecret']")
 
