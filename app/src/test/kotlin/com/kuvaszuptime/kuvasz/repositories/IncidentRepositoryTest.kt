@@ -1511,11 +1511,13 @@ class IncidentRepositoryTest(
 
                     val incidents = incidentRepository.getLatestResolvedIncidents(Duration.ofDays(1), limit = 3)
 
-                    incidents.map { it.incidentType to it.endedAt } shouldBe listOf(
-                        IncidentType.HTTP to now.minusHours(1),
-                        IncidentType.DOCKER to now.minusMinutes(90),
-                        IncidentType.HTTP to now.minusHours(2),
-                    )
+                    incidents shouldHaveSize 3
+                    incidents[0].incidentType shouldBe IncidentType.HTTP
+                    incidents[0].endedAt shouldBe now.minusHours(1)
+                    incidents[1].incidentType shouldBe IncidentType.DOCKER
+                    incidents[1].endedAt shouldBe now.minusMinutes(90)
+                    incidents[2].incidentType shouldBe IncidentType.HTTP
+                    incidents[2].endedAt shouldBe now.minusHours(2)
                 }
             }
 
