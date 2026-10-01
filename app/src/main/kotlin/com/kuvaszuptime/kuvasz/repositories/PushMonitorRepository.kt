@@ -8,10 +8,11 @@ import com.kuvaszuptime.kuvasz.jooq.tables.PushUptimeEvent.PUSH_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.PushMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.PushMonitorSummary
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
-import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
+import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.models.monitor.push.idWithName
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
@@ -39,6 +40,19 @@ class PushMonitorRepository(
         categories: List<String>?,
     ): List<PushMonitorDetailsDto> =
         getMonitorsWithDetails(enabled = enabled, monitorNames = monitorNames, categories = categories)
+
+    override fun fetchSummaries(): List<PushMonitorSummary> = dslContext
+        .select(
+            PUSH_MONITOR.ID.`as`(PushMonitorSummary::id.name),
+            PUSH_MONITOR.NAME.`as`(PushMonitorSummary::name.name),
+            PUSH_MONITOR.ENABLED.`as`(PushMonitorSummary::enabled.name),
+            PUSH_MONITOR.CATEGORY.`as`(PushMonitorSummary::category.name),
+            checkNotNull(latestUptimeEventSelect.field(PUSH_UPTIME_EVENT.STATUS))
+                .`as`(PushMonitorSummary::uptimeStatus.name),
+        )
+        .from(PUSH_MONITOR)
+        .leftJoin(DSL.lateral(latestUptimeEventSelect)).on(DSL.trueCondition())
+        .fetchInto(PushMonitorSummary::class.java)
 
     override fun findById(monitorId: Long, txCtx: DSLContext?): PushMonitorRecord? = (txCtx ?: dslContext)
         .selectFrom(PUSH_MONITOR)

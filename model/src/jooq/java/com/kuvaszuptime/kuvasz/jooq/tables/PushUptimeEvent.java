@@ -166,7 +166,7 @@ public class PushUptimeEvent extends TableImpl<PushUptimeEventRecord> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.asList(Indexes.PUSH_UPTIME_EVENT_ENDED_AT_IDX, Indexes.PUSH_UPTIME_EVENT_MONITOR_IDX);
+        return Arrays.asList(Indexes.PUSH_UPTIME_EVENT_ENDED_AT_IDX, Indexes.PUSH_UPTIME_EVENT_MONITOR_IDX, Indexes.PUSH_UPTIME_EVENT_OPEN_IDX);
     }
 
     @Override

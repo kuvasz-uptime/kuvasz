@@ -13,6 +13,7 @@ import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.dns.idWithName
+import com.kuvaszuptime.kuvasz.models.dto.monitor.DnsMonitorSummary
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
@@ -38,6 +39,19 @@ class DnsMonitorRepository(
         categories: List<String>?,
     ): List<DnsMonitorDetailsDto> =
         getMonitorsWithDetails(enabled = enabled, monitorNames = monitorNames, categories = categories)
+
+    override fun fetchSummaries(): List<DnsMonitorSummary> = dslContext
+        .select(
+            DNS_MONITOR.ID.`as`(DnsMonitorSummary::id.name),
+            DNS_MONITOR.NAME.`as`(DnsMonitorSummary::name.name),
+            DNS_MONITOR.ENABLED.`as`(DnsMonitorSummary::enabled.name),
+            DNS_MONITOR.CATEGORY.`as`(DnsMonitorSummary::category.name),
+            checkNotNull(latestUptimeEventSelect.field(DNS_UPTIME_EVENT.STATUS))
+                .`as`(DnsMonitorSummary::uptimeStatus.name),
+        )
+        .from(DNS_MONITOR)
+        .leftJoin(DSL.lateral(latestUptimeEventSelect)).on(DSL.trueCondition())
+        .fetchInto(DnsMonitorSummary::class.java)
 
     override fun findById(monitorId: Long, txCtx: DSLContext?): DnsMonitorRecord? = (txCtx ?: dslContext)
         .selectFrom(DNS_MONITOR)

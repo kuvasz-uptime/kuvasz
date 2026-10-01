@@ -5,22 +5,23 @@ import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dashboard.DashboardIncidentStats
 import com.kuvaszuptime.kuvasz.models.dashboard.DashboardUptimeStats
+import com.kuvaszuptime.kuvasz.models.dashboard.MonitorStateCounts
 import com.kuvaszuptime.kuvasz.models.dashboard.MonitorTypeUptimeStats
 import com.kuvaszuptime.kuvasz.models.dashboard.UnreliableMonitor
 import com.kuvaszuptime.kuvasz.models.dashboard.UptimeTimelineSlot
-import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorDetailsDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorSummary
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorSummary
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitoringStatsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.docker.DockerMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitoringStatsDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorId
-import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorsWithCategory
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.ActualUptimeStats
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.docker.DockerMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.NumericMonitorID
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.UptimeEventRepository
@@ -32,7 +33,7 @@ import jakarta.inject.Singleton
 import java.time.Duration
 import java.time.LocalDate
 import java.time.OffsetDateTime
-import kotlin.math.ceil
+import java.time.ZoneId
 
 @Singleton
 class StatCalculator(
@@ -53,6 +54,7 @@ class StatCalculator(
         private val MIN_TIMELINE_SLOT: Duration = Duration.ofSeconds(1)
         private val CERTIFICATE_ISSUES = setOf(SslStatus.INVALID, SslStatus.WILL_EXPIRE)
         const val LEAST_RELIABLE_MONITORS_LIMIT = 5
+        const val CERTIFICATES_WITH_ISSUES_LIMIT = 5
     }
 
     fun calculateOverallHttpStats(period: Duration): HttpMonitoringStatsDto {
@@ -126,69 +128,90 @@ class StatCalculator(
 
     /**
      * Calculates the overall - both actual and historical - uptime statistics of every monitor of the given type.
+     *
+     * @param excludePausedMonitors Whether the history should leave out the events of the monitors that are paused now,
+     * even if they were checked during a part of the period.
+     * @param maintenanceWindows Every maintenance window, if they're already at hand, so the ones affecting the
+     * monitors are matched in memory, instead of being resolved for every monitor on the database side.
      */
     private fun calculateOverallStats(
         monitorType: MonitorType,
         period: Duration,
         now: OffsetDateTime = getCurrentTimestamp(),
+        excludePausedMonitors: Boolean = false,
+        maintenanceWindows: List<MaintenanceWindowDetailsDto>? = null,
     ): OverallStats {
-        val monitors = monitorReposByType.getValue(monitorType).fetchAllWithDetails()
+        val monitors = monitorReposByType.getValue(monitorType).fetchSummaries()
         val uptimeEventRepository = uptimeEventReposByType.getValue(monitorType)
-        val uptimeEvents = uptimeEventRepository.fetchAllInPeriod(period)
-        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(
-            monitorsWithCategory = monitors.filter { it.enabled }.monitorsWithCategory()
-        )
-        var downMonitors = 0
-        var upMonitors = 0
-        var pausedMonitors = 0
-        var uptimeInProgressMonitors = 0
-        var downMonitorsInMaintenance = 0
-        val monitorsInMaintenance = mutableSetOf<NumericMonitorID>()
-
-        monitors.forEach { monitor ->
-            if (!monitor.enabled) {
-                pausedMonitors++
-                return@forEach
-            }
-            when (monitor.uptimeStatus) {
-                UptimeStatus.DOWN -> downMonitors++
-                UptimeStatus.UP -> upMonitors++
-                null -> uptimeInProgressMonitors++
-            }
-            if (windowsByMonitor[monitor.monitorId()]?.any { it.active } == true) {
-                monitorsInMaintenance.add(NumericMonitorID(monitorType, monitor.id))
-                if (monitor.uptimeStatus == UptimeStatus.DOWN) downMonitorsInMaintenance++
-            }
+        // A type without any monitor can't have any events either, so they aren't even fetched
+        val uptimeEvents = if (monitors.isEmpty()) {
+            emptyList()
+        } else {
+            uptimeEventRepository.fetchAllInPeriod(
+                periodStart = now.minus(period),
+                periodEnd = now,
+                onlyEnabledMonitors = excludePausedMonitors,
+            )
         }
+        val enabledMonitors = monitors.filter { it.enabled }
+        val windowsByMonitor = enabledMonitors.maintenanceWindowsByMonitor(maintenanceWindows)
+        val (maintainedMonitors, monitorsOutsideMaintenance) = enabledMonitors.partition { monitor ->
+            windowsByMonitor[monitor.monitorId]?.any { it.active } == true
+        }
+        val states = enabledMonitors.stateCounts()
 
         return OverallStats(
             monitors = monitors,
             uptimeEvents = uptimeEvents,
-            monitorsInMaintenance = monitorsInMaintenance,
-            downMonitorsInMaintenance = downMonitorsInMaintenance,
+            monitorsInMaintenance = maintainedMonitors.map { NumericMonitorID(monitorType, it.id) }.toSet(),
+            statesOutsideMaintenance = monitorsOutsideMaintenance.stateCounts(),
+            statesInMaintenance = maintainedMonitors.stateCounts(),
             uptimeStats = ActualUptimeStats(
                 total = monitors.size,
-                down = downMonitors,
-                up = upMonitors,
-                paused = pausedMonitors,
-                inProgress = uptimeInProgressMonitors,
-                inMaintenance = monitorsInMaintenance.size,
-                lastIncident = uptimeEventRepository.fetchLatestIncidentTimestamp(),
+                down = states.down,
+                up = states.up,
+                paused = monitors.size - enabledMonitors.size,
+                inProgress = states.pending,
+                inMaintenance = maintainedMonitors.size,
+                lastIncident = if (monitors.isEmpty()) null else uptimeEventRepository.fetchLatestIncidentTimestamp(),
             ),
             historicalUptimeStats = calculateHistoricalUptimeStats(period, uptimeEvents, now),
         )
     }
 
     /**
-     * Calculates the uptime figures of the dashboard: the overall stats of every monitor type merged together, their
-     * per-type breakdown, and a timeline of the whole period sliced into consecutive slots.
+     * The maintenance windows affecting the given monitors. If every window is already at hand, the active ones are
+     * matched in memory, instead of resolving the windows of every monitor on the database side.
      */
-    fun calculateDashboardUptimeStats(period: Duration): DashboardUptimeStats {
+    private fun List<MonitorSummary>.maintenanceWindowsByMonitor(
+        maintenanceWindows: List<MaintenanceWindowDetailsDto>?,
+    ): Map<MonitorID, List<MaintenanceWindowDetailsDto>> {
+        if (maintenanceWindows == null) {
+            return maintenanceWindowService.getWindowsForMonitors(associate { it.monitorId to it.category })
+        }
+        val activeWindows = maintenanceWindows.filter { it.enabled && it.active }
+        return associate { monitor -> monitor.monitorId to activeWindows.filter { it.affects(monitor) } }
+    }
+
+    /**
+     * Calculates the uptime figures of the dashboard: the overall stats of every monitor type merged together, their
+     * per-type breakdown, and a timeline of the whole period sliced into consecutive slots. Just like the incidents
+     * listed on the dashboard, the figures only cover the monitors that aren't paused.
+     */
+    fun calculateDashboardUptimeStats(
+        period: Duration,
+        maintenanceWindows: List<MaintenanceWindowDetailsDto>,
+    ): DashboardUptimeStats {
         // Every type is anchored to the same instant, otherwise their figures couldn't be merged
         val now = getCurrentTimestamp()
-        val statsByType = MonitorType.entries.associateWith { calculateOverallStats(it, period, now) }
+        val statsByType = MonitorType.entries.associateWith {
+            calculateOverallStats(it, period, now, excludePausedMonitors = true, maintenanceWindows)
+        }
         val allUptimeEvents = statsByType.values.flatMap { it.uptimeEvents }
-        val httpMonitors = statsByType.getValue(MonitorType.HTTP_SSL).monitors.filterIsInstance<HttpMonitorDetailsDto>()
+        val timelinesByType = statsByType.mapValues { (_, stats) ->
+            generateUptimeTimeline(period, stats.uptimeEvents, now)
+        }
+        val httpMonitors = statsByType.getValue(MonitorType.HTTP_SSL).monitors.filterIsInstance<HttpMonitorSummary>()
 
         return DashboardUptimeStats(
             actual = statsByType.values.map { it.uptimeStats }.merge(),
@@ -196,23 +219,27 @@ class StatCalculator(
                 // Monitor IDs are only unique within a type, so the merged events can't tell the monitors apart
                 affectedMonitors = statsByType.values.sumOf { it.historicalUptimeStats.affectedMonitors },
             ),
-            incidents = calculateIncidentStats(allUptimeEvents, periodStart = now.minus(period)),
-            downInMaintenance = statsByType.values.sumOf { it.downMonitorsInMaintenance },
+            incidents = calculateIncidentStats(statsByType),
+            outsideMaintenance = statsByType.values.map { it.statesOutsideMaintenance }.merge(),
+            inMaintenance = statsByType.values.map { it.statesInMaintenance }.merge(),
             sslStats = calculateSslStats(httpMonitors),
-            timeline = generateUptimeTimeline(period, allUptimeEvents, now),
+            timeline = timelinesByType.values.merge(),
             byType = statsByType
                 .filterValues { it.uptimeStats.total > 0 }
                 .map { (type, stats) ->
                     MonitorTypeUptimeStats(
                         type = type,
                         actual = stats.uptimeStats,
+                        outsideMaintenance = stats.statesOutsideMaintenance,
+                        inMaintenance = stats.statesInMaintenance,
                         history = stats.historicalUptimeStats,
-                        timeline = generateUptimeTimeline(period, stats.uptimeEvents, now),
+                        timeline = timelinesByType.getValue(type),
                     )
                 },
             certificatesWithIssues = httpMonitors
                 .filter { it.enabled && it.sslCheckEnabled && it.sslStatus in CERTIFICATE_ISSUES }
-                .sortedWith(compareBy({ it.sslStatus != SslStatus.INVALID }, { it.sslValidUntil })),
+                .sortedWith(compareBy({ it.sslStatus != SslStatus.INVALID }, { it.sslValidUntil }))
+                .take(CERTIFICATES_WITH_ISSUES_LIMIT),
             monitorsInMaintenance = statsByType.values.flatMap { it.monitorsInMaintenance }.toSet(),
             leastReliableMonitors = statsByType
                 .flatMap { (type, stats) -> stats.unreliableMonitors(type, period, now) }
@@ -245,7 +272,6 @@ class StatCalculator(
             UnreliableMonitor(
                 id = monitorId,
                 name = monitor.name,
-                enabled = monitor.enabled,
                 uptimeStatus = monitor.uptimeStatus,
                 inMaintenance = monitorId in monitorsInMaintenance,
                 history = history,
@@ -263,29 +289,63 @@ class StatCalculator(
         lastIncident = mapNotNull { it.lastIncident }.maxOrNull(),
     )
 
+    private fun List<MonitorSummary>.stateCounts() = MonitorStateCounts(
+        up = count { it.uptimeStatus == UptimeStatus.UP },
+        down = count { it.uptimeStatus == UptimeStatus.DOWN },
+        pending = count { it.uptimeStatus == null },
+    )
+
+    /** Every timeline is expected to have the same slots, i.e. to be generated for the same period and instant. */
+    @JvmName("mergeTimelines")
+    private fun Collection<List<UptimeTimelineSlot>>.merge() = reduce { merged, timeline ->
+        merged.zip(timeline) { mergedSlot, slot ->
+            mergedSlot.copy(
+                uptimeSeconds = mergedSlot.uptimeSeconds + slot.uptimeSeconds,
+                downtimeSeconds = mergedSlot.downtimeSeconds + slot.downtimeSeconds,
+                incidents = mergedSlot.incidents + slot.incidents,
+            )
+        }
+    }
+
+    @JvmName("mergeStateCounts")
+    private fun List<MonitorStateCounts>.merge() = MonitorStateCounts(
+        up = sumOf { it.up },
+        down = sumOf { it.down },
+        pending = sumOf { it.pending },
+    )
+
     /**
      * Counts the incidents of the period, the same ones as [calculateHistoricalUptimeStats] does, by their state.
+     * Only the events of the monitors that aren't paused are expected, see [calculateDashboardUptimeStats].
      */
-    private fun calculateIncidentStats(
-        uptimeEvents: List<UptimeEventCalculationContext>,
-        periodStart: OffsetDateTime,
-    ): DashboardIncidentStats {
-        val incidents = uptimeEvents.filter { it.status == UptimeStatus.DOWN && it.wasEffectiveSince(periodStart) }
-        // The ones of the paused monitors that were down when they got paused are neither ongoing, nor resolved
+    private fun calculateIncidentStats(statsByType: Map<MonitorType, OverallStats>): DashboardIncidentStats {
+        val incidentsByType = statsByType.mapValues { (_, stats) ->
+            stats.uptimeEvents.filter { it.status == UptimeStatus.DOWN }
+        }
+        val incidents = incidentsByType.values.flatten()
         val resolvedIncidents = incidents.mapNotNull { incident ->
             incident.endedAt?.let { Duration.between(incident.startedAt, it).seconds }
         }
+        // Monitor IDs are only unique within a type, so the maintenance of the monitors is looked up type by type
+        val ongoingInMaintenance = incidentsByType.entries.sumOf { (type, typeIncidents) ->
+            typeIncidents.count { incident ->
+                incident.endedAt == null &&
+                    NumericMonitorID(type, incident.monitorId) in statsByType.getValue(type).monitorsInMaintenance
+            }
+        }
 
         return DashboardIncidentStats(
-            ongoing = incidents.count { it.endedAt == null && it.isMonitorEnabled },
+            ongoingOutsideMaintenance = incidents.count { it.endedAt == null } - ongoingInMaintenance,
+            ongoingInMaintenance = ongoingInMaintenance,
             resolved = resolvedIncidents.size,
             meanTimeToResolveSeconds = resolvedIncidents.takeIf { it.isNotEmpty() }?.average()?.toLong(),
         )
     }
 
     /**
-     * Slices the period into consecutive slots (the last one ends at [now]) and sums up how much uptime and downtime
-     * the given events contributed to each of them.
+     * Slices the period into consecutive slots (the last one ends at [now], see [timelineSlotStarts]) and sums up how
+     * much uptime and downtime the given events contributed to each of them. Only the events of the monitors that
+     * aren't paused are expected, see [calculateDashboardUptimeStats].
      */
     private fun generateUptimeTimeline(
         period: Duration,
@@ -293,41 +353,75 @@ class StatCalculator(
         now: OffsetDateTime,
     ): List<UptimeTimelineSlot> {
         val periodStart = now.minus(period)
-        val slotLength = timelineSlotLength(period)
-        val slotCount = ceil(period.toMillis().toDouble() / slotLength.toMillis()).toInt()
-        val effectiveEvents = uptimeEvents.filter { it.wasEffectiveSince(periodStart) }
-        // Only counted in the slot where they started, otherwise a long outage would show up in every slot it spans.
-        // The ones that started before the period are counted in the first slot, so the slots add up to the history.
-        val incidentsBySlot = effectiveEvents
-            .filter { it.status == UptimeStatus.DOWN }
-            .groupingBy { incident ->
-                Duration.between(periodStart, incident.effectiveStartDate(periodStart))
-                    .dividedBy(slotLength)
-                    .toInt()
-                    .coerceAtMost(slotCount - 1)
-            }
-            .eachCount()
+        val slotStarts = timelineSlotStarts(periodStart, now, timelineSlotLength(period))
+        val slotEnds = slotStarts.drop(1) + now
+        val slotCount = slotStarts.size
+        val uptimeSeconds = LongArray(slotCount)
+        val downtimeSeconds = LongArray(slotCount)
+        val incidents = IntArray(slotCount)
 
-        return (0 until slotCount).map { slotIndex ->
-            val slotStart = periodStart.plus(slotLength.multipliedBy(slotIndex.toLong()))
-            val slotEnd = minOf(slotStart.plus(slotLength), now)
-            var uptimeSeconds = 0L
-            var downtimeSeconds = 0L
+        fun slotIndexOf(instant: OffsetDateTime): Int {
+            val index = slotStarts.binarySearch { it.toInstant().compareTo(instant.toInstant()) }
+            // Not being a start itself, the instant is in the slot starting right before it
+            return (if (index >= 0) index else -index - 2).coerceIn(0, slotCount - 1)
+        }
 
-            effectiveEvents.forEach { uptimeEvent ->
+        uptimeEvents.forEach { uptimeEvent ->
+            val start = uptimeEvent.effectiveStartDate(periodStart)
+            val end = minOf(uptimeEvent.effectiveEndDate(now), now)
+            // Only counted in the slot where they started, otherwise a long outage would show up in every slot it
+            // spans. The ones that started before the period are counted in the first slot, so the slots add up to
+            // the history.
+            if (uptimeEvent.status == UptimeStatus.DOWN) incidents[slotIndexOf(start)]++
+            if (!end.isAfter(start)) return@forEach
+
+            // Only the slots the event overlaps are visited
+            for (slotIndex in slotIndexOf(start)..slotIndexOf(end)) {
                 val overlapSeconds = Duration.between(
-                    maxOf(uptimeEvent.startedAt, slotStart),
-                    minOf(uptimeEvent.effectiveEndDate(now), slotEnd),
+                    maxOf(start, slotStarts[slotIndex]),
+                    minOf(end, slotEnds[slotIndex]),
                 ).seconds
-                if (overlapSeconds <= 0) return@forEach
+                if (overlapSeconds <= 0) continue
 
                 when (uptimeEvent.status) {
-                    UptimeStatus.UP -> uptimeSeconds += overlapSeconds
-                    UptimeStatus.DOWN -> downtimeSeconds += overlapSeconds
+                    UptimeStatus.UP -> uptimeSeconds[slotIndex] += overlapSeconds
+                    UptimeStatus.DOWN -> downtimeSeconds[slotIndex] += overlapSeconds
                 }
             }
-            UptimeTimelineSlot(slotStart, slotEnd, uptimeSeconds, downtimeSeconds, incidentsBySlot[slotIndex] ?: 0)
         }
+
+        return (0 until slotCount).map { slotIndex ->
+            UptimeTimelineSlot(
+                start = slotStarts[slotIndex],
+                end = slotEnds[slotIndex],
+                uptimeSeconds = uptimeSeconds[slotIndex],
+                downtimeSeconds = downtimeSeconds[slotIndex],
+                incidents = incidents[slotIndex],
+            )
+        }
+    }
+
+    /**
+     * The starts of the slots of the timeline: the start of the period, then every boundary after it. The boundaries
+     * are aligned to the local midnight (see [ZoneId.systemDefault]), so the slots don't shift between two refreshes of
+     * the dashboard, and a daily one is a calendar day. Only the first and the current slot can be shorter than the
+     * [slotLength].
+     */
+    private fun timelineSlotStarts(
+        periodStart: OffsetDateTime,
+        now: OffsetDateTime,
+        slotLength: Duration,
+    ): List<OffsetDateTime> {
+        val zone = ZoneId.systemDefault()
+        val boundaries = generateSequence(periodStart.atZoneSameInstant(zone).toLocalDate().atStartOfDay()) {
+            it.plus(slotLength)
+        }
+            .map { it.atZone(zone).toOffsetDateTime() }
+            .dropWhile { !it.isAfter(periodStart) }
+            .takeWhile { it.isBefore(now) }
+
+        // A local time skipped by a DST change maps to the same instant as the next one
+        return (sequenceOf(periodStart) + boundaries).distinctBy { it.toInstant() }.toList()
     }
 
     private fun timelineSlotLength(period: Duration): Duration = when {
@@ -340,7 +434,7 @@ class StatCalculator(
      * Calculates the SSL statistics of the HTTP monitors that have their SSL checks enabled.
      */
     private fun calculateSslStats(
-        monitors: List<MonitorDetailsDto>,
+        monitors: List<MonitorSummary>,
     ): HttpMonitoringStatsDto.ActualMonitoringStats.SslStats {
         var validMonitors = 0
         var invalidMonitors = 0
@@ -348,7 +442,7 @@ class StatCalculator(
         var inProgressMonitors = 0
 
         monitors
-            .filterIsInstance<HttpMonitorDetailsDto>()
+            .filterIsInstance<HttpMonitorSummary>()
             .filter { it.enabled && it.sslCheckEnabled }
             .forEach { monitor ->
                 when (monitor.sslStatus) {
@@ -374,8 +468,14 @@ class StatCalculator(
         monitorType: MonitorType,
         period: Duration,
         monitorId: Long,
-    ): HistoricalUptimeStatsDto =
-        calculateHistoricalUptimeStats(period, fetchUptimeEventsInPeriod(monitorType, period, listOf(monitorId)))
+    ): HistoricalUptimeStatsDto {
+        val now = getCurrentTimestamp()
+        return calculateHistoricalUptimeStats(
+            period = period,
+            uptimeEvents = fetchUptimeEventsInPeriod(monitorType, period, listOf(monitorId), now),
+            now = now,
+        )
+    }
 
     /**
      * Calculates historical uptime statistics based on a list of uptime events and a period's start time.
@@ -441,7 +541,7 @@ class StatCalculator(
         if (monitorIds.isEmpty()) return emptyMap()
         // The whole batch is anchored to a single instant, so the overviews of the individual monitors stay comparable
         val now = getCurrentTimestamp()
-        val eventsByMonitor = fetchUptimeEventsInPeriod(monitorType, period, monitorIds).groupBy { it.monitorId }
+        val eventsByMonitor = fetchUptimeEventsInPeriod(monitorType, period, monitorIds, now).groupBy { it.monitorId }
 
         return monitorIds.associateWith { monitorId ->
             val uptimeEvents = eventsByMonitor[monitorId].orEmpty()
@@ -504,14 +604,16 @@ class StatCalculator(
         monitorType: MonitorType,
         period: Duration,
         monitorIds: List<Long>,
+        now: OffsetDateTime,
     ): List<UptimeEventCalculationContext> =
-        uptimeEventReposByType.getValue(monitorType).fetchAllInPeriod(period, monitorIds)
+        uptimeEventReposByType.getValue(monitorType).fetchAllInPeriod(now.minus(period), now, monitorIds)
 
     private data class OverallStats(
-        val monitors: List<MonitorDetailsDto>,
+        val monitors: List<MonitorSummary>,
         val uptimeEvents: List<UptimeEventCalculationContext>,
         val monitorsInMaintenance: Set<NumericMonitorID>,
-        val downMonitorsInMaintenance: Int,
+        val statesOutsideMaintenance: MonitorStateCounts,
+        val statesInMaintenance: MonitorStateCounts,
         val uptimeStats: ActualUptimeStats,
         val historicalUptimeStats: HistoricalUptimeStatsDto,
     )
@@ -547,3 +649,7 @@ data class UptimeEventCalculationContext(
         return !date.isBefore(startDate) && !date.isAfter(endDate)
     }
 }
+
+// The same rules as the ones resolving the windows of the monitors on the database side
+private fun MaintenanceWindowDetailsDto.affects(monitor: MonitorSummary): Boolean =
+    global || monitor.monitorId in monitors || monitor.category?.let { it in categories } == true

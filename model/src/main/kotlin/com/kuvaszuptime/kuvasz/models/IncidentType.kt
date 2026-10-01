@@ -12,3 +12,13 @@ enum class IncidentType {
     DNS,
     DOCKER,
 }
+
+val IncidentType.monitorType: MonitorType
+    get() = when (this) {
+        IncidentType.HTTP, IncidentType.SSL -> MonitorType.HTTP_SSL
+        IncidentType.PUSH -> MonitorType.PUSH
+        IncidentType.ICMP -> MonitorType.ICMP
+        IncidentType.TCP -> MonitorType.TCP
+        IncidentType.DNS -> MonitorType.DNS
+        IncidentType.DOCKER -> MonitorType.DOCKER
+    }

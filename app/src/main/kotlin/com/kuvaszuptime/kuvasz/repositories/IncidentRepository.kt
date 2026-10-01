@@ -21,10 +21,13 @@ import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentDto
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentStatus
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
+import org.jooq.Condition
 import org.jooq.DSLContext
+import org.jooq.Field
 import org.jooq.impl.DSL
 import org.jooq.kotlin.and
 import java.time.Duration
+import java.time.OffsetDateTime
 
 @Singleton
 class IncidentRepository(private val dslContext: DSLContext) {
@@ -37,6 +40,7 @@ class IncidentRepository(private val dslContext: DSLContext) {
      * @param monitorId Optional ID of the monitor to filter incidents.
      * @param period Optional duration to filter incidents that were open during this time frame.
      * @param includeResolved Whether to include resolved incidents.
+     * @param includeSslIncidents Whether to include the SSL incidents too, not only the uptime ones.
      *
      * @return List of [IncidentDto] matching the criteria.
      */
@@ -44,33 +48,66 @@ class IncidentRepository(private val dslContext: DSLContext) {
         monitorId: Long? = null,
         period: Duration? = null,
         includeResolved: Boolean,
+        includeSslIncidents: Boolean = true,
     ): List<IncidentDto> {
         val orderFieldName = DSL.name(IncidentDto::updatedAt.name)
 
-        return dslContext
-            // HTTP incidents
-            .httpUptimeIncidentSelect(monitorId, period, includeResolved)
-            // Push incidents
-            .unionAll(dslContext.pushUptimeIncidentSelect(monitorId, period, includeResolved))
-            // ICMP incidents
-            .unionAll(dslContext.icmpUptimeIncidentSelect(monitorId, period, includeResolved))
-            // TCP incidents
-            .unionAll(dslContext.tcpUptimeIncidentSelect(monitorId, period, includeResolved))
-            // DNS incidents
-            .unionAll(dslContext.dnsUptimeIncidentSelect(monitorId, period, includeResolved))
-            // Docker incidents
-            .unionAll(dslContext.dockerUptimeIncidentSelect(monitorId, period, includeResolved))
-            // SSL incidents
-            .unionAll(dslContext.sslIncidentsSelect(monitorId, period, includeResolved))
+        return incidentsSelect(monitorId, period, includeResolved.toIncidentStates(), includeSslIncidents)
             .orderBy(DSL.field(orderFieldName).desc())
             .fetchInto(IncidentDto::class.java)
     }
+
+    /**
+     * Fetches the incidents of every monitor that were resolved during the given [period], the latest resolved one
+     * first, but only [limit] of them.
+     */
+    fun getLatestResolvedIncidents(
+        period: Duration,
+        limit: Int,
+        includeSslIncidents: Boolean = true,
+    ): List<IncidentDto> {
+        val incidents = incidentsSelect(monitorId = null, period, IncidentStates.RESOLVED, includeSslIncidents)
+            .asTable("incident")
+
+        return dslContext
+            .selectFrom(incidents)
+            .orderBy(DSL.field(DSL.name(IncidentDto::endedAt.name)).desc())
+            .limit(limit)
+            .fetchInto(IncidentDto::class.java)
+    }
+
+    private fun incidentsSelect(
+        monitorId: Long?,
+        period: Duration?,
+        states: IncidentStates,
+        includeSslIncidents: Boolean,
+    ) = dslContext
+        // HTTP incidents
+        .httpUptimeIncidentSelect(monitorId, period, states)
+        // Push incidents
+        .unionAll(dslContext.pushUptimeIncidentSelect(monitorId, period, states))
+        // ICMP incidents
+        .unionAll(dslContext.icmpUptimeIncidentSelect(monitorId, period, states))
+        // TCP incidents
+        .unionAll(dslContext.tcpUptimeIncidentSelect(monitorId, period, states))
+        // DNS incidents
+        .unionAll(dslContext.dnsUptimeIncidentSelect(monitorId, period, states))
+        // Docker incidents
+        .unionAll(dslContext.dockerUptimeIncidentSelect(monitorId, period, states))
+        // SSL incidents
+        .run {
+            if (includeSslIncidents) {
+                unionAll(dslContext.sslIncidentsSelect(monitorId, period, states))
+            } else {
+                this
+            }
+        }
 
     @Suppress("IgnoredReturnValue")
     private fun DSLContext.httpUptimeIncidentSelect(
         monitorId: Long? = null,
         period: Duration? = null,
-        includeResolved: Boolean
+        states: IncidentStates
     ) = this
         .select(
             HTTP_MONITOR.ID.`as`(IncidentDto::monitorId.name),
@@ -94,22 +131,14 @@ class IncidentRepository(private val dslContext: DSLContext) {
             } else {
                 and(HTTP_MONITOR.ENABLED.isTrue)
             }
-            // Filter for events that were open at any point during the specified period
-            period?.let {
-                val periodStart = getCurrentTimestamp().minus(period)
-                and(DSL.coalesce(HTTP_UPTIME_EVENT.ENDED_AT, DSL.now()).greaterThan(periodStart))
-            }
-            // Filter out resolved incidents if not requested
-            if (!includeResolved) {
-                and(HTTP_UPTIME_EVENT.ENDED_AT.isNull)
-            }
+            and(incidentStatesCondition(HTTP_UPTIME_EVENT.ENDED_AT, period, states))
         }
 
     @Suppress("IgnoredReturnValue")
     private fun DSLContext.pushUptimeIncidentSelect(
         monitorId: Long? = null,
         period: Duration? = null,
-        includeResolved: Boolean
+        states: IncidentStates
     ) = this
         .select(
             PUSH_MONITOR.ID.`as`(IncidentDto::monitorId.name),
@@ -133,22 +162,14 @@ class IncidentRepository(private val dslContext: DSLContext) {
             } else {
                 and(PUSH_MONITOR.ENABLED.isTrue)
             }
-            // Filter for events that were open at any point during the specified period
-            period?.let {
-                val periodStart = getCurrentTimestamp().minus(period)
-                and(DSL.coalesce(PUSH_UPTIME_EVENT.ENDED_AT, DSL.now()).greaterThan(periodStart))
-            }
-            // Filter out resolved incidents if not requested
-            if (!includeResolved) {
-                and(PUSH_UPTIME_EVENT.ENDED_AT.isNull)
-            }
+            and(incidentStatesCondition(PUSH_UPTIME_EVENT.ENDED_AT, period, states))
         }
 
     @Suppress("IgnoredReturnValue")
     private fun DSLContext.icmpUptimeIncidentSelect(
         monitorId: Long? = null,
         period: Duration? = null,
-        includeResolved: Boolean
+        states: IncidentStates
     ) = this
         .select(
             ICMP_MONITOR.ID.`as`(IncidentDto::monitorId.name),
@@ -171,20 +192,14 @@ class IncidentRepository(private val dslContext: DSLContext) {
             } else {
                 and(ICMP_MONITOR.ENABLED.isTrue)
             }
-            period?.let {
-                val periodStart = getCurrentTimestamp().minus(period)
-                and(DSL.coalesce(ICMP_UPTIME_EVENT.ENDED_AT, DSL.now()).greaterThan(periodStart))
-            }
-            if (!includeResolved) {
-                and(ICMP_UPTIME_EVENT.ENDED_AT.isNull)
-            }
+            and(incidentStatesCondition(ICMP_UPTIME_EVENT.ENDED_AT, period, states))
         }
 
     @Suppress("IgnoredReturnValue")
     private fun DSLContext.tcpUptimeIncidentSelect(
         monitorId: Long? = null,
         period: Duration? = null,
-        includeResolved: Boolean
+        states: IncidentStates
     ) = this
         .select(
             TCP_MONITOR.ID.`as`(IncidentDto::monitorId.name),
@@ -207,20 +222,14 @@ class IncidentRepository(private val dslContext: DSLContext) {
             } else {
                 and(TCP_MONITOR.ENABLED.isTrue)
             }
-            period?.let {
-                val periodStart = getCurrentTimestamp().minus(period)
-                and(DSL.coalesce(TCP_UPTIME_EVENT.ENDED_AT, DSL.now()).greaterThan(periodStart))
-            }
-            if (!includeResolved) {
-                and(TCP_UPTIME_EVENT.ENDED_AT.isNull)
-            }
+            and(incidentStatesCondition(TCP_UPTIME_EVENT.ENDED_AT, period, states))
         }
 
     @Suppress("IgnoredReturnValue")
     private fun DSLContext.dockerUptimeIncidentSelect(
         monitorId: Long? = null,
         period: Duration? = null,
-        includeResolved: Boolean
+        states: IncidentStates
     ) = this
         .select(
             DOCKER_MONITOR.ID.`as`(IncidentDto::monitorId.name),
@@ -251,20 +260,14 @@ class IncidentRepository(private val dslContext: DSLContext) {
             } else {
                 and(DOCKER_MONITOR.ENABLED.isTrue)
             }
-            period?.let {
-                val periodStart = getCurrentTimestamp().minus(period)
-                and(DSL.coalesce(DOCKER_UPTIME_EVENT.ENDED_AT, DSL.now()).greaterThan(periodStart))
-            }
-            if (!includeResolved) {
-                and(DOCKER_UPTIME_EVENT.ENDED_AT.isNull)
-            }
+            and(incidentStatesCondition(DOCKER_UPTIME_EVENT.ENDED_AT, period, states))
         }
 
     @Suppress("IgnoredReturnValue")
     private fun DSLContext.dnsUptimeIncidentSelect(
         monitorId: Long? = null,
         period: Duration? = null,
-        includeResolved: Boolean
+        states: IncidentStates
     ) = this
         .select(
             DNS_MONITOR.ID.`as`(IncidentDto::monitorId.name),
@@ -287,20 +290,14 @@ class IncidentRepository(private val dslContext: DSLContext) {
             } else {
                 and(DNS_MONITOR.ENABLED.isTrue)
             }
-            period?.let {
-                val periodStart = getCurrentTimestamp().minus(period)
-                and(DSL.coalesce(DNS_UPTIME_EVENT.ENDED_AT, DSL.now()).greaterThan(periodStart))
-            }
-            if (!includeResolved) {
-                and(DNS_UPTIME_EVENT.ENDED_AT.isNull)
-            }
+            and(incidentStatesCondition(DNS_UPTIME_EVENT.ENDED_AT, period, states))
         }
 
     @Suppress("IgnoredReturnValue")
     private fun DSLContext.sslIncidentsSelect(
         monitorId: Long? = null,
         period: Duration? = null,
-        includeResolved: Boolean,
+        states: IncidentStates,
     ) = this
         .select(
             HTTP_MONITOR.ID.`as`(IncidentDto::monitorId.name),
@@ -325,15 +322,7 @@ class IncidentRepository(private val dslContext: DSLContext) {
             } else {
                 and(HTTP_MONITOR.ENABLED.isTrue).and(HTTP_MONITOR.SSL_CHECK_ENABLED.isTrue)
             }
-            // Filter for events that were open at any point during the specified period
-            period?.let {
-                val periodStart = getCurrentTimestamp().minus(period)
-                and(DSL.coalesce(SSL_EVENT.ENDED_AT, DSL.now()).greaterThan(periodStart))
-            }
-            // Filter out resolved incidents if not requested
-            if (!includeResolved) {
-                and(SSL_EVENT.ENDED_AT.isNull)
-            }
+            and(incidentStatesCondition(SSL_EVENT.ENDED_AT, period, states))
         }
 
     fun getHttpUptimeIncidents(
@@ -344,7 +333,7 @@ class IncidentRepository(private val dslContext: DSLContext) {
         val orderFieldName = DSL.name(IncidentDto::updatedAt.name)
 
         return dslContext
-            .httpUptimeIncidentSelect(monitorId, period, includeResolved)
+            .httpUptimeIncidentSelect(monitorId, period, includeResolved.toIncidentStates())
             .orderBy(DSL.field(orderFieldName).desc())
             .fetchInto(IncidentDto::class.java)
     }
@@ -357,7 +346,7 @@ class IncidentRepository(private val dslContext: DSLContext) {
         val orderFieldName = DSL.name(IncidentDto::updatedAt.name)
 
         return dslContext
-            .pushUptimeIncidentSelect(monitorId, period, includeResolved)
+            .pushUptimeIncidentSelect(monitorId, period, includeResolved.toIncidentStates())
             .orderBy(DSL.field(orderFieldName).desc())
             .fetchInto(IncidentDto::class.java)
     }
@@ -370,7 +359,7 @@ class IncidentRepository(private val dslContext: DSLContext) {
         val orderFieldName = DSL.name(IncidentDto::updatedAt.name)
 
         return dslContext
-            .icmpUptimeIncidentSelect(monitorId, period, includeResolved)
+            .icmpUptimeIncidentSelect(monitorId, period, includeResolved.toIncidentStates())
             .orderBy(DSL.field(orderFieldName).desc())
             .fetchInto(IncidentDto::class.java)
     }
@@ -383,7 +372,7 @@ class IncidentRepository(private val dslContext: DSLContext) {
         val orderFieldName = DSL.name(IncidentDto::updatedAt.name)
 
         return dslContext
-            .tcpUptimeIncidentSelect(monitorId, period, includeResolved)
+            .tcpUptimeIncidentSelect(monitorId, period, includeResolved.toIncidentStates())
             .orderBy(DSL.field(orderFieldName).desc())
             .fetchInto(IncidentDto::class.java)
     }
@@ -396,7 +385,7 @@ class IncidentRepository(private val dslContext: DSLContext) {
         val orderFieldName = DSL.name(IncidentDto::updatedAt.name)
 
         return dslContext
-            .dockerUptimeIncidentSelect(monitorId, period, includeResolved)
+            .dockerUptimeIncidentSelect(monitorId, period, includeResolved.toIncidentStates())
             .orderBy(DSL.field(orderFieldName).desc())
             .fetchInto(IncidentDto::class.java)
     }
@@ -409,7 +398,7 @@ class IncidentRepository(private val dslContext: DSLContext) {
         val orderFieldName = DSL.name(IncidentDto::updatedAt.name)
 
         return dslContext
-            .dnsUptimeIncidentSelect(monitorId, period, includeResolved)
+            .dnsUptimeIncidentSelect(monitorId, period, includeResolved.toIncidentStates())
             .orderBy(DSL.field(orderFieldName).desc())
             .fetchInto(IncidentDto::class.java)
     }
@@ -422,8 +411,33 @@ class IncidentRepository(private val dslContext: DSLContext) {
         val orderFieldName = DSL.name(IncidentDto::updatedAt.name)
 
         return dslContext
-            .sslIncidentsSelect(monitorId, period, includeResolved)
+            .sslIncidentsSelect(monitorId, period, includeResolved.toIncidentStates())
             .orderBy(DSL.field(orderFieldName).desc())
             .fetchInto(IncidentDto::class.java)
+    }
+
+    /** Which incidents are fetched: the ongoing ones, the resolved ones or all of them. */
+    private enum class IncidentStates { ONGOING, RESOLVED, ALL }
+
+    private fun Boolean.toIncidentStates() = if (this) IncidentStates.ALL else IncidentStates.ONGOING
+
+    /**
+     * The condition of the incidents in the given [states] that were open at any point during the [period], written
+     * so that it can use the index of [endedAt], instead of scanning every event.
+     */
+    private fun incidentStatesCondition(
+        endedAt: Field<OffsetDateTime>,
+        period: Duration?,
+        states: IncidentStates,
+    ): Condition {
+        val ongoing = endedAt.isNull
+        val resolved = period
+            ?.let { endedAt.greaterThan(getCurrentTimestamp().minus(it)) }
+            ?: endedAt.isNotNull
+        return when (states) {
+            IncidentStates.ONGOING -> ongoing
+            IncidentStates.RESOLVED -> resolved
+            IncidentStates.ALL -> if (period == null) DSL.noCondition() else ongoing.or(resolved)
+        }
     }
 }

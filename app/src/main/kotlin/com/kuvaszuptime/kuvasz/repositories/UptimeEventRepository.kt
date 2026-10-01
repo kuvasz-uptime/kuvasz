@@ -1,7 +1,6 @@
 package com.kuvaszuptime.kuvasz.repositories
 
 import com.kuvaszuptime.kuvasz.services.UptimeEventCalculationContext
-import java.time.Duration
 import java.time.OffsetDateTime
 
 /**
@@ -17,9 +16,18 @@ import java.time.OffsetDateTime
 sealed interface UptimeEventRepository {
 
     /**
-     * Fetches all uptime events that have ended or was open within the specified period.
+     * Fetches the uptime events that were open at any point of the period: the ones that started by its end, and
+     * either haven't ended yet or ended after its start. Both ends are passed in, so they are anchored to the very same
+     * instant as the calculations relying on the events.
+     *
+     * @param onlyEnabledMonitors Whether the events of the monitors that are paused now should be left out.
      */
-    fun fetchAllInPeriod(period: Duration, monitorIds: List<Long>? = null): List<UptimeEventCalculationContext>
+    fun fetchAllInPeriod(
+        periodStart: OffsetDateTime,
+        periodEnd: OffsetDateTime,
+        monitorIds: List<Long>? = null,
+        onlyEnabledMonitors: Boolean = false,
+    ): List<UptimeEventCalculationContext>
 
     /**
      * Fetches the timestamp of the latest incident (DOWN status) for enabled monitors.

@@ -3,7 +3,7 @@ package com.kuvaszuptime.kuvasz.ui.pages
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.IncidentType
-import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.monitorType
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentDto
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentStatus
 import com.kuvaszuptime.kuvasz.ui.*
@@ -137,16 +137,6 @@ internal val IncidentType.label: String
         IncidentType.TCP -> "TCP"
         IncidentType.DNS -> "DNS"
         IncidentType.DOCKER -> "Docker"
-    }
-
-internal val IncidentType.monitorType: MonitorType
-    get() = when (this) {
-        IncidentType.HTTP, IncidentType.SSL -> MonitorType.HTTP_SSL
-        IncidentType.PUSH -> MonitorType.PUSH
-        IncidentType.ICMP -> MonitorType.ICMP
-        IncidentType.TCP -> MonitorType.TCP
-        IncidentType.DNS -> MonitorType.DNS
-        IncidentType.DOCKER -> MonitorType.DOCKER
     }
 
 // The same icons and colors as the monitors of the type have, except for the SSL incidents of the HTTP monitors

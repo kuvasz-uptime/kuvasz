@@ -46,14 +46,14 @@ class WebUIController(
     @WebSecured
     @Produces(MediaType.TEXT_HTML)
     @ExecuteOn(TaskExecutors.BLOCKING)
-    fun dashboard(@QueryValue period: Duration?) = renderDashboard(appGlobals, period.orDefaultDashboardPeriod())
+    fun dashboard(@QueryValue period: String?) = renderDashboard(appGlobals, period.toDashboardPeriod())
 
     @Get(DASHBOARD_FRAGMENT_PATH)
     @WebSecured
     @Produces(MediaType.TEXT_HTML)
     @ExecuteOn(TaskExecutors.BLOCKING)
-    fun dashboardOverview(@QueryValue period: Duration?) =
-        renderDashboardOverview(dashboardDataProvider.getOverview(period.orDefaultDashboardPeriod()))
+    fun dashboardOverview(@QueryValue period: String?) =
+        renderDashboardOverview(dashboardDataProvider.getOverview(period.toDashboardPeriod()))
 
     @Get(CONNECTIVITY_BADGE_FRAGMENT_PATH)
     @WebSecured
@@ -107,6 +107,7 @@ class WebUIController(
 }
 
 // Only the periods of the selector are accepted, as the timeline of the dashboard is sliced to fit them
-private fun Duration?.orDefaultDashboardPeriod(): Duration =
-    this?.takeIf { it in UIDefaults.PERIOD_SELECTOR_OPTIONS }
+private fun String?.toDashboardPeriod(): Duration =
+    this?.let { runCatching { Duration.parse(it) }.getOrNull() }
+        ?.takeIf { it in UIDefaults.PERIOD_SELECTOR_OPTIONS }
         ?: Duration.ofDays(UIDefaults.DASHBOARD_MONITORING_STATS_PERIOD_DAYS)

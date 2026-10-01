@@ -12,6 +12,7 @@ import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.icmp.idWithName
+import com.kuvaszuptime.kuvasz.models.dto.monitor.IcmpMonitorSummary
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
@@ -35,6 +36,19 @@ class IcmpMonitorRepository(
         categories: List<String>?,
     ): List<IcmpMonitorDetailsDto> =
         getMonitorsWithDetails(enabled = enabled, monitorNames = monitorNames, categories = categories)
+
+    override fun fetchSummaries(): List<IcmpMonitorSummary> = dslContext
+        .select(
+            ICMP_MONITOR.ID.`as`(IcmpMonitorSummary::id.name),
+            ICMP_MONITOR.NAME.`as`(IcmpMonitorSummary::name.name),
+            ICMP_MONITOR.ENABLED.`as`(IcmpMonitorSummary::enabled.name),
+            ICMP_MONITOR.CATEGORY.`as`(IcmpMonitorSummary::category.name),
+            checkNotNull(latestUptimeEventSelect.field(ICMP_UPTIME_EVENT.STATUS))
+                .`as`(IcmpMonitorSummary::uptimeStatus.name),
+        )
+        .from(ICMP_MONITOR)
+        .leftJoin(DSL.lateral(latestUptimeEventSelect)).on(DSL.trueCondition())
+        .fetchInto(IcmpMonitorSummary::class.java)
 
     override fun findById(monitorId: Long, txCtx: DSLContext?): IcmpMonitorRecord? = (txCtx ?: dslContext)
         .selectFrom(ICMP_MONITOR)

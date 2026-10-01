@@ -37,7 +37,6 @@ internal fun FlowContent.icmpMonitorCreateUpdateModal(
         div {
             classes(MB_3)
             validatedInput(
-                idPrefix = MonitorTypeUiConfig.ICMP.slug,
                 propName = "host",
                 label = Messages.hostLabel(),
                 placeholder = Messages.hostPlaceholder(),
@@ -51,7 +50,6 @@ internal fun FlowContent.icmpMonitorCreateUpdateModal(
         div {
             classes(MB_3)
             validatedInput(
-                idPrefix = MonitorTypeUiConfig.ICMP.slug,
                 propName = "uptimeCheckInterval",
                 label = Messages.uptimeCheckIntervalLabel(),
                 placeholder = null,
@@ -65,7 +63,6 @@ internal fun FlowContent.icmpMonitorCreateUpdateModal(
         div {
             classes(MB_3)
             validatedInput(
-                idPrefix = MonitorTypeUiConfig.ICMP.slug,
                 propName = "packetCount",
                 label = Messages.packetCountLabel(),
                 placeholder = null,
@@ -79,7 +76,6 @@ internal fun FlowContent.icmpMonitorCreateUpdateModal(
         div {
             classes(MB_3)
             validatedInput(
-                idPrefix = MonitorTypeUiConfig.ICMP.slug,
                 propName = "timeoutSeconds",
                 label = Messages.timeoutSecondsLabel(),
                 placeholder = null,
@@ -93,7 +89,6 @@ internal fun FlowContent.icmpMonitorCreateUpdateModal(
         div {
             classes(MB_3)
             validatedInput(
-                idPrefix = MonitorTypeUiConfig.ICMP.slug,
                 propName = "packetLossThreshold",
                 label = Messages.packetLossThresholdLabel(),
                 placeholder = null,
@@ -107,7 +102,6 @@ internal fun FlowContent.icmpMonitorCreateUpdateModal(
         div {
             classes(MB_3)
             validatedInput(
-                idPrefix = MonitorTypeUiConfig.ICMP.slug,
                 propName = "failureCountThreshold",
                 label = Messages.failureCountThresholdLabel(),
                 description = Messages.failureCountThresholdDescription(),

@@ -21,12 +21,13 @@ object UIDefaults {
     private const val SEVEN_DAYS = 7L
     private const val THIRTY_DAYS = 30L
 
-    val PERIOD_SELECTOR_OPTIONS: List<Duration> = listOf(
-        Duration.ofHours(ONE_HOUR),
-        Duration.ofHours(SIX_HOURS),
-        Duration.ofHours(TWELVE_HOURS),
-        Duration.ofDays(ONE_DAY),
-        Duration.ofDays(SEVEN_DAYS),
-        Duration.ofDays(THIRTY_DAYS),
-    )
+    val LAST_HOUR: Duration = Duration.ofHours(ONE_HOUR)
+    val LAST_6_HOURS: Duration = Duration.ofHours(SIX_HOURS)
+    val LAST_12_HOURS: Duration = Duration.ofHours(TWELVE_HOURS)
+    val LAST_24_HOURS: Duration = Duration.ofDays(ONE_DAY)
+    val LAST_7_DAYS: Duration = Duration.ofDays(SEVEN_DAYS)
+    val LAST_30_DAYS: Duration = Duration.ofDays(THIRTY_DAYS)
+
+    val PERIOD_SELECTOR_OPTIONS: List<Duration> =
+        listOf(LAST_HOUR, LAST_6_HOURS, LAST_12_HOURS, LAST_24_HOURS, LAST_7_DAYS, LAST_30_DAYS)
 }

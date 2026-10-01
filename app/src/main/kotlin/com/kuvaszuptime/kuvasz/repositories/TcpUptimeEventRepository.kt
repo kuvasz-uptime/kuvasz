@@ -9,11 +9,9 @@ import com.kuvaszuptime.kuvasz.models.events.TcpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.TcpUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.services.UptimeEventCalculationContext
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
-import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
-import java.time.Duration
 import java.time.OffsetDateTime
 
 @Suppress("TooManyFunctions")
@@ -51,6 +49,7 @@ class TcpUptimeEventRepository(private val dslContext: DSLContext) : UptimeEvent
                 .selectFrom(TCP_UPTIME_EVENT)
                 .where(TCP_UPTIME_EVENT.MONITOR_ID.eq(monitorId))
                 .and(TCP_UPTIME_EVENT.ENDED_AT.isNull)
+                .orderBy(TCP_UPTIME_EVENT.ID)
                 .fetch()
 
             if (uptimeRecords.size <= 1) return@transactionResult uptimeRecords.firstOrNull()
@@ -109,10 +108,11 @@ class TcpUptimeEventRepository(private val dslContext: DSLContext) : UptimeEvent
 
     @Suppress("IgnoredReturnValue")
     override fun fetchAllInPeriod(
-        period: Duration,
+        periodStart: OffsetDateTime,
+        periodEnd: OffsetDateTime,
         monitorIds: List<Long>?,
+        onlyEnabledMonitors: Boolean,
     ): List<UptimeEventCalculationContext> {
-        val periodStart = getCurrentTimestamp().minus(period)
         return dslContext
             .select(
                 TCP_MONITOR.ID.`as`(UptimeEventCalculationContext::monitorId.name),
@@ -124,18 +124,40 @@ class TcpUptimeEventRepository(private val dslContext: DSLContext) : UptimeEvent
             )
             .from(TCP_UPTIME_EVENT)
             .join(TCP_MONITOR).on(TCP_UPTIME_EVENT.MONITOR_ID.eq(TCP_MONITOR.ID))
-            .where(DSL.coalesce(TCP_UPTIME_EVENT.ENDED_AT, DSL.now()).greaterThan(periodStart))
+            .where(TCP_UPTIME_EVENT.STARTED_AT.lessOrEqual(periodEnd))
+            // Written this way, instead of coalescing the end with now(), so it can use the index of ended_at
+            .and(TCP_UPTIME_EVENT.ENDED_AT.isNull.or(TCP_UPTIME_EVENT.ENDED_AT.greaterThan(periodStart)))
             .apply {
                 monitorIds?.let { and(TCP_UPTIME_EVENT.MONITOR_ID.`in`(it)) }
+                if (onlyEnabledMonitors) and(TCP_MONITOR.ENABLED.isTrue)
             }
             .fetchInto(UptimeEventCalculationContext::class.java)
     }
 
-    override fun fetchLatestIncidentTimestamp(): OffsetDateTime? = dslContext
-        .select(DSL.max(DSL.coalesce(TCP_UPTIME_EVENT.UPDATED_AT, TCP_UPTIME_EVENT.STARTED_AT)))
-        .from(TCP_UPTIME_EVENT)
-        .join(TCP_MONITOR).on(TCP_UPTIME_EVENT.MONITOR_ID.eq(TCP_MONITOR.ID))
-        .where(TCP_UPTIME_EVENT.STATUS.eq(UptimeStatus.DOWN))
-        .and(TCP_MONITOR.ENABLED.isTrue)
-        .fetchAny(0, OffsetDateTime::class.java)
+    // An ongoing incident is updated by every check, unlike a resolved one, whose end is its last update too. So they
+    // are looked up separately, the ongoing ones through the index of the open events, the resolved ones through the
+    // index of the end date, instead of indexing the update date, which would make every check more expensive.
+    override fun fetchLatestIncidentTimestamp(): OffsetDateTime? {
+        val latestOngoingIncident = dslContext
+            .select(DSL.max(TCP_UPTIME_EVENT.UPDATED_AT))
+            .from(TCP_UPTIME_EVENT)
+            .join(TCP_MONITOR).on(TCP_UPTIME_EVENT.MONITOR_ID.eq(TCP_MONITOR.ID))
+            .where(TCP_UPTIME_EVENT.ENDED_AT.isNull)
+            .and(TCP_UPTIME_EVENT.STATUS.eq(UptimeStatus.DOWN))
+            .and(TCP_MONITOR.ENABLED.isTrue)
+        val latestResolvedIncident = dslContext
+            .select(TCP_UPTIME_EVENT.ENDED_AT)
+            .from(TCP_UPTIME_EVENT)
+            .join(TCP_MONITOR).on(TCP_UPTIME_EVENT.MONITOR_ID.eq(TCP_MONITOR.ID))
+            .where(TCP_UPTIME_EVENT.ENDED_AT.isNotNull)
+            .and(TCP_UPTIME_EVENT.STATUS.eq(UptimeStatus.DOWN))
+            .and(TCP_MONITOR.ENABLED.isTrue)
+            .orderBy(TCP_UPTIME_EVENT.ENDED_AT.desc())
+            .limit(1)
+
+        return dslContext
+            .select(DSL.greatest(DSL.field(latestOngoingIncident), DSL.field(latestResolvedIncident)))
+            .fetchOne()
+            ?.value1()
+    }
 }

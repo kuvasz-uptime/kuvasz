@@ -9,11 +9,9 @@ import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.services.UptimeEventCalculationContext
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
-import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
-import java.time.Duration
 import java.time.OffsetDateTime
 
 @Suppress("TooManyFunctions")
@@ -51,6 +49,7 @@ class IcmpUptimeEventRepository(private val dslContext: DSLContext) : UptimeEven
                 .selectFrom(ICMP_UPTIME_EVENT)
                 .where(ICMP_UPTIME_EVENT.MONITOR_ID.eq(monitorId))
                 .and(ICMP_UPTIME_EVENT.ENDED_AT.isNull)
+                .orderBy(ICMP_UPTIME_EVENT.ID)
                 .fetch()
 
             if (uptimeRecords.size <= 1) return@transactionResult uptimeRecords.firstOrNull()
@@ -109,10 +108,11 @@ class IcmpUptimeEventRepository(private val dslContext: DSLContext) : UptimeEven
 
     @Suppress("IgnoredReturnValue")
     override fun fetchAllInPeriod(
-        period: Duration,
+        periodStart: OffsetDateTime,
+        periodEnd: OffsetDateTime,
         monitorIds: List<Long>?,
+        onlyEnabledMonitors: Boolean,
     ): List<UptimeEventCalculationContext> {
-        val periodStart = getCurrentTimestamp().minus(period)
         return dslContext
             .select(
                 ICMP_MONITOR.ID.`as`(UptimeEventCalculationContext::monitorId.name),
@@ -124,18 +124,40 @@ class IcmpUptimeEventRepository(private val dslContext: DSLContext) : UptimeEven
             )
             .from(ICMP_UPTIME_EVENT)
             .join(ICMP_MONITOR).on(ICMP_UPTIME_EVENT.MONITOR_ID.eq(ICMP_MONITOR.ID))
-            .where(DSL.coalesce(ICMP_UPTIME_EVENT.ENDED_AT, DSL.now()).greaterThan(periodStart))
+            .where(ICMP_UPTIME_EVENT.STARTED_AT.lessOrEqual(periodEnd))
+            // Written this way, instead of coalescing the end with now(), so it can use the index of ended_at
+            .and(ICMP_UPTIME_EVENT.ENDED_AT.isNull.or(ICMP_UPTIME_EVENT.ENDED_AT.greaterThan(periodStart)))
             .apply {
                 monitorIds?.let { and(ICMP_UPTIME_EVENT.MONITOR_ID.`in`(it)) }
+                if (onlyEnabledMonitors) and(ICMP_MONITOR.ENABLED.isTrue)
             }
             .fetchInto(UptimeEventCalculationContext::class.java)
     }
 
-    override fun fetchLatestIncidentTimestamp(): OffsetDateTime? = dslContext
-        .select(DSL.max(DSL.coalesce(ICMP_UPTIME_EVENT.UPDATED_AT, ICMP_UPTIME_EVENT.STARTED_AT)))
-        .from(ICMP_UPTIME_EVENT)
-        .join(ICMP_MONITOR).on(ICMP_UPTIME_EVENT.MONITOR_ID.eq(ICMP_MONITOR.ID))
-        .where(ICMP_UPTIME_EVENT.STATUS.eq(UptimeStatus.DOWN))
-        .and(ICMP_MONITOR.ENABLED.isTrue)
-        .fetchAny(0, OffsetDateTime::class.java)
+    // An ongoing incident is updated by every check, unlike a resolved one, whose end is its last update too. So they
+    // are looked up separately, the ongoing ones through the index of the open events, the resolved ones through the
+    // index of the end date, instead of indexing the update date, which would make every check more expensive.
+    override fun fetchLatestIncidentTimestamp(): OffsetDateTime? {
+        val latestOngoingIncident = dslContext
+            .select(DSL.max(ICMP_UPTIME_EVENT.UPDATED_AT))
+            .from(ICMP_UPTIME_EVENT)
+            .join(ICMP_MONITOR).on(ICMP_UPTIME_EVENT.MONITOR_ID.eq(ICMP_MONITOR.ID))
+            .where(ICMP_UPTIME_EVENT.ENDED_AT.isNull)
+            .and(ICMP_UPTIME_EVENT.STATUS.eq(UptimeStatus.DOWN))
+            .and(ICMP_MONITOR.ENABLED.isTrue)
+        val latestResolvedIncident = dslContext
+            .select(ICMP_UPTIME_EVENT.ENDED_AT)
+            .from(ICMP_UPTIME_EVENT)
+            .join(ICMP_MONITOR).on(ICMP_UPTIME_EVENT.MONITOR_ID.eq(ICMP_MONITOR.ID))
+            .where(ICMP_UPTIME_EVENT.ENDED_AT.isNotNull)
+            .and(ICMP_UPTIME_EVENT.STATUS.eq(UptimeStatus.DOWN))
+            .and(ICMP_MONITOR.ENABLED.isTrue)
+            .orderBy(ICMP_UPTIME_EVENT.ENDED_AT.desc())
+            .limit(1)
+
+        return dslContext
+            .select(DSL.greatest(DSL.field(latestOngoingIncident), DSL.field(latestResolvedIncident)))
+            .fetchOne()
+            ?.value1()
+    }
 }

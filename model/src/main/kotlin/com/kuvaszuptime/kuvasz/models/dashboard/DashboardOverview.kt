@@ -4,7 +4,7 @@ import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentDto
 import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowDetailsDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorSummary
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.ActualUptimeStats
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
@@ -18,11 +18,15 @@ import java.time.OffsetDateTime
 data class DashboardOverview(
     val period: Duration,
     val uptimeStats: DashboardUptimeStats,
-    // The ongoing ones first, then the latest resolved ones, as many as the dashboard shows
+    // The ongoing ones first (the ones outside a maintenance before the rest, the latest first within both), then the
+    // latest resolved ones, if there is room left for them
     val recentIncidents: List<IncidentDto>,
-    // The enabled windows that are either active or start within the lookahead
+    // The ongoing ones that didn't fit into the list
+    val moreOngoingIncidents: Int,
+    // The enabled windows that are either active or start within the next 7 days
     val maintenanceWindows: List<MaintenanceWindowDetailsDto>,
-    val maintenanceLookahead: Duration,
+    // The windows of the same kind that didn't fit into the list
+    val moreMaintenanceWindows: Int,
 )
 
 /**
@@ -32,13 +36,15 @@ data class DashboardUptimeStats(
     val actual: ActualUptimeStats,
     val history: HistoricalUptimeStatsDto,
     val incidents: DashboardIncidentStats,
-    // The monitors that are down, but under an active maintenance window
-    val downInMaintenance: Int,
+    // The current states of the monitors that aren't paused, split by whether they're under an active maintenance
+    // window
+    val outsideMaintenance: MonitorStateCounts,
+    val inMaintenance: MonitorStateCounts,
     val sslStats: HttpMonitoringStatsDto.ActualMonitoringStats.SslStats,
     val timeline: List<UptimeTimelineSlot>,
     val byType: List<MonitorTypeUptimeStats>,
-    // The invalid certificates first, then the ones about to expire, the soonest expiring first
-    val certificatesWithIssues: List<HttpMonitorDetailsDto>,
+    // The invalid certificates first, then the ones about to expire, the soonest expiring first, capped
+    val certificatesWithIssues: List<HttpMonitorSummary>,
     val monitorsInMaintenance: Set<NumericMonitorID>,
     // The ones with the most downtime first, then the ones with the most incidents
     val leastReliableMonitors: List<UnreliableMonitor>,
@@ -50,7 +56,6 @@ data class DashboardUptimeStats(
 data class UnreliableMonitor(
     val id: NumericMonitorID,
     val name: String,
-    val enabled: Boolean,
     val uptimeStatus: UptimeStatus?,
     val inMaintenance: Boolean,
     val history: HistoricalUptimeStatsDto,
@@ -60,14 +65,29 @@ data class UnreliableMonitor(
  * The incidents (DOWN events) that were open at any point during the period, the same ones as the history counts.
  */
 data class DashboardIncidentStats(
-    val ongoing: Int,
+    // The ongoing ones split by whether their monitor is under an active maintenance window
+    val ongoingOutsideMaintenance: Int,
+    val ongoingInMaintenance: Int,
     val resolved: Int,
     val meanTimeToResolveSeconds: Long?,
+)
+
+/**
+ * How many monitors are in each of the states a monitor that isn't paused can be in.
+ */
+data class MonitorStateCounts(
+    val up: Int,
+    val down: Int,
+    val pending: Int,
 )
 
 data class MonitorTypeUptimeStats(
     val type: MonitorType,
     val actual: ActualUptimeStats,
+    // The current states of the monitors of the type that aren't paused, split by whether they're under an active
+    // maintenance window
+    val outsideMaintenance: MonitorStateCounts,
+    val inMaintenance: MonitorStateCounts,
     val history: HistoricalUptimeStatsDto,
     val timeline: List<UptimeTimelineSlot>,
 )
@@ -82,9 +102,4 @@ data class UptimeTimelineSlot(
     val downtimeSeconds: Long,
     // The incidents that started in the slot (or before the period, in the first one), even if they lasted longer
     val incidents: Int,
-) {
-    val uptimeRatio: Double?
-        get() = (uptimeSeconds + downtimeSeconds)
-            .takeIf { it > 0 }
-            ?.let { uptimeSeconds.toDouble() / it }
-}
+)

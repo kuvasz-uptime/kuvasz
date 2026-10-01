@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.fragments.dashboard.*
+import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.http.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.icmp.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.push.*
@@ -49,12 +50,6 @@ fun renderDashboard(globals: AppGlobals, period: Duration) =
     }
 
 private fun HtmlBlockTag.dashboardHeader(globals: AppGlobals, period: Duration) {
-    val createHttpModalId = "create-http-monitor-modal"
-    val createPushModalId = "create-push-monitor-modal"
-    val createIcmpModalId = "create-icmp-monitor-modal"
-    val createTcpModalId = "create-tcp-monitor-modal"
-    val createDockerModalId = "create-docker-monitor-modal"
-    val createDnsModalId = "create-dns-monitor-modal"
     div {
         classes(CONTAINER_XL)
         div {
@@ -84,64 +79,16 @@ private fun HtmlBlockTag.dashboardHeader(globals: AppGlobals, period: Duration) 
                         }
                         div {
                             classes(DROPDOWN_MENU)
-                            button {
-                                val isReadOnly = globals.editabilityState.areHttpMonitorsReadOnly()
-                                classes(DROPDOWN_ITEM)
-                                modalOpener(createHttpModalId)
-                                disabled = isReadOnly
-                                +Messages.httpSslMonitor()
-                                if (isReadOnly) {
-                                    readOnlyBadge(Messages.readOnlyHttpMonitors())
-                                }
-                            }
-                            button {
-                                val isReadOnly = globals.editabilityState.arePushMonitorsReadOnly()
-                                classes(DROPDOWN_ITEM)
-                                modalOpener(createPushModalId)
-                                disabled = isReadOnly
-                                +Messages.pushMonitor()
-                                if (isReadOnly) {
-                                    readOnlyBadge(Messages.readOnlyPushMonitors())
-                                }
-                            }
-                            button {
-                                val isReadOnly = globals.editabilityState.areIcmpMonitorsReadOnly()
-                                classes(DROPDOWN_ITEM)
-                                modalOpener(createIcmpModalId)
-                                disabled = isReadOnly
-                                +Messages.icmpMonitor()
-                                if (isReadOnly) {
-                                    readOnlyBadge(Messages.readOnlyIcmpMonitors())
-                                }
-                            }
-                            button {
-                                val isReadOnly = globals.editabilityState.areTcpMonitorsReadOnly()
-                                classes(DROPDOWN_ITEM)
-                                modalOpener(createTcpModalId)
-                                disabled = isReadOnly
-                                +Messages.tcpMonitor()
-                                if (isReadOnly) {
-                                    readOnlyBadge(Messages.readOnlyTcpMonitors())
-                                }
-                            }
-                            button {
-                                val isReadOnly = globals.editabilityState.areDockerMonitorsReadOnly()
-                                classes(DROPDOWN_ITEM)
-                                modalOpener(createDockerModalId)
-                                disabled = isReadOnly
-                                +Messages.dockerMonitor()
-                                if (isReadOnly) {
-                                    readOnlyBadge(Messages.readOnlyDockerMonitors())
-                                }
-                            }
-                            button {
-                                val isReadOnly = globals.editabilityState.areDnsMonitorsReadOnly()
-                                classes(DROPDOWN_ITEM)
-                                modalOpener(createDnsModalId)
-                                disabled = isReadOnly
-                                +Messages.dnsMonitor()
-                                if (isReadOnly) {
-                                    readOnlyBadge(Messages.readOnlyDnsMonitors())
+                            MonitorTypeUiConfig.entries.forEach { typeUiConfig ->
+                                button {
+                                    val isReadOnly = globals.editabilityState.areMonitorsReadOnly(typeUiConfig.type)
+                                    classes(DROPDOWN_ITEM)
+                                    modalOpener(typeUiConfig.createModalId)
+                                    disabled = isReadOnly
+                                    +typeUiConfig.monitorTitle
+                                    if (isReadOnly) {
+                                        readOnlyBadge(typeUiConfig.readOnlyNotice)
+                                    }
                                 }
                             }
                         }
@@ -159,23 +106,20 @@ private fun HtmlBlockTag.dashboardHeader(globals: AppGlobals, period: Duration) 
             }
         }
     }
-    // Render the upsert modals conditionally
-    if (!globals.editabilityState.areHttpMonitorsReadOnly()) {
-        httpMonitorCreateUpdateModal(modalId = createHttpModalId, monitor = null, globals)
-    }
-    if (!globals.editabilityState.arePushMonitorsReadOnly()) {
-        pushMonitorCreateUpdateModal(modalId = createPushModalId, monitor = null, globals)
-    }
-    if (!globals.editabilityState.areIcmpMonitorsReadOnly()) {
-        icmpMonitorCreateUpdateModal(modalId = createIcmpModalId, monitor = null, globals)
-    }
-    if (!globals.editabilityState.areTcpMonitorsReadOnly()) {
-        tcpMonitorCreateUpdateModal(modalId = createTcpModalId, monitor = null, globals)
-    }
-    if (!globals.editabilityState.areDnsMonitorsReadOnly()) {
-        dnsMonitorCreateUpdateModal(modalId = createDnsModalId, monitor = null, globals)
-    }
-    if (!globals.editabilityState.areDockerMonitorsReadOnly()) {
-        dockerMonitorCreateUpdateModal(modalId = createDockerModalId, monitor = null, globals)
+    // The create modals of the types whose monitors can be edited
+    MonitorTypeUiConfig.entries
+        .filterNot { globals.editabilityState.areMonitorsReadOnly(it.type) }
+        .forEach { createMonitorModal(it, globals) }
+}
+
+private fun FlowContent.createMonitorModal(typeUiConfig: MonitorTypeUiConfig, globals: AppGlobals) {
+    val modalId = typeUiConfig.createModalId
+    when (typeUiConfig) {
+        MonitorTypeUiConfig.HTTP -> httpMonitorCreateUpdateModal(modalId, monitor = null, globals)
+        MonitorTypeUiConfig.PUSH -> pushMonitorCreateUpdateModal(modalId, monitor = null, globals)
+        MonitorTypeUiConfig.ICMP -> icmpMonitorCreateUpdateModal(modalId, monitor = null, globals)
+        MonitorTypeUiConfig.TCP -> tcpMonitorCreateUpdateModal(modalId, monitor = null, globals)
+        MonitorTypeUiConfig.DNS -> dnsMonitorCreateUpdateModal(modalId, monitor = null, globals)
+        MonitorTypeUiConfig.DOCKER -> dockerMonitorCreateUpdateModal(modalId, monitor = null, globals)
     }
 }

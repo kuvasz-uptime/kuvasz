@@ -9,11 +9,9 @@ import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.services.UptimeEventCalculationContext
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
-import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
-import java.time.Duration
 import java.time.OffsetDateTime
 
 @Suppress("TooManyFunctions")
@@ -55,6 +53,7 @@ class DockerUptimeEventRepository(private val dslContext: DSLContext) : UptimeEv
                 .selectFrom(DOCKER_UPTIME_EVENT)
                 .where(DOCKER_UPTIME_EVENT.MONITOR_ID.eq(monitorId))
                 .and(DOCKER_UPTIME_EVENT.ENDED_AT.isNull)
+                .orderBy(DOCKER_UPTIME_EVENT.ID)
                 .fetch()
 
             if (uptimeRecords.size <= 1) return@transactionResult uptimeRecords.firstOrNull()
@@ -118,10 +117,11 @@ class DockerUptimeEventRepository(private val dslContext: DSLContext) : UptimeEv
 
     @Suppress("IgnoredReturnValue")
     override fun fetchAllInPeriod(
-        period: Duration,
+        periodStart: OffsetDateTime,
+        periodEnd: OffsetDateTime,
         monitorIds: List<Long>?,
+        onlyEnabledMonitors: Boolean,
     ): List<UptimeEventCalculationContext> {
-        val periodStart = getCurrentTimestamp().minus(period)
         return dslContext
             .select(
                 DOCKER_MONITOR.ID.`as`(UptimeEventCalculationContext::monitorId.name),
@@ -133,18 +133,40 @@ class DockerUptimeEventRepository(private val dslContext: DSLContext) : UptimeEv
             )
             .from(DOCKER_UPTIME_EVENT)
             .join(DOCKER_MONITOR).on(DOCKER_UPTIME_EVENT.MONITOR_ID.eq(DOCKER_MONITOR.ID))
-            .where(DSL.coalesce(DOCKER_UPTIME_EVENT.ENDED_AT, DSL.now()).greaterThan(periodStart))
+            .where(DOCKER_UPTIME_EVENT.STARTED_AT.lessOrEqual(periodEnd))
+            // Written this way, instead of coalescing the end with now(), so it can use the index of ended_at
+            .and(DOCKER_UPTIME_EVENT.ENDED_AT.isNull.or(DOCKER_UPTIME_EVENT.ENDED_AT.greaterThan(periodStart)))
             .apply {
                 monitorIds?.let { and(DOCKER_UPTIME_EVENT.MONITOR_ID.`in`(it)) }
+                if (onlyEnabledMonitors) and(DOCKER_MONITOR.ENABLED.isTrue)
             }
             .fetchInto(UptimeEventCalculationContext::class.java)
     }
 
-    override fun fetchLatestIncidentTimestamp(): OffsetDateTime? = dslContext
-        .select(DSL.max(DSL.coalesce(DOCKER_UPTIME_EVENT.UPDATED_AT, DOCKER_UPTIME_EVENT.STARTED_AT)))
-        .from(DOCKER_UPTIME_EVENT)
-        .join(DOCKER_MONITOR).on(DOCKER_UPTIME_EVENT.MONITOR_ID.eq(DOCKER_MONITOR.ID))
-        .where(DOCKER_UPTIME_EVENT.STATUS.eq(UptimeStatus.DOWN))
-        .and(DOCKER_MONITOR.ENABLED.isTrue)
-        .fetchAny(0, OffsetDateTime::class.java)
+    // An ongoing incident is updated by every check, unlike a resolved one, whose end is its last update too. So they
+    // are looked up separately, the ongoing ones through the index of the open events, the resolved ones through the
+    // index of the end date, instead of indexing the update date, which would make every check more expensive.
+    override fun fetchLatestIncidentTimestamp(): OffsetDateTime? {
+        val latestOngoingIncident = dslContext
+            .select(DSL.max(DOCKER_UPTIME_EVENT.UPDATED_AT))
+            .from(DOCKER_UPTIME_EVENT)
+            .join(DOCKER_MONITOR).on(DOCKER_UPTIME_EVENT.MONITOR_ID.eq(DOCKER_MONITOR.ID))
+            .where(DOCKER_UPTIME_EVENT.ENDED_AT.isNull)
+            .and(DOCKER_UPTIME_EVENT.STATUS.eq(UptimeStatus.DOWN))
+            .and(DOCKER_MONITOR.ENABLED.isTrue)
+        val latestResolvedIncident = dslContext
+            .select(DOCKER_UPTIME_EVENT.ENDED_AT)
+            .from(DOCKER_UPTIME_EVENT)
+            .join(DOCKER_MONITOR).on(DOCKER_UPTIME_EVENT.MONITOR_ID.eq(DOCKER_MONITOR.ID))
+            .where(DOCKER_UPTIME_EVENT.ENDED_AT.isNotNull)
+            .and(DOCKER_UPTIME_EVENT.STATUS.eq(UptimeStatus.DOWN))
+            .and(DOCKER_MONITOR.ENABLED.isTrue)
+            .orderBy(DOCKER_UPTIME_EVENT.ENDED_AT.desc())
+            .limit(1)
+
+        return dslContext
+            .select(DSL.greatest(DSL.field(latestOngoingIncident), DSL.field(latestResolvedIncident)))
+            .fetchOne()
+            ?.value1()
+    }
 }

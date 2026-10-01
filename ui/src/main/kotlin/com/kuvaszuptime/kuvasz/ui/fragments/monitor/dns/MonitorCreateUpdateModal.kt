@@ -123,7 +123,6 @@ internal fun FlowContent.dnsMonitorCreateUpdateModal(
         div {
             classes(MB_3)
             validatedInput(
-                idPrefix = MonitorTypeUiConfig.DNS.slug,
                 propName = "host",
                 label = Messages.dnsHostLabel(),
                 placeholder = Messages.dnsHostPlaceholder(),
@@ -137,7 +136,6 @@ internal fun FlowContent.dnsMonitorCreateUpdateModal(
         div {
             classes(MB_3)
             validatedInput(
-                idPrefix = MonitorTypeUiConfig.DNS.slug,
                 propName = "resolverHost",
                 label = Messages.dnsResolverHostLabel(),
                 placeholder = Messages.dnsResolverHostPlaceholder(),
@@ -151,7 +149,6 @@ internal fun FlowContent.dnsMonitorCreateUpdateModal(
         div {
             classes(MB_3)
             validatedInput(
-                idPrefix = MonitorTypeUiConfig.DNS.slug,
                 propName = "resolverPort",
                 label = Messages.dnsResolverPortLabel(),
                 placeholder = null,
@@ -179,7 +176,6 @@ internal fun FlowContent.dnsMonitorCreateUpdateModal(
         div {
             classes(MB_3)
             validatedInput(
-                idPrefix = MonitorTypeUiConfig.DNS.slug,
                 propName = "uptimeCheckInterval",
                 label = Messages.uptimeCheckIntervalLabel(),
                 placeholder = null,
@@ -193,7 +189,6 @@ internal fun FlowContent.dnsMonitorCreateUpdateModal(
         div {
             classes(MB_3)
             validatedInput(
-                idPrefix = MonitorTypeUiConfig.DNS.slug,
                 propName = "timeoutMs",
                 label = Messages.dnsTimeoutMsLabel(),
                 placeholder = null,
@@ -207,7 +202,6 @@ internal fun FlowContent.dnsMonitorCreateUpdateModal(
         div {
             classes(MB_3)
             validatedInput(
-                idPrefix = MonitorTypeUiConfig.DNS.slug,
                 propName = "latencyThresholdMs",
                 label = Messages.latencyThresholdLabel(),
                 placeholder = null,
@@ -221,7 +215,6 @@ internal fun FlowContent.dnsMonitorCreateUpdateModal(
         div {
             classes(MB_3)
             validatedInput(
-                idPrefix = MonitorTypeUiConfig.DNS.slug,
                 propName = "failureCountThreshold",
                 label = Messages.failureCountThresholdLabel(),
                 description = Messages.failureCountThresholdDescription(),
@@ -317,7 +310,6 @@ private fun FlowContent.recordMatchersTable(isReadOnly: Boolean) {
                 }
                 td {
                     validatedInput(
-                        idPrefix = MonitorTypeUiConfig.DNS.slug,
                         propName = "newMatcherValue",
                         label = null,
                         placeholder = Messages.dnsMatchValuePlaceholder(),

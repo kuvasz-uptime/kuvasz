@@ -44,7 +44,7 @@ internal fun FlowContent.monitorUpsertModal(
         extraFormArgs +
         globals.enabledIntegrations.count { it.value.global }.toString()
 
-    div {
+    fieldIdPrefixedDiv(typeUiConfig.slug) {
         id = modalId
         classes(MODAL, MODAL_BLUR, ROUNDED, BG_SURFACE_BACKDROP)
         xData(
@@ -108,7 +108,6 @@ internal fun FlowContent.monitorUpsertModal(
                             required = true,
                             onInput = "validateName()",
                             disabledIf = "$isReadOnlyMode || isNameLocked",
-                            idPrefix = typeUiConfig.slug,
                         )
                     }
                     // Category
