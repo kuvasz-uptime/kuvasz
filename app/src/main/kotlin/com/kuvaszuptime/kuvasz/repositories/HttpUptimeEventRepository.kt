@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.repositories
 
-import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HTTP_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent.HTTP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
@@ -11,11 +10,20 @@ import com.kuvaszuptime.kuvasz.services.UptimeEventCalculationContext
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
-import org.jooq.impl.DSL
 import java.time.OffsetDateTime
 
 @Singleton
 class HttpUptimeEventRepository(private val dslContext: DSLContext) : UptimeEventRepository {
+
+    private val uptimeEventColumns = UptimeEventColumns(
+        eventMonitorId = HTTP_UPTIME_EVENT.MONITOR_ID,
+        status = HTTP_UPTIME_EVENT.STATUS,
+        startedAt = HTTP_UPTIME_EVENT.STARTED_AT,
+        endedAt = HTTP_UPTIME_EVENT.ENDED_AT,
+        updatedAt = HTTP_UPTIME_EVENT.UPDATED_AT,
+        monitorId = HTTP_MONITOR.ID,
+        monitorEnabled = HTTP_MONITOR.ENABLED,
+    )
 
     private fun HttpMonitorDownEvent.getPersistableError() = toStructuredMessage().error
 
@@ -106,58 +114,19 @@ class HttpUptimeEventRepository(private val dslContext: DSLContext) : UptimeEven
         }
         .fetchInto(HttpUptimeEventDto::class.java)
 
-    @Suppress("IgnoredReturnValue")
     override fun fetchAllInPeriod(
         periodStart: OffsetDateTime,
         periodEnd: OffsetDateTime,
         monitorIds: List<Long>?,
         onlyEnabledMonitors: Boolean,
-    ): List<UptimeEventCalculationContext> {
-        return dslContext
-            .select(
-                HTTP_MONITOR.ID.`as`(UptimeEventCalculationContext::monitorId.name),
-                HTTP_MONITOR.ENABLED.`as`(UptimeEventCalculationContext::isMonitorEnabled.name),
-                HTTP_UPTIME_EVENT.STATUS.`as`(UptimeEventCalculationContext::status.name),
-                HTTP_UPTIME_EVENT.STARTED_AT.`as`(UptimeEventCalculationContext::startedAt.name),
-                HTTP_UPTIME_EVENT.ENDED_AT.`as`(UptimeEventCalculationContext::endedAt.name),
-                HTTP_UPTIME_EVENT.UPDATED_AT.`as`(UptimeEventCalculationContext::updatedAt.name),
-            )
-            .from(HTTP_UPTIME_EVENT)
-            .join(HTTP_MONITOR).on(HTTP_UPTIME_EVENT.MONITOR_ID.eq(HTTP_MONITOR.ID))
-            .where(HTTP_UPTIME_EVENT.STARTED_AT.lessOrEqual(periodEnd))
-            // Written this way, instead of coalescing the end with now(), so it can use the index of ended_at
-            .and(HTTP_UPTIME_EVENT.ENDED_AT.isNull.or(HTTP_UPTIME_EVENT.ENDED_AT.greaterThan(periodStart)))
-            .apply {
-                monitorIds?.let { and(HTTP_UPTIME_EVENT.MONITOR_ID.`in`(it)) }
-                if (onlyEnabledMonitors) and(HTTP_MONITOR.ENABLED.isTrue)
-            }
-            .fetchInto(UptimeEventCalculationContext::class.java)
-    }
+    ): List<UptimeEventCalculationContext> = dslContext.fetchUptimeEventsInPeriod(
+        uptimeEventColumns,
+        periodStart,
+        periodEnd,
+        monitorIds,
+        onlyEnabledMonitors,
+    )
 
-    // An ongoing incident is updated by every check, unlike a resolved one, whose end is its last update too. So they
-    // are looked up separately, the ongoing ones through the index of the open events, the resolved ones through the
-    // index of the end date, instead of indexing the update date, which would make every check more expensive.
-    override fun fetchLatestIncidentTimestamp(): OffsetDateTime? {
-        val latestOngoingIncident = dslContext
-            .select(DSL.max(HTTP_UPTIME_EVENT.UPDATED_AT))
-            .from(HTTP_UPTIME_EVENT)
-            .join(HTTP_MONITOR).on(HTTP_UPTIME_EVENT.MONITOR_ID.eq(HTTP_MONITOR.ID))
-            .where(HTTP_UPTIME_EVENT.ENDED_AT.isNull)
-            .and(HTTP_UPTIME_EVENT.STATUS.eq(UptimeStatus.DOWN))
-            .and(HTTP_MONITOR.ENABLED.isTrue)
-        val latestResolvedIncident = dslContext
-            .select(HTTP_UPTIME_EVENT.ENDED_AT)
-            .from(HTTP_UPTIME_EVENT)
-            .join(HTTP_MONITOR).on(HTTP_UPTIME_EVENT.MONITOR_ID.eq(HTTP_MONITOR.ID))
-            .where(HTTP_UPTIME_EVENT.ENDED_AT.isNotNull)
-            .and(HTTP_UPTIME_EVENT.STATUS.eq(UptimeStatus.DOWN))
-            .and(HTTP_MONITOR.ENABLED.isTrue)
-            .orderBy(HTTP_UPTIME_EVENT.ENDED_AT.desc())
-            .limit(1)
-
-        return dslContext
-            .select(DSL.greatest(DSL.field(latestOngoingIncident), DSL.field(latestResolvedIncident)))
-            .fetchOne()
-            ?.value1()
-    }
+    override fun fetchLatestIncidentTimestamp(): OffsetDateTime? =
+        dslContext.fetchLatestUptimeIncidentTimestamp(uptimeEventColumns)
 }

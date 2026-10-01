@@ -1483,6 +1483,42 @@ class IncidentRepositoryTest(
                 }
             }
 
+            `when`("a type has more incidents resolved in the period than the limit") {
+
+                then("every type should be cut to its latest ones, and the whole list to the latest ones of all") {
+                    val now = getCurrentTimestamp()
+                    // The first type of the union, so a limit applied to the wrong part of the query would show up
+                    val httpMonitor = createHttpMonitor(httpMonitorRepository, monitorName = "HTTP")
+                    // The last uptime type of the union
+                    val dockerMonitor = createDockerMonitor(dockerMonitorRepository, monitorName = "Docker")
+                    // Not in the order they were resolved, so the order of the rows can't help
+                    listOf(3L, 1L, 5L, 2L).forEach { endedHoursAgo ->
+                        createHttpUptimeEventRecord(
+                            dslContext,
+                            monitorId = httpMonitor.id,
+                            status = UptimeStatus.DOWN,
+                            startedAt = now.minusHours(endedHoursAgo).minusMinutes(10),
+                            endedAt = now.minusHours(endedHoursAgo),
+                        )
+                    }
+                    createDockerUptimeEventRecord(
+                        dslContext,
+                        monitorId = dockerMonitor.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = now.minusMinutes(100),
+                        endedAt = now.minusMinutes(90),
+                    )
+
+                    val incidents = incidentRepository.getLatestResolvedIncidents(Duration.ofDays(1), limit = 3)
+
+                    incidents.map { it.incidentType to it.endedAt } shouldBe listOf(
+                        IncidentType.HTTP to now.minusHours(1),
+                        IncidentType.DOCKER to now.minusMinutes(90),
+                        IncidentType.HTTP to now.minusHours(2),
+                    )
+                }
+            }
+
             `when`("the SSL incidents are left out") {
 
                 then("only the uptime incidents should be returned, both by it and by getIncidents()") {

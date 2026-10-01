@@ -24,6 +24,8 @@ import jakarta.inject.Singleton
 import org.jooq.Condition
 import org.jooq.DSLContext
 import org.jooq.Field
+import org.jooq.Record
+import org.jooq.Select
 import org.jooq.impl.DSL
 import org.jooq.kotlin.and
 import java.time.Duration
@@ -51,8 +53,12 @@ class IncidentRepository(private val dslContext: DSLContext) {
         includeSslIncidents: Boolean = true,
     ): List<IncidentDto> {
         val orderFieldName = DSL.name(IncidentDto::updatedAt.name)
+        val incidents = incidentSelects(monitorId, period, includeResolved.toIncidentStates(), includeSslIncidents)
+            .unionAll()
+            .asTable("incident")
 
-        return incidentsSelect(monitorId, period, includeResolved.toIncidentStates(), includeSslIncidents)
+        return dslContext
+            .selectFrom(incidents)
             .orderBy(DSL.field(orderFieldName).desc())
             .fetchInto(IncidentDto::class.java)
     }
@@ -66,42 +72,38 @@ class IncidentRepository(private val dslContext: DSLContext) {
         limit: Int,
         includeSslIncidents: Boolean = true,
     ): List<IncidentDto> {
-        val incidents = incidentsSelect(monitorId = null, period, IncidentStates.RESOLVED, includeSslIncidents)
+        val endedAt = DSL.field(DSL.name(IncidentDto::endedAt.name))
+        // Every type is ordered and limited on its own too, so each of them can stop after its latest incidents, read
+        // through the index of their end, instead of every incident of the period being collected and sorted first
+        val incidents = incidentSelects(monitorId = null, period, IncidentStates.RESOLVED, includeSslIncidents)
+            .map { it.orderBy(endedAt.desc()).limit(limit) }
+            .unionAll()
             .asTable("incident")
 
         return dslContext
             .selectFrom(incidents)
-            .orderBy(DSL.field(DSL.name(IncidentDto::endedAt.name)).desc())
+            .orderBy(endedAt.desc())
             .limit(limit)
             .fetchInto(IncidentDto::class.java)
     }
 
-    private fun incidentsSelect(
+    /** The incidents of every type, each of them selected on its own. */
+    private fun incidentSelects(
         monitorId: Long?,
         period: Duration?,
         states: IncidentStates,
         includeSslIncidents: Boolean,
-    ) = dslContext
-        // HTTP incidents
-        .httpUptimeIncidentSelect(monitorId, period, states)
-        // Push incidents
-        .unionAll(dslContext.pushUptimeIncidentSelect(monitorId, period, states))
-        // ICMP incidents
-        .unionAll(dslContext.icmpUptimeIncidentSelect(monitorId, period, states))
-        // TCP incidents
-        .unionAll(dslContext.tcpUptimeIncidentSelect(monitorId, period, states))
-        // DNS incidents
-        .unionAll(dslContext.dnsUptimeIncidentSelect(monitorId, period, states))
-        // Docker incidents
-        .unionAll(dslContext.dockerUptimeIncidentSelect(monitorId, period, states))
-        // SSL incidents
-        .run {
-            if (includeSslIncidents) {
-                unionAll(dslContext.sslIncidentsSelect(monitorId, period, states))
-            } else {
-                this
-            }
-        }
+    ) = listOfNotNull(
+        dslContext.httpUptimeIncidentSelect(monitorId, period, states),
+        dslContext.pushUptimeIncidentSelect(monitorId, period, states),
+        dslContext.icmpUptimeIncidentSelect(monitorId, period, states),
+        dslContext.tcpUptimeIncidentSelect(monitorId, period, states),
+        dslContext.dnsUptimeIncidentSelect(monitorId, period, states),
+        dslContext.dockerUptimeIncidentSelect(monitorId, period, states),
+        if (includeSslIncidents) dslContext.sslIncidentsSelect(monitorId, period, states) else null,
+    )
+
+    private fun <R : Record> List<Select<R>>.unionAll(): Select<R> = reduce { union, select -> union.unionAll(select) }
 
     @Suppress("IgnoredReturnValue")
     private fun DSLContext.httpUptimeIncidentSelect(

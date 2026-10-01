@@ -3,9 +3,8 @@ package com.kuvaszuptime.kuvasz.services.ui
 import com.kuvaszuptime.kuvasz.models.IncidentType
 import com.kuvaszuptime.kuvasz.models.dashboard.DashboardOverview
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentDto
+import com.kuvaszuptime.kuvasz.models.dto.incident.numericMonitorId
 import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowDetailsDto
-import com.kuvaszuptime.kuvasz.models.monitor.NumericMonitorID
-import com.kuvaszuptime.kuvasz.models.monitorType
 import com.kuvaszuptime.kuvasz.repositories.IncidentRepository
 import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowActions
@@ -36,10 +35,8 @@ class DashboardDataProvider(
         val maintenanceWindows = maintenanceWindowActions.getMaintenanceWindows()
         val uptimeStats = statCalculator.calculateDashboardUptimeStats(period, maintenanceWindows)
 
-        // The ongoing incidents come first, and the ones that don't fit are counted, so no monitor that is down goes
-        // unnoticed. Being down is expected during a maintenance, so those can't push the rest out of the list. The
-        // list is only topped up with the resolved ones if there is room left. Just like the figures next to them,
-        // they're the uptime incidents only, the certificates have a card anyway.
+        // The ongoing incidents come first, the ones under maintenance last, and the resolved ones only fill the room
+        // left. The certificates have their own card.
         val ongoingIncidents = incidentRepository
             .getIncidents(includeResolved = false, includeSslIncidents = false)
             .sortedWith(
@@ -78,7 +75,6 @@ class DashboardDataProvider(
                 .filter { window ->
                     window.enabled && (window.active || window.nextStart?.isBefore(lookaheadEnd) == true)
                 }
-                // The active ones first, then the upcoming ones in the order they start
                 .sortedWith(compareByDescending<MaintenanceWindowDetailsDto> { it.active }.thenBy { it.nextStart })
         }
 }
@@ -91,6 +87,3 @@ private data class IncidentDtoKey(
 
 private val IncidentDto.key: IncidentDtoKey
     get() = IncidentDtoKey(incidentType, monitorId, startedAt)
-
-private val IncidentDto.numericMonitorId: NumericMonitorID
-    get() = NumericMonitorID(incidentType.monitorType, monitorId)

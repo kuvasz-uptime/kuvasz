@@ -53,14 +53,12 @@ private fun HtmlBlockTag.dashboardHeader(globals: AppGlobals, period: Duration) 
     div {
         classes(CONTAINER_XL)
         div {
-            // A bit more room between the rows, when the buttons are wrapped below the status on small screens
             classes(ROW, G_2, GY_3, ALIGN_ITEMS_CENTER)
             div {
                 classes(COL_12, COL_MD)
                 // Filled in by the overview fragment through an out-of-band swap
                 dashboardStatus(stats = null)
             }
-            // Next to the status on big screens, in a row of its own below it on small ones
             div {
                 classes(COL_12, COL_MD_AUTO, MS_AUTO)
                 div {
@@ -106,7 +104,6 @@ private fun HtmlBlockTag.dashboardHeader(globals: AppGlobals, period: Duration) 
             }
         }
     }
-    // The create modals of the types whose monitors can be edited
     MonitorTypeUiConfig.entries
         .filterNot { globals.editabilityState.areMonitorsReadOnly(it.type) }
         .forEach { createMonitorModal(it, globals) }

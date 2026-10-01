@@ -18,14 +18,9 @@ import java.time.OffsetDateTime
 data class DashboardOverview(
     val period: Duration,
     val uptimeStats: DashboardUptimeStats,
-    // The ongoing ones first (the ones outside a maintenance before the rest, the latest first within both), then the
-    // latest resolved ones, if there is room left for them
     val recentIncidents: List<IncidentDto>,
-    // The ongoing ones that didn't fit into the list
     val moreOngoingIncidents: Int,
-    // The enabled windows that are either active or start within the next 7 days
     val maintenanceWindows: List<MaintenanceWindowDetailsDto>,
-    // The windows of the same kind that didn't fit into the list
     val moreMaintenanceWindows: Int,
 )
 

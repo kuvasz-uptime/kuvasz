@@ -29,7 +29,12 @@ import com.kuvaszuptime.kuvasz.repositories.monitorType
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowService
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.kuvaszuptime.kuvasz.util.getDurationOfEvent
+import com.kuvaszuptime.kuvasz.util.getEffectiveEndOfEvent
 import jakarta.inject.Singleton
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
 import java.time.Duration
 import java.time.LocalDate
 import java.time.OffsetDateTime
@@ -40,9 +45,13 @@ class StatCalculator(
     monitorRepositories: List<MonitorRepository<*, *>>,
     uptimeEventRepositories: List<UptimeEventRepository>,
     private val maintenanceWindowService: MaintenanceWindowService,
+    dispatcher: CoroutineDispatcher,
 ) {
     private val monitorReposByType = monitorRepositories.associateBy { it.monitorType }
     private val uptimeEventReposByType = uptimeEventRepositories.associateBy { it.monitorType }
+
+    // Shared by every request, so the dashboards can't take up the connections of the checks
+    private val dashboardDispatcher = dispatcher.limitedParallelism(MAX_PARALLEL_DASHBOARD_QUERIES)
 
     companion object {
         // An hour-long period is sliced into 2.5-minute slots, a day-long one into hourly ones
@@ -50,11 +59,16 @@ class StatCalculator(
         private val MID_PERIOD: Duration = Duration.ofDays(7)
         private const val MID_PERIOD_TIMELINE_SLOT_HOURS = 6L
         private const val MAX_TIMELINE_SLOTS = 60L
+
         // The events are measured in whole seconds, so shorter slots wouldn't make any sense
         private val MIN_TIMELINE_SLOT: Duration = Duration.ofSeconds(1)
+
+        // Longer than any shift of the clocks by a DST change
+        private val MAX_DST_SHIFT: Duration = Duration.ofHours(2)
         private val CERTIFICATE_ISSUES = setOf(SslStatus.INVALID, SslStatus.WILL_EXPIRE)
         const val LEAST_RELIABLE_MONITORS_LIMIT = 5
         const val CERTIFICATES_WITH_ISSUES_LIMIT = 5
+        private const val MAX_PARALLEL_DASHBOARD_QUERIES = 4
     }
 
     fun calculateOverallHttpStats(period: Duration): HttpMonitoringStatsDto {
@@ -158,14 +172,16 @@ class StatCalculator(
         val (maintainedMonitors, monitorsOutsideMaintenance) = enabledMonitors.partition { monitor ->
             windowsByMonitor[monitor.monitorId]?.any { it.active } == true
         }
-        val states = enabledMonitors.stateCounts()
+        val statesOutsideMaintenance = monitorsOutsideMaintenance.stateCounts()
+        val statesInMaintenance = maintainedMonitors.stateCounts()
+        val states = listOf(statesOutsideMaintenance, statesInMaintenance).merge()
 
         return OverallStats(
             monitors = monitors,
             uptimeEvents = uptimeEvents,
             monitorsInMaintenance = maintainedMonitors.map { NumericMonitorID(monitorType, it.id) }.toSet(),
-            statesOutsideMaintenance = monitorsOutsideMaintenance.stateCounts(),
-            statesInMaintenance = maintainedMonitors.stateCounts(),
+            statesOutsideMaintenance = statesOutsideMaintenance,
+            statesInMaintenance = statesInMaintenance,
             uptimeStats = ActualUptimeStats(
                 total = monitors.size,
                 down = states.down,
@@ -204,12 +220,12 @@ class StatCalculator(
     ): DashboardUptimeStats {
         // Every type is anchored to the same instant, otherwise their figures couldn't be merged
         val now = getCurrentTimestamp()
-        val statsByType = MonitorType.entries.associateWith {
-            calculateOverallStats(it, period, now, excludePausedMonitors = true, maintenanceWindows)
-        }
+        val statsByType = calculateOverallStatsOfEveryType(period, now, maintenanceWindows)
         val allUptimeEvents = statsByType.values.flatMap { it.uptimeEvents }
+        // Every type's timeline has the same slots, so they can be merged slot by slot
+        val slotStarts = timelineSlotStarts(period, now)
         val timelinesByType = statsByType.mapValues { (_, stats) ->
-            generateUptimeTimeline(period, stats.uptimeEvents, now)
+            generateUptimeTimeline(slotStarts, stats.uptimeEvents, now)
         }
         val httpMonitors = statsByType.getValue(MonitorType.HTTP_SSL).monitors.filterIsInstance<HttpMonitorSummary>()
 
@@ -250,6 +266,25 @@ class StatCalculator(
                 )
                 .take(LEAST_RELIABLE_MONITORS_LIMIT),
         )
+    }
+
+    /** The overall stats of every type, calculated in parallel, without the monitors that are paused. */
+    private fun calculateOverallStatsOfEveryType(
+        period: Duration,
+        now: OffsetDateTime,
+        maintenanceWindows: List<MaintenanceWindowDetailsDto>,
+    ): Map<MonitorType, OverallStats> = runBlocking(dashboardDispatcher) {
+        MonitorType.entries.map { type ->
+            async {
+                type to calculateOverallStats(
+                    type,
+                    period,
+                    now,
+                    excludePausedMonitors = true,
+                    maintenanceWindows = maintenanceWindows,
+                )
+            }
+        }.awaitAll().toMap()
     }
 
     /**
@@ -343,17 +378,16 @@ class StatCalculator(
     }
 
     /**
-     * Slices the period into consecutive slots (the last one ends at [now], see [timelineSlotStarts]) and sums up how
-     * much uptime and downtime the given events contributed to each of them. Only the events of the monitors that
-     * aren't paused are expected, see [calculateDashboardUptimeStats].
+     * Sums up how much uptime and downtime the given events contributed to each slot of the period (the last one ends
+     * at [now], see [timelineSlotStarts]). Only the events of the monitors that aren't paused are expected, see
+     * [calculateDashboardUptimeStats].
      */
     private fun generateUptimeTimeline(
-        period: Duration,
+        slotStarts: List<OffsetDateTime>,
         uptimeEvents: List<UptimeEventCalculationContext>,
         now: OffsetDateTime,
     ): List<UptimeTimelineSlot> {
-        val periodStart = now.minus(period)
-        val slotStarts = timelineSlotStarts(periodStart, now, timelineSlotLength(period))
+        val periodStart = slotStarts.first()
         val slotEnds = slotStarts.drop(1) + now
         val slotCount = slotStarts.size
         val uptimeSeconds = LongArray(slotCount)
@@ -375,7 +409,6 @@ class StatCalculator(
             if (uptimeEvent.status == UptimeStatus.DOWN) incidents[slotIndexOf(start)]++
             if (!end.isAfter(start)) return@forEach
 
-            // Only the slots the event overlaps are visited
             for (slotIndex in slotIndexOf(start)..slotIndexOf(end)) {
                 val overlapSeconds = Duration.between(
                     maxOf(start, slotStarts[slotIndex]),
@@ -402,26 +435,40 @@ class StatCalculator(
     }
 
     /**
-     * The starts of the slots of the timeline: the start of the period, then every boundary after it. The boundaries
-     * are aligned to the local midnight (see [ZoneId.systemDefault]), so the slots don't shift between two refreshes of
-     * the dashboard, and a daily one is a calendar day. Only the first and the current slot can be shorter than the
-     * [slotLength].
+     * The starts of the slots of the timeline, in order: the start of the period, then every boundary after it. The
+     * boundaries are aligned to the local midnight of the [zone], so the slots don't shift between two refreshes of the
+     * dashboard, and a daily one is a calendar day. They are in the offset of the [zone] at their instant, so their
+     * local times are the ones of the zone. Only the first and the current slot can be shorter than the slot length of
+     * the period, and only the one that a DST change falls into can be longer or shorter.
      */
-    private fun timelineSlotStarts(
-        periodStart: OffsetDateTime,
+    internal fun timelineSlotStarts(
+        period: Duration,
         now: OffsetDateTime,
-        slotLength: Duration,
+        zone: ZoneId = ZoneId.systemDefault(),
     ): List<OffsetDateTime> {
-        val zone = ZoneId.systemDefault()
-        val boundaries = generateSequence(periodStart.atZoneSameInstant(zone).toLocalDate().atStartOfDay()) {
-            it.plus(slotLength)
-        }
-            .map { it.atZone(zone).toOffsetDateTime() }
-            .dropWhile { !it.isAfter(periodStart) }
-            .takeWhile { it.isBefore(now) }
+        val periodStart = now.minus(period).atZoneSameInstant(zone).toOffsetDateTime()
+        val slotLength = timelineSlotLength(period)
+        // The local times only go forward, unlike their instants around a DST change: a skipped one is moved forward
+        // onto the same instant as a later one, and a repeated one is a boundary on both of its offsets, the later of
+        // which can come after the period start, even if the local time is before it. So they're stepped from a bit
+        // before the period start to a bit past now, to be sure every boundary of the period is reached, then trimmed
+        // and ordered by their instants.
+        val firstLocalTime = periodStart.toLocalDateTime().minus(MAX_DST_SHIFT)
+        val midnight = firstLocalTime.toLocalDate().atStartOfDay()
+        val slotsSinceMidnight = Duration.between(midnight, firstLocalTime).dividedBy(slotLength)
+        val firstBoundary = midnight.plus(slotLength.multipliedBy(slotsSinceMidnight))
+        val lastLocalTime = now.atZoneSameInstant(zone).toLocalDateTime().plus(slotLength).plus(MAX_DST_SHIFT)
+        val boundaries = generateSequence(firstBoundary) { it.plus(slotLength) }
+            .takeWhile { !it.isAfter(lastLocalTime) }
+            .map { it.atZone(zone) }
+            .flatMap { sequenceOf(it.withEarlierOffsetAtOverlap(), it.withLaterOffsetAtOverlap()) }
+            .map { it.toOffsetDateTime() }
+            .filter { it.isAfter(periodStart) && it.isBefore(now) }
 
-        // A local time skipped by a DST change maps to the same instant as the next one
-        return (sequenceOf(periodStart) + boundaries).distinctBy { it.toInstant() }.toList()
+        return (sequenceOf(periodStart) + boundaries)
+            .distinctBy { it.toInstant() }
+            .sortedBy { it.toInstant() }
+            .toList()
     }
 
     private fun timelineSlotLength(period: Duration): Duration = when {
@@ -640,8 +687,8 @@ data class UptimeEventCalculationContext(
     /** An event of a paused monitor is only effective until its last update, see [getDurationOfEvent]. */
     fun wasEffectiveSince(periodStart: OffsetDateTime): Boolean = isMonitorEnabled || !updatedAt.isBefore(periodStart)
 
-    /** The last instant the event was effective, see [getDurationOfEvent]. */
-    fun effectiveEndDate(now: OffsetDateTime): OffsetDateTime = endedAt ?: if (isMonitorEnabled) now else updatedAt
+    fun effectiveEndDate(now: OffsetDateTime): OffsetDateTime =
+        getEffectiveEndOfEvent(isMonitorEnabled, endedAt, updatedAt, now)
 
     fun wasEffectiveOnDate(date: LocalDate): Boolean {
         val startDate = startedAt.toLocalDate()

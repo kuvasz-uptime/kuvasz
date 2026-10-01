@@ -23,6 +23,7 @@ import com.kuvaszuptime.kuvasz.models.monitor.NumericMonitorID
 import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.ui.DashboardDataProvider
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import com.kuvaszuptime.kuvasz.util.timeAgo
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -49,6 +50,7 @@ class WebUIDashboardTest(
         paused: Int = 0,
         inProgress: Int = 0,
         inMaintenance: Int = 0,
+        lastIncident: OffsetDateTime? = null,
     ) = ActualUptimeStats(
         total = total,
         down = down,
@@ -56,7 +58,7 @@ class WebUIDashboardTest(
         paused = paused,
         inProgress = inProgress,
         inMaintenance = inMaintenance,
-        lastIncident = null,
+        lastIncident = lastIncident,
     )
 
     fun ActualUptimeStats.outsideMaintenance(inMaintenance: MonitorStateCounts) = MonitorStateCounts(
@@ -78,17 +80,18 @@ class WebUIDashboardTest(
         certificatesWithIssues: List<HttpMonitorSummary> = emptyList(),
         maintenanceWindows: List<MaintenanceWindowDetailsDto> = emptyList(),
         moreMaintenanceWindows: Int = 0,
+        history: HistoricalUptimeStatsDto = HistoricalUptimeStatsDto(
+            period = period.toString(),
+            incidents = 0,
+            affectedMonitors = 0,
+            uptimeRatio = null,
+            totalDowntimeSeconds = 0,
+        ),
     ) = DashboardOverview(
         period = period,
         uptimeStats = DashboardUptimeStats(
             actual = actual,
-            history = HistoricalUptimeStatsDto(
-                period = period.toString(),
-                incidents = 0,
-                affectedMonitors = 0,
-                uptimeRatio = null,
-                totalDowntimeSeconds = 0,
-            ),
+            history = history,
             incidents = incidents,
             outsideMaintenance = actual.outsideMaintenance(inMaintenance),
             inMaintenance = inMaintenance,
@@ -271,7 +274,6 @@ class WebUIDashboardTest(
                     val html = controller.dashboardOverview(period = null)
 
                     html shouldContain ">$expectedTitle</h2>"
-                    // The same colors as the monitor states have everywhere else
                     html shouldContain "class=\"status-indicator $expectedColor status-indicator-animated\""
                 }
             }
@@ -292,7 +294,7 @@ class WebUIDashboardTest(
 
                 header shouldContain ">Monitors down: 1 of 10</h2>"
                 header shouldContain "aria-label=\"Down: 1\""
-                header shouldContain "aria-label=\"In maintenance: 3\""
+                header shouldContain "aria-label=\"Maintenance: 3\""
                 header shouldNotContain "Down: 4"
             }
         }
@@ -311,12 +313,12 @@ class WebUIDashboardTest(
                 val header = html.substringBefore("data-testid=\"dashboard-uptime\"")
                 val typeRow = html.substringAfter("data-testid=\"dashboard-monitor-type-push\"")
 
-                listOf(header to "In maintenance: 4", typeRow to "Maintenance: 4").forEach { (counts, maintenance) ->
+                listOf(header, typeRow).forEach { counts ->
                     // 2 + 1 + 1 + 4 = 8, every monitor is counted once
                     counts shouldContain "aria-label=\"Up: 2\""
                     counts shouldContain "aria-label=\"Down: 1\""
                     counts shouldContain "aria-label=\"Pending: 1\""
-                    counts shouldContain "aria-label=\"$maintenance\""
+                    counts shouldContain "aria-label=\"Maintenance: 4\""
                 }
             }
         }
@@ -335,8 +337,40 @@ class WebUIDashboardTest(
                     .substringBefore("data-testid=\"dashboard-uptime\"")
 
                 header shouldContain ">In maintenance: 3</h2>"
-                header shouldContain "aria-label=\"Up: 0\""
-                header shouldNotContain "Pending:"
+                val details = header.substringAfter("data-testid=\"dashboard-status-details\"")
+                details shouldContain "aria-label=\"Up: 0\""
+                details shouldContain "aria-label=\"Pending: 0\""
+                details shouldContain "aria-label=\"Maintenance: 3\""
+            }
+        }
+
+        listOf(
+            "there wasn't any incident yet" to null,
+            "there was an incident already" to getCurrentTimestamp().minusHours(2),
+        ).forEach { (description, lastIncident) ->
+            `when`(description) {
+
+                then("the header should show the same figures below the verdict as always, even the zeros") {
+                    every { provider().getOverview(any()) } answers {
+                        overview(firstArg(), actualStats(total = 1, up = 1, lastIncident = lastIncident))
+                    }
+                    val details = controller.dashboardOverview(period = null)
+                        .substringBefore("data-testid=\"dashboard-uptime\"")
+                        .substringAfter("data-testid=\"dashboard-status-details\"")
+
+                    details shouldContain "aria-label=\"Up: 1\""
+                    details shouldContain "aria-label=\"Down: 0\""
+                    // Only red if any of them is down
+                    details shouldNotContain "text-red"
+                    details shouldContain "aria-label=\"Maintenance: 0\""
+                    details shouldContain "aria-label=\"Paused: 0\""
+                    details shouldContain "aria-label=\"Pending: 0\""
+                    details shouldContain if (lastIncident == null) {
+                        "aria-label=\"No incidents\""
+                    } else {
+                        "aria-label=\"Last incident: ${lastIncident.timeAgo()}\""
+                    }
+                }
             }
         }
 
@@ -378,6 +412,8 @@ class WebUIDashboardTest(
                         .substringBefore("data-testid=\"dashboard-maintenance\"")
 
                     card.split("data-testid=\"dashboard-certificate\"") shouldHaveSize certificates.size + 1
+                    // Every row links to the certificate checks of its monitor
+                    card shouldContain "href=\"/http-monitors/0#http-monitor-details-ssl-events\""
                     if (expectedMore > 0) {
                         card shouldContain "<a href=\"/http-monitors\" class=\"list-group-item " +
                             "list-group-item-action\" data-testid=\"dashboard-more-certificates\">" +
@@ -438,6 +474,110 @@ class WebUIDashboardTest(
             }
         }
 
+        listOf(
+            "there wasn't any incident in the period" to (0 to null) to ("-" to "-"),
+            // E.g. a monitor that has just gone down, and the flaps resolved within the same second
+            "the incidents of the period were shorter than a second" to (2 to 0L) to
+                ("Less than a second" to "Less than a second"),
+        ).forEach { (scenario, expectedValues) ->
+            val (description, figures) = scenario
+            val (incidentCount, meanTimeToResolveSeconds) = figures
+            val (expectedDowntime, expectedMeanTimeToResolve) = expectedValues
+            `when`(description) {
+
+                then("the downtime should be $expectedDowntime, and the MTTR $expectedMeanTimeToResolve") {
+                    every { provider().getOverview(any()) } answers {
+                        overview(
+                            firstArg(),
+                            actualStats(total = 1, up = 1),
+                            history = HistoricalUptimeStatsDto(
+                                period = firstArg<Duration>().toString(),
+                                incidents = incidentCount,
+                                affectedMonitors = incidentCount,
+                                uptimeRatio = 1.0,
+                                totalDowntimeSeconds = 0,
+                            ),
+                            incidents = DashboardIncidentStats(
+                                ongoingOutsideMaintenance = 0,
+                                ongoingInMaintenance = 0,
+                                resolved = incidentCount,
+                                meanTimeToResolveSeconds = meanTimeToResolveSeconds,
+                            ),
+                        )
+                    }
+                    val html = controller.dashboardOverview(period = null)
+                    val downtimeCard = html.substringAfter("data-testid=\"dashboard-downtime\"")
+                    val meanTimeToResolveCard = html.substringAfter("data-testid=\"dashboard-mttr\"")
+
+                    downtimeCard shouldContain "<div class=\"h3 m-0\">$expectedDowntime</div>"
+                    meanTimeToResolveCard shouldContain "<div class=\"h3 m-0\">$expectedMeanTimeToResolve</div>"
+                }
+            }
+        }
+
+        `when`("there are invalid certificates") {
+
+            then("the verdict should spell them out, while the figures below it are about the monitors") {
+                every { provider().getOverview(any()) } answers {
+                    overview(
+                        firstArg(),
+                        actualStats(total = 2, up = 2),
+                        sslStats = SslStats(invalid = 2, valid = 0, willExpire = 1, inProgress = 0),
+                    )
+                }
+                val header = controller.dashboardOverview(period = null)
+                    .substringBefore("data-testid=\"dashboard-uptime\"")
+                val details = header.substringAfter("data-testid=\"dashboard-status-details\"")
+
+                header shouldContain ">Invalid certificates: 2</h2>"
+                details shouldNotContain "ertificates"
+                details shouldContain "aria-label=\"Up: 2\""
+            }
+        }
+
+        `when`("there are recent incidents of every type") {
+
+            then("every row should link to its monitor, the SSL ones to its certificate checks") {
+                val now = getCurrentTimestamp()
+                val expectedLinks = listOf(
+                    Triple(IncidentType.HTTP, 1L, "/http-monitors/1"),
+                    Triple(IncidentType.SSL, 2L, "/http-monitors/2#http-monitor-details-ssl-events"),
+                    Triple(IncidentType.PUSH, 3L, "/push-monitors/3"),
+                    Triple(IncidentType.ICMP, 4L, "/icmp-monitors/4"),
+                    Triple(IncidentType.TCP, 5L, "/tcp-monitors/5"),
+                    Triple(IncidentType.DNS, 6L, "/dns-monitors/6"),
+                    Triple(IncidentType.DOCKER, 7L, "/docker-monitors/7"),
+                )
+                every { provider().getOverview(any()) } answers {
+                    overview(
+                        firstArg(),
+                        actualStats(total = 1, up = 1),
+                        recentIncidents = expectedLinks.map { (type, monitorId, _) ->
+                            IncidentDto(
+                                monitorId = monitorId,
+                                monitorName = "Monitor $monitorId",
+                                isMonitorEnabled = true,
+                                incidentType = type,
+                                status = IncidentStatus.ONGOING,
+                                details = null,
+                                startedAt = now.minusHours(1),
+                                endedAt = null,
+                                updatedAt = now,
+                            )
+                        },
+                    )
+                }
+                val rows = controller.dashboardOverview(period = null)
+                    .split("data-testid=\"dashboard-incident\"")
+                    .drop(1)
+
+                rows shouldHaveSize expectedLinks.size
+                rows.zip(expectedLinks).forEach { (row, expectedLink) ->
+                    row shouldContain "<a href=\"${expectedLink.third}\""
+                }
+            }
+        }
+
         `when`("a type has monitors waiting for their first check") {
 
             then("its row should tell how many of them are pending") {
@@ -483,12 +623,10 @@ class WebUIDashboardTest(
                 sslRow shouldContain "class=\"d-inline-flex icon-inline text-yellow-lt-fg\""
                 sslRow shouldContain "aria-label=\"SSL\""
                 sslRow shouldContain "icon-tabler-lock-open"
-                // The type and when it started
                 sslRow.split("<span>·</span>") shouldHaveSize 2
                 dockerRow shouldContain "class=\"d-inline-flex icon-inline text-teal-lt-fg\""
                 dockerRow shouldContain "aria-label=\"Docker\""
                 dockerRow shouldContain "icon-tabler-brand-docker"
-                // The type, how long it lasted and when it got resolved
                 dockerRow.split("<span>·</span>") shouldHaveSize 3
                 dockerRow shouldContain "<span>1 hour</span>"
             }
@@ -730,7 +868,6 @@ class WebUIDashboardTest(
 
                 rows.map { it.substringAfter("aria-label=\"").substringBefore("\"") } shouldBe
                     listOf("Down", "Maintenance", "Up", "In Progress")
-                // The same colors as the monitor states have everywhere else
                 rows.map { row ->
                     row.substringBefore(" status-dot\" data-testid=\"dashboard-status-dot\"")
                         .substringAfterLast("class=\"")
@@ -743,7 +880,6 @@ class WebUIDashboardTest(
                 rows.forEachIndexed { index, row ->
                     row shouldContain "href=\"/push-monitors/${index + 1}\""
                     row shouldContain ">Monitor ${index + 1}<"
-                    // The type is an icon in the color of the type, the figures are icons too, all named by tooltips
                     row shouldContain "class=\"d-inline-flex icon-inline text-red-lt-fg\""
                     row shouldContain "aria-label=\"Push\""
                     row shouldContain "aria-label=\"50.00% uptime\""
@@ -753,7 +889,6 @@ class WebUIDashboardTest(
                     row shouldContain "aria-label=\"Downtime: 1 hour\""
                     row shouldContain "icon-tabler-clock-down"
                     row shouldNotContain "Incidents: 2<"
-                    // The same dots between the sections as the other rows have
                     row.split("<span>·</span>") shouldHaveSize 4
                 }
             }

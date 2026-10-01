@@ -68,5 +68,119 @@ class PushUptimeEventRepositoryTest(
                 }
             }
         }
+
+        given("the fetchLatestIncidentTimestamp method") {
+
+            `when`("there isn't any incident") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                createPushUptimeEventRecord(
+                    dslContext,
+                    monitorId = monitor.id,
+                    status = UptimeStatus.UP,
+                    startedAt = getCurrentTimestamp().minusHours(1),
+                    endedAt = null,
+                )
+
+                then("it should return nothing") {
+                    pushUptimeEventRepository.fetchLatestIncidentTimestamp() shouldBe null
+                }
+            }
+
+            `when`("an ongoing incident was updated after the latest resolved one ended") {
+                val now = getCurrentTimestamp()
+                val monitor = createPushMonitor(pushMonitorRepository)
+                createPushUptimeEventRecord(
+                    dslContext,
+                    monitorId = monitor.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = now.minusHours(5),
+                    endedAt = now.minusHours(4),
+                )
+                createPushUptimeEventRecord(
+                    dslContext,
+                    monitorId = monitor.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = now.minusHours(2),
+                    endedAt = null,
+                    updatedAt = now.minusMinutes(1),
+                )
+
+                then("it should return the last update of the ongoing one") {
+                    pushUptimeEventRepository.fetchLatestIncidentTimestamp() shouldBe now.minusMinutes(1)
+                }
+            }
+
+            `when`("the latest resolved incident ended after an ongoing one was last updated") {
+                val now = getCurrentTimestamp()
+                val ongoingMonitor = createPushMonitor(pushMonitorRepository)
+                val resolvedMonitor = createPushMonitor(pushMonitorRepository)
+                createPushUptimeEventRecord(
+                    dslContext,
+                    monitorId = ongoingMonitor.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = now.minusHours(3),
+                    endedAt = null,
+                    updatedAt = now.minusHours(2),
+                )
+                createPushUptimeEventRecord(
+                    dslContext,
+                    monitorId = resolvedMonitor.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = now.minusHours(2),
+                    endedAt = now.minusHours(1),
+                )
+
+                then("it should return the end of the resolved one") {
+                    pushUptimeEventRepository.fetchLatestIncidentTimestamp() shouldBe now.minusHours(1)
+                }
+            }
+
+            `when`("the latest events are the ones of a paused monitor, or not incidents") {
+                val now = getCurrentTimestamp()
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val pausedMonitor = createPushMonitor(pushMonitorRepository, enabled = false)
+                createPushUptimeEventRecord(
+                    dslContext,
+                    monitorId = monitor.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = now.minusHours(4),
+                    endedAt = now.minusHours(3),
+                )
+                createPushUptimeEventRecord(
+                    dslContext,
+                    monitorId = monitor.id,
+                    status = UptimeStatus.UP,
+                    startedAt = now.minusHours(3),
+                    endedAt = now.minusMinutes(10),
+                )
+                createPushUptimeEventRecord(
+                    dslContext,
+                    monitorId = monitor.id,
+                    status = UptimeStatus.UP,
+                    startedAt = now.minusMinutes(10),
+                    endedAt = null,
+                    updatedAt = now,
+                )
+                createPushUptimeEventRecord(
+                    dslContext,
+                    monitorId = pausedMonitor.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = now.minusHours(2),
+                    endedAt = now.minusMinutes(30),
+                )
+                createPushUptimeEventRecord(
+                    dslContext,
+                    monitorId = pausedMonitor.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = now.minusMinutes(30),
+                    endedAt = null,
+                    updatedAt = now.minusMinutes(1),
+                )
+
+                then("it should only consider the incidents of the enabled monitors") {
+                    pushUptimeEventRepository.fetchLatestIncidentTimestamp() shouldBe now.minusHours(3)
+                }
+            }
+        }
     }
 }

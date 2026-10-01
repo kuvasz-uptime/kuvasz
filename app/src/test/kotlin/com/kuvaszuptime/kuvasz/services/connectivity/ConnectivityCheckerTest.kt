@@ -4,9 +4,9 @@ import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.config.ConnectivityCheckConfig
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.settings.ConnectivityState
+import com.kuvaszuptime.kuvasz.services.ScheduledCheckDispatchers
 import com.kuvaszuptime.kuvasz.services.check.tcp.SystemHostnameResolver
 import com.kuvaszuptime.kuvasz.services.check.tcp.TcpCheckResult
-import com.kuvaszuptime.kuvasz.services.ScheduledCheckDispatchers
 import com.kuvaszuptime.kuvasz.services.check.tcp.TcpConnectExecutor
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
@@ -141,7 +141,8 @@ class ConnectivityCheckerTest : BehaviorSpec({
             }
 
             then("the last check timestamp still moves along with it") {
-                secondStatus.lastCheckedAt.shouldNotBeNull() shouldBeAfter firstStatus.downSince!!.minusNanos(1)
+                secondStatus.lastCheckedAt.shouldNotBeNull() shouldBeAfter
+                    firstStatus.downSince.shouldNotBeNull().minusNanos(1)
             }
         }
     }

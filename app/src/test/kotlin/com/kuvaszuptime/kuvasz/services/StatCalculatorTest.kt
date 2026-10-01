@@ -3079,6 +3079,59 @@ class StatCalculatorTest(
             }
         }
 
+        given("the timelineSlotStarts() method") {
+
+            val zone = ZoneId.of("Europe/Budapest")
+            listOf(
+                // From 02:00 CET to 03:00 CEST
+                "the clocks are put forward" to OffsetDateTime.parse("2026-03-29T01:00:00Z"),
+                // From 03:00 CEST to 02:00 CET
+                "the clocks are put back" to OffsetDateTime.parse("2026-10-25T01:00:00Z"),
+            ).forEach { (change, changedAt) ->
+                // Both passes of the repeated hour are sampled, from its start to its end
+                listOf(-59L, -30L, 1L, 30L, 59L, 90L).map { changedAt.plusMinutes(it) }.forEach { now ->
+                    listOf(
+                        Duration.ofHours(1),
+                        Duration.ofHours(6),
+                        Duration.ofHours(12),
+                        Duration.ofDays(1),
+                        Duration.ofDays(7),
+                        Duration.ofDays(30),
+                    ).forEach { period ->
+                        `when`("$change, and a period of $period ends at $now") {
+
+                            val slotStarts = statCalculator.timelineSlotStarts(period, now, zone)
+
+                            then("the slots should cover the period in order") {
+                                slotStarts.first().toInstant() shouldBe now.minus(period).toInstant()
+                                slotStarts.zipWithNext().forAll { (start, nextStart) ->
+                                    nextStart.isAfter(start) shouldBe true
+                                }
+                                slotStarts.last().isBefore(now) shouldBe true
+                            }
+
+                            then("their local times should be the ones of the zone") {
+                                slotStarts.forAll { it.offset shouldBe zone.rules.getOffset(it.toInstant()) }
+                            }
+
+                            if (period <= Duration.ofDays(1)) {
+                                then("every slot should be just as long, except for the first and the current one") {
+                                    // A period of a day at most is sliced into 24 slots
+                                    val slotLength = period.dividedBy(24)
+                                    // One more, if the period doesn't start on a boundary
+                                    slotStarts.size shouldBeInRange 24..25
+                                    slotStarts.zipWithNext().drop(1).forAll { (start, nextStart) ->
+                                        Duration.between(start, nextStart) shouldBe slotLength
+                                    }
+                                    (Duration.between(slotStarts.last(), now) <= slotLength) shouldBe true
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         given("the calculateDashboardUptimeStats() method") {
 
             `when`("there isn't any monitor") {

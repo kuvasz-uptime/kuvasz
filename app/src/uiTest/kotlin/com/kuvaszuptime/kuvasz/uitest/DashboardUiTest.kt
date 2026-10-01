@@ -7,6 +7,8 @@ import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createHttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
+import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.uitest.pages.DashboardPage
@@ -49,10 +51,22 @@ class DashboardUiTest(
 
             assertThat(dashboard.heading).hasText("All systems operational")
             assertThat(dashboard.statusIndicator).isVisible()
+            assertThat(dashboard.statusIndicator).hasClass(Pattern.compile("status-green"))
             assertThat(dashboard.statusDetails.getByLabel("Up: 1")).hasText("1")
+            // The same figures every time, even the zeros
+            listOf("Down: 0", "Maintenance: 0", "Paused: 0", "Pending: 0").forEach { label ->
+                assertThat(dashboard.statusDetails.getByLabel(label)).hasText("0")
+            }
+            assertThat(dashboard.statusDetails.getByLabel("No incidents")).hasText("-")
             assertThat(dashboard.uptimeCard).isVisible()
-            assertThat(dashboard.recentIncidentsCard).containsText("No incidents in the last 7 days")
-            assertThat(dashboard.leastReliableMonitorsCard).containsText("No monitor was down in the last 7 days")
+            assertThat(dashboard.recentIncidentsCard).containsText("No incidents in this period")
+            assertThat(dashboard.leastReliableMonitorsCard).containsText("No monitor was down in this period")
+            assertThat(dashboard.maintenanceCard).containsText("No maintenance in the next 7 days")
+            // Without any incident, there is nothing to resolve or to chart
+            assertThat(dashboard.metricValueOf(dashboard.incidentsCountCard)).hasText("0")
+            assertThat(dashboard.metricValueOf(dashboard.downtimeCard)).hasText("-")
+            assertThat(dashboard.metricValueOf(dashboard.meanTimeToResolveCard)).hasText("-")
+            assertThat(dashboard.meanTimeToResolveCard).containsText("Resolved: 0")
             assertThat(dashboard.emptyState).not().isAttached()
         }
 
@@ -140,12 +154,12 @@ class DashboardUiTest(
 
             dashboard.navigate()
 
-            assertThat(dashboard.heading).hasText("1 of 2 monitors down")
-            // The counts of the type are icons, labelled by their tooltips only
+            assertThat(dashboard.heading).hasText("Monitors down: 1 of 2")
+            assertThat(dashboard.statusIndicator).hasClass(Pattern.compile("status-red"))
+            assertThat(dashboard.statusDetails.getByLabel("Down: 1")).hasClass(Pattern.compile("text-red"))
             assertThat(dashboard.monitorTypeRow("http").getByLabel("Down: 1")).hasText("1")
             assertThat(dashboard.statusDotOf(dashboard.incident("Down Monitor"))).hasAttribute("aria-label", "Ongoing")
             assertThat(dashboard.incident("Down Monitor")).containsText("started")
-            // The type is an icon, named by its tooltip only
             assertThat(dashboard.incident("Down Monitor").getByLabel("HTTP")).isVisible()
             assertThat(dashboard.statusDotOf(dashboard.incident("Flaky Monitor")))
                 .hasAttribute("aria-label", "Resolved")
@@ -157,7 +171,6 @@ class DashboardUiTest(
             // The one that was down longer comes first, even if it's not down anymore
             assertThat(dashboard.leastReliableMonitors).hasCount(2)
             assertThat(dashboard.leastReliableMonitors.first()).containsText("Flaky Monitor")
-            // The figures are icons, labelled by their tooltips only
             assertThat(dashboard.leastReliableMonitors.first().getByLabel("Downtime: 1 hour")).hasText("1 hour")
             assertThat(dashboard.leastReliableMonitors.first().getByLabel("Incidents: 1")).hasText("1")
             val downMonitor = dashboard.leastReliableMonitors.last()
@@ -185,12 +198,41 @@ class DashboardUiTest(
             dashboard.navigate()
 
             assertThat(dashboard.heading).hasText("Certificates expiring soon")
+            assertThat(dashboard.statusIndicator).hasClass(Pattern.compile("status-yellow"))
             assertThat(dashboard.certificates).hasCount(1)
             assertThat(dashboard.certificates.first()).containsText("Expiring Certificate")
+            assertThat(dashboard.moreCertificatesLink).not().isAttached()
             assertThat(dashboard.certificatesCard.getByLabel("Valid: 0")).hasText("0")
             assertThat(dashboard.certificatesCard.getByLabel("Expires soon: 1")).hasText("1")
             // Only the counts that aren't zero are shown, except for the valid ones
             assertThat(dashboard.certificatesCard.getByLabel("Invalid: 0")).not().isAttached()
+        }
+
+        "the dashboard lists only the soonest expiring certificates, but calls out the rest of them" {
+            val now = getCurrentTimestamp()
+            repeat(MORE_THAN_THE_LISTED_CERTIFICATES) { index ->
+                val monitor = createHttpMonitor(httpMonitorRepository, monitorName = "Certificate $index")
+                createSSLEventRecord(
+                    dslContext,
+                    monitorId = monitor.id,
+                    status = SslStatus.WILL_EXPIRE,
+                    startedAt = now.minusDays(1),
+                    endedAt = null,
+                    sslExpiryDate = now.plusDays(index + 1L),
+                )
+            }
+
+            val page = newPage()
+            val dashboard = DashboardPage(page)
+            dashboard.navigate()
+
+            assertThat(dashboard.certificates).hasCount(LISTED_CERTIFICATES)
+            assertThat(dashboard.certificates.first()).containsText("Certificate 0")
+            assertThat(dashboard.certificatesCard.getByLabel("Expires soon: $MORE_THAN_THE_LISTED_CERTIFICATES"))
+                .hasText("$MORE_THAN_THE_LISTED_CERTIFICATES")
+            assertThat(dashboard.moreCertificatesLink)
+                .hasText("More certificates with issues: ${MORE_THAN_THE_LISTED_CERTIFICATES - LISTED_CERTIFICATES}")
+            assertThat(dashboard.moreCertificatesLink).hasAttribute("href", "/http-monitors")
         }
 
         "the dashboard doesn't show a certificates card without a monitor that checks one" {
@@ -226,7 +268,6 @@ class DashboardUiTest(
             dashboard.navigate()
 
             assertThat(dashboard.maintenanceWindows).hasCount(2)
-            // The same colors as on the list of the maintenance windows: green if active, yellow if scheduled
             val active = dashboard.maintenanceWindows.first()
             assertThat(active).containsText("Database upgrade")
             assertThat(active).containsText("ends in")
@@ -240,6 +281,31 @@ class DashboardUiTest(
             assertThat(dashboard.manageMaintenanceWindowsLink).hasAttribute("href", "/maintenance-windows")
             // The heading tells how far ahead the upcoming windows are looked for
             assertThat(dashboard.maintenanceCard.getByTestId("dashboard-card-subtitle")).hasText("Next 7 days")
+            assertThat(dashboard.moreMaintenanceWindowsLink).not().isAttached()
+        }
+
+        "the dashboard lists only the first maintenance windows, but calls out the rest of them" {
+            val now = getCurrentTimestamp()
+            createHttpMonitor(httpMonitorRepository, sslCheckEnabled = false)
+            repeat(MORE_THAN_THE_LISTED_MAINTENANCE_WINDOWS) { index ->
+                createMaintenanceWindow(
+                    dslContext,
+                    name = "Window $index",
+                    start = now.plusHours(index + 1L),
+                    duration = "PT1H",
+                )
+            }
+
+            val page = newPage()
+            val dashboard = DashboardPage(page)
+            dashboard.navigate()
+
+            assertThat(dashboard.maintenanceWindows).hasCount(LISTED_MAINTENANCE_WINDOWS)
+            assertThat(dashboard.maintenanceWindows.first()).containsText("Window 0")
+            assertThat(dashboard.moreMaintenanceWindowsLink).hasText(
+                "More maintenance windows: ${MORE_THAN_THE_LISTED_MAINTENANCE_WINDOWS - LISTED_MAINTENANCE_WINDOWS}"
+            )
+            assertThat(dashboard.moreMaintenanceWindowsLink).hasAttribute("href", "/maintenance-windows")
         }
 
         "picking another period reloads the dashboard with the overview of that period" {
@@ -258,6 +324,261 @@ class DashboardUiTest(
             assertThat(dashboard.recentIncidentsCard.getByTestId("dashboard-card-subtitle")).hasText("Last 30 days")
         }
 
+        "the dashboard only mentions the monitors that are down under maintenance, without any alarm" {
+            val now = getCurrentTimestamp()
+            createHealthyMonitor()
+            val maintained =
+                createHttpMonitor(httpMonitorRepository, monitorName = "Maintained", sslCheckEnabled = false)
+            createHttpUptimeEventRecord(
+                dslContext,
+                monitorId = maintained.id,
+                status = UptimeStatus.DOWN,
+                startedAt = now.minusHours(1),
+                endedAt = null,
+            )
+            val maintainedUp =
+                createHttpMonitor(httpMonitorRepository, monitorName = "Maintained up", sslCheckEnabled = false)
+            createHttpUptimeEventRecord(
+                dslContext,
+                monitorId = maintainedUp.id,
+                status = UptimeStatus.UP,
+                startedAt = now.minusHours(1),
+                endedAt = null,
+            )
+            createMaintenanceWindow(
+                dslContext,
+                monitors = listOf(maintained, maintainedUp).map { MonitorID(MonitorType.HTTP_SSL, it.name) },
+            )
+
+            val page = newPage()
+            val dashboard = DashboardPage(page)
+            dashboard.navigate()
+
+            assertThat(dashboard.heading).hasText("Down during maintenance: 1")
+            assertThat(dashboard.statusIndicator).hasClass(Pattern.compile("status-gray"))
+            // The monitors under maintenance are only counted by the maintenance, no matter whether they're up or down
+            assertThat(dashboard.statusDetails.getByLabel("Maintenance: 2")).hasText("2")
+            assertThat(dashboard.statusDetails.getByLabel("Up: 1")).hasText("1")
+            assertThat(dashboard.statusDetails.getByLabel("Down: 0")).hasText("0")
+            assertThat(dashboard.monitorTypeRow("http").getByLabel("Maintenance: 2")).hasText("2")
+            assertThat(dashboard.monitorTypeRow("http").getByLabel("Up: 1")).hasText("1")
+            // The incident is listed with the same gray dot as everywhere else, and it isn't counted in red either
+            val incidentDot = dashboard.statusDotOf(dashboard.incident("Maintained"))
+            assertThat(incidentDot).hasAttribute("aria-label", "Maintenance")
+            assertThat(incidentDot).hasClass(Pattern.compile("status-gray"))
+            assertThat(dashboard.incidentsCountCard).containsText("In maintenance: 1")
+            assertThat(dashboard.incidentsCountCard).not().containsText("Ongoing")
+            assertThat(dashboard.monitorTypeRow("http").getByLabel("Down: 1")).not().isAttached()
+            assertThat(dashboard.statusDotOf(dashboard.leastReliableMonitors.first()))
+                .hasClass(Pattern.compile("status-gray"))
+        }
+
+        "the dashboard only mentions the maintenance when every monitor that isn't paused is under one" {
+            createHealthyMonitor()
+            createMaintenanceWindow(dslContext, global = true)
+
+            val page = newPage()
+            val dashboard = DashboardPage(page)
+            dashboard.navigate()
+
+            assertThat(dashboard.heading).hasText("In maintenance: 1")
+            assertThat(dashboard.statusIndicator).hasClass(Pattern.compile("status-gray"))
+            // The monitor is up, but it's only counted by the maintenance
+            assertThat(dashboard.statusDetails.getByLabel("Up: 0")).hasText("0")
+            assertThat(dashboard.statusDetails.getByLabel("Maintenance: 1")).hasText("1")
+            assertThat(dashboard.monitorTypeRow("http").getByLabel("Up: 0")).hasText("0")
+            assertThat(dashboard.monitorTypeRow("http").getByLabel("Maintenance: 1")).hasText("1")
+        }
+
+        "the dashboard tells when every monitor is paused, and leaves their incidents out" {
+            val now = getCurrentTimestamp()
+            val paused = createHttpMonitor(
+                httpMonitorRepository,
+                monitorName = "Paused Monitor",
+                sslCheckEnabled = false,
+                enabled = false,
+            )
+            createHttpUptimeEventRecord(
+                dslContext,
+                monitorId = paused.id,
+                status = UptimeStatus.DOWN,
+                startedAt = now.minusHours(OUTAGE_STARTED_HOURS_AGO),
+                endedAt = now.minusHours(2),
+            )
+
+            val page = newPage()
+            val dashboard = DashboardPage(page)
+            dashboard.navigate()
+
+            assertThat(dashboard.heading).hasText("Every monitor is paused")
+            assertThat(dashboard.statusIndicator).hasClass(Pattern.compile("status-cyan"))
+            assertThat(dashboard.statusDetails.getByLabel("Paused: 1")).hasText("1")
+            assertThat(dashboard.monitorTypeRow("http").getByLabel("Paused: 1")).hasText("1")
+            // A paused monitor isn't checked, so none of its incidents are counted or listed
+            assertThat(dashboard.metricValueOf(dashboard.incidentsCountCard)).hasText("0")
+            assertThat(dashboard.metricValueOf(dashboard.downtimeCard)).hasText("-")
+            assertThat(dashboard.recentIncidentsCard).containsText("No incidents in this period")
+            assertThat(dashboard.leastReliableMonitorsCard).containsText("No monitor was down in this period")
+            assertThat(dashboard.timelineBlocks("http", "bg-danger")).hasCount(0)
+        }
+
+        "the dashboard calls out the invalid certificates, but doesn't list them as incidents" {
+            val now = getCurrentTimestamp()
+            val monitor = createHttpMonitor(httpMonitorRepository, monitorName = "Invalid Certificate")
+            createHttpUptimeEventRecord(
+                dslContext,
+                monitorId = monitor.id,
+                status = UptimeStatus.UP,
+                startedAt = now.minusHours(1),
+                endedAt = null,
+            )
+            createSSLEventRecord(
+                dslContext,
+                monitorId = monitor.id,
+                status = SslStatus.INVALID,
+                startedAt = now.minusHours(1),
+                endedAt = null,
+                error = "The certificate has expired",
+            )
+
+            val page = newPage()
+            val dashboard = DashboardPage(page)
+            dashboard.navigate()
+
+            assertThat(dashboard.heading).hasText("Invalid certificates: 1")
+            assertThat(dashboard.statusIndicator).hasClass(Pattern.compile("status-red"))
+            assertThat(dashboard.certificatesCard.getByLabel("Invalid: 1")).hasText("1")
+            assertThat(dashboard.certificates).hasCount(1)
+            val certificate = dashboard.certificates.first()
+            assertThat(certificate).containsText("Invalid Certificate")
+            assertThat(certificate).containsText("The certificate has expired")
+            assertThat(dashboard.statusDotOf(certificate)).hasClass(Pattern.compile("status-red"))
+            // The certificates have a card of their own, the incidents are the uptime ones only
+            assertThat(dashboard.recentIncidentsCard).containsText("No incidents in this period")
+        }
+
+        "the dashboard doesn't claim anything about the certificates that haven't been checked yet" {
+            createHttpMonitor(httpMonitorRepository, monitorName = "Unchecked Certificate")
+
+            val page = newPage()
+            val dashboard = DashboardPage(page)
+            dashboard.navigate()
+
+            assertThat(dashboard.certificatesCard).containsText("Waiting for the first certificate checks")
+            assertThat(dashboard.certificatesCard.getByLabel("Pending: 1")).hasText("1")
+            assertThat(dashboard.certificates).hasCount(0)
+        }
+
+        "the dashboard counts the ongoing incidents that don't fit into its list" {
+            val now = getCurrentTimestamp()
+            repeat(MORE_THAN_THE_LISTED_INCIDENTS) { index ->
+                val monitor = createHttpMonitor(
+                    httpMonitorRepository,
+                    monitorName = "Down Monitor $index",
+                    sslCheckEnabled = false,
+                )
+                createHttpUptimeEventRecord(
+                    dslContext,
+                    monitorId = monitor.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = now.minusMinutes(index + 1L),
+                    endedAt = null,
+                )
+            }
+
+            val page = newPage()
+            val dashboard = DashboardPage(page)
+            dashboard.navigate()
+
+            assertThat(dashboard.heading)
+                .hasText("Monitors down: $MORE_THAN_THE_LISTED_INCIDENTS of $MORE_THAN_THE_LISTED_INCIDENTS")
+            assertThat(dashboard.incidents).hasCount(LISTED_INCIDENTS)
+            assertThat(dashboard.incidents.first()).containsText("Down Monitor 0")
+            assertThat(dashboard.moreOngoingIncidentsLink)
+                .hasText("More ongoing incidents: ${MORE_THAN_THE_LISTED_INCIDENTS - LISTED_INCIDENTS}")
+            assertThat(dashboard.moreOngoingIncidentsLink).hasAttribute("href", "/incidents?period=PT168H")
+        }
+
+        "the uptime timeline tells the slots with and without downtime and data apart" {
+            val now = getCurrentTimestamp()
+            val monitor = createHttpMonitor(httpMonitorRepository, monitorName = "Timeline", sslCheckEnabled = false)
+            // Only checked for the last 5 hours, with an outage between 3 and 2 hours ago
+            createHttpUptimeEventRecord(
+                dslContext,
+                monitorId = monitor.id,
+                status = UptimeStatus.UP,
+                startedAt = now.minusHours(CHECKED_FOR_HOURS),
+                endedAt = now.minusHours(OUTAGE_STARTED_HOURS_AGO),
+            )
+            createHttpUptimeEventRecord(
+                dslContext,
+                monitorId = monitor.id,
+                status = UptimeStatus.DOWN,
+                startedAt = now.minusHours(OUTAGE_STARTED_HOURS_AGO),
+                endedAt = now.minusHours(2),
+            )
+            createHttpUptimeEventRecord(
+                dslContext,
+                monitorId = monitor.id,
+                status = UptimeStatus.UP,
+                startedAt = now.minusHours(2),
+                endedAt = null,
+            )
+
+            val page = newPage()
+            val dashboard = DashboardPage(page)
+            dashboard.navigate("PT24H")
+
+            assertThat(dashboard.timelineBlocks("http", "bg-danger").first()).isVisible()
+            assertThat(dashboard.timelineBlocks("http", "bg-success").first()).isVisible()
+            assertThat(dashboard.timelineBlocks("http", "text-muted").first()).isVisible()
+            // The tooltips don't spell out any uptime, only the incidents, or the lack of any data
+            assertThat(dashboard.timelineBlocks("http", "bg-danger").first())
+                .hasAttribute("aria-label", Pattern.compile(".* · Incidents: 1$"))
+            assertThat(dashboard.timelineBlocks("http", "text-muted").first())
+                .hasAttribute("aria-label", Pattern.compile(".* · N/A$"))
+            assertThat(dashboard.timelineBlocks("http", "bg-success").first())
+                .hasAttribute("aria-label", Pattern.compile("^[^·]+ – [^·]+$"))
+            // The resolved incident is counted by the key figures, and it took an hour to resolve
+            assertThat(dashboard.metricValueOf(dashboard.incidentsCountCard)).hasText("1")
+            assertThat(dashboard.metricValueOf(dashboard.downtimeCard)).hasText("1 hour")
+            assertThat(dashboard.metricValueOf(dashboard.meanTimeToResolveCard)).hasText("1 hour")
+            assertThat(dashboard.meanTimeToResolveCard).containsText("Resolved: 1")
+        }
+
+        "a malformed period falls back to the default one, instead of failing the dashboard" {
+            createHealthyMonitor()
+
+            val page = newPage()
+            val dashboard = DashboardPage(page)
+            dashboard.navigate("abc")
+
+            assertThat(dashboard.heading).hasText("All systems operational")
+            assertThat(dashboard.periodSelector).hasValue("PT168H")
+            assertThat(dashboard.cardSubtitleOf(dashboard.recentIncidentsCard)).hasText("Last 7 days")
+        }
+
+        "every period of the selector has a label of its own on the cards" {
+            createHealthyMonitor()
+
+            val page = newPage()
+            val dashboard = DashboardPage(page)
+            listOf(
+                "PT1H" to "Last hour",
+                "PT6H" to "Last 6 hours",
+                "PT12H" to "Last 12 hours",
+                "PT24H" to "Last 24 hours",
+                "PT168H" to "Last 7 days",
+                "PT720H" to "Last 30 days",
+            ).forEach { (period, label) ->
+                dashboard.navigate(period)
+
+                assertThat(dashboard.periodSelector).hasValue(period)
+                assertThat(dashboard.cardSubtitleOf(dashboard.recentIncidentsCard)).hasText(label)
+                assertThat(dashboard.cardSubtitleOf(dashboard.leastReliableMonitorsCard)).hasText(label)
+            }
+        }
+
         "refreshing the dashboard replaces the placeholder with the overview of the freshly created monitor" {
             val page = newPage()
             val dashboard = DashboardPage(page)
@@ -272,6 +593,7 @@ class DashboardUiTest(
             assertThat(dashboard.monitorTypeRow("http").getByLabel("Pending: 1")).hasText("1")
             // The verdict in the page header is refreshed together with the overview
             assertThat(dashboard.heading).hasText("Waiting for the first checks")
+            assertThat(dashboard.statusIndicator).hasClass(Pattern.compile("status-yellow"))
         }
     }
 
@@ -293,6 +615,15 @@ class DashboardUiTest(
     }
 
     companion object {
+        private const val OUTAGE_STARTED_HOURS_AGO = 3L
+        private const val CHECKED_FOR_HOURS = 5L
+        private const val LISTED_INCIDENTS = 6
+        private const val MORE_THAN_THE_LISTED_INCIDENTS = LISTED_INCIDENTS + 2
+        private const val LISTED_CERTIFICATES = 5
+        private const val MORE_THAN_THE_LISTED_CERTIFICATES = LISTED_CERTIFICATES + 1
+        private const val LISTED_MAINTENANCE_WINDOWS = 5
+        private const val MORE_THAN_THE_LISTED_MAINTENANCE_WINDOWS = LISTED_MAINTENANCE_WINDOWS + 1
+
         private const val SMALL_SCREEN_WIDTH = 390
         private const val SMALL_SCREEN_HEIGHT = 844
 

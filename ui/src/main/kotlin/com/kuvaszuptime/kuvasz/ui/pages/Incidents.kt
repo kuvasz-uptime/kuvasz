@@ -10,6 +10,7 @@ import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
+import com.kuvaszuptime.kuvasz.ui.fragments.monitor.http.sslEventsPath
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import com.kuvaszuptime.kuvasz.util.formatAsInterval
@@ -139,7 +140,6 @@ internal val IncidentType.label: String
         IncidentType.DOCKER -> "Docker"
     }
 
-// The same icons and colors as the monitors of the type have, except for the SSL incidents of the HTTP monitors
 internal val IncidentType.icon: Icon
     get() = if (this == IncidentType.SSL) Icon.LOCK_OPEN else MonitorTypeUiConfig.of(monitorType).icon
 
@@ -173,14 +173,10 @@ fun FlowContent.incidentStatusBadge(incident: IncidentDto) {
     }
 }
 
-internal fun IncidentDto.getMonitorUrl(): String = when (this.incidentType) {
-    IncidentType.HTTP -> "/http-monitors/${this.monitorId}"
-    IncidentType.SSL -> "/http-monitors/${this.monitorId}#http-monitor-details-ssl-events"
-    IncidentType.PUSH -> "/push-monitors/${this.monitorId}"
-    IncidentType.ICMP -> "/icmp-monitors/${this.monitorId}"
-    IncidentType.TCP -> "/tcp-monitors/${this.monitorId}"
-    IncidentType.DNS -> "/dns-monitors/${this.monitorId}"
-    IncidentType.DOCKER -> "/docker-monitors/${this.monitorId}"
+internal fun IncidentDto.getMonitorUrl(): String = if (incidentType == IncidentType.SSL) {
+    sslEventsPath(monitorId)
+} else {
+    MonitorTypeUiConfig.of(incidentType.monitorType).detailsPath(monitorId)
 }
 
 private fun HtmlBlockTag.incidentsPageHeader(formattedPeriod: String, selectedPeriod: Duration) {

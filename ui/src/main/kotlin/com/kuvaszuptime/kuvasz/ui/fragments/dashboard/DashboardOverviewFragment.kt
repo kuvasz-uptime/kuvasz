@@ -12,16 +12,16 @@ import com.kuvaszuptime.kuvasz.models.dashboard.UnreliableMonitor
 import com.kuvaszuptime.kuvasz.models.dashboard.UptimeTimelineSlot
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentDto
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentStatus
+import com.kuvaszuptime.kuvasz.models.dto.incident.numericMonitorId
 import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorSummary
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitoringStatsDto.ActualMonitoringStats.SslStats
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.ActualUptimeStats
-import com.kuvaszuptime.kuvasz.models.monitor.NumericMonitorID
-import com.kuvaszuptime.kuvasz.models.monitorType
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
+import com.kuvaszuptime.kuvasz.ui.fragments.monitor.http.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.pages.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
@@ -78,11 +78,10 @@ fun renderDashboardOverview(overview: DashboardOverview): String =
 
 /**
  * The verdict of the dashboard in the page header: an indicator with a one-liner about the most important issue, and
- * the figures worth knowing about below it. Without [stats] (before the first load) only the page title is rendered.
+ * the same figures below it every time. Without [stats] (before the first load) only the page title is rendered.
  */
 internal fun FlowContent.dashboardStatus(stats: DashboardUptimeStats?, swapOob: Boolean = false) {
     val verdict = stats?.verdict()
-    val details = verdict?.let { (title, _) -> stats.statusDetails().filter { it.text != title } }.orEmpty()
     div {
         id = DASHBOARD_STATUS_ID
         if (swapOob) hx { swapOob() }
@@ -109,13 +108,19 @@ internal fun FlowContent.dashboardStatus(stats: DashboardUptimeStats?, swapOob: 
             h2 {
                 classes(PAGE_TITLE)
                 testId("dashboard-title")
-                +(verdict?.first ?: Messages.monitoring())
+                +(verdict?.title ?: Messages.monitoring())
             }
-            if (details.isNotEmpty()) {
+            if (verdict != null) {
                 div {
                     classes(D_FLEX, FLEX_WRAP, ALIGN_ITEMS_CENTER, GAP_3, TEXT_SECONDARY)
                     testId("dashboard-status-details")
-                    details.forEach { iconCount(it.icon, it.text, it.value, it.color) }
+                    monitorCountFigures(stats.actual, stats.outsideMaintenance, withZeros = true)
+                    val lastIncident = stats.actual.lastIncident?.timeAgo()
+                    iconCount(
+                        Icon.FLAME,
+                        text = lastIncident?.let { Messages.lastIncidentAgo(it) } ?: Messages.noIncidents(),
+                        value = lastIncident ?: "-",
+                    )
                 }
             }
         }
@@ -123,48 +128,22 @@ internal fun FlowContent.dashboardStatus(stats: DashboardUptimeStats?, swapOob: 
 }
 
 // The monitors under maintenance are only counted by the maintenance, so every monitor is counted once
-private fun DashboardUptimeStats.verdict(): Pair<String, CSSClass>? = when {
+private fun DashboardUptimeStats.verdict(): Verdict? = when {
     actual.total == 0 -> null
     // Only the ones outside a maintenance are alarming, and the paused monitors aren't checked at all
     outsideMaintenance.down > 0 ->
-        Messages.dashboardStatusDown(outsideMaintenance.down, actual.total - actual.paused) to STATUS_RED
-    sslStats.invalid > 0 -> Messages.dashboardStatusInvalidCertificates(sslStats.invalid) to STATUS_RED
-    sslStats.willExpire > 0 -> Messages.dashboardStatusExpiringCertificates() to STATUS_YELLOW
-    // Being down is expected during a maintenance, so it's only worth a neutral mention
-    inMaintenance.down > 0 -> Messages.dashboardStatusDownInMaintenance(inMaintenance.down) to STATUS_GRAY
-    // Nothing is down at this point, so without any monitor being up, the rest of them is pending, under maintenance
-    // or paused
-    outsideMaintenance.up > 0 -> Messages.dashboardStatusOperational() to STATUS_GREEN
-    outsideMaintenance.pending > 0 -> Messages.dashboardStatusPending() to STATUS_YELLOW
-    actual.inMaintenance > 0 -> Messages.dashboardMaintenanceCount(actual.inMaintenance) to STATUS_GRAY
-    else -> Messages.dashboardStatusPaused() to STATUS_CYAN
+        Verdict(Messages.dashboardStatusDown(outsideMaintenance.down, actual.total - actual.paused), STATUS_RED)
+
+    sslStats.invalid > 0 -> Verdict(Messages.dashboardStatusInvalidCertificates(sslStats.invalid), STATUS_RED)
+    sslStats.willExpire > 0 -> Verdict(Messages.dashboardStatusExpiringCertificates(), STATUS_YELLOW)
+    inMaintenance.down > 0 -> Verdict(Messages.dashboardStatusDownInMaintenance(inMaintenance.down), STATUS_GRAY)
+    outsideMaintenance.up > 0 -> Verdict(Messages.dashboardStatusOperational(), STATUS_GREEN)
+    outsideMaintenance.pending > 0 -> Verdict(Messages.dashboardStatusPending(), STATUS_YELLOW)
+    actual.inMaintenance > 0 -> Verdict(Messages.dashboardMaintenanceCount(actual.inMaintenance), STATUS_GRAY)
+    else -> Verdict(Messages.dashboardStatusPaused(), STATUS_CYAN)
 }
 
-/** A figure of the header's status line: shown as an icon with a [value], and spelled out in full by [text]. */
-private data class StatusDetail(val icon: Icon, val text: String, val value: String, val color: CSSClass? = null)
-
-private fun DashboardUptimeStats.statusDetails(): List<StatusDetail> = listOfNotNull(
-    StatusDetail(Icon.ARROW_NARROW_UP, "${Messages.up()}: ${outsideMaintenance.up}", outsideMaintenance.up.toString()),
-    outsideMaintenance.down.takeIf { it > 0 }?.let { down ->
-        StatusDetail(Icon.ARROW_NARROW_DOWN, "${Messages.down()}: $down", down.toString(), TEXT_RED)
-    },
-    actual.inMaintenance.takeIf { it > 0 }?.let {
-        StatusDetail(Icon.TOOL, Messages.dashboardMaintenanceCount(it), it.toString())
-    },
-    actual.paused.takeIf { it > 0 }?.let { StatusDetail(Icon.PAUSE, Messages.dashboardPausedCount(it), it.toString()) },
-    outsideMaintenance.pending.takeIf { it > 0 }?.let {
-        StatusDetail(Icon.HOURGLASS, Messages.dashboardPendingCount(it), it.toString())
-    },
-    sslStats.invalid.takeIf { it > 0 }?.let {
-        StatusDetail(Icon.LOCK_OPEN, Messages.dashboardStatusInvalidCertificates(it), it.toString(), TEXT_RED)
-    },
-    sslStats.willExpire.takeIf { it > 0 }?.let {
-        StatusDetail(Icon.TIMER, Messages.dashboardExpiringCertificateCount(it), it.toString(), TEXT_YELLOW)
-    },
-    actual.lastIncident?.let { lastIncident ->
-        lastIncident.timeAgo().let { StatusDetail(Icon.FLAME, Messages.lastIncidentAgo(it), it) }
-    },
-)
+private data class Verdict(val title: String, val color: CSSClass)
 
 private val SslStats.checkedMonitors: Int
     get() = valid + invalid + willExpire + inProgress
@@ -186,8 +165,7 @@ private fun FlowContent.keyMetricCards(overview: DashboardOverview) {
         title = Messages.incidents(),
         value = history.incidents.toString(),
         details = {
-            // The resolved ones are left out, the MTTR card counts them already. Just like in the page header, the ones
-            // under maintenance are only worth a neutral mention.
+            // The resolved ones are counted by the MTTR card already
             if (incidents.ongoingOutsideMaintenance > 0) {
                 span {
                     classes(TEXT_RED)
@@ -208,7 +186,8 @@ private fun FlowContent.keyMetricCards(overview: DashboardOverview) {
     keyMetricCard(
         testId = "dashboard-downtime",
         title = Messages.totalDowntime(),
-        value = history.totalDowntimeSeconds.formatAsIntervalOrDash(),
+        // Without any incident there is no downtime to measure, but a just started one can be shorter than a second
+        value = history.totalDowntimeSeconds.takeIf { history.incidents > 0 }.formatAsIntervalOrDash(),
     ) {
         timelineSparkline(timeline.map { it.downtimeSeconds }, TEXT_ORANGE, Messages.totalDowntime())
             ?: metricAvatar(Icon.CLOCK_DOWN, BG_SECONDARY_LT)
@@ -223,7 +202,9 @@ private fun FlowContent.keyMetricCards(overview: DashboardOverview) {
     }
 }
 
-private fun Long?.formatAsIntervalOrDash(): String = this?.takeIf { it > 0 }?.formatAsInterval() ?: "-"
+/** A dash if there is nothing to measure, otherwise the interval, even if it's shorter than a second. */
+private fun Long?.formatAsIntervalOrDash(): String =
+    this?.let { seconds -> seconds.takeIf { it > 0 }?.formatAsInterval() ?: Messages.lessThanASecond() } ?: "-"
 
 private fun FlowContent.keyMetricCard(
     testId: String,
@@ -257,7 +238,6 @@ private fun FlowContent.keyMetricCard(
                         visual()
                     }
                 }
-                // Below the value and the visual, so it gets the whole width of the card and never wraps next to them
                 div {
                     classes(TEXT_SECONDARY)
                     details()
@@ -287,7 +267,6 @@ private fun FlowContent.timelineSparkline(values: List<Long>, color: CSSClass, l
         }
     }
 
-// The same UP/DOWN semantics as everywhere else: any downtime at all is red
 private fun Double?.uptimeColor(): CSSClass = when {
     this == null -> BG_SECONDARY_LT
     this >= 1.0 -> BG_GREEN_LT
@@ -341,29 +320,31 @@ private fun FlowContent.monitorTypeRow(typeStats: MonitorTypeUptimeStats) {
     }
 }
 
-/**
- * The monitor counts of a type as icons with numbers next to them, leaving out the zeros except for the monitors that
- * are up. The labels are only in the tooltips, so they don't make the rows noisy. Just like in the page header, the
- * monitors under maintenance are only counted by the maintenance.
- */
 private fun FlowContent.monitorCounts(stats: ActualUptimeStats, outsideMaintenance: MonitorStateCounts) {
     span {
         classes(D_INLINE_FLEX, ALIGN_ITEMS_CENTER, GAP_2, TEXT_SECONDARY)
         testId("dashboard-monitor-counts")
-        monitorCount(Icon.ARROW_NARROW_UP, Messages.up(), outsideMaintenance.up)
-        if (outsideMaintenance.down > 0) {
-            monitorCount(Icon.ARROW_NARROW_DOWN, Messages.down(), outsideMaintenance.down, TEXT_RED)
-        }
-        if (stats.inMaintenance > 0) monitorCount(Icon.TOOL, Messages.maintenance(), stats.inMaintenance)
-        if (stats.paused > 0) monitorCount(Icon.PAUSE, Messages.paused(), stats.paused)
-        if (outsideMaintenance.pending > 0) {
-            iconCount(
-                Icon.HOURGLASS,
-                Messages.dashboardPendingCount(outsideMaintenance.pending),
-                outsideMaintenance.pending.toString(),
-            )
-        }
+        monitorCountFigures(stats, outsideMaintenance, withZeros = false)
     }
+}
+
+/**
+ * The monitor counts as icons with numbers next to them, the labels are only in the tooltips. The monitors under
+ * maintenance are only counted by the maintenance. Without [withZeros], only the monitors that are up are shown even
+ * if there is none of them.
+ */
+private fun FlowContent.monitorCountFigures(
+    stats: ActualUptimeStats,
+    outsideMaintenance: MonitorStateCounts,
+    withZeros: Boolean,
+) {
+    val down = outsideMaintenance.down
+    val pending = outsideMaintenance.pending
+    monitorCount(Icon.ARROW_NARROW_UP, Messages.up(), outsideMaintenance.up)
+    if (withZeros || down > 0) monitorCount(Icon.ARROW_NARROW_DOWN, Messages.down(), down, TEXT_RED.takeIf { down > 0 })
+    if (withZeros || stats.inMaintenance > 0) monitorCount(Icon.TOOL, Messages.maintenance(), stats.inMaintenance)
+    if (withZeros || stats.paused > 0) monitorCount(Icon.PAUSE, Messages.paused(), stats.paused)
+    if (withZeros || pending > 0) iconCount(Icon.HOURGLASS, Messages.dashboardPendingCount(pending), pending.toString())
 }
 
 private fun FlowContent.monitorCount(icon: Icon, label: String, count: Int, color: CSSClass? = null) =
@@ -372,7 +353,6 @@ private fun FlowContent.monitorCount(icon: Icon, label: String, count: Int, colo
 /** A figure shown as an icon and a short [value], spelled out in full by its tooltip. */
 private fun FlowContent.iconCount(icon: Icon, text: String, value: String, color: CSSClass? = null) {
     span {
-        // icon-inline scales the icon down to the size of the text next to it
         classes(setOfNotNull(D_INLINE_FLEX, ALIGN_ITEMS_CENTER, GAP_1, ICON_INLINE, color))
         tooltip(text)
         ariaLabel(text)
@@ -406,8 +386,7 @@ private fun FlowContent.detailSections(sections: List<FlowContent.() -> Unit>) {
 private fun textSection(text: String): FlowContent.() -> Unit = { span { +text } }
 
 private fun FlowContent.timelineBlock(slot: UptimeTimelineSlot) {
-    // The same UP/DOWN semantics as everywhere else: a slot with any downtime at all is red, even if an incident
-    // started too late in it to add a whole second of downtime yet
+    // Red even if an incident started too late in the slot to add a whole second of downtime yet
     val isDown = slot.downtimeSeconds > 0 || slot.incidents > 0
     val hasData = isDown || slot.uptimeSeconds > 0
     div {
@@ -451,10 +430,11 @@ private fun FlowContent.incidentsCard(overview: DashboardOverview) {
             div {
                 classes(LIST_GROUP, LIST_GROUP_FLUSH)
                 incidents.forEach { incident ->
-                    val monitorId = NumericMonitorID(incident.incidentType.monitorType, incident.monitorId)
-                    incidentRow(incident, inMaintenance = monitorId in overview.uptimeStats.monitorsInMaintenance)
+                    incidentRow(
+                        incident,
+                        inMaintenance = incident.numericMonitorId in overview.uptimeStats.monitorsInMaintenance,
+                    )
                 }
-                // The list is capped, even if there are more ongoing incidents, but they are called out at least
                 if (overview.moreOngoingIncidents > 0) {
                     moreItemsRow(
                         href = "/incidents?period=${overview.period}",
@@ -488,7 +468,6 @@ private fun FlowContent.incidentRow(incident: IncidentDto, inMaintenance: Boolea
             incident.endedAt?.let { Messages.dashboardIncidentResolvedAgo(it.timeAgo()) },
         )
     }
-    // The dot alone tells the state of the incident, just like on the incidents page
     val (dotClasses, state) = when {
         isOngoing && inMaintenance -> setOf(STATUS_GRAY) to Messages.maintenance()
         isOngoing -> setOf(STATUS_RED, STATUS_DOT_ANIMATED) to Messages.dashboardIncidentOngoing()
@@ -519,7 +498,6 @@ private fun FlowContent.certificatesCard(stats: DashboardUptimeStats) {
             cardTitle(Icon.LOCK_CLOSED, Messages.dashboardCertificates())
             div {
                 classes(CARD_ACTIONS)
-                // The same icons as in the status line of the page header
                 span {
                     classes(D_INLINE_FLEX, ALIGN_ITEMS_CENTER, GAP_2, TEXT_SECONDARY)
                     testId("dashboard-certificate-counts")
@@ -550,7 +528,6 @@ private fun FlowContent.certificatesCard(stats: DashboardUptimeStats) {
             div {
                 classes(LIST_GROUP, LIST_GROUP_FLUSH)
                 stats.certificatesWithIssues.forEach { certificateRow(it) }
-                // The list is capped, but the ones that didn't fit are called out at least
                 val moreCertificatesWithIssues =
                     stats.sslStats.invalid + stats.sslStats.willExpire - stats.certificatesWithIssues.size
                 if (moreCertificatesWithIssues > 0) {
@@ -572,7 +549,7 @@ private fun FlowContent.certificateRow(monitor: HttpMonitorSummary) {
         dotClasses = setOf(if (isInvalid) STATUS_RED else STATUS_YELLOW),
         dotTooltip = if (isInvalid) Messages.invalid() else Messages.expiresSoon(),
         title = monitor.name,
-        href = "${MonitorTypeUiConfig.HTTP.detailsPath(monitor.id)}#http-monitor-details-ssl-events",
+        href = sslEventsPath(monitor.id),
         details = if (isInvalid) {
             monitor.sslError ?: Messages.invalid()
         } else {
@@ -620,7 +597,6 @@ private fun FlowContent.maintenanceCard(windows: List<MaintenanceWindowDetailsDt
 private fun FlowContent.cardTitle(icon: Icon, title: String, subtitle: String? = null) {
     h3 {
         classes(CARD_TITLE, D_FLEX, ALIGN_ITEMS_CENTER, GAP_2)
-        // Without being a flex container itself, the icon would sit on the baseline, below the middle of the text
         span {
             classes(D_INLINE_FLEX, TEXT_SECONDARY)
             icon(icon)
@@ -639,7 +615,6 @@ private fun FlowContent.cardTitle(icon: Icon, title: String, subtitle: String? =
 private fun FlowContent.maintenanceWindowRow(window: MaintenanceWindowDetailsDto) {
     listGroupRow(
         testId = "dashboard-maintenance-window",
-        // The same colors as on the list of the maintenance windows
         dotClasses = if (window.active) setOf(STATUS_GREEN, STATUS_DOT_ANIMATED) else setOf(STATUS_YELLOW),
         dotTooltip = if (window.active) {
             Messages.dashboardMaintenanceActive()
@@ -686,8 +661,6 @@ private fun FlowContent.leastReliableMonitorsCard(overview: DashboardOverview) {
 }
 
 private fun FlowContent.unreliableMonitorRow(monitor: UnreliableMonitor) {
-    // The dot tells the current state of the monitor, the details tell how it did over the period. The paused monitors
-    // aren't listed at all.
     val (dotClasses, state) = when {
         monitor.inMaintenance -> setOf(STATUS_GRAY) to Messages.maintenance()
         monitor.uptimeStatus == UptimeStatus.DOWN -> setOf(STATUS_RED, STATUS_DOT_ANIMATED) to Messages.down()
@@ -706,7 +679,6 @@ private fun FlowContent.unreliableMonitorRow(monitor: UnreliableMonitor) {
         val uptimeText = uptime?.let { Messages.dashboardUptimeValue(it) } ?: Messages.noData()
         val incidents = monitor.history.incidents.toString()
         val downtime = monitor.history.totalDowntimeSeconds.formatAsIntervalOrDash()
-        // The same icons as the uptime, the incidents and the downtime cards have
         detailSections(
             listOf(
                 { typeIcon(typeUiConfig.icon, typeUiConfig.color, typeUiConfig.title) },
@@ -768,7 +740,6 @@ private fun FlowContent.listGroupRow(
                     titleTooltip?.let { tooltip(it) }
                     +title
                 }
-                // Only the title is truncated, the details wrap to as many lines as they need
                 div {
                     classes(TEXT_SECONDARY, TEXT_WRAP, TEXT_BREAK)
                     details()

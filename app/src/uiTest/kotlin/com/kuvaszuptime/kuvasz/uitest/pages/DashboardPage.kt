@@ -29,6 +29,10 @@ class DashboardPage(private val page: Page) {
 
     val incidentsCountCard: Locator get() = page.getByTestId("dashboard-incidents-count")
 
+    val downtimeCard: Locator get() = page.getByTestId("dashboard-downtime")
+
+    val meanTimeToResolveCard: Locator get() = page.getByTestId("dashboard-mttr")
+
     val monitorTypesCard: Locator get() = page.getByTestId("dashboard-monitor-types")
 
     val recentIncidentsCard: Locator get() = page.getByTestId("dashboard-recent-incidents")
@@ -37,13 +41,20 @@ class DashboardPage(private val page: Page) {
 
     val viewAllIncidentsLink: Locator get() = recentIncidentsCard.byRole(AriaRole.LINK, "View all incidents")
 
+    val moreOngoingIncidentsLink: Locator get() = recentIncidentsCard.getByTestId("dashboard-more-ongoing-incidents")
+
     val certificatesCard: Locator get() = page.getByTestId("dashboard-certificates")
 
     val certificates: Locator get() = certificatesCard.getByTestId("dashboard-certificate")
 
+    val moreCertificatesLink: Locator get() = certificatesCard.getByTestId("dashboard-more-certificates")
+
     val maintenanceCard: Locator get() = page.getByTestId("dashboard-maintenance")
 
     val maintenanceWindows: Locator get() = maintenanceCard.getByTestId("dashboard-maintenance-window")
+
+    val moreMaintenanceWindowsLink: Locator
+        get() = maintenanceCard.getByTestId("dashboard-more-maintenance-windows")
 
     val manageMaintenanceWindowsLink: Locator
         get() = maintenanceCard.byRole(AriaRole.LINK, "Manage maintenance windows")
@@ -61,6 +72,21 @@ class DashboardPage(private val page: Page) {
     fun monitorTypeRow(type: String): Locator = page.getByTestId("dashboard-monitor-type-$type")
 
     fun incident(monitorName: String): Locator = incidents.filter(Locator.FilterOptions().setHasText(monitorName))
+
+    /**
+     * The blocks of the uptime timeline of a monitor type, with the given color class: `bg-success` (up), `bg-danger`
+     * (down) or `text-muted` (no data). Their tooltips spell out what they cover, through their labels.
+     */
+    fun timelineBlocks(type: String, colorClass: String): Locator =
+        monitorTypeRow(type).locator(".tracking-block.$colorClass")
+
+    fun cardSubtitleOf(card: Locator): Locator = card.getByTestId("dashboard-card-subtitle")
+
+    fun metricValueOf(card: Locator): Locator = card.locator(".h3")
+
+    fun navigate(period: String) {
+        page.navigate("/?period=$period")
+    }
 
     /** The dot of a row of the dashboard's lists, which tells the state of the item through its label. */
     fun statusDotOf(row: Locator): Locator = row.getByTestId("dashboard-status-dot")

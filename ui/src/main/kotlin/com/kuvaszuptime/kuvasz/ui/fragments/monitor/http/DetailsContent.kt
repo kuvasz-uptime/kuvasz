@@ -8,6 +8,11 @@ import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
 
+private const val SSL_EVENTS_ELEMENT_ID = "http-monitor-details-ssl-events"
+
+internal fun sslEventsPath(monitorId: Long): String =
+    "${MonitorTypeUiConfig.HTTP.detailsPath(monitorId)}#$SSL_EVENTS_ELEMENT_ID"
+
 internal fun FlowContent.httpMonitorDetailsContent(monitor: HttpMonitorDetailsDto, stats: HistoricalUptimeStatsDto) =
     monitorDetailsContent(
         typeUiConfig = MonitorTypeUiConfig.HTTP,
@@ -28,7 +33,7 @@ internal fun FlowContent.httpMonitorDetailsContent(monitor: HttpMonitorDetailsDt
             // SSL incidents
             incidentsHeading()
             autoRefreshedBlock(
-                elementId = "http-monitor-details-ssl-events",
+                elementId = SSL_EVENTS_ELEMENT_ID,
                 path = MonitorTypeUiConfig.HTTP.fragmentPath("details-ssl-incidents/${monitor.id}"),
                 cssClasses = setOf(ROW, ROW_CARDS, MB_3),
             )

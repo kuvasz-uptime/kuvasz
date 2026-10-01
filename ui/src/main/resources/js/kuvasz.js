@@ -65,8 +65,7 @@ const reInitTooltips = () => {
     });
 
     document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(tooltipTriggerEl => {
-        // The existing ones are left alone: disposing a tooltip while it fades out makes the pending callback of
-        // its transition fail on the already disposed instance
+        // The existing ones are left alone, see disposeComponents()
         if (tabler.Tooltip.getInstance(tooltipTriggerEl)) {
             return;
         }
