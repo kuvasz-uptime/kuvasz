@@ -39,6 +39,8 @@ internal enum class MonitorTypeUiConfig(
 
     val listElementId: String get() = "$slug-monitors-list"
 
+    val listCountElementId: String get() = "$slug-monitors-count"
+
     val createModalId: String get() = "create-$slug-monitor-modal"
 
     val refreshListCall: String get() = "refresh${slugCapitalized}MonitorList()"

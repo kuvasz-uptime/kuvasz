@@ -65,6 +65,25 @@ class MonitorListCategoryFilterE2ETest(
                     html shouldContain "categorized"
                     html shouldNotContain ">uncategorized<"
                 }
+
+                then("the count swapped into the toolbar is the one of the filtered list") {
+                    html shouldContain COUNT_ELEMENT_ID
+                    html shouldContain "hx-swap-oob"
+                    html shouldContain ">${Messages.monitorCount(1)}<"
+                }
+            }
+
+            `when`("the category has no monitors") {
+                createHttpMonitor(httpMonitorRepository, monitorName = "categorized", category = "Payments")
+
+                val html = get("/http-monitors/fragments/list?category=Search")
+
+                then("the count is still swapped, so a stale one never lingers next to the empty state") {
+                    html shouldContain "empty-state"
+                    html shouldContain COUNT_ELEMENT_ID
+                    html shouldContain "hx-swap-oob"
+                    html shouldContain ">${Messages.monitorCount(0)}<"
+                }
             }
 
             `when`("the category needs escaping in the URL") {
@@ -90,6 +109,12 @@ class MonitorListCategoryFilterE2ETest(
                 then("the htmx endpoint of the list is left unfiltered too") {
                     html shouldContain """hx-get="/http-monitors/fragments/list""""
                     html shouldNotContain """hx-get="/http-monitors/fragments/list?category"""
+                }
+
+                then("the toolbar holds an empty slot for the count, which the first load of the list fills") {
+                    html shouldContain COUNT_ELEMENT_ID
+                    html shouldNotContain "hx-swap-oob"
+                    html shouldNotContain Messages.monitorCount(1)
                 }
             }
 
@@ -125,5 +150,9 @@ class MonitorListCategoryFilterE2ETest(
                 }
             }
         }
+    }
+
+    companion object {
+        private const val COUNT_ELEMENT_ID = "id=\"http-monitors-count\""
     }
 }
