@@ -229,6 +229,7 @@ internal fun FlowContent.maintenanceWindowStatus(window: MaintenanceWindowDetail
 
     span {
         classes(colorClass)
+        testId("maintenance-window-status")
         tooltip(window.statusText())
         icon(icon)
     }
