@@ -62,3 +62,20 @@ resources:
 
 # Timezone
 timezone: "America/New_York"
+
+# Extra volumes, rendered next to the built-in /tmp volume
+# (e.g. the Docker socket of the node, owned by the group 999)
+podSecurityContext:
+  fsGroup: 1000
+  supplementalGroups:
+    - 999
+
+extraVolumes:
+  - name: docker-socket
+    hostPath:
+      path: /var/run/docker.sock
+      type: Socket
+
+extraVolumeMounts:
+  - name: docker-socket
+    mountPath: /var/run/docker.sock

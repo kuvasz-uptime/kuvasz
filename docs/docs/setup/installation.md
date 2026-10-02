@@ -85,6 +85,10 @@ Create a file called `docker-compose.yml` in the same directory where you create
 
      If you would like to completely **disable authentication**, you should set the `ENABLE_AUTH` environment variable to `false` and then you can just simply omit every authentication related configuration.
 
+!!! tip "Running as a non-root user"
+
+    The image runs as `root` by default, but _Kuvasz_ doesn't need any privileges, so you can run it as a **non-root user** as well, by uncommenting the related lines in the file above. Check out the [**related recipe**](../management/examples.md#running-kuvasz-as-a-non-root-user) for the details, and for a few things to keep in mind (e.g. file permissions, ICMP & Docker monitors).
+
 ### 3. Starting the stack
 
 Run the following command in the same directory where you created all the files mentioned above:

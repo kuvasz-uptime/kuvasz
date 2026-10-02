@@ -118,6 +118,45 @@ integrations:
 - **Later files win** over the earlier ones for the settings that are present in more than one of them, and the _YAML_ configuration as a whole takes precedence over the environment variables.
 - **Never split the very same list across multiple files!** Lists (e.g. `integrations.slack`, `http-monitors`, `status-pages`) are merged **by their position**, so if `integrations.slack` is present in two files, the entries of the last one will overwrite the entries of the first one **one by one**, and the extra entries of the first file are dropped entirely. A given list should always live in **exactly one** file, but different lists (even under the same parent key, like `integrations.slack` and `integrations.pagerduty`) can be spread across different files without any problem.
 
+## Running Kuvasz as a non-root user
+
+The official _Docker_ image runs as `root` by default, but _Kuvasz_ doesn't need any privileges: it listens on port `8080` (no need to bind a privileged port), it logs to the standard output, and the only place it writes to is `/tmp` (the temporary files of the [YAML exports](#backup-restore-with-yaml)). So you can run it with **any user and group ID**, and the IDs don't even have to exist inside the image.
+
+If you'd like to harden your container even further, you can drop every _Linux_ capability and make the root filesystem read-only as well:
+
+```yaml title="docker-compose.yml" hl_lines="4-12"
+services:
+  kuvasz:
+    image: kuvaszmonitoring/kuvasz:latest
+    user: "1000:1000" # (1)!
+    cap_drop: # (2)!
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    read_only: true # (3)!
+    tmpfs:
+      - /tmp
+    # ...
+    volumes:
+      - ./kuvasz.yml:/config/kuvasz.yml:ro # (4)!
+```
+
+1.  Any `UID:GID` pair works, pick the one that suits your host the best.
+2.  _Kuvasz_ doesn't need any capabilities, not even for the [ICMP monitors](icmp-monitors.md) (see the details below).
+3.  Optional. If you make the root filesystem read-only, `/tmp` has to stay writable (e.g. with a `tmpfs` mount like above), otherwise the YAML exports (_Settings > Backup & Restore_) fail with an `Internal Server Error`, and `Read-only file system` in the logs.
+4.  The configuration file has to be **readable by the user** you've chosen (e.g. `chmod 644 kuvasz.yml`), otherwise _Kuvasz_ won't start.
+
+!!! tip "Kubernetes (Helm)"
+
+    The [**official Helm chart**](../setup/helm-deployment.md) already does all of this out of the box: it runs _Kuvasz_ as `1000:1000`, without any capabilities, with a read-only root filesystem and a writable `/tmp`. See its [**security context**](../setup/helm-deployment.md#security-context) for the details.
+
+### Things to keep in mind
+
+- **Every file you mount** has to be readable by the chosen user, not just your `kuvasz.yml`: the [additional configuration files and secrets](#splitting-your-configuration-into-multiple-files), the [custom `cacerts`](#providing-a-custom-root-certificate-for-ssl-checks), the [TLS certificates of your Docker hosts](docker-hosts.md#tls), etc.
+- **ICMP monitors** use the `ping` command of the image, which falls back to **unprivileged ICMP sockets** when it's not run by `root`. These are only allowed for the groups covered by the `net.ipv4.ping_group_range` kernel parameter, which _Docker_ sets to **every group** (`0 2147483647`) for the containers by default, so it works out of the box. However, if you run the container with `network_mode: host`, the value of the **host** is used, and if it doesn't cover your group, your ICMP monitors will be **DOWN** with a `ping: permission denied (are you root?)` error. In that case, extend the range on the host (e.g. `sysctl -w net.ipv4.ping_group_range="0 2147483647"`, and persist it under `/etc/sysctl.d/`), or don't use the host network. Adding the `NET_RAW` capability to the container **won't help**, because the capabilities aren't passed to the processes of a non-root user.
+- **Docker monitors** using the **local socket** (`unix:///var/run/docker.sock`) need access to the socket, which belongs to the `docker` group of the host (or to `root` on _Docker Desktop_), so its ID has to be added with `group_add` (see the [**example**](docker-hosts.md#local-daemon-with-docker-compose)). Otherwise, your monitors will be **DOWN** with a `The Docker host "local" cannot be reached: Permission denied` error. Using a [**socket proxy**](docker-hosts.md#behind-a-socket-proxy) instead avoids the problem entirely.
+- If you [connect to _PostgreSQL_ through its **unix socket**](../setup/configuration.md#connecting-through-a-unix-socket), the chosen user needs access to the socket file too, which the default permissions of _PostgreSQL_ usually allow.
+
 ## Home Assistant RESTful integration
 
 !!! warning
