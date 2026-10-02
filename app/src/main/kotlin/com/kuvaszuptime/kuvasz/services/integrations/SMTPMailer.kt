@@ -2,13 +2,14 @@ package com.kuvaszuptime.kuvasz.services.integrations
 
 import com.kuvaszuptime.kuvasz.config.SMTPMailerConfig
 import com.kuvaszuptime.kuvasz.util.loggerFor
+import jakarta.annotation.PreDestroy
 import jakarta.inject.Singleton
 import org.simplejavamail.api.email.Email
 import org.simplejavamail.mailer.MailerBuilder
 import java.util.concurrent.CompletableFuture
 
 @Singleton
-class SMTPMailer(smtpMailerConfig: SMTPMailerConfig) {
+class SMTPMailer(smtpMailerConfig: SMTPMailerConfig) : AutoCloseable {
 
     companion object {
         private val logger = loggerFor<SMTPMailer>()
@@ -42,4 +43,9 @@ class SMTPMailer(smtpMailerConfig: SMTPMailerConfig) {
 
     @Suppress("ForbiddenVoid")
     fun sendAsync(email: Email): CompletableFuture<Void> = mailerClient.sendMail(email, true)
+
+    @PreDestroy
+    override fun close() {
+        mailerClient.close()
+    }
 }
