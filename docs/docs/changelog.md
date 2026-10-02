@@ -14,6 +14,8 @@ Docker monitors are fully integrated across _Kuvasz_: they're manageable via the
 
 **🖥️ A fully redesigned dashboard** 
 
+![New dashboard](images/ui/dashboard.webp)
+
 Instead of repeating the same set of stat cards for every monitor type in a boring way, the brand new dashboard gives you a single overview of **all of your monitors** now: a **verdict** in the header about what needs your attention, the key figures (**uptime**, **incidents**, **downtime** and **mean time to resolve**), an **uptime timeline** per monitor type, the **recent incidents** (both ongoing and resolved), the **certificates** that need your attention, the **active and upcoming maintenance windows**, and the **least reliable monitors** of the period. The period it covers can be picked with a **period selector** (from the last hour up to the last 30 days).
 
 ---
