@@ -216,9 +216,20 @@ internal fun FlowContent.maintenanceWindowScheduleSummary(
 }
 
 internal fun FlowContent.maintenanceWindowStatus(window: MaintenanceWindowDetailsDto) {
-    inlineBadge(
-        text = window.statusText(),
-        color = window.badgeColor(),
-        tooltip = window.endsAt?.let { "${Messages.maintenanceWindowEndsAt()}: ${it.toDateTimeStringWithZone()}" },
-    )
+    val icon = if (window.enabled) {
+        Icon.CIRCLE_CHECK_FILLED
+    } else {
+        Icon.CIRCLE_X_FILLED
+    }
+    val colorClass: CSSClass = when {
+        window.active -> TEXT_GREEN
+        window.enabled -> TEXT_YELLOW
+        else -> TEXT_SECONDARY
+    }
+
+    span {
+        classes(colorClass)
+        tooltip(window.statusText())
+        icon(icon)
+    }
 }
