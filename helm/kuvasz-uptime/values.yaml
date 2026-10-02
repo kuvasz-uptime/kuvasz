@@ -30,10 +30,12 @@ podSecurityContext:
 securityContext:
   runAsNonRoot: true
   runAsUser: 1000
+  runAsGroup: 1000
   capabilities:
     drop:
     - ALL
-  readOnlyRootFilesystem: false
+  # Kuvasz only writes to /tmp, which is always mounted as an emptyDir volume
+  readOnlyRootFilesystem: true
   allowPrivilegeEscalation: false
 
 

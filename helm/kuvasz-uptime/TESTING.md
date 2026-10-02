@@ -29,6 +29,7 @@ This uses the `test-values.yaml` file which configures:
 - Ingress configuration
 - Custom resource limits
 - Configuration file with Slack integration
+- Extra volumes (the Docker socket of the node) and supplemental groups
 
 ### 3. Render with internal database
 

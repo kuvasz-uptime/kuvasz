@@ -132,6 +132,8 @@ spec:
               mountPath: /config/kuvasz.yml
               subPath: kuvasz.yml
               readOnly: true
+            - name: tmp
+              mountPath: /tmp
             {{- with .Values.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -139,6 +141,8 @@ spec:
         - name: config
           configMap:
             name: {{ include "kuvasz.fullname" . }}-config
+        - name: tmp
+          emptyDir: {}
         {{- with .Values.extraVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}

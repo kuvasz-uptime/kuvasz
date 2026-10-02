@@ -183,6 +183,39 @@ httpRoute:
 
 If `httpRoute.parentRefs` is empty, the route attaches to a Gateway named `gateway` in the release namespace. `httpRoute.filters`, `httpRoute.timeouts`, and `httpRoute.extraRules` are rendered directly into the `HTTPRoute` spec for advanced Gateway API use cases.
 
+### Security context
+
+The chart runs _Kuvasz_ as a **non-root user and group** (`1000:1000`), **without any capabilities**, and with a **read-only root filesystem** by default. The only place _Kuvasz_ writes to is `/tmp` (the temporary files of the [YAML exports](../management/examples.md#backup-restore-with-yaml)), which the chart always mounts as an `emptyDir` volume, so you don't need to add one yourself.
+
+```yaml title="values.yaml (defaults)"
+podSecurityContext:
+  fsGroup: 1000
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+```
+
+!!! warning "ICMP monitors on older container runtimes"
+
+    [ICMP monitors](../management/icmp-monitors.md) rely on **unprivileged ICMP sockets**, which are only allowed for the groups covered by the `net.ipv4.ping_group_range` kernel parameter. _containerd_ 2.x allows them for every group by default, but older runtimes (e.g. _containerd_ 1.x) might not, and your ICMP monitors will be **DOWN** with a `ping: permission denied (are you root?)` error. In that case, set the parameter for the pod (it's a [safe sysctl](https://kubernetes.io/docs/tasks/administer-cluster/sysctl-cluster/){target="_blank"}, so it's allowed by default):
+
+    ```yaml title="values.yaml"
+    podSecurityContext:
+      fsGroup: 1000
+      sysctls:
+        - name: net.ipv4.ping_group_range
+          value: "0 2147483647"
+    ```
+
+If you'd like to monitor the containers of your nodes through their **Docker socket**, the group owning the socket has to be added to the pod as well, see the [**related recipe**](../management/docker-hosts.md#local-daemon-on-kubernetes-helm).
+
 ### Configuring Kuvasz
 
 You can provide a custom [YAML configuration](configuration.md) by including it in your values file:

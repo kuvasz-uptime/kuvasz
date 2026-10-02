@@ -97,6 +97,10 @@ The following table lists the most important parameters and their default values
 | `externalDatabase`                             | External database configuration, check out `values.yaml` in case you would like to use your existing PostgreSQL instance |                           |
 | `timezone`                                     | Timezone                                                                                                                 | `UTC`                     |
 | `resources`                                    | Resource limits/requests                                                                                                 | See `values.yaml`         |
+| `securityContext`                              | Container security context. Runs as `1000:1000` without capabilities, with a read-only root filesystem                   | See `values.yaml`         |
+| `podSecurityContext`                           | Pod security context (e.g. `supplementalGroups`, `sysctls`)                                                              | `fsGroup: 1000`           |
+| `extraVolumes`                                 | Extra volumes. A `tmp` volume (`emptyDir`, mounted to `/tmp`) is always added by the chart                               | `[]`                      |
+| `extraVolumeMounts`                            | Extra volume mounts of the Kuvasz container                                                                              | `[]`                      |
 
 ## Database Options
 
