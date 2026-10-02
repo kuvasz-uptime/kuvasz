@@ -177,7 +177,9 @@ private fun FlowContent.keyMetricCards(overview: DashboardOverview) {
                 span { +Messages.dashboardMaintenanceCount(incidents.ongoingInMaintenance) }
                 +" · "
             }
-            +Messages.dashboardAffectedMonitors(history.affectedMonitors)
+            if (history.affectedMonitors > 0) {
+                +Messages.dashboardAffectedMonitors(history.affectedMonitors)
+            }
         },
     ) {
         timelineSparkline(timeline.map { it.incidents.toLong() }, TEXT_RED, Messages.incidents())
@@ -196,7 +198,11 @@ private fun FlowContent.keyMetricCards(overview: DashboardOverview) {
         testId = "dashboard-mttr",
         title = Messages.dashboardMeanTimeToResolve(),
         value = incidents.meanTimeToResolveSeconds.formatAsIntervalOrDash(),
-        details = { +Messages.dashboardResolvedCount(incidents.resolved) },
+        details = {
+            if (incidents.resolved > 0) {
+                +Messages.dashboardResolvedCount(incidents.resolved)
+            }
+        },
     ) {
         metricAvatar(Icon.TIMER, BG_SECONDARY_LT)
     }

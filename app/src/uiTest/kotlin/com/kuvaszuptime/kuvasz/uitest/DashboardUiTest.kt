@@ -64,9 +64,10 @@ class DashboardUiTest(
             assertThat(dashboard.maintenanceCard).containsText("No maintenance in the next 7 days")
             // Without any incident, there is nothing to resolve or to chart
             assertThat(dashboard.metricValueOf(dashboard.incidentsCountCard)).hasText("0")
+            assertThat(dashboard.incidentsCountCard).not().containsText("Affected monitors")
             assertThat(dashboard.metricValueOf(dashboard.downtimeCard)).hasText("-")
             assertThat(dashboard.metricValueOf(dashboard.meanTimeToResolveCard)).hasText("-")
-            assertThat(dashboard.meanTimeToResolveCard).containsText("Resolved: 0")
+            assertThat(dashboard.meanTimeToResolveCard).not().containsText("Resolved")
             assertThat(dashboard.emptyState).not().isAttached()
         }
 

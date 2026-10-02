@@ -22,6 +22,10 @@
 -- only scheduled on startup, so until then the seeded states stay exactly as they are (the hosts below don't exist).
 -- Also, application-dev.yml defines the HTTP and the push monitors, and on startup every HTTP and push monitor that is
 -- not in there is deleted, together with its history.
+--
+-- The two active maintenance windows end 50 and 95 minutes after seeding, then their monitors aren't under maintenance
+-- anymore, so re-run it to start them over. The Docker monitors are on the "local" Docker host, which has to be
+-- defined in application-local.yml.
 
 \if :{?days}
 \else
