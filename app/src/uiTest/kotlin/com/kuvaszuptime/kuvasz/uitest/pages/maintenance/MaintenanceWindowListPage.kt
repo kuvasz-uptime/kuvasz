@@ -49,6 +49,13 @@ class MaintenanceWindowListPage(private val page: Page) {
 
     fun categoriesCell(name: String): Locator = rowByName(name).getByTestId("maintenance-window-categories")
 
+    // The icon-only status badge, matched by its tooltip text. Bootstrap moves the rendered `title` into
+    // `data-bs-original-title` when it takes the element over, so both have to be considered.
+    fun statusBadge(name: String, status: String): Locator = rowByName(name).locator(
+        "[data-testid=maintenance-window-status][title=\"$status\"], " +
+            "[data-testid=maintenance-window-status][data-bs-original-title=\"$status\"]"
+    )
+
     fun toggle(name: String) {
         rowByName(name).getByTestId("maintenance-window-toggle-button").click()
     }

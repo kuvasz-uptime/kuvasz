@@ -91,7 +91,7 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto, dockerHosts: List
                         value = Messages.xDays(settings.app.eventDataRetentionDays.toString())
                     )
                     settingsLabel(
-                        label = Messages.latencyDataRetention(),
+                        label = Messages.metricsDataRetention(),
                         value = Messages.xDays(settings.app.latencyDataRetentionDays.toString())
                     )
                     settingsLabel(

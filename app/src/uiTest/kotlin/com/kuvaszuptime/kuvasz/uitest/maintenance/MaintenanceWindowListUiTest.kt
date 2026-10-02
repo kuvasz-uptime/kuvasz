@@ -21,13 +21,13 @@ class MaintenanceWindowListUiTest(private val httpMonitorRepository: HttpMonitor
             val page = newPage()
             val list = MaintenanceWindowListPage(page)
             list.navigate()
-            assertThat(list.rowByName("List Toggle Window")).containsText(Messages.maintenanceWindowActive())
+            assertThat(list.statusBadge("List Toggle Window", Messages.maintenanceWindowActive())).isVisible()
 
             list.toggle("List Toggle Window")
-            assertThat(list.rowByName("List Toggle Window")).containsText(Messages.disabled())
+            assertThat(list.statusBadge("List Toggle Window", Messages.disabled())).isVisible()
 
             list.toggle("List Toggle Window")
-            assertThat(list.rowByName("List Toggle Window")).containsText(Messages.maintenanceWindowActive())
+            assertThat(list.statusBadge("List Toggle Window", Messages.maintenanceWindowActive())).isVisible()
         }
 
         "each row exposes configure, clone, toggle and delete action buttons" {

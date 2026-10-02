@@ -121,7 +121,9 @@ class HttpMonitorListUiTest(private val httpMonitorRepository: HttpMonitorReposi
             val page = newPage()
             val list = HttpMonitorListPage(page)
             list.navigate()
-            list.names shouldBe listOf("pays", "plain", "searches")
+            val allNames = listOf("pays", "plain", "searches")
+            list.names shouldBe allNames
+            assertThat(list.count).hasText(Messages.monitorCount(allNames.size))
 
             list.filterByCategory("Payments")
 
@@ -130,6 +132,8 @@ class HttpMonitorListUiTest(private val httpMonitorRepository: HttpMonitorReposi
             assertThat(list.rowByName("pays")).isVisible()
             assertThat(list.rowByName("searches")).hasCount(0)
             assertThat(list.rowByName("plain")).hasCount(0)
+            // The count is the one of the filtered list, not of every monitor of the type
+            assertThat(list.count).hasText(Messages.monitorCount(1))
         }
 
         "the uncategorized option lists only the monitors without a category" {

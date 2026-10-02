@@ -15,6 +15,8 @@ class HttpMonitorListPage(private val page: Page) {
 
     val emptyState: Locator get() = page.getByTestId("empty-state")
 
+    val count: Locator get() = page.getByTestId("http-monitor-count")
+
     fun navigate() {
         page.navigate("/http-monitors")
     }

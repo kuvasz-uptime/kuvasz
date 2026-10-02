@@ -184,7 +184,7 @@ class MaintenanceWindowCrudUiTest(private val httpMonitorRepository: HttpMonitor
             list.navigate()
             assertThat(list.rows).hasCount(2)
             assertThat(list.rowByName(clonedName)).containsText("0 2 * * *")
-            assertThat(list.rowByName(clonedName)).containsText(Messages.disabled())
+            assertThat(list.statusBadge(clonedName, Messages.disabled())).isVisible()
             assertThat(list.monitorsCell(clonedName)).hasText("1")
             assertThat(list.categoriesCell(clonedName)).hasText("1")
         }

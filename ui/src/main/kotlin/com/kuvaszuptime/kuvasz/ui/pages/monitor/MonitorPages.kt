@@ -16,7 +16,8 @@ import kotlin.time.Duration.Companion.seconds
 
 /**
  * The page listing every monitor of a type. The list itself is loaded and refreshed by htmx, so all this renders is
- * the header with the create modal of the type, the category filter, and the placeholder the list is swapped into.
+ * the header with the create modal of the type, the category filter with the monitor count, and the placeholder the
+ * list is swapped into.
  *
  * The filter is rendered here rather than inside the swapped fragment on purpose: the list refreshes itself every
  * few seconds, and a filter living inside it would be torn out from under the cursor. Its current value travels in
@@ -69,6 +70,10 @@ private fun FlowContent.categoryFilterToolbar(
         testId("category-filter")
         div {
             classes(ROW, G_2, ALIGN_ITEMS_CENTER, W_100)
+            div {
+                classes(CSSClass.COL)
+                monitorCountLabel(typeUiConfig, count = null)
+            }
             div {
                 classes(COL_12, COL_SM_AUTO, MS_SM_AUTO)
                 div {

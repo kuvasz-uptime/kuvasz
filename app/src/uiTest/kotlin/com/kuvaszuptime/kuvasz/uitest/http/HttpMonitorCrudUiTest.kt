@@ -52,10 +52,13 @@ class HttpMonitorCrudUiTest(private val httpMonitorRepository: HttpMonitorReposi
 
             list.navigate()
             assertThat(list.rowByName(updatedName)).isVisible()
+            assertThat(list.count).hasText(Messages.monitorCount(1))
 
             list.deleteMonitor(updatedName)
             assertThat(list.rowByName(updatedName)).hasCount(0)
             assertThat(list.emptyState).isVisible()
+            // The count follows the refreshed list, even though the toolbar it lives in is never re-rendered
+            assertThat(list.count).hasText(Messages.monitorCount(0))
         }
 
         "cross-origin header propagation is disabled by default, and enabling it survives the save" {
