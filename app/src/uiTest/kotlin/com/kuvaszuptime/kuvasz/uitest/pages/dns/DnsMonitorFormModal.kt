@@ -9,13 +9,13 @@ import java.util.regex.Pattern
 // The Alpine.js-driven create/update modal for DNS monitors.
 class DnsMonitorFormModal(page: Page) : ModalView(page) {
 
-    val nameInput: Locator get() = modal.locator("#name-input")
-    val hostInput: Locator get() = modal.locator("#host-input")
-    val resolverHostInput: Locator get() = modal.locator("#resolverHost-input")
-    val resolverPortInput: Locator get() = modal.locator("#resolverPort-input")
-    val uptimeCheckIntervalInput: Locator get() = modal.locator("#uptimeCheckInterval-input")
-    val latencyThresholdInput: Locator get() = modal.locator("#latencyThresholdMs-input")
-    val newMatcherValueInput: Locator get() = modal.locator("#newMatcherValue-input")
+    val nameInput: Locator get() = modal.locator("#dns-name-input")
+    val hostInput: Locator get() = modal.locator("#dns-host-input")
+    val resolverHostInput: Locator get() = modal.locator("#dns-resolverHost-input")
+    val resolverPortInput: Locator get() = modal.locator("#dns-resolverPort-input")
+    val uptimeCheckIntervalInput: Locator get() = modal.locator("#dns-uptimeCheckInterval-input")
+    val latencyThresholdInput: Locator get() = modal.locator("#dns-latencyThresholdMs-input")
+    val newMatcherValueInput: Locator get() = modal.locator("#dns-newMatcherValue-input")
 
     val matcherRows: Locator get() = modal.getByTestId("matcher-row")
 

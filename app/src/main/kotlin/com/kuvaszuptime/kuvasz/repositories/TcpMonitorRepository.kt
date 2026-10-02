@@ -12,6 +12,7 @@ import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.tcp.idWithName
+import com.kuvaszuptime.kuvasz.models.dto.monitor.TcpMonitorSummary
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
@@ -35,6 +36,19 @@ class TcpMonitorRepository(
         categories: List<String>?,
     ): List<TcpMonitorDetailsDto> =
         getMonitorsWithDetails(enabled = enabled, monitorNames = monitorNames, categories = categories)
+
+    override fun fetchSummaries(): List<TcpMonitorSummary> = dslContext
+        .select(
+            TCP_MONITOR.ID.`as`(TcpMonitorSummary::id.name),
+            TCP_MONITOR.NAME.`as`(TcpMonitorSummary::name.name),
+            TCP_MONITOR.ENABLED.`as`(TcpMonitorSummary::enabled.name),
+            TCP_MONITOR.CATEGORY.`as`(TcpMonitorSummary::category.name),
+            checkNotNull(latestUptimeEventSelect.field(TCP_UPTIME_EVENT.STATUS))
+                .`as`(TcpMonitorSummary::uptimeStatus.name),
+        )
+        .from(TCP_MONITOR)
+        .leftJoin(DSL.lateral(latestUptimeEventSelect)).on(DSL.trueCondition())
+        .fetchInto(TcpMonitorSummary::class.java)
 
     override fun findById(monitorId: Long, txCtx: DSLContext?): TcpMonitorRecord? = (txCtx ?: dslContext)
         .selectFrom(TCP_MONITOR)

@@ -1,6 +1,8 @@
 package com.kuvaszuptime.kuvasz.models.dto.incident
 
 import com.kuvaszuptime.kuvasz.models.IncidentType
+import com.kuvaszuptime.kuvasz.models.monitor.NumericMonitorID
+import com.kuvaszuptime.kuvasz.models.monitorType
 import io.micronaut.core.annotation.Introspected
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.OffsetDateTime
@@ -26,6 +28,10 @@ data class IncidentDto(
     @param:Schema(description = "When the incident was last updated", required = true)
     val updatedAt: OffsetDateTime,
 )
+
+// Unique across the types, unlike the monitorId itself
+val IncidentDto.numericMonitorId: NumericMonitorID
+    get() = NumericMonitorID(incidentType.monitorType, monitorId)
 
 @Introspected
 enum class IncidentStatus {

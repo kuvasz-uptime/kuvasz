@@ -58,6 +58,16 @@ internal enum class MonitorTypeUiConfig(
             DOCKER -> Messages.dockerMonitors()
         }
 
+    val monitorTitle: String
+        get() = when (this) {
+            HTTP -> Messages.httpSslMonitor()
+            PUSH -> Messages.pushMonitor()
+            ICMP -> Messages.icmpMonitor()
+            TCP -> Messages.tcpMonitor()
+            DNS -> Messages.dnsMonitor()
+            DOCKER -> Messages.dockerMonitor()
+        }
+
     val readOnlyNotice: String
         get() = when (this) {
             HTTP -> Messages.readOnlyHttpMonitors()

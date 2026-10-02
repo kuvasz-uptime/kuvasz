@@ -12,6 +12,7 @@ import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.docker.idWithName
+import com.kuvaszuptime.kuvasz.models.dto.monitor.DockerMonitorSummary
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
@@ -35,6 +36,19 @@ class DockerMonitorRepository(
         categories: List<String>?,
     ): List<DockerMonitorDetailsDto> =
         getMonitorsWithDetails(enabled = enabled, monitorNames = monitorNames, categories = categories)
+
+    override fun fetchSummaries(): List<DockerMonitorSummary> = dslContext
+        .select(
+            DOCKER_MONITOR.ID.`as`(DockerMonitorSummary::id.name),
+            DOCKER_MONITOR.NAME.`as`(DockerMonitorSummary::name.name),
+            DOCKER_MONITOR.ENABLED.`as`(DockerMonitorSummary::enabled.name),
+            DOCKER_MONITOR.CATEGORY.`as`(DockerMonitorSummary::category.name),
+            checkNotNull(latestUptimeEventSelect.field(DOCKER_UPTIME_EVENT.STATUS))
+                .`as`(DockerMonitorSummary::uptimeStatus.name),
+        )
+        .from(DOCKER_MONITOR)
+        .leftJoin(DSL.lateral(latestUptimeEventSelect)).on(DSL.trueCondition())
+        .fetchInto(DockerMonitorSummary::class.java)
 
     override fun findById(monitorId: Long, txCtx: DSLContext?): DockerMonitorRecord? = (txCtx ?: dslContext)
         .selectFrom(DOCKER_MONITOR)

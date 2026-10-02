@@ -36,6 +36,24 @@ internal fun FlowContent.formLabel(
     }
 }
 
+/**
+ * A consumer that keeps the ids of the form fields rendered through it unique, when the same form is rendered for
+ * multiple entity types on the same page, e.g. the create modals of all the monitor types on the dashboard. Every tag
+ * inherits the consumer of its parent, so [idPrefix] covers every field of the subtree, see [fieldId].
+ */
+internal class FieldIdPrefixingConsumer(
+    downstream: TagConsumer<Any?>,
+    val idPrefix: String,
+) : TagConsumer<Any?> by downstream
+
+/** Renders a DIV whose whole subtree prefixes the ids of its form fields with [idPrefix]. */
+internal fun FlowContent.fieldIdPrefixedDiv(idPrefix: String, block: DIV.() -> Unit) =
+    DIV(emptyMap(), FieldIdPrefixingConsumer(consumer, idPrefix)).visit(block)
+
+/** The id of a form field, prefixed if it's rendered in a [fieldIdPrefixedDiv]. */
+internal fun FlowContent.fieldId(propName: String, suffix: String): String =
+    listOfNotNull((consumer as? FieldIdPrefixingConsumer)?.idPrefix, propName, suffix).joinToString("-")
+
 internal fun FlowContent.validatedInput(
     propName: String,
     label: String?,
@@ -50,8 +68,8 @@ internal fun FlowContent.validatedInput(
     smallControl: Boolean = false,
     descriptionShownIf: String? = null,
 ) {
-    val inputName = "$propName-input"
-    val dataListId = "$propName-datalist"
+    val inputName = fieldId(propName, "input")
+    val dataListId = fieldId(propName, "datalist")
     if (!label.isNullOrEmpty()) {
         formLabel(
             label = label,
@@ -102,7 +120,7 @@ internal fun FlowContent.validatedTextArea(
     onInput: String? = null,
     disabledIf: String? = null,
 ) {
-    val inputName = "$propName-input"
+    val inputName = fieldId(propName, "input")
     if (!label.isNullOrEmpty()) {
         formLabel(
             label = label,

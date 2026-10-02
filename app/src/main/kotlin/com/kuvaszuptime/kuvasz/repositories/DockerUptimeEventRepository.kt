@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.repositories
 
-import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.DockerMonitor.DOCKER_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.DockerUptimeEvent.DOCKER_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DockerUptimeEventRecord
@@ -9,16 +8,23 @@ import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.services.UptimeEventCalculationContext
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
-import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
-import org.jooq.impl.DSL
-import java.time.Duration
 import java.time.OffsetDateTime
 
 @Suppress("TooManyFunctions")
 @Singleton
 class DockerUptimeEventRepository(private val dslContext: DSLContext) : UptimeEventRepository {
+
+    private val uptimeEventColumns = UptimeEventColumns(
+        eventMonitorId = DOCKER_UPTIME_EVENT.MONITOR_ID,
+        status = DOCKER_UPTIME_EVENT.STATUS,
+        startedAt = DOCKER_UPTIME_EVENT.STARTED_AT,
+        endedAt = DOCKER_UPTIME_EVENT.ENDED_AT,
+        updatedAt = DOCKER_UPTIME_EVENT.UPDATED_AT,
+        monitorId = DOCKER_MONITOR.ID,
+        monitorEnabled = DOCKER_MONITOR.ENABLED,
+    )
 
     private fun DockerMonitorDownEvent.getPersistableError() = toStructuredMessage().error
 
@@ -55,6 +61,7 @@ class DockerUptimeEventRepository(private val dslContext: DSLContext) : UptimeEv
                 .selectFrom(DOCKER_UPTIME_EVENT)
                 .where(DOCKER_UPTIME_EVENT.MONITOR_ID.eq(monitorId))
                 .and(DOCKER_UPTIME_EVENT.ENDED_AT.isNull)
+                .orderBy(DOCKER_UPTIME_EVENT.ID)
                 .fetch()
 
             if (uptimeRecords.size <= 1) return@transactionResult uptimeRecords.firstOrNull()
@@ -116,35 +123,19 @@ class DockerUptimeEventRepository(private val dslContext: DSLContext) : UptimeEv
         }
         .fetchInto(DockerUptimeEventDto::class.java)
 
-    @Suppress("IgnoredReturnValue")
     override fun fetchAllInPeriod(
-        period: Duration,
+        periodStart: OffsetDateTime,
+        periodEnd: OffsetDateTime,
         monitorIds: List<Long>?,
-    ): List<UptimeEventCalculationContext> {
-        val periodStart = getCurrentTimestamp().minus(period)
-        return dslContext
-            .select(
-                DOCKER_MONITOR.ID.`as`(UptimeEventCalculationContext::monitorId.name),
-                DOCKER_MONITOR.ENABLED.`as`(UptimeEventCalculationContext::isMonitorEnabled.name),
-                DOCKER_UPTIME_EVENT.STATUS.`as`(UptimeEventCalculationContext::status.name),
-                DOCKER_UPTIME_EVENT.STARTED_AT.`as`(UptimeEventCalculationContext::startedAt.name),
-                DOCKER_UPTIME_EVENT.ENDED_AT.`as`(UptimeEventCalculationContext::endedAt.name),
-                DOCKER_UPTIME_EVENT.UPDATED_AT.`as`(UptimeEventCalculationContext::updatedAt.name),
-            )
-            .from(DOCKER_UPTIME_EVENT)
-            .join(DOCKER_MONITOR).on(DOCKER_UPTIME_EVENT.MONITOR_ID.eq(DOCKER_MONITOR.ID))
-            .where(DSL.coalesce(DOCKER_UPTIME_EVENT.ENDED_AT, DSL.now()).greaterThan(periodStart))
-            .apply {
-                monitorIds?.let { and(DOCKER_UPTIME_EVENT.MONITOR_ID.`in`(it)) }
-            }
-            .fetchInto(UptimeEventCalculationContext::class.java)
-    }
+        onlyEnabledMonitors: Boolean,
+    ): List<UptimeEventCalculationContext> = dslContext.fetchUptimeEventsInPeriod(
+        uptimeEventColumns,
+        periodStart,
+        periodEnd,
+        monitorIds,
+        onlyEnabledMonitors,
+    )
 
-    override fun fetchLatestIncidentTimestamp(): OffsetDateTime? = dslContext
-        .select(DSL.max(DSL.coalesce(DOCKER_UPTIME_EVENT.UPDATED_AT, DOCKER_UPTIME_EVENT.STARTED_AT)))
-        .from(DOCKER_UPTIME_EVENT)
-        .join(DOCKER_MONITOR).on(DOCKER_UPTIME_EVENT.MONITOR_ID.eq(DOCKER_MONITOR.ID))
-        .where(DOCKER_UPTIME_EVENT.STATUS.eq(UptimeStatus.DOWN))
-        .and(DOCKER_MONITOR.ENABLED.isTrue)
-        .fetchAny(0, OffsetDateTime::class.java)
+    override fun fetchLatestIncidentTimestamp(): OffsetDateTime? =
+        dslContext.fetchLatestUptimeIncidentTimestamp(uptimeEventColumns)
 }

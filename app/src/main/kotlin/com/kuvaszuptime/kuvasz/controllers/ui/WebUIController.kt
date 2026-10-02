@@ -4,12 +4,12 @@ import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.repositories.IncidentRepository
 import com.kuvaszuptime.kuvasz.repositories.SettingsRepository
-import com.kuvaszuptime.kuvasz.repositories.SharedMonitorRepository
 import com.kuvaszuptime.kuvasz.security.ui.UnauthenticatedOnly
 import com.kuvaszuptime.kuvasz.security.ui.WebSecured
 import com.kuvaszuptime.kuvasz.services.docker.DockerHostRegistry
 import com.kuvaszuptime.kuvasz.services.docker.client.DockerApiClient
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
+import com.kuvaszuptime.kuvasz.services.ui.DashboardDataProvider
 import com.kuvaszuptime.kuvasz.ui.fragments.dashboard.*
 import com.kuvaszuptime.kuvasz.ui.fragments.layout.*
 import com.kuvaszuptime.kuvasz.ui.pages.*
@@ -31,14 +31,14 @@ class WebUIController(
     private val settingsRepository: SettingsRepository,
     private val integrationsRepository: IntegrationRepository,
     private val incidentRepository: IncidentRepository,
-    private val sharedMonitorRepository: SharedMonitorRepository,
+    private val dashboardDataProvider: DashboardDataProvider,
     private val dockerHostRegistry: DockerHostRegistry?,
     private val dockerApiClient: DockerApiClient?,
 ) {
 
     companion object {
         const val DASHBOARD_PATH = "/"
-        const val DASHBOARD_EMPTY_STATE_FRAGMENT_PATH = "/fragments/dashboard-empty-state"
+        const val DASHBOARD_FRAGMENT_PATH = "/fragments/dashboard"
         const val LOGIN_PATH = "/login"
     }
 
@@ -46,13 +46,14 @@ class WebUIController(
     @WebSecured
     @Produces(MediaType.TEXT_HTML)
     @ExecuteOn(TaskExecutors.BLOCKING)
-    fun dashboard() = renderDashboard(appGlobals)
+    fun dashboard(@QueryValue period: String?) = renderDashboard(appGlobals, period.toDashboardPeriod())
 
-    @Get(DASHBOARD_EMPTY_STATE_FRAGMENT_PATH)
+    @Get(DASHBOARD_FRAGMENT_PATH)
     @WebSecured
     @Produces(MediaType.TEXT_HTML)
     @ExecuteOn(TaskExecutors.BLOCKING)
-    fun dashboardEmptyState() = if (sharedMonitorRepository.hasAnyMonitor()) "" else renderDashboardEmptyState()
+    fun dashboardOverview(@QueryValue period: String?) =
+        renderDashboardOverview(dashboardDataProvider.getOverview(period.toDashboardPeriod()))
 
     @Get(CONNECTIVITY_BADGE_FRAGMENT_PATH)
     @WebSecured
@@ -104,3 +105,9 @@ class WebUIController(
         )
     }
 }
+
+// Only the periods of the selector are accepted, as the timeline of the dashboard is sliced to fit them
+private fun String?.toDashboardPeriod(): Duration =
+    this?.let { runCatching { Duration.parse(it) }.getOrNull() }
+        ?.takeIf { it in UIDefaults.PERIOD_SELECTOR_OPTIONS }
+        ?: Duration.ofDays(UIDefaults.DASHBOARD_MONITORING_STATS_PERIOD_DAYS)

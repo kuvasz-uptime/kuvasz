@@ -15,6 +15,7 @@ import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.http.idWithName
+import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorSummary
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
@@ -40,6 +41,25 @@ class HttpMonitorRepository(
         categories: List<String>?,
     ): List<HttpMonitorDetailsDto> =
         getMonitorsWithDetails(enabled = enabled, monitorNames = monitorNames, categories = categories)
+
+    override fun fetchSummaries(): List<HttpMonitorSummary> = dslContext
+        .select(
+            HTTP_MONITOR.ID.`as`(HttpMonitorSummary::id.name),
+            HTTP_MONITOR.NAME.`as`(HttpMonitorSummary::name.name),
+            HTTP_MONITOR.ENABLED.`as`(HttpMonitorSummary::enabled.name),
+            HTTP_MONITOR.CATEGORY.`as`(HttpMonitorSummary::category.name),
+            checkNotNull(latestUptimeEventSelect.field(HTTP_UPTIME_EVENT.STATUS))
+                .`as`(HttpMonitorSummary::uptimeStatus.name),
+            HTTP_MONITOR.SSL_CHECK_ENABLED.`as`(HttpMonitorSummary::sslCheckEnabled.name),
+            SSL_EVENT.STATUS.`as`(HttpMonitorSummary::sslStatus.name),
+            SSL_EVENT.SSL_EXPIRY_DATE.`as`(HttpMonitorSummary::sslValidUntil.name),
+            SSL_EVENT.ERROR.`as`(HttpMonitorSummary::sslError.name),
+        )
+        .from(HTTP_MONITOR)
+        .leftJoin(DSL.lateral(latestUptimeEventSelect)).on(DSL.trueCondition())
+        .leftJoin(SSL_EVENT)
+        .on(HTTP_MONITOR.ID.eq(SSL_EVENT.MONITOR_ID).and(SSL_EVENT.ENDED_AT.isNull))
+        .fetchInto(HttpMonitorSummary::class.java)
 
     override fun findById(monitorId: Long, txCtx: DSLContext?): HttpMonitorRecord? = (txCtx ?: dslContext)
         .selectFrom(HTTP_MONITOR)

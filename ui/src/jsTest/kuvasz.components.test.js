@@ -37,6 +37,10 @@ const {
     setTheme,
     setThemeOption,
     appearanceSettings,
+    reInitTooltips,
+    initSparklines,
+    disposeComponents,
+    TOOLTIP_DISPOSE_DELAY_MS,
 } = require('../main/resources/js/kuvasz.js');
 
 // --------- #1: isValidHttpHeaderName (regex) ---------
@@ -2504,4 +2508,128 @@ test('monitorListItem dispatches the events the shared upsert modal of the list 
         ['edit-monitor', {id: 7, title: 'Update Source', nameLocked: true}],
         ['clone-monitor', {id: 7, name: 'Source (clone)'}],
     ]);
+});
+
+// --------- DOM helpers run after the HTMX swaps ---------
+
+// Stubs the few DOM and Tabler calls the helpers make: `elements` maps the selectors to what they match, and
+// `existingTooltips` holds the trigger elements that already have a tooltip instance.
+const stubDom = (t, {elements, existingTooltips = []}) => {
+    const originalQuerySelectorAll = globalThis.document.querySelectorAll;
+    const originalQuerySelector = globalThis.document.querySelector;
+    const originalTabler = globalThis.tabler;
+    const created = [];
+    globalThis.document.querySelectorAll = (selector) => elements[selector] ?? [];
+    globalThis.document.querySelector = (selector) => (elements[selector] ?? [])[0] ?? null;
+    globalThis.tabler = {
+        Tooltip: class {
+            static getInstance(element) { return existingTooltips.includes(element) ? {} : null; }
+            constructor(element, options) { created.push({element, options}); }
+        },
+        Sparkline: {getOrCreateInstance: (element) => created.push({element})},
+    };
+    t.after(() => {
+        globalThis.document.querySelectorAll = originalQuerySelectorAll;
+        globalThis.document.querySelector = originalQuerySelector;
+        globalThis.tabler = originalTabler;
+    });
+    return created;
+};
+
+const fakeElement = (attributes = {}, id = null) => {
+    const element = {
+        id,
+        removed: false,
+        getAttribute: (name) => attributes[name] ?? null,
+        remove() { element.removed = true; },
+    };
+    return element;
+};
+
+test('reInitTooltips only creates the tooltips of the elements that do not have one yet', (t) => {
+    const existing = fakeElement();
+    const swappedIn = fakeElement({'data-bs-html': 'true', 'data-bs-placement': 'top'});
+    const created = stubDom(t, {
+        elements: {'[data-bs-toggle="tooltip"]': [existing, swappedIn]},
+        existingTooltips: [existing],
+    });
+
+    reInitTooltips();
+
+    // Disposing the existing one could break its pending fade-out transition, so it's left alone
+    assert.equal(created.length, 1);
+    assert.equal(created[0].element, swappedIn);
+    assert.deepEqual(created[0].options, {delay: {show: 50, hide: 50}, html: true, placement: 'top'});
+});
+
+test('reInitTooltips falls back to the default options of the tooltips', (t) => {
+    const created = stubDom(t, {elements: {'[data-bs-toggle="tooltip"]': [fakeElement()]}});
+
+    reInitTooltips();
+
+    assert.deepEqual(created[0].options, {delay: {show: 50, hide: 50}, html: false, placement: 'auto'});
+});
+
+test('reInitTooltips removes only the tooltips whose element was swapped out', (t) => {
+    const orphaned = fakeElement({}, 'tooltip1');
+    const stillDescribing = fakeElement({}, 'tooltip2');
+    stubDom(t, {
+        elements: {
+            'div.tooltip': [orphaned, stillDescribing],
+            '[aria-describedby="tooltip2"]': [fakeElement()],
+        },
+    });
+
+    reInitTooltips();
+
+    assert.equal(orphaned.removed, true);
+    assert.equal(stillDescribing.removed, false);
+});
+
+test('initSparklines renders every sparkline of the page', (t) => {
+    const sparklines = [fakeElement(), fakeElement()];
+    const created = stubDom(t, {elements: {'[data-bs-toggle="sparkline"]': sparklines}});
+
+    initSparklines();
+
+    assert.deepEqual(created.map(it => it.element), sparklines);
+});
+
+// Stubs the Tabler instances of the given elements, recording which of them got disposed
+const stubInstances = (t, {tooltips = [], sparklines = []}) => {
+    const originalTabler = globalThis.tabler;
+    const disposed = [];
+    const instanceOf = (elements) => (element) =>
+        elements.includes(element) ? {dispose: () => disposed.push(element)} : null;
+    globalThis.tabler = {
+        Tooltip: {getInstance: instanceOf(tooltips)},
+        Sparkline: {getInstance: instanceOf(sparklines)},
+    };
+    t.after(() => { globalThis.tabler = originalTabler; });
+    return disposed;
+};
+
+const fakeContainer = (elements) => ({querySelectorAll: (selector) => elements[selector] ?? []});
+
+test('disposeComponents disposes the sparklines and, after their transitions, the tooltips of the containers', (t) => {
+    t.mock.timers.enable({apis: ['setTimeout']});
+    const [tooltip, tooltipWithoutInstance, otherTooltip] = [fakeElement(), fakeElement(), fakeElement()];
+    const sparkline = fakeElement();
+    const disposed = stubInstances(t, {tooltips: [tooltip, otherTooltip], sparklines: [sparkline]});
+
+    disposeComponents(
+        fakeContainer({
+            '[data-bs-toggle="tooltip"]': [tooltip, tooltipWithoutInstance],
+            '[data-bs-toggle="sparkline"]': [sparkline],
+        }),
+        // A container that isn't on the page is skipped
+        null,
+        fakeContainer({'[data-bs-toggle="tooltip"]': [otherTooltip]}),
+    );
+
+    assert.deepEqual(disposed, [sparkline]);
+    t.mock.timers.tick(TOOLTIP_DISPOSE_DELAY_MS - 1);
+    assert.deepEqual(disposed, [sparkline]);
+    t.mock.timers.tick(1);
+    assert.deepEqual(disposed, [sparkline, tooltip, otherTooltip]);
 });

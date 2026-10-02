@@ -173,7 +173,7 @@ public class SslEvent extends TableImpl<SslEventRecord> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.asList(Indexes.SSL_EVENT_ENDED_AT_IDX, Indexes.SSL_EVENT_MONITOR_IDX);
+        return Arrays.asList(Indexes.SSL_EVENT_ENDED_AT_IDX, Indexes.SSL_EVENT_MONITOR_IDX, Indexes.SSL_EVENT_OPEN_IDX);
     }
 
     @Override

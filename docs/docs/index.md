@@ -16,7 +16,7 @@ title: The developer- and cloud-friendly uptime monitor
 
     Are you looking for the **deployment guide**? You can find it [**here**](setup/installation.md)!
 
-![Kuvasz](images/feature_carousel.webp)
+![Kuvasz](images/ui/dashboard.webp)
 
 ## Highlights
 

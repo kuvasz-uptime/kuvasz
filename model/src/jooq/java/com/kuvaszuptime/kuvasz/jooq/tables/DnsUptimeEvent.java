@@ -166,7 +166,7 @@ public class DnsUptimeEvent extends TableImpl<DnsUptimeEventRecord> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.asList(Indexes.DNS_UPTIME_EVENT_ENDED_AT_IDX, Indexes.DNS_UPTIME_EVENT_MONITOR_IDX);
+        return Arrays.asList(Indexes.DNS_UPTIME_EVENT_ENDED_AT_IDX, Indexes.DNS_UPTIME_EVENT_MONITOR_IDX, Indexes.DNS_UPTIME_EVENT_OPEN_IDX);
     }
 
     @Override

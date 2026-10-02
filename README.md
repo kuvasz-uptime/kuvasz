@@ -10,7 +10,7 @@
 
 **Kuvasz** [ˈkuvɒs] is an open-source, self-hosted uptime & SSL monitoring service with [**status pages**](https://demo.kuvasz-uptime.dev/status), designed to help you keep track of your websites and services. It provides a modern, user-friendly interface, a powerful REST API + MCP server, maintenance windows and supports multiple notification channels like email, Discord, Slack, Telegram, Microsoft Teams, Apprise, Pushover, PagerDuty and custom webhooks.
 
-![Kuvasz](docs/docs/images/feature_carousel.webp)
+![Kuvasz](docs/docs/images/ui/dashboard.webp)
 
 ## [📖 Documentation](https://kuvasz-uptime.dev)
 

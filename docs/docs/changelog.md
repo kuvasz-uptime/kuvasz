@@ -12,6 +12,14 @@ Docker monitors are fully integrated across _Kuvasz_: they're manageable via the
 
 ---
 
+**🖥️ A fully redesigned dashboard** 
+
+![New dashboard](images/ui/dashboard.webp)
+
+Instead of repeating the same set of stat cards for every monitor type in a boring way, the brand new dashboard gives you a single overview of **all of your monitors** now: a **verdict** in the header about what needs your attention, the key figures (**uptime**, **incidents**, **downtime** and **mean time to resolve**), an **uptime timeline** per monitor type, the **recent incidents** (both ongoing and resolved), the **certificates** that need your attention, the **active and upcoming maintenance windows**, and the **least reliable monitors** of the period. The period it covers can be picked with a **period selector** (from the last hour up to the last 30 days).
+
+---
+
 **🔌 Connectivity check**
 
 When the host running _Kuvasz_ loses its own outbound network access — an ISP blip, a router reboot, a restarted _Docker_ network, a flapping VPN — every monitor fails at the very same moment, and you get an incident storm, a matching recovery storm and permanently polluted uptime percentages, all because of something that has nothing to do with the services you monitor.
@@ -26,6 +34,7 @@ The new [**connectivity check**](features/connectivity-check.md) periodically di
 
 - **Connecting to PostgreSQL through its unix socket**: if [`DATABASE_HOST`](setup/configuration.md#connecting-through-a-unix-socket) points to the **directory of the socket** (e.g. `/var/run/postgresql`), _Kuvasz_ connects through it instead of TCP, just like `psql` does. So when your database runs on the same host, you can mount its socket into the container and don't need to expose _PostgreSQL_ on the network at all.
 - **Virtual thread scheduling** (experimental, disabled by default): the scheduled checks can run on [**virtual threads**](setup/configuration.md#virtual-thread-scheduling) now, so a lot of unreachable TCP, DNS or Docker targets waiting for their timeout can't delay the checks of your other monitors anymore.
+- **UI refresh**: Tabler UI has been bumped to **1.6.x**, which brings sharper focus indicators and a lot of small visual improvements, while keeping the familiar color scheme. If you'd like a different one, you can pick a **gray palette** and an **accent color** on the **Settings** page now: your choice is saved in your browser (just like the dark/light mode). The public status pages aren't affected by it, but each of them can get its own [**gray palette**](management/status-pages.md#gray-palette_1) instead (the default one [included](management/status-pages.md#gray-palette)). The start of a **one-off maintenance window** is picked with a proper **date and time picker** now (it can still be typed in, as `YYYY-MM-DD HH:mm`).
 - **Lower memory usage on the database side**: _Kuvasz_ keeps only **2 idle database connections** open instead of 10, which saves **a few megabytes of memory** on your _PostgreSQL_ server while there's nothing to do. The pool still grows (up to 10 connections) when it's needed.
 
 ### Fixes

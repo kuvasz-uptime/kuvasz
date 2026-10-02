@@ -20,15 +20,16 @@ fun getDurationOfEvent(
     endedAt: OffsetDateTime?,
     updatedAt: OffsetDateTime,
     now: OffsetDateTime = getCurrentTimestamp(),
-): Long {
-    val effectiveEndDate = if (isMonitorEnabled) {
-        // If the monitor is active then we use either the end date of the event or the actual timestamp in
-        // case of an ongoing event
-        endedAt ?: now
-    } else {
-        // If the monitors is paused then we use either the end date of the event, or the last update of it,
-        // because this is the LAST KNOWN date when the current state was effective
-        endedAt ?: updatedAt
-    }
-    return startedAt.diffToDuration(effectiveEndDate).inWholeSeconds
-}
+): Long = startedAt.diffToDuration(getEffectiveEndOfEvent(isMonitorEnabled, endedAt, updatedAt, now)).inWholeSeconds
+
+/**
+ * The last instant when an event was effective: its end date, or if it's still ongoing, the actual timestamp for an
+ * enabled monitor, and the last update for a paused one, because that is the LAST KNOWN date when the state was
+ * effective
+ */
+fun getEffectiveEndOfEvent(
+    isMonitorEnabled: Boolean,
+    endedAt: OffsetDateTime?,
+    updatedAt: OffsetDateTime,
+    now: OffsetDateTime,
+): OffsetDateTime = endedAt ?: if (isMonitorEnabled) now else updatedAt

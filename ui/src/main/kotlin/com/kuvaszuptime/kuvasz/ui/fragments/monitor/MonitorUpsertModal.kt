@@ -44,7 +44,7 @@ internal fun FlowContent.monitorUpsertModal(
         extraFormArgs +
         globals.enabledIntegrations.count { it.value.global }.toString()
 
-    div {
+    fieldIdPrefixedDiv(typeUiConfig.slug) {
         id = modalId
         classes(MODAL, MODAL_BLUR, ROUNDED, BG_SURFACE_BACKDROP)
         xData(

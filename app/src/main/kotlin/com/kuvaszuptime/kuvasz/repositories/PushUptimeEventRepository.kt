@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.repositories
 
-import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor.PUSH_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.PushUptimeEvent.PUSH_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushUptimeEventRecord
@@ -9,15 +8,22 @@ import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.services.UptimeEventCalculationContext
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
-import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
-import org.jooq.impl.DSL
-import java.time.Duration
 import java.time.OffsetDateTime
 
 @Singleton
 class PushUptimeEventRepository(private val dslContext: DSLContext) : UptimeEventRepository {
+
+    private val uptimeEventColumns = UptimeEventColumns(
+        eventMonitorId = PUSH_UPTIME_EVENT.MONITOR_ID,
+        status = PUSH_UPTIME_EVENT.STATUS,
+        startedAt = PUSH_UPTIME_EVENT.STARTED_AT,
+        endedAt = PUSH_UPTIME_EVENT.ENDED_AT,
+        updatedAt = PUSH_UPTIME_EVENT.UPDATED_AT,
+        monitorId = PUSH_MONITOR.ID,
+        monitorEnabled = PUSH_MONITOR.ENABLED,
+    )
 
     private fun PushMonitorDownEvent.getPersistableError() = toStructuredMessage().error
 
@@ -48,6 +54,7 @@ class PushUptimeEventRepository(private val dslContext: DSLContext) : UptimeEven
             .selectFrom(PUSH_UPTIME_EVENT)
             .where(PUSH_UPTIME_EVENT.MONITOR_ID.eq(monitorId))
             .and(PUSH_UPTIME_EVENT.ENDED_AT.isNull)
+            .orderBy(PUSH_UPTIME_EVENT.ID)
             .fetch()
 
         if (uptimeRecords.size <= 1) return uptimeRecords.firstOrNull()
@@ -107,35 +114,19 @@ class PushUptimeEventRepository(private val dslContext: DSLContext) : UptimeEven
         }
         .fetchInto(PushUptimeEventDto::class.java)
 
-    @Suppress("IgnoredReturnValue")
     override fun fetchAllInPeriod(
-        period: Duration,
+        periodStart: OffsetDateTime,
+        periodEnd: OffsetDateTime,
         monitorIds: List<Long>?,
-    ): List<UptimeEventCalculationContext> {
-        val periodStart = getCurrentTimestamp().minus(period)
-        return dslContext
-            .select(
-                PUSH_MONITOR.ID.`as`(UptimeEventCalculationContext::monitorId.name),
-                PUSH_MONITOR.ENABLED.`as`(UptimeEventCalculationContext::isMonitorEnabled.name),
-                PUSH_UPTIME_EVENT.STATUS.`as`(UptimeEventCalculationContext::status.name),
-                PUSH_UPTIME_EVENT.STARTED_AT.`as`(UptimeEventCalculationContext::startedAt.name),
-                PUSH_UPTIME_EVENT.ENDED_AT.`as`(UptimeEventCalculationContext::endedAt.name),
-                PUSH_UPTIME_EVENT.UPDATED_AT.`as`(UptimeEventCalculationContext::updatedAt.name),
-            )
-            .from(PUSH_UPTIME_EVENT)
-            .join(PUSH_MONITOR).on(PUSH_UPTIME_EVENT.MONITOR_ID.eq(PUSH_MONITOR.ID))
-            .where(DSL.coalesce(PUSH_UPTIME_EVENT.ENDED_AT, DSL.now()).greaterThan(periodStart))
-            .apply {
-                monitorIds?.let { and(PUSH_UPTIME_EVENT.MONITOR_ID.`in`(it)) }
-            }
-            .fetchInto(UptimeEventCalculationContext::class.java)
-    }
+        onlyEnabledMonitors: Boolean,
+    ): List<UptimeEventCalculationContext> = dslContext.fetchUptimeEventsInPeriod(
+        uptimeEventColumns,
+        periodStart,
+        periodEnd,
+        monitorIds,
+        onlyEnabledMonitors,
+    )
 
-    override fun fetchLatestIncidentTimestamp(): OffsetDateTime? = dslContext
-        .select(DSL.max(DSL.coalesce(PUSH_UPTIME_EVENT.UPDATED_AT, PUSH_UPTIME_EVENT.STARTED_AT)))
-        .from(PUSH_UPTIME_EVENT)
-        .join(PUSH_MONITOR).on(PUSH_UPTIME_EVENT.MONITOR_ID.eq(PUSH_MONITOR.ID))
-        .where(PUSH_UPTIME_EVENT.STATUS.eq(UptimeStatus.DOWN))
-        .and(PUSH_MONITOR.ENABLED.isTrue)
-        .fetchAny(0, OffsetDateTime::class.java)
+    override fun fetchLatestIncidentTimestamp(): OffsetDateTime? =
+        dslContext.fetchLatestUptimeIncidentTimestamp(uptimeEventColumns)
 }

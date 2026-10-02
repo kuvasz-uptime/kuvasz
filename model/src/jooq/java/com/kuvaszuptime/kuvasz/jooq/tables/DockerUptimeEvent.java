@@ -171,7 +171,7 @@ public class DockerUptimeEvent extends TableImpl<DockerUptimeEventRecord> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.asList(Indexes.DOCKER_UPTIME_EVENT_ENDED_AT_IDX, Indexes.DOCKER_UPTIME_EVENT_MONITOR_IDX);
+        return Arrays.asList(Indexes.DOCKER_UPTIME_EVENT_ENDED_AT_IDX, Indexes.DOCKER_UPTIME_EVENT_MONITOR_IDX, Indexes.DOCKER_UPTIME_EVENT_OPEN_IDX);
     }
 
     @Override

@@ -20,7 +20,9 @@ import com.kuvaszuptime.kuvasz.models.IncidentType
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentStatus
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import io.kotest.inspectors.forAll
 import io.kotest.inspectors.forOne
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -1402,6 +1404,162 @@ class IncidentRepositoryTest(
                         .shouldHaveSize(1)
                         .first()
                         .details shouldBe "The Docker host \"local\" cannot be reached: connection refused"
+                }
+            }
+        }
+
+        given("the getLatestResolvedIncidents() method") {
+
+            `when`("there are incidents of different types, states and monitors") {
+
+                then("it should return the latest ones resolved in the period, but only as many as requested") {
+                    val now = getCurrentTimestamp()
+                    val httpMonitor = createHttpMonitor(httpMonitorRepository, monitorName = "HTTP")
+                    val tcpMonitor = createTcpMonitor(tcpMonitorRepository, monitorName = "TCP")
+                    val pausedMonitor = createPushMonitor(pushMonitorRepository, enabled = false)
+                    // Resolved in the period, in this order
+                    createSSLEventRecord(
+                        dslContext,
+                        monitorId = httpMonitor.id,
+                        status = SslStatus.INVALID,
+                        startedAt = now.minusHours(10),
+                        endedAt = now.minusHours(1),
+                    )
+                    createTcpUptimeEventRecord(
+                        dslContext,
+                        monitorId = tcpMonitor.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = now.minusHours(3),
+                        endedAt = now.minusHours(2),
+                    )
+                    createHttpUptimeEventRecord(
+                        dslContext,
+                        monitorId = httpMonitor.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = now.minusHours(5),
+                        endedAt = now.minusHours(4),
+                    )
+                    // Left out, as it's the oldest one over the limit
+                    createTcpUptimeEventRecord(
+                        dslContext,
+                        monitorId = tcpMonitor.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = now.minusHours(7),
+                        endedAt = now.minusHours(6),
+                    )
+                    // Left out, as it's still ongoing
+                    createHttpUptimeEventRecord(
+                        dslContext,
+                        monitorId = httpMonitor.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = now.minusMinutes(30),
+                        endedAt = null,
+                    )
+                    // Left out, as it was resolved before the period
+                    createTcpUptimeEventRecord(
+                        dslContext,
+                        monitorId = tcpMonitor.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = now.minusDays(3),
+                        endedAt = now.minusDays(2),
+                    )
+                    // Left out, as the monitor is paused, just like from the rest of the incidents
+                    createPushUptimeEventRecord(
+                        dslContext,
+                        monitorId = pausedMonitor.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = now.minusMinutes(50),
+                        endedAt = now.minusMinutes(40),
+                    )
+
+                    val incidents = incidentRepository.getLatestResolvedIncidents(Duration.ofDays(1), limit = 3)
+
+                    incidents.map { it.incidentType to it.monitorName } shouldBe listOf(
+                        IncidentType.SSL to "HTTP",
+                        IncidentType.TCP to "TCP",
+                        IncidentType.HTTP to "HTTP",
+                    )
+                    incidents.forAll { it.status shouldBe IncidentStatus.RESOLVED }
+                }
+            }
+
+            `when`("a type has more incidents resolved in the period than the limit") {
+
+                then("every type should be cut to its latest ones, and the whole list to the latest ones of all") {
+                    val now = getCurrentTimestamp()
+                    // The first type of the union, so a limit applied to the wrong part of the query would show up
+                    val httpMonitor = createHttpMonitor(httpMonitorRepository, monitorName = "HTTP")
+                    // The last uptime type of the union
+                    val dockerMonitor = createDockerMonitor(dockerMonitorRepository, monitorName = "Docker")
+                    // Not in the order they were resolved, so the order of the rows can't help
+                    listOf(3L, 1L, 5L, 2L).forEach { endedHoursAgo ->
+                        createHttpUptimeEventRecord(
+                            dslContext,
+                            monitorId = httpMonitor.id,
+                            status = UptimeStatus.DOWN,
+                            startedAt = now.minusHours(endedHoursAgo).minusMinutes(10),
+                            endedAt = now.minusHours(endedHoursAgo),
+                        )
+                    }
+                    createDockerUptimeEventRecord(
+                        dslContext,
+                        monitorId = dockerMonitor.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = now.minusMinutes(100),
+                        endedAt = now.minusMinutes(90),
+                    )
+
+                    val incidents = incidentRepository.getLatestResolvedIncidents(Duration.ofDays(1), limit = 3)
+
+                    incidents shouldHaveSize 3
+                    incidents[0].incidentType shouldBe IncidentType.HTTP
+                    incidents[0].endedAt shouldBe now.minusHours(1)
+                    incidents[1].incidentType shouldBe IncidentType.DOCKER
+                    incidents[1].endedAt shouldBe now.minusMinutes(90)
+                    incidents[2].incidentType shouldBe IncidentType.HTTP
+                    incidents[2].endedAt shouldBe now.minusHours(2)
+                }
+            }
+
+            `when`("the SSL incidents are left out") {
+
+                then("only the uptime incidents should be returned, both by it and by getIncidents()") {
+                    val now = getCurrentTimestamp()
+                    val monitor = createHttpMonitor(httpMonitorRepository)
+                    listOf(null, now.minusHours(1)).forEach { endedAt ->
+                        createHttpUptimeEventRecord(
+                            dslContext,
+                            monitorId = monitor.id,
+                            status = UptimeStatus.DOWN,
+                            startedAt = now.minusHours(2),
+                            endedAt = endedAt,
+                        )
+                        createSSLEventRecord(
+                            dslContext,
+                            monitorId = monitor.id,
+                            status = SslStatus.INVALID,
+                            startedAt = now.minusHours(2),
+                            endedAt = endedAt,
+                        )
+                    }
+
+                    incidentRepository
+                        .getLatestResolvedIncidents(Duration.ofDays(1), limit = 3, includeSslIncidents = false)
+                        .map { it.incidentType to it.status } shouldBe
+                        listOf(IncidentType.HTTP to IncidentStatus.RESOLVED)
+                    incidentRepository
+                        .getIncidents(includeResolved = false, includeSslIncidents = false)
+                        .map { it.incidentType to it.status } shouldBe
+                        listOf(IncidentType.HTTP to IncidentStatus.ONGOING)
+                    // Both of them are included by default
+                    incidentRepository.getIncidents(includeResolved = true) shouldHaveSize 4
+                }
+            }
+
+            `when`("there isn't any resolved incident") {
+
+                then("it should return an empty list") {
+                    incidentRepository.getLatestResolvedIncidents(Duration.ofDays(1), limit = 3).shouldBeEmpty()
                 }
             }
         }

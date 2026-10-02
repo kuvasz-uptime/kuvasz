@@ -13,14 +13,14 @@ import com.microsoft.playwright.TimeoutError
  */
 class DockerMonitorFormModal(page: Page) : ModalView(page) {
 
-    val nameInput: Locator get() = modal.locator("#name-input")
+    val nameInput: Locator get() = modal.locator("#docker-name-input")
 
     /** The connectivity-check toggle, which Docker is the only type to turn on by default. */
     val ignoreConnectivityCheckToggle: Locator
         get() = modal.locator("input[name=ignoreConnectivityCheck]")
 
-    val uptimeCheckIntervalInput: Locator get() = modal.locator("#uptimeCheckInterval-input")
-    val timeoutMsInput: Locator get() = modal.locator("#timeoutMs-input")
+    val uptimeCheckIntervalInput: Locator get() = modal.locator("#docker-uptimeCheckInterval-input")
+    val timeoutMsInput: Locator get() = modal.locator("#docker-timeoutMs-input")
 
     private val dockerHostField: Locator get() = modal.getByTestId("docker-host-select")
     private val containerField: Locator get() = modal.getByTestId("docker-container-select")

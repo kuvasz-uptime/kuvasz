@@ -79,7 +79,7 @@ internal fun FlowContent.pushMonitorCreateUpdateModal(
                 label = Messages.clientSecretLabel(),
                 description = Messages.clientSecretDescription(),
                 required = true,
-                inputName = "$propName-input",
+                inputName = fieldId(propName, "input"),
             )
             div {
                 classes(ROW)
@@ -88,6 +88,7 @@ internal fun FlowContent.pushMonitorCreateUpdateModal(
                     input {
                         type = InputType.text
                         classes(FORM_CONTROL)
+                        id = fieldId(propName, "input")
                         autoComplete = "off"
                         xModel(propName)
                         xBindErrorClass(propName)

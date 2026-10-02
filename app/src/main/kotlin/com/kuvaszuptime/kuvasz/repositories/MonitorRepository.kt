@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.models.DuplicationException
 import com.kuvaszuptime.kuvasz.models.MonitorDuplicatedException
 import com.kuvaszuptime.kuvasz.models.PersistenceException
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorSummary
 import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.util.toPersistenceException
@@ -35,6 +36,29 @@ internal fun categoryFilterCondition(categoryField: Field<String>, filter: Categ
         is CategoryFilter.InCategory -> categoryField.eq(filter.category)
     }
 
+/**
+ * The WHERE condition selecting the monitors of a status page: the ones referenced explicitly by their name,
+ * plus every monitor belonging to one of the referenced categories. The two selectors are additive.
+ *
+ * Both being null means "no restriction at all", which is how the default status page collects every enabled
+ * monitor. Both being empty selects nothing, which is what an empty custom page already did before the
+ * categories existed.
+ */
+internal fun selectionCondition(
+    nameField: Field<String>,
+    categoryField: Field<String>,
+    monitorNames: List<String>?,
+    categories: List<String>?,
+): Condition? {
+    if (monitorNames == null && categories == null) return null
+
+    val selectors = listOfNotNull(
+        monitorNames?.takeIf { it.isNotEmpty() }?.let { nameField.`in`(it) },
+        categories?.takeIf { it.isNotEmpty() }?.let { categoryField.`in`(it) },
+    )
+    return if (selectors.isEmpty()) DSL.falseCondition() else DSL.or(selectors)
+}
+
 @Suppress("ComplexInterface")
 sealed interface MonitorRepository<R : MonitorRecord, D : MonitorDetailsDto> {
 
@@ -49,6 +73,9 @@ sealed interface MonitorRepository<R : MonitorRecord, D : MonitorDetailsDto> {
         monitorNames: List<String>? = null,
         categories: List<String>? = null,
     ): List<D>
+
+    /** Fetches only what the statistics need of every monitor, see [MonitorSummary]. */
+    fun fetchSummaries(): List<MonitorSummary>
     fun findById(monitorId: Long, txCtx: DSLContext?): R?
     fun findByName(name: String, txCtx: DSLContext? = null): R?
     fun deleteById(monitorId: Long, txCtx: DSLContext?): Int
@@ -72,29 +99,6 @@ sealed interface MonitorRepository<R : MonitorRecord, D : MonitorDetailsDto> {
                 DSL.unnest(STATUS_PAGE.MONITORS).`as`("t", MONITOR_NAME_FIELD_NAME)
             )
             .groupBy(monitorNameField)
-
-    /**
-     * The WHERE condition selecting the monitors of a status page: the ones referenced explicitly by their name,
-     * plus every monitor belonging to one of the referenced categories. The two selectors are additive.
-     *
-     * Both being null means "no restriction at all", which is how the default status page collects every enabled
-     * monitor. Both being empty selects nothing, which is what an empty custom page already did before the
-     * categories existed.
-     */
-    fun selectionCondition(
-        nameField: Field<String>,
-        categoryField: Field<String>,
-        monitorNames: List<String>?,
-        categories: List<String>?,
-    ): Condition? {
-        if (monitorNames == null && categories == null) return null
-
-        val selectors = listOfNotNull(
-            monitorNames?.takeIf { it.isNotEmpty() }?.let { nameField.`in`(it) },
-            categories?.takeIf { it.isNotEmpty() }?.let { categoryField.`in`(it) },
-        )
-        return if (selectors.isEmpty()) DSL.falseCondition() else DSL.or(selectors)
-    }
 
     /**
      * Converts a DataAccessException to a PersistenceException by matching duplication errors.

@@ -1,7 +1,6 @@
 package com.kuvaszuptime.kuvasz.controllers.ui
 
 import com.kuvaszuptime.kuvasz.AppGlobals
-import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.TcpMonitor.TCP_MONITOR
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
@@ -10,7 +9,6 @@ import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.security.ui.WebSecured
 import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.check.tcp.TcpMonitorActions
-import com.kuvaszuptime.kuvasz.ui.fragments.dashboard.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.tcp.*
 import com.kuvaszuptime.kuvasz.ui.pages.monitor.tcp.*
@@ -36,22 +34,6 @@ class WebUITcpMonitorController(
     private val monitorRepository: TcpMonitorRepository,
     private val incidentRepository: IncidentRepository,
 ) {
-
-    @Get("/tcp-monitors/fragments/stats")
-    @WebSecured
-    @ExecuteOn(TaskExecutors.BLOCKING)
-    @Produces(MediaType.TEXT_HTML)
-    fun tcpMonitoringStats(): String {
-        val period = Duration.ofDays(UIDefaults.DASHBOARD_MONITORING_STATS_PERIOD_DAYS)
-
-        return renderTcpMonitoringStats(
-            monitoringStats = statCalculator.calculateOverallTcpStats(period),
-            downMonitors = monitorActions.getMonitorsWithDetails(
-                enabled = true,
-                uptimeStatus = listOf(UptimeStatus.DOWN),
-            ),
-        )
-    }
 
     @Get("/tcp-monitors")
     @WebSecured

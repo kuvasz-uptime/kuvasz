@@ -7,11 +7,11 @@ import com.microsoft.playwright.Page
 // The Alpine.js-driven create/update modal for TCP monitors.
 class TcpMonitorFormModal(page: Page) : ModalView(page) {
 
-    val nameInput: Locator get() = modal.locator("#name-input")
-    val hostInput: Locator get() = modal.locator("#host-input")
-    val portInput: Locator get() = modal.locator("#port-input")
-    val uptimeCheckIntervalInput: Locator get() = modal.locator("#uptimeCheckInterval-input")
-    val latencyThresholdInput: Locator get() = modal.locator("#latencyThresholdMs-input")
+    val nameInput: Locator get() = modal.locator("#tcp-name-input")
+    val hostInput: Locator get() = modal.locator("#tcp-host-input")
+    val portInput: Locator get() = modal.locator("#tcp-port-input")
+    val uptimeCheckIntervalInput: Locator get() = modal.locator("#tcp-uptimeCheckInterval-input")
+    val latencyThresholdInput: Locator get() = modal.locator("#tcp-latencyThresholdMs-input")
 
     fun setName(value: String): TcpMonitorFormModal {
         nameInput.fill(value)

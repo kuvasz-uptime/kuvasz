@@ -17,7 +17,7 @@ import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 
 /**
  * The selection a status page expresses is resolved in SQL, and every monitor repository wires the very same
- * [MonitorRepository.selectionCondition] and category join into its own query. Both are easy to get subtly wrong
+ * [selectionCondition] and category join into its own query. Both are easy to get subtly wrong
  * per type, so every case below runs against all five repositories.
  *
  * The two selectors are additive, and both of them being null means "no restriction at all", which is how the

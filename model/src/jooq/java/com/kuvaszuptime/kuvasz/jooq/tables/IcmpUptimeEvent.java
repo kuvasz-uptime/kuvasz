@@ -166,7 +166,7 @@ public class IcmpUptimeEvent extends TableImpl<IcmpUptimeEventRecord> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.asList(Indexes.ICMP_UPTIME_EVENT_ENDED_AT_IDX, Indexes.ICMP_UPTIME_EVENT_MONITOR_IDX);
+        return Arrays.asList(Indexes.ICMP_UPTIME_EVENT_ENDED_AT_IDX, Indexes.ICMP_UPTIME_EVENT_MONITOR_IDX, Indexes.ICMP_UPTIME_EVENT_OPEN_IDX);
     }
 
     @Override
