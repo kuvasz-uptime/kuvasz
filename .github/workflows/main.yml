@@ -81,17 +81,6 @@ jobs:
           require_tests: false
           # Fork PRs get a read-only token, so posting there would fail the step: summary-only for them
           comment: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
-      - name: Upload JVM test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v6
-        with:
-          token: ${{ secrets.CODECOV_UPLOAD_TOKEN }}
-          report_type: test_results
-          # The default search (*test*.xml) would also pick up the logback-test.xml configs
-          disable_search: true
-          files: '**/build/test-results/test/TEST-*.xml'
-          flags: jvm
-          fail_ci_if_error: false
       - name: Upload JVM test reports
         if: failure()
         uses: actions/upload-artifact@v4
@@ -106,6 +95,19 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_UPLOAD_TOKEN }}
           files: ./build/reports/kover/report.xml
+          fail_ci_if_error: false
+      - name: Upload JVM test results to Codecov
+        # Must stay after every Gradle step: the action downloads its CLI into the workspace, and the untracked
+        # files turn the git-based project version into a ".dirty" one, which reruns the whole test suite
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@v6
+        with:
+          token: ${{ secrets.CODECOV_UPLOAD_TOKEN }}
+          report_type: test_results
+          # The default search (*test*.xml) would also pick up the logback-test.xml configs
+          disable_search: true
+          files: '**/build/test-results/test/TEST-*.xml'
+          flags: jvm
           fail_ci_if_error: false
 
   ui-tests:
