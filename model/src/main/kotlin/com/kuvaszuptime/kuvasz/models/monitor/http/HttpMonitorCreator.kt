@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorCreator
 import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
+import com.kuvaszuptime.kuvasz.util.nullIfBlank
 import com.kuvaszuptime.kuvasz.validation.SupportedStatusCodes
 import com.kuvaszuptime.kuvasz.validation.ValidHeaderNames
 import com.kuvaszuptime.kuvasz.validation.WellFormedJsonString
@@ -38,6 +39,7 @@ interface HttpMonitorCreator : MonitorCreator<HttpMonitorRecord> {
     val forceNoCache: Boolean
     val followRedirects: Boolean
     val crossOriginHeaderPropagation: Boolean
+    val proxy: String?
 
     @get:NotNull(message = MonitorValidationMessages.SSL_EXPIRY_THRESHOLD_NOT_NULL)
     @get:PositiveOrZero(message = MonitorValidationMessages.SSL_EXPIRY_THRESHOLD_POSITIVE_OR_ZERO)
@@ -84,6 +86,7 @@ interface HttpMonitorCreator : MonitorCreator<HttpMonitorRecord> {
             .setForceNoCache(forceNoCache)
             .setFollowRedirects(followRedirects)
             .setCrossOriginHeaderPropagation(crossOriginHeaderPropagation)
+            .setProxy(proxy.nullIfBlank())
             .setSslExpiryThreshold(sslExpiryThreshold)
             .setIntegrations(validatedIntegrations.toTypedArray())
             .setExpectedStatusCodes(expectedStatusCodes?.toSet()?.toTypedArray().orEmpty())

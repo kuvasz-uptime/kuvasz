@@ -46,7 +46,7 @@ const {
 // --------- #1: isValidHttpHeaderName (regex) ---------
 
 test('isValidHttpHeaderName', () => {
-    const form = upsertHttpMonitorForm(null, {}, 'category-select', false, 'select', [], 0);
+    const form = upsertHttpMonitorForm(null, {}, 'category-select', false, 'select', [], 'proxy-select', [], '(not configured)', 0);
     // Empty / nullish is treated as "no error"
     assert.equal(form.isValidHttpHeaderName(''), true);
     assert.equal(form.isValidHttpHeaderName(null), true);
@@ -1066,6 +1066,77 @@ test('Docker host select re-offers a host that is no longer configured, marked a
     assert.equal(form.dockerHost, 'removed');
 });
 
+test('HTTP proxy validator rejects a proxy that is not configured, unless the monitor already had it', () => {
+    const buildForm = () => upsertHttpMonitorForm(
+        null, {proxyNotConfigured: 'NC'}, 'category-select', false, 'select', [], 'proxy-select', ['egress'],
+        '(not configured)', 0,
+    );
+
+    // No proxy means a direct connection, which is always fine
+    assertValidatorBoundaries(buildForm, 'proxy', 'validateProxy', 'NC', [['', false], [null, false], ['egress', false]]);
+    // A proxy that is not configured is what a clone of a monitor with a since-removed proxy would carry
+    assertValidatorBoundaries(buildForm, 'proxy', 'validateProxy', 'NC', [['removed', true]]);
+
+    // The monitor that already has such a proxy may keep it...
+    const update = buildForm();
+    update.populateTypeFields({proxy: 'removed'});
+    Object.assign(update, {errors: {}, isUpdate: true});
+    update.validateProxy();
+    assert.equal(update.errors.proxy, null);
+
+    // ...but it can't be pointed to another proxy that is not configured either
+    update.proxy = 'other-removed';
+    update.validateProxy();
+    assert.equal(update.errors.proxy, 'NC');
+});
+
+test('HTTP proxy select re-offers a proxy that is no longer configured, marked as such', () => {
+    const tomSelect = fakeTomSelect();
+    const form = upsertHttpMonitorForm(
+        null, {}, 'category-select', false, 'select', [], 'proxy-select', ['egress'], '(not configured)', 0,
+    );
+
+    withCategorySelect(tomSelect, () => form.populateTypeFields({proxy: 'removed'}));
+
+    assert.deepEqual(tomSelect.options, [
+        {value: 'egress', text: 'egress'},
+        {value: 'removed', text: 'removed (not configured)'},
+    ]);
+    assert.deepEqual(tomSelect.items, ['removed']);
+    assert.equal(form.proxy, 'removed');
+    assert.equal(form.storedProxy, 'removed');
+});
+
+test('HTTP proxy select only offers the configured proxies without a stored one', () => {
+    const tomSelect = fakeTomSelect();
+    const form = upsertHttpMonitorForm(
+        null, {}, 'category-select', false, 'select', [], 'proxy-select', ['egress'], '(not configured)', 0,
+    );
+
+    withCategorySelect(tomSelect, () => form.populateTypeFields({proxy: 'egress'}));
+    assert.deepEqual(tomSelect.options, [{value: 'egress', text: 'egress'}]);
+    assert.deepEqual(tomSelect.items, ['egress']);
+    assert.equal(form.proxy, 'egress');
+
+    const directTomSelect = fakeTomSelect();
+    withCategorySelect(directTomSelect, () => form.populateTypeFields(null));
+    assert.deepEqual(directTomSelect.options, [{value: 'egress', text: 'egress'}]);
+    assert.deepEqual(directTomSelect.items, []);
+    assert.equal(form.proxy, '');
+});
+
+test('HTTP request body sends the proxy, or null for a direct connection', () => {
+    const form = upsertHttpMonitorForm(
+        null, {}, 'category-select', false, 'select', [], 'proxy-select', ['egress'], '(not configured)', 0,
+    );
+
+    form.populateFrom({name: 'site', url: 'https://example.com', proxy: 'egress'});
+    assert.equal(form.buildRequestBody().proxy, 'egress');
+
+    form.proxy = '';
+    assert.equal(form.buildRequestBody().proxy, null);
+});
+
 test('Docker containers are listed only while the modal is open', () => {
     const listeners = {};
     const modal = {addEventListener: (event, listener) => listeners[event] = listener};
@@ -1268,13 +1339,13 @@ test('Push validators enforce interval, grace period and client secret rules', (
 // --------- #5: populateFrom field mapping (shared by reset & clone) ---------
 
 test('HTTP populateFrom copies a source and falls back to defaults', () => {
-    const form = upsertHttpMonitorForm(null, {}, 'category-select', false, 'select', [], 0);
+    const form = upsertHttpMonitorForm(null, {}, 'category-select', false, 'select', [], 'proxy-select', [], '(not configured)', 0);
 
     form.populateFrom({
         name: 'Src', url: 'https://example.com', sensitiveUrl: true, sslExpiryThreshold: 14,
         failureCountThreshold: 4, uptimeCheckInterval: 120, sslCheckEnabled: true,
         latencyHistoryEnabled: false, forceNoCache: false, followRedirects: false,
-        crossOriginHeaderPropagation: true,
+        crossOriginHeaderPropagation: true, proxy: 'egress',
         requestMethod: 'POST', integrations: ['slack'], expectedStatusCodes: [200, 301],
         expectedKeyword: 'ok', expectedKeywordCaseSensitive: true, expectedKeywordNegated: true,
         responseTimeThresholdMillis: 500, requestHeaders: {'X-A': '1'}, expectedHeaders: {'X-B': '2'},
@@ -1291,6 +1362,7 @@ test('HTTP populateFrom copies a source and falls back to defaults', () => {
     assert.equal(form.forceNoCache, false);
     assert.equal(form.followRedirects, false);
     assert.equal(form.crossOriginHeaderPropagation, true);
+    assert.equal(form.proxy, 'egress');
     assert.equal(form.requestMethod, 'POST');
     assert.deepEqual(form.integrations, ['slack']);
     // Status codes are stringified for the TomSelect widget
@@ -1315,6 +1387,7 @@ test('HTTP populateFrom copies a source and falls back to defaults', () => {
     assert.equal(form.forceNoCache, true);
     assert.equal(form.followRedirects, true);
     assert.equal(form.crossOriginHeaderPropagation, false);
+    assert.equal(form.proxy, '');
     assert.equal(form.requestMethod, 'GET');
     assert.deepEqual(form.integrations, []);
     assert.deepEqual(form.selectedHttpStatusCodes, []);
@@ -1662,7 +1735,7 @@ test('escapeHtml escapes every HTML special character and handles missing values
 
 test('monitor forms populate and reset the category', () => {
     const forms = [
-        upsertHttpMonitorForm(null, {}, 'category-select', false, 'select', [], 0),
+        upsertHttpMonitorForm(null, {}, 'category-select', false, 'select', [], 'proxy-select', [], '(not configured)', 0),
         upsertPushMonitorForm(null, {}, 'category-select', false, 0),
         upsertIcmpMonitorForm(null, {}, 'category-select', false, 0),
         upsertTcpMonitorForm(null, {}, 'category-select', false, 0),
@@ -1677,7 +1750,7 @@ test('monitor forms populate and reset the category', () => {
 });
 
 test('validateCategory flags categories longer than 100 characters', () => {
-    const form = upsertHttpMonitorForm(null, {categoryTooLong: 'too long'}, 'category-select', false, 'select', [], 0);
+    const form = upsertHttpMonitorForm(null, {categoryTooLong: 'too long'}, 'category-select', false, 'select', [], 'proxy-select', [], '(not configured)', 0);
     form.populateFrom(null);
     form.category = 'a'.repeat(101);
     form.validateCategory();
@@ -1925,7 +1998,7 @@ test('upsert shows the rejected name change of a monitor on its field, every oth
         errorResponse(400, {message: 'invalid window'}),
     );
     const messages = {nameCannotBeChanged: 'IMMUTABLE'};
-    const monitorForm = upsertHttpMonitorForm({id: 1, name: 'site'}, messages, 'category-select', false, 'select', [], 0);
+    const monitorForm = upsertHttpMonitorForm({id: 1, name: 'site'}, messages, 'category-select', false, 'select', [], 'proxy-select', [], '(not configured)', 0);
     const maintenanceWindowForm = upsertMaintenanceWindowForm(null, messages, 'select', []);
 
     monitorForm.resetState();
@@ -2018,7 +2091,7 @@ test('HTTP validators enforce the name, SSL expiry, interval, failure count and 
         nameRequired: 'N', sslExpiryThresholdInvalid: 'SSL', uptimeCheckIntervalInvalid: 'UI',
         failureCountThresholdInvalid: 'FC', responseTimeThresholdInvalid: 'RT',
     };
-    const buildForm = () => upsertHttpMonitorForm(null, msgs, 'category-select', false, 'select', [], 0);
+    const buildForm = () => upsertHttpMonitorForm(null, msgs, 'category-select', false, 'select', [], 'proxy-select', [], '(not configured)', 0);
 
     assertValidatorBoundaries(buildForm, 'name', 'validateName', 'N', [
         ['', true], ['   ', true], [null, true], ['site', false],
@@ -2041,7 +2114,7 @@ test('HTTP validators enforce the name, SSL expiry, interval, failure count and 
 test('HTTP submitForm keeps an invalid request body on its field instead of sending it', async (t) => {
     stubBrowser(t);
     const requests = stubRequests(t, jsonResponse({id: 8}));
-    const form = upsertHttpMonitorForm(null, {requestBodyInvalid: 'JSON'}, 'category-select', false, 'select', [], 0);
+    const form = upsertHttpMonitorForm(null, {requestBodyInvalid: 'JSON'}, 'category-select', false, 'select', [], 'proxy-select', [], '(not configured)', 0);
     form.resetState();
     Object.assign(form, {name: 'api', url: 'https://example.com', requestBody: '{"key": '});
 
@@ -2060,7 +2133,7 @@ test('HTTP submitForm keeps an invalid request body on its field instead of send
 
 const monitorFormFactories = {
     http: (monitor = null, isNameLocked = false) =>
-        upsertHttpMonitorForm(monitor, {}, 'category-select', isNameLocked, 'select', [], 0),
+        upsertHttpMonitorForm(monitor, {}, 'category-select', isNameLocked, 'select', [], 'proxy-select', [], '(not configured)', 0),
     push: (monitor = null, isNameLocked = false) => upsertPushMonitorForm(monitor, {}, 'category-select', isNameLocked, 0),
     icmp: (monitor = null, isNameLocked = false) => upsertIcmpMonitorForm(monitor, {}, 'category-select', isNameLocked, 0),
     tcp: (monitor = null, isNameLocked = false) => upsertTcpMonitorForm(monitor, {}, 'category-select', isNameLocked, 0),

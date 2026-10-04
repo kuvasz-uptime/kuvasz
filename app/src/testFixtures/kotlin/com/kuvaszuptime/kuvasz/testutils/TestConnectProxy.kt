@@ -14,13 +14,17 @@ import kotlin.concurrent.thread
  * MockServer can't stand in for it: after a CONNECT it always expects TLS, so it drops a tunnel that carries
  * plaintext HTTP.
  */
-class TestConnectProxy(username: String? = null, password: String? = null) : AutoCloseable {
+class TestConnectProxy(
+    username: String? = null,
+    password: String? = null,
+    port: Int = 0,
+) : AutoCloseable {
 
     private companion object {
         const val EMPTY_BODY = "Content-Length: 0\r\n"
     }
 
-    private val server = ServerSocket(0)
+    private val server = ServerSocket(port)
     private val expectedToken = if (username != null && password != null) {
         Base64.getEncoder().encodeToString("$username:$password".toByteArray())
     } else {

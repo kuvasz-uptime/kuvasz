@@ -65,6 +65,7 @@ public class HttpMonitor implements Serializable {
     private String category;
     private Boolean crossOriginHeaderPropagation;
     private Boolean ignoreConnectivityCheck;
+    private String proxy;
 
     public HttpMonitor() {}
 
@@ -96,6 +97,7 @@ public class HttpMonitor implements Serializable {
         this.category = value.category;
         this.crossOriginHeaderPropagation = value.crossOriginHeaderPropagation;
         this.ignoreConnectivityCheck = value.ignoreConnectivityCheck;
+        this.proxy = value.proxy;
     }
 
     public HttpMonitor(
@@ -125,7 +127,8 @@ public class HttpMonitor implements Serializable {
         Boolean sensitiveUrl,
         String category,
         Boolean crossOriginHeaderPropagation,
-        Boolean ignoreConnectivityCheck
+        Boolean ignoreConnectivityCheck,
+        String proxy
     ) {
         this.id = id;
         this.name = name;
@@ -154,6 +157,7 @@ public class HttpMonitor implements Serializable {
         this.category = category;
         this.crossOriginHeaderPropagation = crossOriginHeaderPropagation;
         this.ignoreConnectivityCheck = ignoreConnectivityCheck;
+        this.proxy = proxy;
     }
 
     /**
@@ -571,6 +575,21 @@ public class HttpMonitor implements Serializable {
         return this;
     }
 
+    /**
+     * Getter for <code>kuvasz.http_monitor.proxy</code>.
+     */
+    public String getProxy() {
+        return this.proxy;
+    }
+
+    /**
+     * Setter for <code>kuvasz.http_monitor.proxy</code>.
+     */
+    public HttpMonitor setProxy(String proxy) {
+        this.proxy = proxy;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -742,6 +761,12 @@ public class HttpMonitor implements Serializable {
         }
         else if (!this.ignoreConnectivityCheck.equals(other.ignoreConnectivityCheck))
             return false;
+        if (this.proxy == null) {
+            if (other.proxy != null)
+                return false;
+        }
+        else if (!this.proxy.equals(other.proxy))
+            return false;
         return true;
     }
 
@@ -776,6 +801,7 @@ public class HttpMonitor implements Serializable {
         result = prime * result + ((this.category == null) ? 0 : this.category.hashCode());
         result = prime * result + ((this.crossOriginHeaderPropagation == null) ? 0 : this.crossOriginHeaderPropagation.hashCode());
         result = prime * result + ((this.ignoreConnectivityCheck == null) ? 0 : this.ignoreConnectivityCheck.hashCode());
+        result = prime * result + ((this.proxy == null) ? 0 : this.proxy.hashCode());
         return result;
     }
 
@@ -810,6 +836,7 @@ public class HttpMonitor implements Serializable {
         sb.append(", ").append(category);
         sb.append(", ").append(crossOriginHeaderPropagation);
         sb.append(", ").append(ignoreConnectivityCheck);
+        sb.append(", ").append(proxy);
 
         sb.append(")");
         return sb.toString();

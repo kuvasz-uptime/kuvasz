@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResponse
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
 import com.kuvaszuptime.kuvasz.models.monitor.http.safeDisplayUrl
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.services.proxy.ProxyNotConfiguredException
 import com.kuvaszuptime.kuvasz.util.isServerRelatedError
 import com.kuvaszuptime.kuvasz.util.loggerFor
 import io.micronaut.core.io.buffer.ByteBuffer
@@ -32,6 +33,7 @@ class HttpUptimeChecker(
     private val monitorRepository: HttpMonitorRepository,
     private val checkRequestConfigurator: HttpCheckRequestConfigurator,
     private val checkResponseEvaluator: HttpCheckResponseEvaluator,
+    private val proxiedHttpClients: ProxiedHttpClientRegistry,
 ) {
 
     companion object {
@@ -90,9 +92,10 @@ class HttpUptimeChecker(
     )
     suspend fun sendHttpRequest(monitor: HttpMonitorRecord, uri: URI): HttpCheckResponse {
         logger.debug("Sending HTTP request to $uri (${monitor.name})")
+        val client = clientFor(monitor)
         val request = checkRequestConfigurator.fromMonitor(monitor, uri)
         val start = System.currentTimeMillis()
-        val httpResponse = httpClient.exchange(
+        val httpResponse = client.exchange(
             request,
             Argument.of(ByteBuffer::class.java),
             Argument.of(ByteBuffer::class.java),
@@ -107,6 +110,10 @@ class HttpUptimeChecker(
             latency = latency
         )
     }
+
+    private fun clientFor(monitor: HttpMonitorRecord): HttpClient =
+        monitor.proxy?.let { proxy -> proxiedHttpClients.clientFor(proxy) ?: throw ProxyNotConfiguredException(proxy) }
+            ?: httpClient
 }
 
 /**

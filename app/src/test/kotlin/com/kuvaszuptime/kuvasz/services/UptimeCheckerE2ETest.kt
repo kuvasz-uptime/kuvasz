@@ -16,11 +16,17 @@ import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.http.HttpUptimeChecker
 import com.kuvaszuptime.kuvasz.services.connectivity.ConnectivityChecker
 import com.kuvaszuptime.kuvasz.testutils.ENABLED_CONNECTIVITY_CHECK
+import com.kuvaszuptime.kuvasz.testutils.TEST_CONNECT_PROXY
+import com.kuvaszuptime.kuvasz.testutils.TEST_CONNECT_PROXY_PORT
+import com.kuvaszuptime.kuvasz.testutils.TestConnectProxy
 import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
 import com.kuvaszuptime.kuvasz.testutils.shouldBeUriOf
 import io.kotest.inspectors.forAll
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldStartWith
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpStatus
@@ -44,7 +50,7 @@ import org.mockserver.verify.VerificationTimes
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.milliseconds
 
-@MicronautTest(startApplication = false, environments = [ENABLED_CONNECTIVITY_CHECK])
+@MicronautTest(startApplication = false, environments = [ENABLED_CONNECTIVITY_CHECK, TEST_CONNECT_PROXY])
 class UptimeCheckerE2ETest(
     uptimeChecker: HttpUptimeChecker,
     private val monitorRepository: HttpMonitorRepository,
@@ -54,16 +60,19 @@ class UptimeCheckerE2ETest(
 ) : DatabaseBehaviorSpec() {
     init {
         lateinit var mockServer: ClientAndServer
+        lateinit var connectProxy: TestConnectProxy
         val mockServerUrl = "http://localhost:1080"
         // The same mock server, reached through a host that differs from the one of the monitored URLs
         val otherHostMockServerUrl = "http://127.0.0.1:1080"
 
         beforeSpec {
             mockServer = ClientAndServer.startClientAndServer(1080)
+            connectProxy = TestConnectProxy(port = TEST_CONNECT_PROXY_PORT)
         }
 
         afterSpec {
             mockServer.stop()
+            connectProxy.close()
         }
 
         afterContainer {
@@ -99,6 +108,107 @@ class UptimeCheckerE2ETest(
                     expectedEvent.monitor.id shouldBe monitor.id
 
                     mockServer.verifyRequest(request)
+                }
+            }
+
+            `when`("it checks a monitor that is UP through a proxy") {
+                val monitor = createHttpMonitor(
+                    repository = monitorRepository,
+                    url = "$mockServerUrl/proxied-path",
+                    proxy = TEST_CONNECT_PROXY,
+                )
+                val subscriber = TestSubscriber<HttpMonitorUpEvent>()
+                eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(subscriber) }
+
+                val request = getRequest("/proxied-path")
+                mockServer.`when`(request).respond(response().withStatusCode(HttpStatus.OK.code))
+
+                uptimeChecker.check(monitor)
+
+                then("it should reach the target through the tunnel of the proxy") {
+                    val expectedEvent = subscriber.awaitCount(1).values().first()
+
+                    expectedEvent.status shouldBe HttpStatus.OK
+                    expectedEvent.monitor.id shouldBe monitor.id
+                    mockServer.verifyRequest(request)
+                    connectProxy.tunnels shouldContain "localhost:1080"
+                }
+            }
+
+            `when`("it checks a monitor through a proxy, and the target redirects") {
+                val monitor = createHttpMonitor(
+                    repository = monitorRepository,
+                    url = "$mockServerUrl/proxied-redirect",
+                    followRedirects = true,
+                    proxy = TEST_CONNECT_PROXY,
+                )
+                val subscriber = TestSubscriber<HttpMonitorUpEvent>()
+                eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(subscriber) }
+                val tunnelsBefore = connectProxy.tunnels.size
+
+                val redirectRequest = getRequest("/proxied-redirect")
+                val targetRequest = getRequest("/proxied-redirect-target")
+                mockServer.`when`(redirectRequest).respond(
+                    response()
+                        .withStatusCode(HttpStatus.FOUND.code)
+                        .withHeader(HttpHeaders.LOCATION, "$otherHostMockServerUrl/proxied-redirect-target")
+                )
+                mockServer.`when`(targetRequest).respond(response().withStatusCode(HttpStatus.OK.code))
+
+                uptimeChecker.check(monitor)
+
+                then("every hop should go through the proxy") {
+                    subscriber.awaitCount(1).values().first().monitor.id shouldBe monitor.id
+                    mockServer.verifyRequest(redirectRequest)
+                    mockServer.verifyRequest(targetRequest)
+                    // The redirect points to another host, so it can't reuse the first tunnel
+                    connectProxy.tunnels.drop(tunnelsBefore) shouldContain "127.0.0.1:1080"
+                }
+            }
+
+            `when`("it checks a monitor whose proxy is not configured") {
+                val monitor = createHttpMonitor(
+                    repository = monitorRepository,
+                    url = "$mockServerUrl/dangling-proxy-path",
+                    proxy = "gone",
+                )
+                val subscriber = TestSubscriber<HttpMonitorDownEvent>()
+                eventDispatcher.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(subscriber) }
+
+                val request = getRequest("/dangling-proxy-path")
+                mockServer.`when`(request).respond(response().withStatusCode(HttpStatus.OK.code))
+
+                uptimeChecker.check(monitor)
+
+                then("it should report it as DOWN, instead of falling back to a direct connection") {
+                    val expectedEvent = subscriber.awaitCount(1).values().first()
+
+                    expectedEvent.monitor.id shouldBe monitor.id
+                    expectedEvent.error.message shouldBe "The proxy \"gone\" is not configured"
+                    mockServer.verify(request, VerificationTimes.never())
+                }
+            }
+
+            `when`("it checks a monitor whose proxy has a name that can't be resolved") {
+                val monitor = createHttpMonitor(
+                    repository = monitorRepository,
+                    url = "$mockServerUrl/unresolvable-proxy-path",
+                    proxy = "unresolvable-proxy",
+                )
+                val subscriber = TestSubscriber<HttpMonitorDownEvent>()
+                eventDispatcher.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(subscriber) }
+
+                val request = getRequest("/unresolvable-proxy-path")
+                mockServer.`when`(request).respond(response().withStatusCode(HttpStatus.OK.code))
+
+                uptimeChecker.check(monitor)
+
+                then("it should report it as DOWN, instead of falling back to a direct connection") {
+                    val expectedEvent = subscriber.awaitCount(1).values().first()
+
+                    expectedEvent.monitor.id shouldBe monitor.id
+                    expectedEvent.error.message.shouldNotBeNull() shouldContain "proxy.invalid"
+                    mockServer.verify(request, VerificationTimes.never())
                 }
             }
 

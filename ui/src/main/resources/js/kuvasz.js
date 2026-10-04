@@ -1222,6 +1222,11 @@ const monitorForm = ({
     },
 });
 
+/*
+ The proxy of an HTTP monitor can only be picked from the proxies of the YAML config. A monitor keeps a proxy that has
+ been removed from the config since, until the field is changed, so an edit that does not touch it can't silently
+ switch the monitor to a direct connection.
+*/
 const upsertHttpMonitorForm = (
     monitor,
     errorMessages,
@@ -1229,6 +1234,9 @@ const upsertHttpMonitorForm = (
     isNameLocked,
     acceptedStatusCodeSelectId,
     supportedHttpStatusCodes,
+    proxySelectId,
+    configuredProxies,
+    notConfiguredProxySuffix,
     globalIntegrationCount
 ) => ({
     ...monitorForm({
@@ -1241,6 +1249,8 @@ const upsertHttpMonitorForm = (
         globalIntegrationCount,
     }),
     supportedHttpStatusCodes: supportedHttpStatusCodes || [],
+    configuredProxies: configuredProxies || [],
+    storedProxy: '',
 
     populateTypeFields(source) {
         this.url = source?.url || '';
@@ -1271,6 +1281,21 @@ const upsertHttpMonitorForm = (
         resetTomSelectState(acceptedStatusCodeSelectId, (ts) => {
             this.selectedHttpStatusCodes.forEach(code => ts.addItem(code, true));
         });
+
+        // The list page edits every monitor through one shared modal, so a dangling proxy is re-offered on each populate
+        const proxy = source?.proxy || '';
+        resetTomSelectState(proxySelectId, (ts) => {
+            this.configuredProxies.forEach(configured => ts.addOption({value: configured, text: configured}));
+            if (proxy && !this.configuredProxies.includes(proxy)) {
+                ts.addOption({value: proxy, text: `${proxy} ${notConfiguredProxySuffix}`});
+            }
+            if (proxy) {
+                ts.addItem(proxy, true);
+            }
+        });
+        // Clearing the widget re-binds it to Alpine, so the value is only set once it's done
+        this.proxy = proxy;
+        this.storedProxy = proxy;
     },
 
     isValidHttpHeaderName(headerName) {
@@ -1321,6 +1346,7 @@ const upsertHttpMonitorForm = (
 
     validateTypeFields() {
         this.validateUrl();
+        this.validateProxy();
         this.validateSslExpiryThreshold();
         this.validateUptimeCheckInterval();
         this.validateResponseTimeThreshold();
@@ -1333,6 +1359,13 @@ const upsertHttpMonitorForm = (
         } else {
             this.errors.url = isValidUrl(this.url) ? null : this.errorMessages.urlInvalid;
         }
+    },
+
+    validateProxy() {
+        // Only an existing monitor may keep a proxy that was removed from the config since, a clone of it may not
+        const isDangling = this.proxy && !this.configuredProxies.includes(this.proxy)
+            && !(this.isUpdate && this.proxy === this.storedProxy);
+        this.errors.proxy = isDangling ? this.errorMessages.proxyNotConfigured : null;
     },
 
     validateSslExpiryThreshold() {
@@ -1375,6 +1408,7 @@ const upsertHttpMonitorForm = (
             forceNoCache: this.forceNoCache,
             followRedirects: this.followRedirects,
             crossOriginHeaderPropagation: this.crossOriginHeaderPropagation,
+            proxy: this.proxy || null,
             uptimeCheckInterval: this.uptimeCheckInterval,
             requestMethod: this.requestMethod,
             expectedStatusCodes: this.selectedHttpStatusCodes,
@@ -2130,6 +2164,19 @@ const renderDockerContainerOption = (data, escape) => {
 };
 
 /*
+ The proxy select of the HTTP monitors. Its options are the configured proxies, which only the YAML config can define,
+ so nothing can be created here, and clearing it means a direct connection.
+*/
+const initProxySelect = (selector) => {
+    new TomSelect(selector, {
+        create: false,
+        persist: false,
+        maxItems: 1,
+        plugins: ['clear_button'],
+    });
+};
+
+/*
  The container select. Unlike the host it does accept a typed in value, because the listing is best effort and a
  container may simply not exist yet when the monitor is set up.
 */
@@ -2808,6 +2855,7 @@ if (typeof module !== 'undefined' && module.exports) {
         fetchDockerContainers,
         initDockerHostSelect,
         initDockerContainerSelect,
+        initProxySelect,
         renderDockerContainerOption,
     };
 }

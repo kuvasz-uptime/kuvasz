@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.uitest.pages.common.DetailsReadOnlyView
 import com.kuvaszuptime.kuvasz.uitest.pages.common.ListReadOnlyView
 import com.kuvaszuptime.kuvasz.uitest.pages.common.UpsertModalReadOnlyView
+import com.kuvaszuptime.kuvasz.uitest.pages.http.HttpMonitorFormModal
 import com.kuvaszuptime.kuvasz.uitest.pages.settings.SettingsBackupPage
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
@@ -35,6 +36,14 @@ class ReadOnlyConfigUiTest : UiTestSpec() {
                 "name" to "yaml-http-monitor",
                 "url" to "https://example.com",
             )
+            // The proxy is a TomSelect, not one of the plain inputs the shared assertion covers
+            page.keyboard().press("Escape")
+            list.navigate()
+            list.openConfigurationModal("yaml-http-monitor")
+            with(HttpMonitorFormModal(page).expandRequestSettings()) {
+                assertThat(selectedProxy).hasText("corporate-egress")
+                assertThat(proxySelect).isDisabled()
+            }
         }
 
         "YAML-configured push monitors are read-only on the list, detail page and config modal" {

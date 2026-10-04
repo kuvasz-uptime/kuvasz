@@ -2,6 +2,9 @@ package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationResult
 import com.kuvaszuptime.kuvasz.services.check.ssl.SSLValidator
+import com.kuvaszuptime.kuvasz.services.check.tcp.BoundedHostnameResolver
+import com.kuvaszuptime.kuvasz.services.check.tcp.SystemHostnameResolver
+import com.kuvaszuptime.kuvasz.services.proxy.ProxyTunnel
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.assertions.retry
 import io.kotest.core.annotation.Ignored
@@ -16,7 +19,7 @@ import kotlin.time.Duration.Companion.minutes
 @Ignored
 class SSLValidatorTest : StringSpec(
     {
-        val validator = SSLValidator()
+        val validator = SSLValidator(ProxyTunnel(BoundedHostnameResolver(SystemHostnameResolver())))
 
         "validate should return the right result" {
             retry(maxRetry = 3, timeout = 3.minutes) {

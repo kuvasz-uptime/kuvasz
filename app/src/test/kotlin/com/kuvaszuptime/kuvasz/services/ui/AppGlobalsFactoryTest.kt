@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.config.ApiKeyConfig
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.config.DefaultStatusPageConfig
 import com.kuvaszuptime.kuvasz.config.DockerHostConfig
+import com.kuvaszuptime.kuvasz.config.ProxyConfig
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationMap
@@ -18,8 +19,10 @@ import com.kuvaszuptime.kuvasz.services.VersionChecker
 import com.kuvaszuptime.kuvasz.services.docker.DockerHostRegistry
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.monitor.SharedMonitorActions
+import com.kuvaszuptime.kuvasz.services.proxy.ProxyRegistry
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.core.spec.style.BehaviorSpec
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -52,6 +55,8 @@ class AppGlobalsFactoryTest : BehaviorSpec({
         )
     }
 
+    val emptyProxyRegistry = ProxyRegistry(emptyList())
+
     given("the AppGlobalsFactory") {
 
         `when`("when SecurityService is not available - (a.k.a. authentication is disabled)") {
@@ -67,6 +72,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 apiKeyConfig = null,
                 connectivityChecker = null,
                 dockerHostRegistry = null,
+                proxyRegistry = emptyProxyRegistry,
             )
 
             then("it should return the correctly hydrated view model") {
@@ -96,6 +102,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 apiKeyConfig = null,
                 connectivityChecker = null,
                 dockerHostRegistry = null,
+                proxyRegistry = emptyProxyRegistry,
             )
 
             then("it should return the correctly hydrated view model") {
@@ -125,6 +132,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 apiKeyConfig = null,
                 connectivityChecker = null,
                 dockerHostRegistry = null,
+                proxyRegistry = emptyProxyRegistry,
             )
 
             then("it should return the correctly hydrated view model") {
@@ -157,6 +165,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 apiKeyConfig = null,
                 connectivityChecker = null,
                 dockerHostRegistry = null,
+                proxyRegistry = emptyProxyRegistry,
             )
 
             then("it should return the correctly hydrated view model") {
@@ -181,6 +190,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 apiKeyConfig = null,
                 connectivityChecker = null,
                 dockerHostRegistry = null,
+                proxyRegistry = emptyProxyRegistry,
             )
             globals.editabilityState.areHttpMonitorsReadOnly() shouldBe false
             globals.editabilityState.areStatusPagesReadOnly() shouldBe false
@@ -202,6 +212,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 apiKeyConfig = null,
                 connectivityChecker = null,
                 dockerHostRegistry = null,
+                proxyRegistry = emptyProxyRegistry,
             )
 
             then("it should return the correctly hydrated view model") {
@@ -235,6 +246,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 apiKeyConfig = null,
                 connectivityChecker = null,
                 dockerHostRegistry = null,
+                proxyRegistry = emptyProxyRegistry,
             )
 
             then("it should return the correctly hydrated view model with integrations") {
@@ -263,6 +275,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                     apiKeyConfig = null,
                     connectivityChecker = null,
                     dockerHostRegistry = null,
+                    proxyRegistry = emptyProxyRegistry,
                 )
                 globals.versionInfo() shouldBe VersionInfo(
                     installedVersion = BuildConfig.APP_VERSION,
@@ -284,6 +297,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 apiKeyConfig = null,
                 connectivityChecker = null,
                 dockerHostRegistry = null,
+                proxyRegistry = emptyProxyRegistry,
             )
 
             then("it should return the correct default status page settings") {
@@ -304,6 +318,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 apiKeyConfig = null,
                 connectivityChecker = null,
                 dockerHostRegistry = null,
+                proxyRegistry = emptyProxyRegistry,
             )
 
             then("it should return the correct list of enabled monitors") {
@@ -326,6 +341,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 apiKeyConfig = null,
                 connectivityChecker = null,
                 dockerHostRegistry = null,
+                proxyRegistry = emptyProxyRegistry,
             )
 
             then("neither OIDC nor OIDC logout is enabled when the OIDC client bean is absent") {
@@ -349,6 +365,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 apiKeyConfig = null,
                 connectivityChecker = null,
                 dockerHostRegistry = null,
+                proxyRegistry = emptyProxyRegistry,
             )
 
             then("both OIDC and OIDC logout are enabled") {
@@ -372,6 +389,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 apiKeyConfig = null,
                 connectivityChecker = null,
                 dockerHostRegistry = null,
+                proxyRegistry = emptyProxyRegistry,
             )
 
             then("OIDC is enabled but OIDC logout is not") {
@@ -392,6 +410,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 apiKeyConfig = null,
                 connectivityChecker = null,
                 dockerHostRegistry = null,
+                proxyRegistry = emptyProxyRegistry,
             )
 
             then("API key auth is reported as disabled") {
@@ -411,6 +430,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 apiKeyConfig = null,
                 connectivityChecker = null,
                 dockerHostRegistry = null,
+                proxyRegistry = emptyProxyRegistry,
             )
 
             then("there is no connectivity status at all") {
@@ -440,6 +460,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 apiKeyConfig = null,
                 connectivityChecker = mockk { every { getStatus() } returns status },
                 dockerHostRegistry = null,
+                proxyRegistry = emptyProxyRegistry,
             )
 
             then("the live status is exposed to the views") {
@@ -459,6 +480,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 apiKeyConfig = ApiKeyConfig().apply { apiKey = "some-non-blank-api-key" },
                 connectivityChecker = null,
                 dockerHostRegistry = null,
+                proxyRegistry = emptyProxyRegistry,
             )
 
             then("API key auth is reported as enabled") {
@@ -478,6 +500,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 apiKeyConfig = ApiKeyConfig().apply { apiKey = null },
                 connectivityChecker = null,
                 dockerHostRegistry = null,
+                proxyRegistry = emptyProxyRegistry,
             )
             val blankKeyGlobals = AppGlobalsFactory().appGlobals(
                 null,
@@ -490,6 +513,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 apiKeyConfig = ApiKeyConfig().apply { apiKey = "   " },
                 connectivityChecker = null,
                 dockerHostRegistry = null,
+                proxyRegistry = emptyProxyRegistry,
             )
 
             then("API key auth is reported as disabled") {
@@ -524,10 +548,47 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                         },
                     )
                 ),
+                proxyRegistry = emptyProxyRegistry,
             )
 
             then("their names are exposed to the UI, sorted") {
                 globals.configuredDockerHosts shouldBe listOf("local", "vps-1")
+                globals.configuredProxies.shouldBeEmpty()
+            }
+        }
+
+        `when`("proxies are configured") {
+            val globals = AppGlobalsFactory().appGlobals(
+                null,
+                AppConfig(),
+                emptyIntegrationRepository,
+                mockVersionChecker,
+                mockDefaultPageSettings,
+                mockkMonitorActions,
+                oidcClient = null,
+                apiKeyConfig = null,
+                connectivityChecker = null,
+                dockerHostRegistry = null,
+                proxyRegistry = ProxyRegistry(
+                    listOf(
+                        mockk<ProxyConfig> {
+                            every { name } returns "office-network"
+                            every { url } returns "socks5://127.0.0.1:1080"
+                            every { username } returns null
+                            every { password } returns null
+                        },
+                        mockk<ProxyConfig> {
+                            every { name } returns "corporate-egress"
+                            every { url } returns "http://10.0.0.10:3128"
+                            every { username } returns null
+                            every { password } returns null
+                        },
+                    )
+                ),
+            )
+
+            then("their names are exposed to the UI, sorted") {
+                globals.configuredProxies shouldBe listOf("corporate-egress", "office-network")
             }
         }
     }

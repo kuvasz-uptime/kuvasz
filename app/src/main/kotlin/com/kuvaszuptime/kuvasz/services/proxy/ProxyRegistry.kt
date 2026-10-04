@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.models.dto.proxy.ProxyDto
 import com.kuvaszuptime.kuvasz.util.loggerFor
 import io.micronaut.context.annotation.Context
 import jakarta.annotation.PostConstruct
+import jakarta.validation.ValidationException
 
 @Context
 class ProxyRegistry(private val proxyConfigs: List<ProxyConfig>) {
@@ -60,4 +61,11 @@ class ProxyRegistry(private val proxyConfigs: List<ProxyConfig>) {
     } catch (ex: ProxyConfigException) {
         throw ProxyConfigException("Invalid configuration for proxy [$name]: ${ex.message}", ex)
     }
+
+    fun requireConfiguredProxy(name: String): String {
+        if (this[name] == null) throw NonExistingProxyException(name)
+        return name
+    }
 }
+
+class NonExistingProxyException(name: String) : ValidationException("Non-existing proxy found: $name.")

@@ -1,0 +1,12 @@
+http-monitors:
+  - name: proxied-1
+    url: http://example.com
+    uptime-check-interval: 120
+    proxy: corporate-egress
+  - name: proxied-2
+    url: http://example.org
+    uptime-check-interval: 120
+    proxy: " office-network "
+  - name: direct-1
+    url: http://example.net
+    uptime-check-interval: 120

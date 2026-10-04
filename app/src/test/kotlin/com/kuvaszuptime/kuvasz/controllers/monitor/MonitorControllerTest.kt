@@ -34,6 +34,7 @@ import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
+import com.kuvaszuptime.kuvasz.testutils.PROXIES
 import com.kuvaszuptime.kuvasz.util.getBodyAs
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.inspectors.forOne
@@ -60,7 +61,7 @@ import tools.jackson.databind.node.ObjectNode
 import tools.jackson.dataformat.yaml.YAMLMapper
 import tools.jackson.module.kotlin.convertValue
 
-@MicronautTest(environments = ["full-integrations-setup"])
+@MicronautTest(environments = ["full-integrations-setup", PROXIES])
 class MonitorControllerTest(
     @param:Client("/") private val client: HttpClient,
     private val httpMonitorRepository: HttpMonitorRepository,
@@ -91,6 +92,31 @@ class MonitorControllerTest(
             return yamlMapper.writeValueAsBytes(content)
         }
 
+        fun proxiedExportDto(name: String, proxy: String) = HttpMonitorExportDto(
+            name = name,
+            url = "https://example.com",
+            sensitiveUrl = false,
+            uptimeCheckInterval = 60,
+            enabled = true,
+            sslCheckEnabled = false,
+            latencyHistoryEnabled = true,
+            requestMethod = HttpMethod.GET,
+            followRedirects = true,
+            proxy = proxy,
+            forceNoCache = true,
+            sslExpiryThreshold = 30,
+            failureCountThreshold = 1,
+            integrations = emptySet(),
+            expectedStatusCodes = emptySet(),
+            responseTimeThresholdMillis = null,
+            expectedKeyword = null,
+            expectedKeywordCaseSensitive = false,
+            expectedKeywordNegated = false,
+            requestHeaders = emptyMap(),
+            expectedHeaders = emptyMap(),
+            requestBody = null,
+        )
+
         given("MonitorController's getMonitorsExport() endpoint") {
             `when`("there are monitors in the database") {
                 val httpMonitor = createHttpMonitor(
@@ -104,6 +130,7 @@ class MonitorControllerTest(
                     uptimeCheckInterval = 23234,
                     monitorName = "irrelevant2",
                     crossOriginHeaderPropagation = true,
+                    proxy = "corporate-egress",
                     sslExpiryThreshold = 15,
                     failureCountThreshold = 5,
                     expectedStatusCodes = setOf(200, 404),
@@ -255,6 +282,7 @@ class MonitorControllerTest(
                         firstMonitor.forceNoCache shouldBe httpMonitor.forceNoCache
                         firstMonitor.followRedirects shouldBe httpMonitor.followRedirects
                         firstMonitor.crossOriginHeaderPropagation shouldBe httpMonitor.crossOriginHeaderPropagation
+                        firstMonitor.proxy shouldBe null
                         firstMonitor.sslExpiryThreshold shouldBe httpMonitor.sslExpiryThreshold
                         firstMonitor.failureCountThreshold shouldBe httpMonitor.failureCountThreshold
                     }
@@ -271,6 +299,7 @@ class MonitorControllerTest(
                         secondMonitor.forceNoCache shouldBe httpMonitor2.forceNoCache
                         secondMonitor.followRedirects shouldBe httpMonitor2.followRedirects
                         secondMonitor.crossOriginHeaderPropagation shouldBe true
+                        secondMonitor.proxy shouldBe "corporate-egress"
                         secondMonitor.sslExpiryThreshold shouldBe httpMonitor2.sslExpiryThreshold
                         secondMonitor.failureCountThreshold shouldBe httpMonitor2.failureCountThreshold
                         secondMonitor.expectedStatusCodes shouldBe httpMonitor2.expectedStatusCodes.toSet()
@@ -618,6 +647,49 @@ class MonitorControllerTest(
                     response.status shouldBe HttpStatus.OK
                     httpMonitorRepository.findByName("legacy-http").shouldNotBeNull()
                         .crossOriginHeaderPropagation shouldBe HttpMonitorDefaults.CROSS_ORIGIN_HEADER_PROPAGATION
+                }
+            }
+
+            `when`("an HTTP monitor in the uploaded YAML is checked through a configured proxy") {
+                val yamlContent = buildYamlImportContent(
+                    httpMonitors = listOf(proxiedExportDto(name = "proxied-http", proxy = "office-network"))
+                )
+                val multipartBody = MultipartBody.builder()
+                    .addPart("file", "monitors.yml", MediaType.APPLICATION_YAML_TYPE, yamlContent)
+                    .build()
+                val request = HttpRequest.POST("/api/v2/monitors/import/yaml?dryRun=false", multipartBody)
+                    .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                    .accept(MediaType.APPLICATION_JSON_TYPE)
+
+                then("it should import the monitor with its proxy") {
+                    val response = client.exchange(request, MonitorImportResultDto::class.java).awaitFirst()
+
+                    response.status shouldBe HttpStatus.OK
+                    httpMonitorRepository.findByName("proxied-http").shouldNotBeNull().proxy shouldBe "office-network"
+                }
+            }
+
+            `when`("an HTTP monitor in the uploaded YAML is checked through a proxy that is not configured") {
+                createHttpMonitor(httpMonitorRepository, monitorName = "should-survive")
+                val yamlContent = buildYamlImportContent(
+                    httpMonitors = listOf(proxiedExportDto(name = "proxied-http", proxy = "not-configured"))
+                )
+                val multipartBody = MultipartBody.builder()
+                    .addPart("file", "monitors.yml", MediaType.APPLICATION_YAML_TYPE, yamlContent)
+                    .build()
+                val request = HttpRequest.POST("/api/v2/monitors/import/yaml?dryRun=false", multipartBody)
+                    .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                    .accept(MediaType.APPLICATION_JSON_TYPE)
+
+                then("it should reject the whole import, instead of silently checking it over a direct connection") {
+                    val response = shouldThrow<HttpClientResponseException> {
+                        client.exchange(request, ServiceError::class.java).awaitFirst()
+                    }
+                    response.status shouldBe HttpStatus.BAD_REQUEST
+                    response.response.getBodyAs<ServiceError>()?.message shouldBe
+                        "Non-existing proxy found: not-configured."
+                    httpMonitorRepository.findByName("should-survive").shouldNotBeNull()
+                    httpMonitorRepository.findByName("proxied-http").shouldBeNull()
                 }
             }
 

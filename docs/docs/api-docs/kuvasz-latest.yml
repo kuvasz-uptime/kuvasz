@@ -4236,6 +4236,12 @@ components:
             \ monitored URL. If false, the custom request headers are withheld from\
             \ such redirect targets."
           default: false
+        proxy:
+          type: string
+          description: "The name of a proxy defined in the configuration, that both\
+            \ the uptime and the SSL checks of the monitor are routed through. If\
+            \ null, the monitor is checked over a direct connection."
+          nullable: true
         sslExpiryThreshold:
           minimum: 0
           type: integer
@@ -4358,6 +4364,7 @@ components:
       - name
       - nextSSLCheck
       - nextUptimeCheck
+      - proxy
       - requestBody
       - requestHeaders
       - requestMethod
@@ -4485,6 +4492,12 @@ components:
             \ whose origin (scheme, host and port) differs from the origin of the\
             \ monitored URL. If false, the custom request headers are withheld from\
             \ such redirect targets."
+        proxy:
+          type: string
+          description: "The name of a proxy defined in the configuration, that both\
+            \ the uptime and the SSL checks of the monitor are routed through. If\
+            \ null, the monitor is checked over a direct connection."
+          nullable: true
         sslExpiryThreshold:
           type: integer
           description: The threshold in days for SSL certificate expiry checks
@@ -4606,6 +4619,7 @@ components:
       - integrations
       - latencyHistoryEnabled
       - name
+      - proxy
       - requestBody
       - requestHeaders
       - requestMethod
@@ -4665,6 +4679,12 @@ components:
             \ whose origin (scheme, host and port) differs from the origin of the\
             \ monitored URL. If false, the custom request headers are withheld from\
             \ such redirect targets."
+        proxy:
+          type: string
+          description: "The name of a proxy defined in the configuration, that both\
+            \ the uptime and the SSL checks of the monitor are routed through. If\
+            \ null, the monitor is checked over a direct connection."
+          nullable: true
         sslExpiryThreshold:
           type: integer
           description: The threshold in days for SSL certificate expiry checks
@@ -4844,6 +4864,12 @@ components:
             \ monitored URL. If false, the custom request headers are withheld from\
             \ such redirect targets."
           nullable: false
+        proxy:
+          type: string
+          description: "The name of a proxy defined in the configuration, that both\
+            \ the uptime and the SSL checks of the monitor are routed through. If\
+            \ null, the monitor is checked over a direct connection."
+          nullable: true
         sslExpiryThreshold:
           minimum: 0
           type: integer

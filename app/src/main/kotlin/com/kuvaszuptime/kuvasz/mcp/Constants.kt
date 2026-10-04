@@ -51,4 +51,6 @@ object ToolNames {
     const val LIST_DOCKER_MONITORS = "list-docker-monitors"
     const val DELETE_DOCKER_MONITOR = "delete-docker-monitor"
     const val TOGGLE_DOCKER_MONITOR = "toggle-docker-monitor"
+    const val LIST_DOCKER_HOSTS = "list-docker-hosts"
+    const val LIST_PROXIES = "list-proxies"
 }

@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.mcp
 import com.kuvaszuptime.kuvasz.controllers.monitor.CheckHttpMonitorsWritable
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_APP_SETTINGS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_INTEGRATIONS
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_PROXIES
 import com.kuvaszuptime.kuvasz.mcp.schemas.DeleteResultSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.HttpMonitorCreatorSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.HttpMonitorDetailsSchema
@@ -48,6 +49,8 @@ class HttpMonitorTools(
         name = ToolNames.CREATE_HTTP_MONITOR,
         description = "Creates a new HTTP monitor. Only 'name', 'url', and 'uptimeCheckInterval'" +
             " are required; all other fields use sensible defaults. " +
+            "If set, 'proxy' must name a proxy configured in the YAML config, which cannot be created here. " +
+            "The configured proxies can be found via the $LIST_PROXIES tool. " +
             "Refer to the docs for the default values: https://kuvasz-uptime.dev/management/http-monitors/." +
             "The available integrations can be found via the $LIST_INTEGRATIONS tool." +
             "This tool will work only if 'areHttpMonitorsReadOnly' from the $GET_APP_SETTINGS tool " +

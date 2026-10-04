@@ -17,6 +17,7 @@ class ProxySettingsWithoutProxiesUiTest : UiTestSpec() {
     @MockBean(ProxyRegistry::class)
     fun proxyRegistryMock(): ProxyRegistry = mockk {
         every { getProxyDtos() } returns emptyList()
+        every { configuredProxies } returns emptyMap()
     }
 
     init {

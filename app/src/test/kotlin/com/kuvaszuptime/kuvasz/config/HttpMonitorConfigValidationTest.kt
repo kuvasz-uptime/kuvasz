@@ -165,6 +165,7 @@ class HttpMonitorConfigDefaultValuesTest(applicationContext: ApplicationContext)
                 monitorConfig.forceNoCache shouldBe HttpMonitorDefaults.FORCE_NO_CACHE
                 monitorConfig.followRedirects shouldBe HttpMonitorDefaults.FOLLOW_REDIRECTS
                 monitorConfig.crossOriginHeaderPropagation shouldBe HttpMonitorDefaults.CROSS_ORIGIN_HEADER_PROPAGATION
+                monitorConfig.proxy.shouldBeNull()
                 monitorConfig.sslExpiryThreshold shouldBe HttpMonitorDefaults.SSL_EXPIRY_THRESHOLD_DAYS
                 monitorConfig.integrations.shouldBeNull()
                 monitorConfig.ignoreConnectivityCheck shouldBe MonitorDefaults.IGNORE_CONNECTIVITY_CHECK

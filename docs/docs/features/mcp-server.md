@@ -55,7 +55,7 @@ The `/mcp` endpoint is protected by a dedicated [**MCP API key**](../setup/confi
 
 !!! note "Read-only mode"
 
-    If you have configured your monitors via YAML, the corresponding `create-*`, `toggle-*`, and `delete-*` tools will return an error when called. The same applies to the `create-maintenance-window`, `toggle-maintenance-window`, and `delete-maintenance-window` tools when maintenance windows are configured via YAML. Additionally, `delete-*` tools will fail if the monitor is referenced by a read-only status page. The `list-*`, `get-*-details`, `get-*-stats`, `list-incidents`, and `list-integrations` tools are always available regardless of read-only mode.
+    If you have configured your monitors via YAML, the corresponding `create-*`, `toggle-*`, and `delete-*` tools will return an error when called. The same applies to the `create-maintenance-window`, `toggle-maintenance-window`, and `delete-maintenance-window` tools when maintenance windows are configured via YAML. Additionally, `delete-*` tools will fail if the monitor is referenced by a read-only status page. The `list-*`, `get-*-details`, `get-*-stats`, `list-incidents`, `list-integrations`, `list-docker-hosts`, and `list-proxies` tools are always available regardless of read-only mode.
     
     This is the **expected behavior**, and works exactly the same as if you were to perform these operations via the REST API or dashboard.
 
@@ -152,15 +152,26 @@ The MCP server exposes the following tools to connected clients:
 
 <!-- md:version 4.1.0 -->
 
-| Tool                             | Description                                                                                                                          |
-|----------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
-| `list-maintenance-windows`       | List all maintenance windows with their schedule (manual, recurring or one-off) and current active state                             |
+| Tool                             | Description                                                                                                                                         |
+|----------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| `list-maintenance-windows`       | List all maintenance windows with their schedule (manual, recurring or one-off) and current active state                                            |
 | `get-maintenance-window-details` | Get full details of a specific maintenance window, including affected monitors and categories, notified integrations, and resolved next start / end |
-| `create-maintenance-window`      | Create a new maintenance window (manual, `cron` + `duration` recurring, or `start` + `duration` one-off)                             |
-| `toggle-maintenance-window`      | Enable or disable a maintenance window via its master `enabled` switch                                                               |
-| `delete-maintenance-window`      | Permanently delete a maintenance window by ID                                                                                        |
+| `create-maintenance-window`      | Create a new maintenance window (manual, `cron` + `duration` recurring, or `start` + `duration` one-off)                                            |
+| `toggle-maintenance-window`      | Enable or disable a maintenance window via its master `enabled` switch                                                                              |
+| `delete-maintenance-window`      | Permanently delete a maintenance window by ID                                                                                                       |
 
 The `maintenanceWindows` affecting a monitor (and whether it is currently `inMaintenance`) are also surfaced on the `get-*-monitor-details` tool outputs.
+
+### Docker hosts and proxies
+
+<!-- md:version 4.5.0 -->
+
+Both are defined in the YAML configuration only, so they can be listed, but not created through the MCP server. The listed names are what `create-docker-monitor` and `create-http-monitor` accept in their `dockerHost` and `proxy` fields.
+
+| Tool                | Description                                                                                                                         |
+|---------------------|-------------------------------------------------------------------------------------------------------------------------------------|
+| `list-docker-hosts` | List the configured Docker hosts with their URL, the way Kuvasz authenticates to them, and the Engine API version negotiated so far |
+| `list-proxies`      | List the configured outbound proxies with their type (HTTP or SOCKS5), address, and whether Kuvasz authenticates to them            |
 
 ### Integrations
 

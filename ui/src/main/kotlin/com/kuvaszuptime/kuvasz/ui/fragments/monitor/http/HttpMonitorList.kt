@@ -10,6 +10,7 @@ import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
 fun renderHttpMonitorList(
     monitors: List<HttpMonitorDetailsDto>,
     editabilityState: AppGlobals.EditabilityState,
+    configuredProxies: List<String>,
 ): String =
     renderMonitorList(
         monitors = monitors,
@@ -26,4 +27,5 @@ fun renderHttpMonitorList(
             timestampColumn(Messages.nextCheck(), D_LG_TABLE_CELL) { it.nextUptimeCheck },
         ),
         nameTooltip = { it.url.toString() },
+        nameBadge = { monitor -> monitor.proxy?.let { proxyIconBadge(it, configuredProxies) } },
     )

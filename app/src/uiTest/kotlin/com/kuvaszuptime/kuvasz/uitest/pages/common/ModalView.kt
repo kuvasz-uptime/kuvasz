@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.uitest.pages.common
 
 import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
+import com.microsoft.playwright.TimeoutError
 import com.microsoft.playwright.options.WaitForSelectorState
 
 // Base for page objects scoped to the currently-open (`.modal.show`) modal dialog.
@@ -73,6 +74,27 @@ abstract class ModalView(protected val page: Page) {
         textbox.press("Enter")
     }
 
+    /**
+     * Picks an existing option by clicking it, the way a person does. A field that takes no new values has no
+     * "add new" row for a keypress to fall back on, and committing the typed text with Enter only works
+     * while TomSelect happens to have the matching row highlighted.
+     */
+    protected fun pickFromDropdown(field: Locator, value: String) {
+        val option = field.locator(".ts-dropdown .option")
+            .filter(Locator.FilterOptions().setHasText(value))
+            .first()
+        // TomSelect focuses on a timer, so on a slow machine another field can take the focus back and close this one
+        repeat(OPEN_ATTEMPTS) { attempt ->
+            field.locator(".ts-control").click()
+            try {
+                option.click(Locator.ClickOptions().setTimeout(OPTION_TIMEOUT_MS))
+                return
+            } catch (ex: TimeoutError) {
+                if (attempt == OPEN_ATTEMPTS - 1) throw ex
+            }
+        }
+    }
+
     // Opens the modal's TomSelect dropdown and picks the option matching [optionText].
     fun selectOption(optionText: String) {
         multiSelectField.locator(".ts-control").click()
@@ -116,5 +138,10 @@ abstract class ModalView(protected val page: Page) {
     // Clears every selected category through the clear button of the widget.
     fun clearCategories() {
         categoriesField.locator(".clear-button").click()
+    }
+
+    private companion object {
+        const val OPEN_ATTEMPTS = 3
+        const val OPTION_TIMEOUT_MS = 5000.0
     }
 }

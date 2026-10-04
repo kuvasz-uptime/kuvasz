@@ -73,7 +73,7 @@ class WebUIHttpMonitorController(
             categoryFilter = CategoryFilter.fromQueryParam(category),
         )
 
-        return renderHttpMonitorList(monitors, appGlobals.editabilityState)
+        return renderHttpMonitorList(monitors, appGlobals.editabilityState, appGlobals.configuredProxies)
     }
 
     @Get("/http-monitors/fragments/details-heading/{monitorId}")
@@ -83,7 +83,7 @@ class WebUIHttpMonitorController(
     fun httpMonitorHeading(@PathVariable monitorId: Long): String {
         val monitor = monitorActions.getMonitorDetails(monitorId)
         return buildString {
-            append(renderHttpMonitorDetailsHeading(monitor))
+            append(renderHttpMonitorDetailsHeading(monitor, appGlobals.configuredProxies))
             append(
                 renderHttpUptimeSummary(
                     monitor = monitor,

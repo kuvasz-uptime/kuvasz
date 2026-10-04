@@ -18,6 +18,7 @@ import com.kuvaszuptime.kuvasz.models.monitor.http.idWithName
 import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorSummary
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import com.kuvaszuptime.kuvasz.util.nullIfBlank
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import org.jooq.Record
@@ -149,6 +150,7 @@ class HttpMonitorRepository(
                 .set(HTTP_MONITOR.REQUEST_METHOD, updatedMonitor.requestMethod)
                 .set(HTTP_MONITOR.FOLLOW_REDIRECTS, updatedMonitor.followRedirects)
                 .set(HTTP_MONITOR.CROSS_ORIGIN_HEADER_PROPAGATION, updatedMonitor.crossOriginHeaderPropagation)
+                .set(HTTP_MONITOR.PROXY, updatedMonitor.proxy.nullIfBlank())
                 .set(HTTP_MONITOR.METRICS_HISTORY_ENABLED, updatedMonitor.metricsHistoryEnabled)
                 .set(HTTP_MONITOR.FORCE_NO_CACHE, updatedMonitor.forceNoCache)
                 .set(HTTP_MONITOR.SSL_EXPIRY_THRESHOLD, updatedMonitor.sslExpiryThreshold)
@@ -232,6 +234,7 @@ class HttpMonitorRepository(
             HTTP_MONITOR.FORCE_NO_CACHE.`as`(HttpMonitorDetailsDto::forceNoCache.name),
             HTTP_MONITOR.FOLLOW_REDIRECTS.`as`(HttpMonitorDetailsDto::followRedirects.name),
             HTTP_MONITOR.CROSS_ORIGIN_HEADER_PROPAGATION.`as`(HttpMonitorDetailsDto::crossOriginHeaderPropagation.name),
+            HTTP_MONITOR.PROXY.`as`(HttpMonitorDetailsDto::proxy.name),
             HTTP_MONITOR.REQUEST_METHOD.`as`(HttpMonitorDetailsDto::requestMethod.name),
             HTTP_MONITOR.SSL_EXPIRY_THRESHOLD.`as`(HttpMonitorDetailsDto::sslExpiryThreshold.name),
             HTTP_MONITOR.FAILURE_COUNT_THRESHOLD.`as`(HttpMonitorDetailsDto::failureCountThreshold.name),

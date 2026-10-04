@@ -82,6 +82,7 @@ class ProxiedHttpClientRegistry(
     private val appConfig: AppConfig,
     @Named(BaseHttpCheckerClientConfiguration.EVENT_LOOP_GROUP)
     private val eventLoopConfig: EventLoopGroupConfiguration,
+    private val directConfiguration: HttpCheckerClientConfiguration,
 ) : AutoCloseable {
 
     private class ProxiedClient(val client: HttpClient, val configuration: ProxiedHttpCheckerClientConfiguration)
@@ -110,6 +111,8 @@ class ProxiedHttpClientRegistry(
             proxy = proxy,
             numOfThreads = eventLoopConfig.numThreads,
         )
+        // A proxied check has to trust exactly the same certificates as a direct one
+        configuration.sslConfiguration = directConfiguration.sslConfiguration
         return ProxiedClient(client = HttpClient.create(null, configuration), configuration = configuration)
     }
 

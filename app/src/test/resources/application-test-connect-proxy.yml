@@ -1,0 +1,5 @@
+proxies:
+  - name: "test-connect-proxy"
+    url: "http://localhost:1090"
+  - name: "unresolvable-proxy"
+    url: "http://proxy.invalid:1090"

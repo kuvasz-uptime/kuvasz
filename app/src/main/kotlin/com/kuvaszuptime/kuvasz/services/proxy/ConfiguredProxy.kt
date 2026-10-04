@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.services.proxy
 
+import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.dto.proxy.ProxyType
 import com.kuvaszuptime.kuvasz.util.lenientHostAndPort
 import java.net.URI
@@ -21,6 +22,8 @@ data class ConfiguredProxy(
 )
 
 class ProxyConfigException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
+
+class ProxyNotConfiguredException(name: String) : RuntimeException(Messages.proxyNotConfigured(name))
 
 internal object ProxyUrl {
 

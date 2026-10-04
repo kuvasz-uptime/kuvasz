@@ -10,10 +10,10 @@ import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
 import kotlinx.html.stream.*
 
-fun renderHttpMonitorDetailsHeading(monitor: HttpMonitorDetailsDto): String =
-    buildString { appendHTML().div { httpMonitorDetailsHeading(monitor) } }
+fun renderHttpMonitorDetailsHeading(monitor: HttpMonitorDetailsDto, configuredProxies: List<String>): String =
+    buildString { appendHTML().div { httpMonitorDetailsHeading(monitor, configuredProxies) } }
 
-internal fun FlowContent.httpMonitorDetailsHeading(monitor: HttpMonitorDetailsDto) =
+internal fun FlowContent.httpMonitorDetailsHeading(monitor: HttpMonitorDetailsDto, configuredProxies: List<String>) =
     monitorDetailsHeading(MonitorTypeUiConfig.HTTP, monitor) {
         a(href = "#http-monitor-details-ssl-summary") {
             classes(LIST_INLINE_ITEM, ALIGN_MIDDLE, TEXT_WRAP, TEXT_BREAK)
@@ -31,6 +31,13 @@ internal fun FlowContent.httpMonitorDetailsHeading(monitor: HttpMonitorDetailsDt
                         color = Color.DEFAULT,
                     )
                 }
+            }
+        }
+        monitor.proxy?.let { proxy ->
+            li {
+                classes(LIST_INLINE_ITEM, ALIGN_MIDDLE)
+                testId("proxy-badge")
+                proxyBadge(proxy, configuredProxies)
             }
         }
     }

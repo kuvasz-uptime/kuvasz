@@ -16,6 +16,26 @@ class HttpMonitorFormModal(page: Page) : ModalView(page) {
     val crossOriginHeaderPropagationToggle: Locator
         get() = modal.locator("input[name='crossOriginHeaderPropagation']")
 
+    private val proxyField: Locator get() = modal.getByTestId("proxy-select")
+
+    /** The picked proxy, as the chip TomSelect renders for it. There is none for a direct connection. */
+    val selectedProxy: Locator get() = proxyField.locator(".ts-control .item")
+
+    /** The select TomSelect hides, which still tells whether the field is disabled. */
+    val proxySelect: Locator get() = proxyField.locator("select")
+
+    /** Picks a proxy from the dropdown. Request settings have to be expanded first. */
+    fun setProxy(value: String): HttpMonitorFormModal {
+        pickFromDropdown(proxyField, value)
+        return this
+    }
+
+    /** Switches the monitor to a direct connection, through the clear button of the widget. */
+    fun clearProxy(): HttpMonitorFormModal {
+        proxyField.locator(".clear-button").click()
+        return this
+    }
+
     fun setName(value: String): HttpMonitorFormModal {
         nameInput.fill(value)
         return this
