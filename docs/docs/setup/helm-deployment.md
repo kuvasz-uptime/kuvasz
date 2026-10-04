@@ -235,6 +235,52 @@ config:
         uptime-check-interval: 60
 ```
 
+#### Using your own ConfigMap
+
+If you'd rather keep your configuration separate from your values file, you can manage it in **your own ConfigMap**, mount it into the container with `extraVolumes` and `extraVolumeMounts`, and point _Kuvasz_ to it with the `MICRONAUT_CONFIG_FILES` environment variable.
+
+First, create the ConfigMap from your local `kuvasz.yml`:
+
+```bash
+kubectl create configmap kuvasz-custom-config -n kuvasz-uptime --from-file kuvasz.yml
+```
+
+Then add the following to your values file:
+
+```yaml title="values.yaml"
+extraVolumes:
+  - name: custom-config
+    configMap:
+      name: kuvasz-custom-config
+
+extraVolumeMounts:
+  - name: custom-config
+    mountPath: /config/kuvasz-custom.yml # (1)!
+    subPath: kuvasz.yml # (2)!
+    readOnly: true
+
+extraEnv:
+  - name: MICRONAUT_CONFIG_FILES
+    value: "/config/kuvasz-custom.yml"
+```
+
+1. Must **not** be `/config/kuvasz.yml`, see the warning below
+2. The key of the file in your ConfigMap (with `--from-file`, it's the name of the file you created it from)
+
+!!! warning "Use a different file name than `kuvasz.yml`"
+
+    The chart **always mounts its own configuration** (the one built from `config.raw`) to `/config/kuvasz.yml`, so your file has to be mounted to **a different path** (e.g. `/config/kuvasz-custom.yml`). Kubernetes doesn't allow two volume mounts with the same path, so the pod **won't be created** if you mount your ConfigMap to `/config/kuvasz.yml`.
+
+    Setting `MICRONAUT_CONFIG_FILES` replaces the default config file location of the image, so the chart's own `/config/kuvasz.yml` (and therefore `config.raw`) **won't be loaded anymore**. Keep your whole configuration in your own ConfigMap.
+
+Since _Kuvasz_ reads its configuration on startup only, you need to **restart the deployment** after changing your ConfigMap (the chart can only detect the changes of `config.raw` automatically):
+
+```bash
+kubectl create configmap kuvasz-custom-config -n kuvasz-uptime --from-file kuvasz.yml \
+  --dry-run=client -o yaml | kubectl apply -f -
+kubectl rollout restart deployment -n kuvasz-uptime kuvasz-uptime
+```
+
 ### OIDC authentication
 
 You can configure OpenID Connect instead of the built-in username/password login form:
