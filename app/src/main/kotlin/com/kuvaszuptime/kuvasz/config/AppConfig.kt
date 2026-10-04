@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.config
 
 import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
-import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckerClientConfiguration.Companion.DEFAULT_READ_TIMEOUT_SECONDS
+import com.kuvaszuptime.kuvasz.services.check.http.BaseHttpCheckerClientConfiguration.Companion.DEFAULT_READ_TIMEOUT_SECONDS
 import io.micronaut.context.annotation.ConfigurationProperties
 import io.micronaut.context.annotation.Context
 import io.micronaut.core.annotation.Introspected

@@ -55,7 +55,7 @@ class ProxyRegistry(private val proxyConfigs: List<ProxyConfig>) {
             type = type,
             host = host,
             port = port,
-            credentials = ProxyUrl.resolveCredentials(username, password),
+            credentials = ProxyUrl.resolveCredentials(type, username, password),
         )
     } catch (ex: ProxyConfigException) {
         throw ProxyConfigException("Invalid configuration for proxy [$name]: ${ex.message}", ex)

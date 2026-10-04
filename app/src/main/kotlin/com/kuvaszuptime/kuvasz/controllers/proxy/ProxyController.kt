@@ -21,7 +21,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
     SecurityRequirement(name = OpenApiSecuritySchemes.API_KEY),
     SecurityRequirement(name = OpenApiSecuritySchemes.BEARER_AUTH)
 )
-class ProxyController(private val proxyRegistry: ProxyRegistry?) : ProxyOperations {
+class ProxyController(private val proxyRegistry: ProxyRegistry) : ProxyOperations {
 
     @ApiResponses(
         ApiResponse(
@@ -29,5 +29,5 @@ class ProxyController(private val proxyRegistry: ProxyRegistry?) : ProxyOperatio
             description = "The list of configured proxies",
         ),
     )
-    override fun getProxies(): List<ProxyDto> = proxyRegistry?.getProxyDtos().orEmpty()
+    override fun getProxies(): List<ProxyDto> = proxyRegistry.getProxyDtos()
 }

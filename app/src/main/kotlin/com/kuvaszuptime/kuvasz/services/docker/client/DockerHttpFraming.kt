@@ -3,6 +3,9 @@ package com.kuvaszuptime.kuvasz.services.docker.client
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckRequestConfigurator
 import com.kuvaszuptime.kuvasz.services.docker.DockerConnection
 import com.kuvaszuptime.kuvasz.util.elapsedMsSince
+import com.kuvaszuptime.kuvasz.util.httpStatusCodeOf
+import com.kuvaszuptime.kuvasz.util.readExactly
+import com.kuvaszuptime.kuvasz.util.readHttpLine
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpMethod
 import io.micronaut.http.MediaType
@@ -23,7 +26,6 @@ import java.nio.charset.StandardCharsets
 internal object DockerHttpFraming {
 
     private const val CRLF = "\r\n"
-    private const val LF = '\n'.code
     // Plenty for an inspection or a sample; only an endpoint whose answer grows with the host asks for more
     const val MAX_BODY_BYTES = 1024 * 1024
     private const val CHUNK_RADIX = 16
@@ -73,7 +75,7 @@ internal object DockerHttpFraming {
 
     private fun readStatusCode(input: InputStream): Int {
         val statusLine = readLine(input)
-        return statusLine?.split(' ')?.getOrNull(1)?.toIntOrNull()
+        return statusLine?.let(::httpStatusCodeOf)
             ?: throw IOException(
                 "Malformed HTTP status line from the daemon: [${statusLine ?: "<connection closed>"}]"
             )
@@ -134,32 +136,19 @@ internal object DockerHttpFraming {
             ?: throw IOException("Malformed chunk size in the daemon's response: [${line ?: "<connection closed>"}]")
 
     private fun readExactly(input: InputStream, length: Int): ByteArray =
-        input.readNBytes(length).also { bytes ->
-            if (bytes.size < length) {
-                throw IOException("The daemon closed the connection after ${bytes.size} of $length bytes")
-            }
+        input.readExactly(length) { received ->
+            IOException("The daemon closed the connection after $received of $length bytes")
         }
 
-    private fun readLine(input: InputStream): String? {
-        val buffer = ByteArrayOutputStream()
-        while (true) {
-            when (val byte = input.read()) {
-                -1 -> return buffer.takeIf { it.size() > 0 }?.toString(StandardCharsets.US_ASCII)
-                LF -> return buffer.toString(StandardCharsets.US_ASCII).removeSuffix("\r")
-                else -> {
-                    buffer.write(byte)
-                    ensureWithinLimit(buffer.size().toLong())
-                }
-            }
-        }
-    }
+    private fun readLine(input: InputStream): String? =
+        input.readHttpLine(MAX_BODY_BYTES) { limitExceeded(MAX_BODY_BYTES) }
 
     /**
      * Takes a Long, so a running total cannot overflow past the check.
      */
     private fun ensureWithinLimit(size: Long, limit: Int = MAX_BODY_BYTES) {
-        if (size > limit) {
-            throw IOException("The daemon's response exceeds the $limit byte limit")
-        }
+        if (size > limit) throw limitExceeded(limit)
     }
+
+    private fun limitExceeded(limit: Int) = IOException("The daemon's response exceeds the $limit byte limit")
 }

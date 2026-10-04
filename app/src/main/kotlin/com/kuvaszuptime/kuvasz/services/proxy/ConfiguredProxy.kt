@@ -26,6 +26,8 @@ internal object ProxyUrl {
 
     private const val MIN_PORT = 1
     private const val MAX_PORT = 65_535
+    private const val MAX_SOCKS5_FIELD_BYTES = 255
+    private const val MAX_ASCII_CODE = 0x7F
 
     private const val HTTP_SCHEME = "http"
     private const val HTTPS_SCHEME = "https"
@@ -84,15 +86,30 @@ internal object ProxyUrl {
         )
     }
 
-    fun resolveCredentials(username: String?, password: String?): ProxyCredentials? {
+    fun resolveCredentials(type: ProxyType, username: String?, password: String?): ProxyCredentials? {
         val user = username?.takeIf { it.isNotBlank() }
         val pass = password?.takeIf { it.isNotEmpty() }
-        return when {
-            user == null && pass == null -> null
-            user != null && pass != null -> ProxyCredentials(username = user, password = pass)
-            else -> throw ProxyConfigException(
+        val socks5Fields = if (type == ProxyType.SOCKS5) listOfNotNull(user, pass) else emptyList()
+        // The SOCKS5 handler of Netty, which the HTTP checks go through, writes them as ASCII, so anything else would
+        // be sent differently by the HTTP and the TCP checks
+        val notAsciiForSocks5 = socks5Fields.any { field -> field.any { it.code > MAX_ASCII_CODE } }
+        // RFC 1929 sends both of them with a single byte of length
+        val tooLongForSocks5 = socks5Fields.any { it.length > MAX_SOCKS5_FIELD_BYTES }
+        val onlyOneOfThem = (user != null) xor (pass != null)
+        val problem = when {
+            onlyOneOfThem ->
                 "Only one of 'username' and 'password' is configured. They have to be configured together."
-            )
+
+            notAsciiForSocks5 ->
+                "The 'username' and the 'password' of a SOCKS5 proxy can only contain ASCII characters."
+
+            tooLongForSocks5 ->
+                "The 'username' and the 'password' of a SOCKS5 proxy can be at most $MAX_SOCKS5_FIELD_BYTES bytes long."
+
+            else -> null
         }
+        problem?.let { throw ProxyConfigException(it) }
+
+        return if (user != null && pass != null) ProxyCredentials(username = user, password = pass) else null
     }
 }

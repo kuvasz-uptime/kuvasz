@@ -16,7 +16,8 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class TcpConnectExecutorTest : BehaviorSpec({
 
-    val executor = TcpConnectExecutor(SystemHostnameResolver())
+    val resolver = BoundedHostnameResolver(SystemHostnameResolver())
+    val executor = TcpConnectExecutor(resolver)
 
     lateinit var mockServer: ClientAndServer
 
@@ -26,7 +27,7 @@ class TcpConnectExecutorTest : BehaviorSpec({
 
     afterSpec {
         mockServer.stop()
-        executor.close()
+        resolver.close()
     }
 
     given("a TcpConnectExecutor") {
@@ -73,7 +74,8 @@ class TcpConnectExecutorTest : BehaviorSpec({
             Thread.sleep(RESOLVER_HANG_MS)
             InetAddress.getLoopbackAddress()
         }
-        val hangingExecutor = TcpConnectExecutor(HostnameResolver(hangingResolver))
+        val hangingResolution = BoundedHostnameResolver(HostnameResolver(hangingResolver))
+        val hangingExecutor = TcpConnectExecutor(hangingResolution)
 
         `when`("a check runs against it") {
             val timeoutMs = 200
@@ -91,7 +93,7 @@ class TcpConnectExecutorTest : BehaviorSpec({
         }
 
         afterSpec {
-            hangingExecutor.close()
+            hangingResolution.close()
         }
     }
 
@@ -101,7 +103,8 @@ class TcpConnectExecutorTest : BehaviorSpec({
             Thread.sleep(SLOW_RESOLVER_MS)
             InetAddress.getByName("127.0.0.1")
         }
-        val slowExecutor = TcpConnectExecutor(HostnameResolver(slowResolver))
+        val slowResolution = BoundedHostnameResolver(HostnameResolver(slowResolver))
+        val slowExecutor = TcpConnectExecutor(slowResolution)
 
         `when`("a check connects to an open port through it") {
             val result = slowExecutor.execute("slow-but-ok.example", mockServer.localPort, timeoutMs = 5000)
@@ -116,7 +119,7 @@ class TcpConnectExecutorTest : BehaviorSpec({
         }
 
         afterSpec {
-            slowExecutor.close()
+            slowResolution.close()
         }
     }
 
@@ -129,7 +132,8 @@ class TcpConnectExecutorTest : BehaviorSpec({
             releaseResolver.await()
             InetAddress.getLoopbackAddress()
         }
-        val dedupExecutor = TcpConnectExecutor(HostnameResolver(blockingResolver))
+        val blockingResolution = BoundedHostnameResolver(HostnameResolver(blockingResolver))
+        val dedupExecutor = TcpConnectExecutor(blockingResolution)
 
         `when`("several checks target the same unresolved host at once") {
             val threads = (1..CONCURRENT_CHECKS).map {
@@ -145,7 +149,7 @@ class TcpConnectExecutorTest : BehaviorSpec({
 
         afterSpec {
             releaseResolver.countDown()
-            dedupExecutor.close()
+            blockingResolution.close()
         }
     }
 }) {

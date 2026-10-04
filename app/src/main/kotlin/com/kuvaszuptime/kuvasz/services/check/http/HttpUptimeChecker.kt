@@ -109,8 +109,10 @@ class HttpUptimeChecker(
     }
 }
 
-@Singleton
-class HttpCheckerClientConfiguration(
+/**
+ * The settings shared by every client that checks HTTP monitors, whether it connects directly or through a proxy.
+ */
+abstract class BaseHttpCheckerClientConfiguration(
     config: ApplicationConfiguration,
     private val appConfig: AppConfig,
 ) : HttpClientConfiguration(config) {
@@ -130,7 +132,13 @@ class HttpCheckerClientConfiguration(
         DefaultHttpClientConfiguration.DefaultHttp2ClientConfiguration()
 
     companion object {
-        private const val EVENT_LOOP_GROUP = "uptime-check"
+        const val EVENT_LOOP_GROUP = "uptime-check"
         const val DEFAULT_READ_TIMEOUT_SECONDS = 30L
     }
 }
+
+@Singleton
+class HttpCheckerClientConfiguration(
+    config: ApplicationConfiguration,
+    appConfig: AppConfig,
+) : BaseHttpCheckerClientConfiguration(config, appConfig)

@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.config.ConnectivityCheckConfig
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.settings.ConnectivityState
 import com.kuvaszuptime.kuvasz.services.ScheduledCheckDispatchers
+import com.kuvaszuptime.kuvasz.services.check.tcp.BoundedHostnameResolver
 import com.kuvaszuptime.kuvasz.services.check.tcp.SystemHostnameResolver
 import com.kuvaszuptime.kuvasz.services.check.tcp.TcpCheckResult
 import com.kuvaszuptime.kuvasz.services.check.tcp.TcpConnectExecutor
@@ -27,7 +28,8 @@ import kotlin.system.measureTimeMillis
 
 class ConnectivityCheckerTest : BehaviorSpec({
 
-    val executor = TcpConnectExecutor(SystemHostnameResolver())
+    val resolver = BoundedHostnameResolver(SystemHostnameResolver())
+    val executor = TcpConnectExecutor(resolver)
     // The very dispatcher the application injects into the checker
     val dispatcher = ScheduledCheckDispatchers(AppConfig()).default
 
@@ -44,7 +46,7 @@ class ConnectivityCheckerTest : BehaviorSpec({
 
     afterSpec {
         openTarget.stop()
-        executor.close()
+        resolver.close()
     }
 
     fun config(targets: List<String>) = ConnectivityCheckConfig().apply {

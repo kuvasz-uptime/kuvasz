@@ -176,18 +176,18 @@ class ProxyUrlTest : BehaviorSpec({
 
         `when`("neither the username nor the password is set") {
             then("there should be no credentials") {
-                ProxyUrl.resolveCredentials(username = null, password = null).shouldBeNull()
+                ProxyUrl.resolveCredentials(ProxyType.HTTP, username = null, password = null).shouldBeNull()
             }
         }
 
         `when`("both of them are blank") {
             then("there should be no credentials") {
-                ProxyUrl.resolveCredentials(username = " ", password = "").shouldBeNull()
+                ProxyUrl.resolveCredentials(ProxyType.HTTP, username = " ", password = "").shouldBeNull()
             }
         }
 
         `when`("both of them are set") {
-            val credentials = ProxyUrl.resolveCredentials(username = "kuvasz", password = " s3cr3t ")
+            val credentials = ProxyUrl.resolveCredentials(ProxyType.HTTP, username = "kuvasz", password = " s3cr3t ")
 
             then("they should be paired up, keeping the password as is") {
                 credentials shouldBe ProxyCredentials(username = "kuvasz", password = " s3cr3t ")
@@ -199,9 +199,57 @@ class ProxyUrlTest : BehaviorSpec({
             }
         }
 
+        `when`("they are too long for a SOCKS5 proxy") {
+            val exception = shouldThrow<ProxyConfigException> {
+                ProxyUrl.resolveCredentials(ProxyType.SOCKS5, username = "kuvasz", password = "a".repeat(256))
+            }
+
+            then("they should be rejected, because RFC 1929 limits both of them to 255 bytes") {
+                exception.message shouldContain "can be at most 255 bytes long"
+            }
+        }
+
+        `when`("they contain non-ASCII characters for a SOCKS5 proxy") {
+            val passwordException = shouldThrow<ProxyConfigException> {
+                ProxyUrl.resolveCredentials(ProxyType.SOCKS5, username = "kuvasz", password = "jelszó")
+            }
+            val usernameException = shouldThrow<ProxyConfigException> {
+                ProxyUrl.resolveCredentials(ProxyType.SOCKS5, username = "kuvaszü", password = "s3cr3t")
+            }
+
+            then("they should be rejected, because the SOCKS5 client of the HTTP checks can only send ASCII") {
+                passwordException.message shouldContain "can only contain ASCII characters"
+                usernameException.message shouldContain "can only contain ASCII characters"
+            }
+        }
+
+        `when`("they contain non-ASCII characters for an HTTP proxy") {
+            val credentials = ProxyUrl.resolveCredentials(ProxyType.HTTP, username = "kuvasz", password = "jelszó")
+
+            then("they should be accepted, because Basic authentication is sent as UTF-8 by every check") {
+                credentials shouldBe ProxyCredentials(username = "kuvasz", password = "jelszó")
+            }
+        }
+
+        `when`("they are just as long as a SOCKS5 proxy allows") {
+            val credentials = ProxyUrl.resolveCredentials(ProxyType.SOCKS5, username = "a".repeat(255), password = "b")
+
+            then("they should be accepted") {
+                credentials shouldBe ProxyCredentials(username = "a".repeat(255), password = "b")
+            }
+        }
+
+        `when`("they are longer than 255 bytes for an HTTP proxy") {
+            val credentials = ProxyUrl.resolveCredentials(ProxyType.HTTP, username = "a".repeat(300), password = "b")
+
+            then("they should be accepted, because HTTP has no such limit") {
+                credentials shouldBe ProxyCredentials(username = "a".repeat(300), password = "b")
+            }
+        }
+
         `when`("only the username is set") {
             val exception = shouldThrow<ProxyConfigException> {
-                ProxyUrl.resolveCredentials(username = "kuvasz", password = null)
+                ProxyUrl.resolveCredentials(ProxyType.HTTP, username = "kuvasz", password = null)
             }
 
             then("it should be rejected") {
@@ -211,7 +259,7 @@ class ProxyUrlTest : BehaviorSpec({
 
         `when`("only the password is set") {
             val exception = shouldThrow<ProxyConfigException> {
-                ProxyUrl.resolveCredentials(username = null, password = "s3cr3t")
+                ProxyUrl.resolveCredentials(ProxyType.HTTP, username = null, password = "s3cr3t")
             }
 
             then("it should be rejected") {

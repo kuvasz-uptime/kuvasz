@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.services.docker
 
 import com.kuvaszuptime.kuvasz.config.DockerHostConfig
 import com.kuvaszuptime.kuvasz.services.docker.ssl.DockerSslContextProvider
+import com.kuvaszuptime.kuvasz.util.closeQuietly
 import io.micronaut.context.annotation.Requires
 import jakarta.inject.Singleton
 import java.io.Closeable
@@ -84,9 +85,5 @@ class DockerConnectionFactory(private val sslContextProvider: DockerSslContextPr
         socket.startHandshake()
 
         return socket
-    }
-
-    private fun Closeable.closeQuietly() {
-        runCatching { close() }
     }
 }
