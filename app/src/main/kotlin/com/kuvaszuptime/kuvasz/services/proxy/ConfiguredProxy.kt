@@ -1,0 +1,98 @@
+package com.kuvaszuptime.kuvasz.services.proxy
+
+import com.kuvaszuptime.kuvasz.models.dto.proxy.ProxyType
+import com.kuvaszuptime.kuvasz.util.lenientHostAndPort
+import java.net.URI
+import java.net.URISyntaxException
+
+data class ProxyCredentials(
+    val username: String,
+    val password: String,
+) {
+    override fun toString(): String = "ProxyCredentials(username=$username, password=****)"
+}
+
+data class ConfiguredProxy(
+    val name: String,
+    val type: ProxyType,
+    val host: String,
+    val port: Int,
+    val credentials: ProxyCredentials?,
+)
+
+class ProxyConfigException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
+
+internal object ProxyUrl {
+
+    private const val MIN_PORT = 1
+    private const val MAX_PORT = 65_535
+
+    private const val HTTP_SCHEME = "http"
+    private const val HTTPS_SCHEME = "https"
+    private const val SOCKS5_SCHEME = "socks5"
+
+    private val SCHEMES = mapOf(HTTP_SCHEME to ProxyType.HTTP, SOCKS5_SCHEME to ProxyType.SOCKS5)
+    private val SUPPORTED_SCHEMES = SCHEMES.keys.map { "$it://" }
+
+    fun parse(url: String): Triple<ProxyType, String, Int> {
+        val uri = url.toUri()
+        val type = uri.scheme?.lowercase()?.let(SCHEMES::get) ?: throw unsupportedScheme(url, uri.scheme?.lowercase())
+        val (host, port) = uri.lenientHostAndPort()
+        addressProblem(url, uri, host, port)?.let { throw ProxyConfigException(it) }
+        // A missing host is reported by addressProblem() already
+        return Triple(type, checkNotNull(host), port)
+    }
+
+    private fun addressProblem(url: String, uri: URI, host: String?, port: Int): String? {
+        val hasPath = !uri.rawPath.isNullOrEmpty() && uri.rawPath != "/"
+        return when {
+            // Credentials in the URL would end up everywhere the URL is shown or logged
+            uri.rawAuthority?.contains('@') == true ->
+                "[$url] contains credentials. Please use the 'username' and 'password' properties instead."
+
+            hasPath || uri.rawQuery != null || uri.rawFragment != null ->
+                "[$url] should only consist of a scheme, a host and a port."
+
+            host.isNullOrBlank() -> "[$url] does not contain a host name."
+
+            // There is no port every proxy listens on by default, so guessing one would only defer the failure
+            port == -1 -> "[$url] does not contain a port, e.g. http://10.0.0.10:3128"
+
+            port !in MIN_PORT..MAX_PORT ->
+                "[$url] has an invalid port [$port]. Expected one between $MIN_PORT and $MAX_PORT."
+
+            else -> null
+        }
+    }
+
+    private fun String.toUri(): URI = try {
+        URI(trim())
+    } catch (ex: URISyntaxException) {
+        throw ProxyConfigException("[$this] is not a valid URL: ${ex.reason}", ex)
+    }
+
+    private fun unsupportedScheme(url: String, scheme: String?): ProxyConfigException = when (scheme) {
+        null -> ProxyConfigException("[$url] is missing a scheme. Expected one of: $SUPPORTED_SCHEMES")
+        HTTPS_SCHEME -> ProxyConfigException(
+            "[$url] uses the unsupported scheme [$HTTPS_SCHEME] " +
+                "(TLS connections to the proxy itself are not supported, " +
+                "but HTTPS targets can be monitored through an http:// proxy). Expected one of: $SUPPORTED_SCHEMES"
+        )
+
+        else -> ProxyConfigException(
+            "[$url] uses the unsupported scheme [$scheme]. Expected one of: $SUPPORTED_SCHEMES"
+        )
+    }
+
+    fun resolveCredentials(username: String?, password: String?): ProxyCredentials? {
+        val user = username?.takeIf { it.isNotBlank() }
+        val pass = password?.takeIf { it.isNotEmpty() }
+        return when {
+            user == null && pass == null -> null
+            user != null && pass != null -> ProxyCredentials(username = user, password = pass)
+            else -> throw ProxyConfigException(
+                "Only one of 'username' and 'password' is configured. They have to be configured together."
+            )
+        }
+    }
+}

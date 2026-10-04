@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.services.docker
 
 import com.kuvaszuptime.kuvasz.models.dto.docker.DockerHostAuthMethod
+import com.kuvaszuptime.kuvasz.util.lenientHostAndPort
 import java.net.URI
 import java.net.URISyntaxException
 import java.nio.file.Files
@@ -76,10 +77,6 @@ internal object DockerDaemonUrl {
 
     private val SUPPORTED_SCHEMES = listOf(UNIX_SCHEME, TCP_SCHEME, HTTP_SCHEME, HTTPS_SCHEME).map { "$it://" }
 
-    // java.net.URI leaves the host empty for a name that is not an RFC 2396 hostname, which rules out underscores,
-    // although a Compose service name like docker_proxy is a perfectly resolvable host on a Docker network
-    private val UNDERSCORED_AUTHORITY = Regex("([A-Za-z0-9._-]+)(?::([0-9]{1,5}))?")
-
     fun parse(url: String, tls: DockerTlsMaterial?): DockerDaemonAddress {
         val uri = url.toUri()
 
@@ -141,7 +138,7 @@ internal object DockerDaemonUrl {
     }
 
     private fun parseTcp(uri: URI, secure: Boolean, tls: DockerTlsMaterial?): DockerDaemonAddress.Tcp {
-        val (host, explicitPort) = uri.hostAndPort()
+        val (host, explicitPort) = uri.lenientHostAndPort()
         if (host.isNullOrBlank()) {
             throw DockerHostConfigException("[$uri] does not contain a host name.")
         }
@@ -154,14 +151,6 @@ internal object DockerDaemonUrl {
             )
         }
         return DockerDaemonAddress.Tcp(host = host, port = port, secure = secure, tls = tls)
-    }
-
-    private fun URI.hostAndPort(): Pair<String?, Int> {
-        if (host != null) return host to port
-        return authority?.let(UNDERSCORED_AUTHORITY::matchEntire)
-            ?.destructured
-            ?.let { (name, portDigits) -> name to (portDigits.toIntOrNull() ?: -1) }
-            ?: (null to -1)
     }
 
     /**

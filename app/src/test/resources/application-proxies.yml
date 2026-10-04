@@ -1,0 +1,7 @@
+proxies:
+  - name: "corporate-egress"
+    url: "http://10.0.0.10:3128"
+    username: "kuvasz"
+    password: "s3cr3t"
+  - name: "office-network"
+    url: "socks5://127.0.0.1:1080"

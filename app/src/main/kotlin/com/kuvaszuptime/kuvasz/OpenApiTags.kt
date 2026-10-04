@@ -11,6 +11,7 @@ object OpenApiTags {
     const val INTEGRATIONS = "Integrations"
     const val MAINTENANCE_WINDOWS = "Maintenance windows"
     const val MONITORS = "Monitors"
+    const val PROXIES = "Proxies"
     const val PUSH_MONITORS = "Push monitors"
     const val SETTINGS = "Settings"
     const val STATUS_PAGES = "Status pages"

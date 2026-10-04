@@ -20,6 +20,7 @@ tags:
 - name: Incidents
 - name: Integrations
 - name: Docker hosts
+- name: Proxies
 - name: Maintenance windows
 - name: Status pages
 - name: Settings
@@ -1567,6 +1568,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/proxies:
+    get:
+      tags:
+      - Proxies
+      summary: Returns all the configured proxies
+      operationId: getProxies
+      responses:
+        "200":
+          description: The list of configured proxies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Proxy"
       security:
       - apiKey: []
       - bearerAuth: []
@@ -6289,6 +6308,45 @@ components:
             \ for this integration. If empty or null, no event types are excluded."
           items:
             $ref: "#/components/schemas/IntegrationEventType"
+    Proxy:
+      required:
+      - host
+      - name
+      - type
+      type: object
+      properties:
+        name:
+          type: string
+          description: "The unique name of the proxy, referenced by monitors"
+          example: corporate-egress
+        type:
+          description: The protocol of the proxy
+          allOf:
+          - $ref: "#/components/schemas/ProxyType"
+        host:
+          type: string
+          description: The host name or IP address of the proxy
+          example: 10.0.0.10
+        port:
+          type: integer
+          description: The port of the proxy
+          format: int32
+          example: 3128
+        authenticated:
+          type: boolean
+          description: Whether Kuvasz authenticates to the proxy with a username and
+            password
+      description: "An outbound proxy monitors can be checked through, configured\
+        \ via YAML"
+    ProxyType:
+      type: string
+      description: The protocol Kuvasz uses to open a tunnel through a proxy
+      enum:
+      - HTTP
+      - SOCKS5
+      x-enum-descriptions:
+      - "An HTTP proxy, tunneling every connection with the CONNECT method"
+      - A SOCKS5 proxy
     PushMonitorCreateDto:
       required:
       - clientSecret
