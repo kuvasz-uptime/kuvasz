@@ -151,6 +151,8 @@ config:
     # ...
 ```
 
+If you'd rather manage the configuration in your own ConfigMap, mount it via `extraVolumes` and `extraVolumeMounts` to a path **other than `/config/kuvasz.yml`** (which is always used by the chart's own ConfigMap), and point `MICRONAUT_CONFIG_FILES` to it via `extraEnv`. See the [documentation](https://kuvasz-uptime.dev/setup/helm-deployment/#using-your-own-configmap) for a complete example.
+
 ## Gateway API HTTPRoute
 
 The chart can expose Kuvasz through a Gateway API `HTTPRoute` instead of, or alongside, an Ingress. The chart creates the `HTTPRoute`; the target `Gateway` must already exist in the cluster.
