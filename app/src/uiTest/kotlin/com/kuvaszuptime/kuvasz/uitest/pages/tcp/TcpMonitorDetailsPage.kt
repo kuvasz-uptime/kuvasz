@@ -32,6 +32,9 @@ class TcpMonitorDetailsPage(private val page: Page) {
     // The badge in the header showing the monitor's category, if it has one
     val categoryBadge: Locator get() = page.getByTestId("monitor-category-badge")
 
+    // The proxy the monitor is checked through, or the warning about one that is not configured anymore.
+    val proxyBadge: Locator get() = page.locator("#tcp-monitor-detail-heading").getByTestId("proxy-badge")
+
     // The pause/resume control in the header: shows a pause icon while running, a play icon once paused.
     val toggleButton: Locator get() = page.getByTestId("toggle-monitor-button")
     val pauseControl: Locator get() = toggleButton.locator(".icon-tabler-player-pause")

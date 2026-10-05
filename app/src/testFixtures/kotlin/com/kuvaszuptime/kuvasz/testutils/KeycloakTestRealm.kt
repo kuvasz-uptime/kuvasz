@@ -8,7 +8,7 @@ import dasniko.testcontainers.keycloak.KeycloakContainer
  */
 object KeycloakTestRealm {
 
-    const val IMAGE = "quay.io/keycloak/keycloak:26.6"
+    const val IMAGE = "quay.io/keycloak/keycloak:26.8"
     const val REALM_IMPORT_FILE = "/keycloak/kuvasz-realm.json"
 
     const val REALM = "kuvasz"

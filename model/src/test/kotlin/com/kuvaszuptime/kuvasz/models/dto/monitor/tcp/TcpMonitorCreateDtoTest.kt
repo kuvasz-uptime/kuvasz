@@ -259,6 +259,7 @@ class TcpMonitorCreateDtoDefaultsTest : BehaviorSpec({
             dto.integrations shouldBe emptyList()
             dto.category shouldBe null
             dto.ignoreConnectivityCheck shouldBe MonitorDefaults.IGNORE_CONNECTIVITY_CHECK
+            dto.proxy shouldBe null
         }
 
         then("the flag should be carried over to the record") {
@@ -283,6 +284,24 @@ class TcpMonitorCreateDtoDefaultsTest : BehaviorSpec({
                 baseDto.copy(category = "   ").toMonitorRecord(emptySet()).category shouldBe null
                 baseDto.copy(category = " Core services ").toMonitorRecord(emptySet()).category shouldBe
                     "Core services"
+            }
+        }
+    }
+
+    given("the toMonitorRecord() mapping of the proxy") {
+        val baseDto = TcpMonitorCreateDto(
+            name = "Test Monitor",
+            host = "example.com",
+            port = 8080,
+            uptimeCheckInterval = 60,
+        )
+
+        `when`("the proxy is null, blank or padded with whitespace") {
+            then("it should be persisted as null (a direct connection) or trimmed") {
+                baseDto.copy(proxy = null).toMonitorRecord(emptySet()).proxy shouldBe null
+                baseDto.copy(proxy = "   ").toMonitorRecord(emptySet()).proxy shouldBe null
+                baseDto.copy(proxy = " corporate-egress ").toMonitorRecord(emptySet()).proxy shouldBe
+                    "corporate-egress"
             }
         }
     }

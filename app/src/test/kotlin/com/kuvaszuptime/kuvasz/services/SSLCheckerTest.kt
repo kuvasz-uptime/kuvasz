@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
+import com.kuvaszuptime.kuvasz.models.dto.proxy.ProxyType
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.CertificateInfo
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
@@ -14,9 +15,12 @@ import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.services.check.ssl.SSLChecker
 import com.kuvaszuptime.kuvasz.services.check.ssl.SSLValidator
+import com.kuvaszuptime.kuvasz.services.proxy.ConfiguredProxy
+import com.kuvaszuptime.kuvasz.services.proxy.ProxyRegistry
 import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.core.test.TestCase
 import io.kotest.engine.test.TestResult
 import io.kotest.matchers.comparables.shouldBeGreaterThan
@@ -35,10 +39,21 @@ import java.time.OffsetDateTime
 @MicronautTest(startApplication = false)
 class SSLCheckerTest(
     private val monitorRepository: HttpMonitorRepository,
-    sslEventRepository: SSLEventRepository
+    private val sslEventRepository: SSLEventRepository
 ) : DatabaseBehaviorSpec() {
 
     private val sslValidator = mockk<SSLValidator>()
+    private val configuredProxy = ConfiguredProxy(
+        name = "corporate-egress",
+        type = ProxyType.HTTP,
+        host = "10.0.0.10",
+        port = 3128,
+        credentials = null,
+    )
+    private val proxyRegistry = mockk<ProxyRegistry> {
+        every { this@mockk[configuredProxy.name] } returns configuredProxy
+        every { this@mockk["gone"] } returns null
+    }
 
     init {
         val eventDispatcher = EventDispatcher()
@@ -49,6 +64,7 @@ class SSLCheckerTest(
                 eventDispatcher = eventDispatcher,
                 sslEventRepository = sslEventRepository,
                 databaseEventHandler = mockDbEventHandler,
+                proxyRegistry = proxyRegistry,
             )
         )
 
@@ -168,6 +184,44 @@ class SSLCheckerTest(
         }
     }
 
+    init {
+        given("a monitor that is checked through a proxy") {
+
+            fun sslCheckerWith(dbEventHandler: DatabaseEventHandler) = SSLChecker(
+                sslValidator = sslValidator,
+                eventDispatcher = EventDispatcher(),
+                sslEventRepository = sslEventRepository,
+                databaseEventHandler = dbEventHandler,
+                proxyRegistry = proxyRegistry,
+            )
+
+            `when`("its proxy is configured") {
+                val dbEventHandler = mockk<DatabaseEventHandler>(relaxed = true)
+                val monitor = createHttpMonitor(monitorRepository, proxy = configuredProxy.name)
+                mockValidationResult(SslStatus.VALID)
+
+                sslCheckerWith(dbEventHandler).check(monitor)
+
+                then("the certificate should be validated through the proxy") {
+                    verify { sslValidator.validateHttps(monitor.url.toUri(), configuredProxy) }
+                    verify(exactly = 1) { dbEventHandler.handleSSLMonitorEvent(any()) }
+                }
+            }
+
+            `when`("its proxy is not configured anymore") {
+                val dbEventHandler = mockk<DatabaseEventHandler>(relaxed = true)
+                val monitor = createHttpMonitor(monitorRepository, proxy = "gone")
+
+                sslCheckerWith(dbEventHandler).check(monitor)
+
+                then("the check should be skipped, instead of blaming the certificate") {
+                    verify(exactly = 0) { sslValidator.validateHttps(any(), any()) }
+                    verify(exactly = 0) { dbEventHandler.handleSSLMonitorEvent(any()) }
+                }
+            }
+        }
+    }
+
     override suspend fun afterTest(testCase: TestCase, result: TestResult) {
         clearMocks(sslValidator)
         super.afterTest(testCase, result)
@@ -183,6 +237,6 @@ class SSLCheckerTest(
             SslStatus.WILL_EXPIRE -> SSLValidationResult.Valid(certInfo)
             SslStatus.INVALID -> SSLValidationResult.Invalid(SSLValidationError("validation error"))
         }
-        every { sslValidator.validateHttps(any()) } returns mockResult
+        every { sslValidator.validateHttps(any(), any()) } returns mockResult
     }
 }

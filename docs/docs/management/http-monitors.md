@@ -29,6 +29,7 @@
       ssl-expiry-threshold: 30 # (10)!
       failure-count-threshold: 1 # (20)!
       ignore-connectivity-check: false # (24)!
+      proxy: "corporate-egress" # (25)!
       expected-status-codes: # (12)!
         - 200
         - 201
@@ -71,6 +72,7 @@
     22. **Category**: An optional, free-form category to group the monitor on the status pages (e.g. a product or service name).
     23. **Cross-origin header propagation**: Whether the custom request headers should be sent to a redirect target whose origin (scheme, host and port) differs from the origin of the monitored URL. Defaults to false.
     24. **Ignore connectivity check**: Whether the monitor should keep being checked even while _Kuvasz_ considers its own outbound connectivity lost. Defaults to false.
+    25. **Proxy**: The name of a [proxy](proxies.md) defined in the `proxies` section of your YAML file, that the uptime and the SSL checks of the monitor are routed through. Defaults to `null`, which means a direct connection.
 
 === "API (expert)"
 
@@ -174,6 +176,21 @@ The **HTTP method** to use for the uptime checks.
 
     - If you use the `HEAD` method, the response body will be empty, so the [**expected keyword check**](#expected-keyword) will always fail.
     - If you would like to send a [**request body**](#request-body), you must use the `POST`, `PUT`, or `PATCH` methods.
+
+### Proxy <!-- md:config proxies.md -->
+
+<!-- md:version 4.5.0 -->
+<!-- md:default empty -->
+<!-- md:type string -->
+<!-- md:yaml_prop `proxy` -->
+
+The **name of a** [**proxy**](proxies.md) that both the **uptime** and the **SSL checks** of the monitor are routed through, as defined in the `proxies` section of your configuration file. Leave it empty to check the monitor over a **direct connection**, which is the default.
+
+The proxy resolves the host of the URL, so a target that only resolves behind the proxy can be monitored too, and every hop of a [redirect chain](#follow-redirects) goes through the same proxy. A newly set proxy **must be configured**, and if it's removed from the configuration later, the monitor is kept, but its checks fail until the proxy is added back, or the monitor is pointed to another one. See [**Referencing proxies from monitors**](proxies.md#referencing-proxies-from-monitors) for the details.
+
+!!! warning "Plain HTTP targets"
+
+    Plain `http://` URLs are tunneled through the proxy with `CONNECT` as well, which some proxies (e.g. _Squid_ with its default configuration) only allow towards port 443. See the [**limitations**](proxies.md#limitations).
 
 ### Follow redirects
 
@@ -466,6 +483,10 @@ Enable it for monitors that **don't depend on the outbound connectivity** of _Ku
 !!!info
 
     This flag has **no effect at all** when the [connectivity check](../setup/configuration.md#connectivity-check) is disabled, which is the default. You can set it freely regardless, so it's already in place if you decide to turn the feature on later.
+
+!!!tip "Monitors checked through a proxy"
+
+    The connectivity check never goes through a [proxy](proxies.md), so it's usually a good idea to enable this flag for the monitors that are checked through one. See [**Proxies and the connectivity check**](proxies.md#proxies-and-the-connectivity-check) for the details.
 
 ## Common operations
 

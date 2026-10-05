@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.security.ui.WebSecured
 import com.kuvaszuptime.kuvasz.services.docker.DockerHostRegistry
 import com.kuvaszuptime.kuvasz.services.docker.client.DockerApiClient
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
+import com.kuvaszuptime.kuvasz.services.proxy.ProxyRegistry
 import com.kuvaszuptime.kuvasz.services.ui.DashboardDataProvider
 import com.kuvaszuptime.kuvasz.ui.fragments.dashboard.*
 import com.kuvaszuptime.kuvasz.ui.fragments.layout.*
@@ -34,6 +35,7 @@ class WebUIController(
     private val dashboardDataProvider: DashboardDataProvider,
     private val dockerHostRegistry: DockerHostRegistry?,
     private val dockerApiClient: DockerApiClient?,
+    private val proxyRegistry: ProxyRegistry,
 ) {
 
     companion object {
@@ -76,6 +78,7 @@ class WebUIController(
         globals = appGlobals,
         settings = settingsRepository.getSettings(),
         dockerHosts = dockerHostRegistry?.getHostDtos(dockerApiClient).orEmpty(),
+        proxies = proxyRegistry.getProxyDtos(),
     )
 
     @Get("/integrations")

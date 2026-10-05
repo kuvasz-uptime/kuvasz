@@ -24,11 +24,8 @@ class MsTeamsWebhookClientTest(
     private val cardFactory: MsTeamsCardFactory,
 ) : ShouldSpec({
 
-    lateinit var mockServer: ClientAndServer
-    val mockServerUrl = "http://localhost:1081"
-    val webhookUrl = "$mockServerUrl/workflows/aaa/triggers/manual/paths/invoke".toUri()
-
-    beforeSpec { mockServer = ClientAndServer.startClientAndServer(1081) }
+    val mockServer = ClientAndServer.startClientAndServer(0)
+    val webhookUrl = "http://localhost:${mockServer.port}/workflows/aaa/triggers/manual/paths/invoke".toUri()
 
     afterSpec { mockServer.stop() }
 

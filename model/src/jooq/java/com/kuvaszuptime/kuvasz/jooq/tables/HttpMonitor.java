@@ -209,6 +209,11 @@ public class HttpMonitor extends TableImpl<HttpMonitorRecord> {
      */
     public final TableField<HttpMonitorRecord, Boolean> IGNORE_CONNECTIVITY_CHECK = createField(DSL.name("ignore_connectivity_check"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("false"), SQLDataType.BOOLEAN)), this, "");
 
+    /**
+     * The column <code>kuvasz.http_monitor.proxy</code>.
+     */
+    public final TableField<HttpMonitorRecord, String> PROXY = createField(DSL.name("proxy"), SQLDataType.CLOB, this, "");
+
     private HttpMonitor(Name alias, Table<HttpMonitorRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }
@@ -278,7 +283,7 @@ public class HttpMonitor extends TableImpl<HttpMonitorRecord> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.asList(Indexes.HTTP_MONITOR_CATEGORY_IDX);
+        return Arrays.asList(Indexes.HTTP_MONITOR_CATEGORY_IDX, Indexes.HTTP_MONITOR_PROXY_IDX);
     }
 
     @Override

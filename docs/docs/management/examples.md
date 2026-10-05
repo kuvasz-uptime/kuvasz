@@ -1088,6 +1088,14 @@ docker-hosts:
       cert: "/certs/homelab/cert.pem"
       key: "/certs/homelab/key.pem"
 ---
+proxies:
+  - name: "corporate-egress"
+    url: "http://10.0.0.10:3128"
+    username: "kuvasz"
+    password: "${EGRESS_PROXY_PASSWORD}"
+  - name: "office-network"
+    url: "socks5://bastion-tunnel:1080"
+---
 http-monitors:
   - name: "full configuration example"
     url: "https://akobor.me"
@@ -1121,6 +1129,12 @@ http-monitors:
   - name: "minimal configuration example"
     url: "https://kuvasz-uptime.dev"
     uptime-check-interval: 5
+  - name: "Intranet through the egress proxy"
+    url: "https://intranet.corp.local"
+    uptime-check-interval: 60
+    ssl-check-enabled: true
+    proxy: "corporate-egress"
+    ignore-connectivity-check: true
 push-monitors:
   - name: "My Push Monitor"
     heartbeat-interval: 10
@@ -1169,6 +1183,12 @@ tcp-monitors:
     port: 25
     uptime-check-interval: 30
     enabled: true
+  - name: "Office database through SOCKS5"
+    host: "db.office.local"
+    port: 5432
+    uptime-check-interval: 60
+    proxy: "office-network"
+    ignore-connectivity-check: true
 dns-monitors:
   - name: "My DNS Monitor"
     host: "example.com"

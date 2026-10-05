@@ -22,10 +22,12 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.testutils.PROXIES
 import com.kuvaszuptime.kuvasz.testutils.shouldHaveError
 import com.kuvaszuptime.kuvasz.testutils.shouldHaveInputValidationError
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldHaveSingleElement
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.micronaut.http.client.HttpClient
@@ -34,7 +36,7 @@ import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.modelcontextprotocol.client.McpSyncClient
 import io.modelcontextprotocol.spec.McpSchema
 
-@MicronautTest(environments = ["full-integrations-setup"])
+@MicronautTest(environments = ["full-integrations-setup", PROXIES])
 class HttpMonitorToolsTest(
     @param:Client("/") private val client: HttpClient,
     private val httpMonitorRepository: HttpMonitorRepository,
@@ -67,6 +69,7 @@ class HttpMonitorToolsTest(
                     httpMonitorRepository,
                     integrations = listOf(IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled")),
                     crossOriginHeaderPropagation = true,
+                    proxy = "corporate-egress",
                 )
                 val response = callToolWithMcpClient(GET_HTTP_MONITOR_DETAILS, mapOf("monitorId" to monitor.id))
 
@@ -79,6 +82,7 @@ class HttpMonitorToolsTest(
                     details.ignoreConnectivityCheck shouldBe monitor.ignoreConnectivityCheck
                     details.integrations shouldHaveSingleElement "slack:test_implicitly_enabled"
                     details.crossOriginHeaderPropagation shouldBe true
+                    details.proxy shouldBe "corporate-egress"
 
                     response.contentAs<HttpMonitorDetailsSchema>() shouldBe details
                 }
@@ -184,6 +188,46 @@ class HttpMonitorToolsTest(
                         .crossOriginHeaderPropagation shouldBe true
                     httpMonitorRepository.findByName("mcp-created-propagating-monitor").shouldNotBeNull()
                         .crossOriginHeaderPropagation shouldBe true
+                }
+            }
+
+            `when`("create-http-monitor is called with a configured proxy") {
+                val response = callToolWithMcpClient(
+                    CREATE_HTTP_MONITOR,
+                    mapOf(
+                        "name" to "mcp-created-proxied-monitor",
+                        "url" to "https://example.com",
+                        "uptimeCheckInterval" to 60,
+                        "proxy" to "office-network",
+                    )
+                )
+
+                then("it should create the monitor with the given proxy") {
+                    response.isError shouldBe false
+
+                    response.structuredContentAs<HttpMonitorSchema>().shouldNotBeNull().proxy shouldBe "office-network"
+                    httpMonitorRepository.findByName("mcp-created-proxied-monitor").shouldNotBeNull()
+                        .proxy shouldBe "office-network"
+                }
+            }
+
+            `when`("create-http-monitor is called with a proxy that is not configured") {
+                val response = callTool(
+                    CREATE_HTTP_MONITOR,
+                    mapOf(
+                        "name" to "mcp-created-monitor-with-unknown-proxy",
+                        "url" to "https://example.com",
+                        "uptimeCheckInterval" to 60,
+                        "proxy" to "not-configured",
+                    )
+                )
+
+                then("it should return an invalid-params protocol error and not create the monitor") {
+                    response.shouldHaveError(
+                        McpSchema.ErrorCodes.INVALID_PARAMS,
+                        "Non-existing proxy found: not-configured."
+                    )
+                    httpMonitorRepository.findByName("mcp-created-monitor-with-unknown-proxy").shouldBeNull()
                 }
             }
 

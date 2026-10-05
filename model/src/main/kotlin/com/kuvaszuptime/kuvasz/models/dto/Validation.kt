@@ -74,6 +74,11 @@ object DockerHostValidationMessages {
     const val URL_NOT_BLANK = "The URL of a Docker host cannot be blank"
 }
 
+object ProxyValidationMessages {
+    const val NAME_NOT_BLANK = "The name of a proxy cannot be blank"
+    const val URL_NOT_BLANK = "The URL of a proxy cannot be blank"
+}
+
 object MonitorValidationMessages {
     const val NAME_NOT_BLANK = "Monitor name must not be blank"
     const val CATEGORY_MAX_SIZE = "Monitor category must be at most {max} characters long"

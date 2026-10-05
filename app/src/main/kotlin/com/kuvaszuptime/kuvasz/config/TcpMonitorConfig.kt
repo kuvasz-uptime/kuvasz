@@ -43,4 +43,6 @@ interface TcpMonitorConfig : TcpMonitorCreator, MonitorConfig {
 
     @get:Bindable(defaultValue = MonitorDefaults.IGNORE_CONNECTIVITY_CHECK.toString())
     override val ignoreConnectivityCheck: Boolean
+
+    override val proxy: String?
 }

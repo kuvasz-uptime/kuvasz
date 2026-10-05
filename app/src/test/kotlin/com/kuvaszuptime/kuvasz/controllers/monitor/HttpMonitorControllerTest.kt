@@ -39,6 +39,7 @@ import com.kuvaszuptime.kuvasz.services.UptimeOverview
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageCacheInvalidator
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageDataActions
+import com.kuvaszuptime.kuvasz.testutils.PROXIES
 import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.util.getBodyAs
@@ -83,7 +84,7 @@ import java.time.Duration
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.time.Duration.Companion.milliseconds
 
-@MicronautTest(environments = ["full-integrations-setup"])
+@MicronautTest(environments = ["full-integrations-setup", PROXIES])
 class HttpMonitorControllerTest(
     @param:Client("/") private val client: HttpClient,
     private val monitorClient: HttpMonitorClient,
@@ -674,6 +675,7 @@ class HttpMonitorControllerTest(
                     forceNoCache = false,
                     followRedirects = false,
                     crossOriginHeaderPropagation = true,
+                    proxy = "corporate-egress",
                     sslExpiryThreshold = 15,
                     failureCountThreshold = 2,
                     integrations = setUpIntegrations,
@@ -740,6 +742,7 @@ class HttpMonitorControllerTest(
                     response.forceNoCache shouldBe false
                     response.followRedirects shouldBe false
                     response.crossOriginHeaderPropagation shouldBe true
+                    response.proxy shouldBe "corporate-egress"
                     response.sslExpiryThreshold shouldBe 15
                     response.failureCountThreshold shouldBe 2
                     response.sslValidUntil shouldBe sslExpiryDate
@@ -1146,6 +1149,8 @@ class HttpMonitorControllerTest(
                     monitorInDb.followRedirects shouldBe createdMonitor.followRedirects
                     monitorInDb.crossOriginHeaderPropagation shouldBe false
                     monitorInDb.crossOriginHeaderPropagation shouldBe createdMonitor.crossOriginHeaderPropagation
+                    monitorInDb.proxy shouldBe null
+                    createdMonitor.proxy shouldBe null
                     monitorInDb.sslExpiryThreshold shouldBe 30
                     monitorInDb.sslExpiryThreshold shouldBe createdMonitor.sslExpiryThreshold
                     monitorInDb.failureCountThreshold shouldBe 1
@@ -1185,6 +1190,7 @@ class HttpMonitorControllerTest(
                     forceNoCache = false,
                     followRedirects = false,
                     crossOriginHeaderPropagation = true,
+                    proxy = " corporate-egress ",
                     sslExpiryThreshold = 20,
                     integrations = setUpIntegrations.map { it.toString() },
                     expectedStatusCodes = listOf(200, 201, 200),
@@ -1226,6 +1232,8 @@ class HttpMonitorControllerTest(
                     monitorInDb.followRedirects shouldBe createdMonitor.followRedirects
                     monitorInDb.crossOriginHeaderPropagation shouldBe true
                     monitorInDb.crossOriginHeaderPropagation shouldBe createdMonitor.crossOriginHeaderPropagation
+                    monitorInDb.proxy shouldBe "corporate-egress"
+                    createdMonitor.proxy shouldBe "corporate-egress"
                     monitorInDb.sslExpiryThreshold shouldBe 20
                     monitorInDb.sslExpiryThreshold shouldBe createdMonitor.sslExpiryThreshold
                     monitorInDb.failureCountThreshold shouldBe 4
@@ -1390,6 +1398,42 @@ class HttpMonitorControllerTest(
                     response.status shouldBe HttpStatus.BAD_REQUEST
                     response.message shouldContain
                         "Non-existing integration ID found: email:non-existing-integration."
+                }
+            }
+
+            `when`("it is called with a proxy that is not configured") {
+                val monitorToCreate = HttpMonitorCreateDto(
+                    name = "monitor_with_unknown_proxy",
+                    url = "https://valid-url.com",
+                    uptimeCheckInterval = 6000,
+                    proxy = "not-configured",
+                )
+                val request = HttpRequest.POST("/api/v2/http-monitors", monitorToCreate)
+                val response = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request).awaitFirst()
+                }
+
+                then("it should return a 400 and not create the monitor") {
+                    response.status shouldBe HttpStatus.BAD_REQUEST
+                    response.response.getBodyAs<ServiceError>()?.message shouldBe
+                        "Non-existing proxy found: not-configured."
+                    monitorRepository.findByName(monitorToCreate.name).shouldBeNull()
+                }
+            }
+
+            `when`("it is called with a blank proxy") {
+                val createdMonitor = monitorClient.createMonitor(
+                    HttpMonitorCreateDto(
+                        name = "monitor_with_blank_proxy",
+                        url = "https://valid-url.com",
+                        uptimeCheckInterval = 6000,
+                        proxy = "  ",
+                    )
+                )
+
+                then("it should be checked over a direct connection") {
+                    createdMonitor.proxy shouldBe null
+                    monitorRepository.findById(createdMonitor.id, null).shouldNotBeNull().proxy shouldBe null
                 }
             }
 
@@ -1740,6 +1784,7 @@ class HttpMonitorControllerTest(
                     .put(HttpMonitorUpdateDto::forceNoCache.name, false)
                     .put(HttpMonitorUpdateDto::followRedirects.name, false)
                     .put(HttpMonitorUpdateDto::crossOriginHeaderPropagation.name, true)
+                    .put(HttpMonitorUpdateDto::proxy.name, "office-network")
                     .put(HttpMonitorUpdateDto::name.name, "updated_test_monitor")
                     .put(HttpMonitorUpdateDto::url.name, "https://updated-url.com")
                     .put(HttpMonitorUpdateDto::uptimeCheckInterval.name, "5000")
@@ -1792,6 +1837,7 @@ class HttpMonitorControllerTest(
                     monitorInDb.forceNoCache shouldBe false
                     monitorInDb.followRedirects shouldBe false
                     monitorInDb.crossOriginHeaderPropagation shouldBe true
+                    monitorInDb.proxy shouldBe "office-network"
                     monitorInDb.sslExpiryThreshold shouldBe 20
                     monitorInDb.failureCountThreshold shouldBe 2
                     monitorInDb.integrations.shouldNotBeNull() shouldContainExactlyInAnyOrder
@@ -2484,6 +2530,74 @@ class HttpMonitorControllerTest(
                     response.status shouldBe HttpStatus.BAD_REQUEST
                     response.message shouldContain ValidationMessages.WELL_FORMED_JSON_STRING
                     monitorInDb.requestBody shouldBe createdMonitor.requestBody
+                }
+            }
+
+            `when`("a monitor is pointed to a proxy that is not configured") {
+                val monitor = createHttpMonitor(monitorRepository, proxy = "corporate-egress")
+
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .put(HttpMonitorUpdateDto::proxy.name, "not-configured")
+                val response = shouldThrow<HttpClientResponseException> {
+                    client.exchange(HttpRequest.PATCH("/api/v2/http-monitors/${monitor.id}", updateDto))
+                        .awaitFirst()
+                }
+
+                then("it should return a 400 and keep the previous proxy") {
+                    response.status shouldBe HttpStatus.BAD_REQUEST
+                    response.response.getBodyAs<ServiceError>()?.message shouldBe
+                        "Non-existing proxy found: not-configured."
+                    monitorRepository.findById(monitor.id, null).shouldNotBeNull().proxy shouldBe "corporate-egress"
+                }
+            }
+
+            `when`("the proxy of a monitor is cleared") {
+                val monitor = createHttpMonitor(monitorRepository, proxy = "corporate-egress")
+
+                val updateDto = JsonNodeFactory.instance.objectNode().putNull(HttpMonitorUpdateDto::proxy.name)
+                val updatedMonitor = monitorClient.updateMonitor(monitor.id, updateDto)
+
+                then("it should be checked over a direct connection") {
+                    updatedMonitor.proxy shouldBe null
+                    monitorRepository.findById(monitor.id, null).shouldNotBeNull().proxy shouldBe null
+                }
+            }
+
+            `when`("the proxy of a monitor is set to a blank value") {
+                val monitor = createHttpMonitor(monitorRepository, proxy = "corporate-egress")
+
+                val updateDto = JsonNodeFactory.instance.objectNode().put(HttpMonitorUpdateDto::proxy.name, " ")
+                val updatedMonitor = monitorClient.updateMonitor(monitor.id, updateDto)
+
+                then("it should be stored as no proxy at all") {
+                    updatedMonitor.proxy shouldBe null
+                }
+            }
+
+            `when`("a monitor whose proxy was removed from the config is updated") {
+                val monitor = createHttpMonitor(monitorRepository, proxy = "removed-proxy")
+
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .put(HttpMonitorUpdateDto::uptimeCheckInterval.name, 120)
+                val updatedMonitor = monitorClient.updateMonitor(monitor.id, updateDto)
+
+                then("it should keep the proxy and apply the update") {
+                    updatedMonitor.proxy shouldBe "removed-proxy"
+                    updatedMonitor.uptimeCheckInterval shouldBe 120
+                }
+            }
+
+            `when`("a monitor whose proxy was removed from the config is sent with its proxy unchanged") {
+                val monitor = createHttpMonitor(monitorRepository, proxy = "removed-proxy")
+
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .put(HttpMonitorUpdateDto::proxy.name, " removed-proxy ")
+                    .put(HttpMonitorUpdateDto::uptimeCheckInterval.name, 180)
+                val updatedMonitor = monitorClient.updateMonitor(monitor.id, updateDto)
+
+                then("it should be accepted, as only a newly set proxy has to be configured") {
+                    updatedMonitor.proxy shouldBe "removed-proxy"
+                    updatedMonitor.uptimeCheckInterval shouldBe 180
                 }
             }
         }

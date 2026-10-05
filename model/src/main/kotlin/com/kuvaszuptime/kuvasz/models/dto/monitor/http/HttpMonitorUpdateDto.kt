@@ -70,6 +70,9 @@ data class HttpMonitorUpdateDto(
     @param:Schema(description = HttpMonitorDocs.CROSS_ORIGIN_HEADER_PROPAGATION, required = false, nullable = false)
     val crossOriginHeaderPropagation: Boolean?,
 
+    @param:Schema(description = HttpMonitorDocs.PROXY, required = false, nullable = true)
+    val proxy: String?,
+
     @get:NotNull
     @get:PositiveOrZero(message = MonitorValidationMessages.SSL_EXPIRY_THRESHOLD_POSITIVE_OR_ZERO)
     @param:Schema(description = HttpMonitorDocs.SSL_EXPIRY_THRESHOLD, required = false, nullable = false)

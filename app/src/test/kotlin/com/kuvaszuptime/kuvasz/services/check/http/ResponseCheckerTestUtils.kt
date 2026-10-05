@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
 import com.kuvaszuptime.kuvasz.models.monitor.http.toJsonNode
+import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
 import com.kuvaszuptime.kuvasz.util.toUri
@@ -13,8 +14,18 @@ import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldStartWith
 import io.kotest.matchers.types.shouldBeInstanceOf
+import io.mockk.every
+import io.mockk.mockk
 import io.reactivex.rxjava3.subscribers.TestSubscriber
 import kotlin.time.Duration.Companion.seconds
+
+/**
+ * The previous event is stubbed explicitly, because a relaxed mock would answer with an auto-mocked jOOQ record, and
+ * instrumenting one of those for the first time in a JVM takes tens of seconds.
+ */
+fun mockUptimeEventRepository(): HttpUptimeEventRepository = mockk(relaxed = true) {
+    every { getPreviousEventByMonitorId(any()) } returns null
+}
 
 fun EventDispatcher.upSubscriber(): TestSubscriber<HttpMonitorUpEvent> {
     val subscriber = TestSubscriber<HttpMonitorUpEvent>()

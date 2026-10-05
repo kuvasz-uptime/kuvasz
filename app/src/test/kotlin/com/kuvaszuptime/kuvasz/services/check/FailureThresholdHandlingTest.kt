@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.services.check
 
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PendingFailureRecord
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
@@ -39,7 +40,7 @@ class FailureThresholdHandlingTest : BehaviorSpec({
                     monitor = mockMonitor(failureCountThreshold = 3),
                     status = HttpStatus.OK,
                     error = Exception(),
-                    previousEvent = mockk { every { status } returns UptimeStatus.DOWN }
+                    previousEvent = HttpUptimeEventRecord().setStatus(UptimeStatus.DOWN)
                 ).isDownNow(mockFailureRepo) shouldBe true
             }
         }
@@ -52,7 +53,7 @@ class FailureThresholdHandlingTest : BehaviorSpec({
                     monitor = mockMonitor(failureCountThreshold = 1),
                     status = HttpStatus.OK,
                     error = Exception(),
-                    previousEvent = mockk { every { status } returns UptimeStatus.UP }
+                    previousEvent = HttpUptimeEventRecord().setStatus(UptimeStatus.UP)
                 ).isDownNow(mockFailureRepo) shouldBe true
             }
         }
@@ -101,7 +102,7 @@ class FailureThresholdHandlingTest : BehaviorSpec({
                     monitor = mockMonitor(failureCountThreshold = 2),
                     status = HttpStatus.OK,
                     error = Exception(),
-                    previousEvent = mockk { every { status } returns UptimeStatus.UP }
+                    previousEvent = HttpUptimeEventRecord().setStatus(UptimeStatus.UP)
                 ).isDownNow(mockFailureRepo) shouldBe false
             }
         }
@@ -139,7 +140,7 @@ class FailureThresholdHandlingTest : BehaviorSpec({
                     monitor = mockMonitor(failureCountThreshold = 2),
                     status = HttpStatus.OK,
                     error = Exception(),
-                    previousEvent = mockk { every { status } returns UptimeStatus.UP }
+                    previousEvent = HttpUptimeEventRecord().setStatus(UptimeStatus.UP)
                 ).isDownNow(mockFailureRepo) shouldBe true
             }
         }

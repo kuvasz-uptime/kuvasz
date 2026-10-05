@@ -5,6 +5,8 @@ import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.uitest.PlaywrightSupport
 import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
+import com.kuvaszuptime.kuvasz.uitest.shouldAcceptAfterFixing
+import com.kuvaszuptime.kuvasz.uitest.shouldRejectWith
 import com.kuvaszuptime.kuvasz.uitest.pages.tcp.TcpMonitorDetailsPage
 import com.kuvaszuptime.kuvasz.uitest.pages.tcp.TcpMonitorListPage
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
@@ -13,6 +15,8 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldEndWith
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
+
+private const val UPDATED_UPTIME_CHECK_INTERVAL = 300
 
 @MicronautTest(environments = [PlaywrightSupport.UI_TEST_ENV])
 class TcpMonitorCrudUiTest(private val tcpMonitorRepository: TcpMonitorRepository) : UiTestSpec() {
@@ -51,6 +55,84 @@ class TcpMonitorCrudUiTest(private val tcpMonitorRepository: TcpMonitorRepositor
             list.deleteMonitor(updatedName)
             assertThat(list.rowByName(updatedName)).hasCount(0)
             assertThat(list.emptyState).isVisible()
+        }
+
+        "a proxy can be picked, changed and cleared, and the monitor shows which one it is checked through" {
+            val page = newPage()
+            val list = TcpMonitorListPage(page)
+            list.navigate()
+
+            val createModal = list.openCreateModal()
+                .setName("TCP Proxied Monitor")
+                .setHost("db.internal")
+                .setPort("5432")
+            // A direct connection, unless a proxy is picked
+            assertThat(createModal.selectedProxy).hasCount(0)
+            createModal.setProxy("corporate-egress").save()
+            page.waitForURL("**/tcp-monitors/*")
+
+            val details = TcpMonitorDetailsPage(page)
+            assertThat(details.proxyBadge).containsText("corporate-egress")
+            tcpMonitorRepository.findByName("TCP Proxied Monitor").shouldNotBeNull().proxy shouldBe "corporate-egress"
+
+            val changeModal = details.openConfigureModal()
+            assertThat(changeModal.selectedProxy).hasText("corporate-egress")
+            val changed = page.waitForResponse({ it.request().method() == "PATCH" }) {
+                changeModal.setProxy("office-network").save()
+            }
+            changed.ok() shouldBe true
+            tcpMonitorRepository.findByName("TCP Proxied Monitor").shouldNotBeNull().proxy shouldBe "office-network"
+            assertThat(details.proxyBadge).containsText("office-network")
+
+            val clearModal = details.openConfigureModal()
+            val cleared = page.waitForResponse({ it.request().method() == "PATCH" }) {
+                clearModal.clearProxy().save()
+            }
+            cleared.ok() shouldBe true
+            tcpMonitorRepository.findByName("TCP Proxied Monitor").shouldNotBeNull().proxy.shouldBeNull()
+            assertThat(details.proxyBadge).hasCount(0)
+        }
+
+        "a monitor keeps a proxy that was removed from the config through an edit" {
+            val monitor = createTcpMonitor(
+                tcpMonitorRepository,
+                monitorName = "TCP Dangling Proxy",
+                proxy = "removed-proxy",
+            )
+            val page = newPage()
+            val list = TcpMonitorListPage(page)
+            list.navigate()
+
+            val modal = list.configureMonitor(monitor.name)
+            assertThat(modal.selectedProxy).hasText(Messages.proxyNotConfiguredOption("removed-proxy"))
+            val response = page.waitForResponse({ it.request().method() == "PATCH" }) {
+                modal.setUptimeCheckInterval("$UPDATED_UPTIME_CHECK_INTERVAL").save()
+            }
+            response.ok() shouldBe true
+
+            with(tcpMonitorRepository.findByName(monitor.name).shouldNotBeNull()) {
+                proxy shouldBe "removed-proxy"
+                uptimeCheckInterval shouldBe UPDATED_UPTIME_CHECK_INTERVAL
+            }
+        }
+
+        // Only the monitor that already has such a proxy may keep it, a new one has to pick a configured one, or none
+        "a clone of a monitor whose proxy was removed from the config has to pick a configured one, or none" {
+            val monitor = createTcpMonitor(
+                tcpMonitorRepository,
+                monitorName = "TCP Dangling Proxy Source",
+                proxy = "removed-proxy",
+            )
+            val page = newPage()
+            val list = TcpMonitorListPage(page)
+            list.navigate()
+
+            val cloneModal = list.cloneMonitor(monitor.name)
+            cloneModal.save()
+            cloneModal shouldRejectWith Messages.errorProxyNotConfigured()
+
+            cloneModal.clearProxy()
+            cloneModal shouldAcceptAfterFixing Messages.errorProxyNotConfigured()
         }
 
         "a TCP monitor can be cloned from the list, pre-filling a fresh create form" {

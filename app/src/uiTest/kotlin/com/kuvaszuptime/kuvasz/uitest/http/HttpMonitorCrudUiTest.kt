@@ -5,6 +5,8 @@ import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.uitest.PlaywrightSupport
 import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
+import com.kuvaszuptime.kuvasz.uitest.shouldAcceptAfterFixing
+import com.kuvaszuptime.kuvasz.uitest.shouldRejectWith
 import com.kuvaszuptime.kuvasz.uitest.pages.http.HttpMonitorDetailsPage
 import com.kuvaszuptime.kuvasz.uitest.pages.http.HttpMonitorListPage
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
@@ -15,6 +17,8 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldEndWith
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
+
+private const val UPDATED_UPTIME_CHECK_INTERVAL = 300
 
 @MicronautTest(environments = [PlaywrightSupport.UI_TEST_ENV])
 class HttpMonitorCrudUiTest(private val httpMonitorRepository: HttpMonitorRepository) : UiTestSpec() {
@@ -78,6 +82,84 @@ class HttpMonitorCrudUiTest(private val httpMonitorRepository: HttpMonitorReposi
             // Re-opening the monitor's configuration must show the persisted setting
             val reopened = HttpMonitorDetailsPage(page).openConfigureModal().expandRequestSettings()
             assertThat(reopened.crossOriginHeaderPropagationToggle).isChecked()
+        }
+
+        "a proxy can be picked, changed and cleared, and the monitor shows which one it is checked through" {
+            val page = newPage()
+            val list = HttpMonitorListPage(page)
+            list.navigate()
+
+            val createModal = list.openCreateModal()
+                .setName("HTTP Proxied Monitor")
+                .setUrl("https://proxied.example.com")
+                .expandRequestSettings()
+            // A direct connection, unless a proxy is picked
+            assertThat(createModal.selectedProxy).hasCount(0)
+            createModal.setProxy("corporate-egress").save()
+            page.waitForURL("**/http-monitors/*")
+
+            val details = HttpMonitorDetailsPage(page)
+            assertThat(details.proxyBadge).containsText("corporate-egress")
+            httpMonitorRepository.findByName("HTTP Proxied Monitor").shouldNotBeNull().proxy shouldBe "corporate-egress"
+
+            val changeModal = details.openConfigureModal().expandRequestSettings()
+            assertThat(changeModal.selectedProxy).hasText("corporate-egress")
+            val changed = page.waitForResponse({ it.request().method() == "PATCH" }) {
+                changeModal.setProxy("office-network").save()
+            }
+            changed.ok() shouldBe true
+            httpMonitorRepository.findByName("HTTP Proxied Monitor").shouldNotBeNull().proxy shouldBe "office-network"
+            assertThat(details.proxyBadge).containsText("office-network")
+
+            val clearModal = details.openConfigureModal().expandRequestSettings()
+            val cleared = page.waitForResponse({ it.request().method() == "PATCH" }) {
+                clearModal.clearProxy().save()
+            }
+            cleared.ok() shouldBe true
+            httpMonitorRepository.findByName("HTTP Proxied Monitor").shouldNotBeNull().proxy.shouldBeNull()
+            assertThat(details.proxyBadge).hasCount(0)
+        }
+
+        "a monitor keeps a proxy that was removed from the config through an edit" {
+            val monitor = createHttpMonitor(
+                httpMonitorRepository,
+                monitorName = "HTTP Dangling Proxy",
+                proxy = "removed-proxy",
+            )
+            val page = newPage()
+            val list = HttpMonitorListPage(page)
+            list.navigate()
+
+            val modal = list.configureMonitor(monitor.name).expandRequestSettings()
+            assertThat(modal.selectedProxy).hasText(Messages.proxyNotConfiguredOption("removed-proxy"))
+            val response = page.waitForResponse({ it.request().method() == "PATCH" }) {
+                modal.setUptimeCheckInterval("$UPDATED_UPTIME_CHECK_INTERVAL").save()
+            }
+            response.ok() shouldBe true
+
+            with(httpMonitorRepository.findByName(monitor.name).shouldNotBeNull()) {
+                proxy shouldBe "removed-proxy"
+                uptimeCheckInterval shouldBe UPDATED_UPTIME_CHECK_INTERVAL
+            }
+        }
+
+        // Only the monitor that already has such a proxy may keep it, a new one has to pick a configured one, or none
+        "a clone of a monitor whose proxy was removed from the config has to pick a configured one, or none" {
+            val monitor = createHttpMonitor(
+                httpMonitorRepository,
+                monitorName = "HTTP Dangling Proxy Source",
+                proxy = "removed-proxy",
+            )
+            val page = newPage()
+            val list = HttpMonitorListPage(page)
+            list.navigate()
+
+            val cloneModal = list.cloneMonitor(monitor.name).expandRequestSettings()
+            cloneModal.save()
+            cloneModal shouldRejectWith Messages.errorProxyNotConfigured()
+
+            cloneModal.clearProxy()
+            cloneModal shouldAcceptAfterFixing Messages.errorProxyNotConfigured()
         }
 
         "an HTTP monitor can be cloned from the list, pre-filling a fresh create form" {

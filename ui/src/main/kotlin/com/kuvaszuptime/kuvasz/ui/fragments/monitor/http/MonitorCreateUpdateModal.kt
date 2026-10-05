@@ -21,6 +21,7 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
 ) {
     val serializedStatusCodes = SupportedExpectedHttpStatusCodes.allCodes.asJsonString()
     val acceptedStatusCodeSelectId = "accepted-status-codes-select"
+    val proxySelectId = "http-monitor-proxy-select"
     monitorUpsertModal(
         modalId = modalId,
         typeUiConfig = MonitorTypeUiConfig.HTTP,
@@ -41,8 +42,15 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
             "requestHeaderInvalid" to Messages.errorNewHeaderInvalid(),
             "expectedHeaderInvalid" to Messages.errorNewHeaderInvalid(),
             "requestBodyInvalid" to Messages.errorRequestBodyInvalid(),
+            "proxyNotConfigured" to Messages.errorProxyNotConfigured(),
         ),
-        extraFormArgs = listOf("'" + acceptedStatusCodeSelectId + "'", serializedStatusCodes),
+        extraFormArgs = listOf(
+            "'" + acceptedStatusCodeSelectId + "'",
+            serializedStatusCodes,
+            "'$proxySelectId'",
+            globals.configuredProxies.asJsonString(),
+            Messages.proxyNotConfiguredSuffix().asJsonString(),
+        ),
         extraSettings = { isReadOnlyMode, settingsAccordionId ->
             // HTTP Monitor Request Settings
             accordionItem(
@@ -60,6 +68,18 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
                         required = true,
                     )
                     httpMethodSelector(xModelName = "requestMethod", isReadOnly = isReadOnlyMode)
+                }
+                // Proxy
+                div {
+                    classes(MB_3)
+                    testId("proxy-select")
+                    proxySelector(
+                        selectId = proxySelectId,
+                        description = Messages.proxyDescription(),
+                        isReadOnlyMode = isReadOnlyMode,
+                        currentProxy = monitor?.proxy,
+                        configuredProxies = globals.configuredProxies,
+                    )
                 }
                 // Follow Redirects
                 div {

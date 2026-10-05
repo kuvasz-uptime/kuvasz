@@ -248,6 +248,21 @@ public class TcpMonitorRecord extends UpdatableRecordImpl<TcpMonitorRecord> impl
         return (Boolean) get(14);
     }
 
+    /**
+     * Setter for <code>kuvasz.tcp_monitor.proxy</code>.
+     */
+    public TcpMonitorRecord setProxy(String value) {
+        set(15, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.tcp_monitor.proxy</code>.
+     */
+    public String getProxy() {
+        return (String) get(15);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -271,7 +286,7 @@ public class TcpMonitorRecord extends UpdatableRecordImpl<TcpMonitorRecord> impl
     /**
      * Create a detached, initialised TcpMonitorRecord
      */
-    public TcpMonitorRecord(Long id, String name, String host, Integer port, Integer uptimeCheckInterval, Integer timeoutMs, Integer latencyThresholdMs, Long failureCountThreshold, Boolean enabled, Boolean metricsHistoryEnabled, IntegrationID[] integrations, OffsetDateTime createdAt, OffsetDateTime updatedAt, String category, Boolean ignoreConnectivityCheck) {
+    public TcpMonitorRecord(Long id, String name, String host, Integer port, Integer uptimeCheckInterval, Integer timeoutMs, Integer latencyThresholdMs, Long failureCountThreshold, Boolean enabled, Boolean metricsHistoryEnabled, IntegrationID[] integrations, OffsetDateTime createdAt, OffsetDateTime updatedAt, String category, Boolean ignoreConnectivityCheck, String proxy) {
         super(TcpMonitor.TCP_MONITOR);
 
         setId(id);
@@ -289,6 +304,7 @@ public class TcpMonitorRecord extends UpdatableRecordImpl<TcpMonitorRecord> impl
         setUpdatedAt(updatedAt);
         setCategory(category);
         setIgnoreConnectivityCheck(ignoreConnectivityCheck);
+        setProxy(proxy);
         resetTouchedOnNotNull();
     }
 
@@ -314,6 +330,7 @@ public class TcpMonitorRecord extends UpdatableRecordImpl<TcpMonitorRecord> impl
             setUpdatedAt(value.getUpdatedAt());
             setCategory(value.getCategory());
             setIgnoreConnectivityCheck(value.getIgnoreConnectivityCheck());
+            setProxy(value.getProxy());
             resetTouchedOnNotNull();
         }
     }

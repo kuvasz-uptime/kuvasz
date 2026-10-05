@@ -37,8 +37,10 @@ import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_DOCKER_MONITORS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_HTTP_MONITORS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_ICMP_MONITORS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_INCIDENTS
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_DOCKER_HOSTS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_INTEGRATIONS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_MAINTENANCE_WINDOWS
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_PROXIES
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_PUSH_MONITORS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_STATUS_PAGES
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_TCP_MONITORS
@@ -198,6 +200,8 @@ class McpServerAuthTest(
                         GET_DOCKER_MONITOR_DETAILS,
                         GET_DOCKER_MONITOR_STATS,
                         LIST_DOCKER_MONITORS,
+                        LIST_DOCKER_HOSTS,
+                        LIST_PROXIES,
                         TOGGLE_DOCKER_MONITOR,
                         DELETE_DOCKER_MONITOR,
                     )

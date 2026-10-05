@@ -25,13 +25,8 @@ class GenericWebhookClientTest(
     private val client: GenericWebhookClient,
 ) : ShouldSpec({
 
-    lateinit var mockServer: ClientAndServer
-    val mockServerUrl = "http://localhost:1080"
-    val webhookUrl = "$mockServerUrl/webhook".toUri()
-
-    beforeSpec {
-        mockServer = ClientAndServer.startClientAndServer(1080)
-    }
+    val mockServer = ClientAndServer.startClientAndServer(0)
+    val webhookUrl = "http://localhost:${mockServer.port}/webhook".toUri()
 
     afterSpec {
         mockServer.stop()

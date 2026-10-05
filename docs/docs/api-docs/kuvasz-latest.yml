@@ -20,6 +20,7 @@ tags:
 - name: Incidents
 - name: Integrations
 - name: Docker hosts
+- name: Proxies
 - name: Maintenance windows
 - name: Status pages
 - name: Settings
@@ -1567,6 +1568,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/proxies:
+    get:
+      tags:
+      - Proxies
+      summary: Returns all the configured proxies
+      operationId: getProxies
+      responses:
+        "200":
+          description: The list of configured proxies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Proxy"
       security:
       - apiKey: []
       - bearerAuth: []
@@ -4217,6 +4236,12 @@ components:
             \ monitored URL. If false, the custom request headers are withheld from\
             \ such redirect targets."
           default: false
+        proxy:
+          type: string
+          description: "The name of a proxy defined in the configuration, that both\
+            \ the uptime and the SSL checks of the monitor are routed through. If\
+            \ null, the monitor is checked over a direct connection."
+          nullable: true
         sslExpiryThreshold:
           minimum: 0
           type: integer
@@ -4339,6 +4364,7 @@ components:
       - name
       - nextSSLCheck
       - nextUptimeCheck
+      - proxy
       - requestBody
       - requestHeaders
       - requestMethod
@@ -4466,6 +4492,12 @@ components:
             \ whose origin (scheme, host and port) differs from the origin of the\
             \ monitored URL. If false, the custom request headers are withheld from\
             \ such redirect targets."
+        proxy:
+          type: string
+          description: "The name of a proxy defined in the configuration, that both\
+            \ the uptime and the SSL checks of the monitor are routed through. If\
+            \ null, the monitor is checked over a direct connection."
+          nullable: true
         sslExpiryThreshold:
           type: integer
           description: The threshold in days for SSL certificate expiry checks
@@ -4587,6 +4619,7 @@ components:
       - integrations
       - latencyHistoryEnabled
       - name
+      - proxy
       - requestBody
       - requestHeaders
       - requestMethod
@@ -4646,6 +4679,12 @@ components:
             \ whose origin (scheme, host and port) differs from the origin of the\
             \ monitored URL. If false, the custom request headers are withheld from\
             \ such redirect targets."
+        proxy:
+          type: string
+          description: "The name of a proxy defined in the configuration, that both\
+            \ the uptime and the SSL checks of the monitor are routed through. If\
+            \ null, the monitor is checked over a direct connection."
+          nullable: true
         sslExpiryThreshold:
           type: integer
           description: The threshold in days for SSL certificate expiry checks
@@ -4825,6 +4864,12 @@ components:
             \ monitored URL. If false, the custom request headers are withheld from\
             \ such redirect targets."
           nullable: false
+        proxy:
+          type: string
+          description: "The name of a proxy defined in the configuration, that both\
+            \ the uptime and the SSL checks of the monitor are routed through. If\
+            \ null, the monitor is checked over a direct connection."
+          nullable: true
         sslExpiryThreshold:
           minimum: 0
           type: integer
@@ -6289,6 +6334,45 @@ components:
             \ for this integration. If empty or null, no event types are excluded."
           items:
             $ref: "#/components/schemas/IntegrationEventType"
+    Proxy:
+      required:
+      - host
+      - name
+      - type
+      type: object
+      properties:
+        name:
+          type: string
+          description: "The unique name of the proxy, referenced by monitors"
+          example: corporate-egress
+        type:
+          description: The protocol of the proxy
+          allOf:
+          - $ref: "#/components/schemas/ProxyType"
+        host:
+          type: string
+          description: The host name or IP address of the proxy
+          example: 10.0.0.10
+        port:
+          type: integer
+          description: The port of the proxy
+          format: int32
+          example: 3128
+        authenticated:
+          type: boolean
+          description: Whether Kuvasz authenticates to the proxy with a username and
+            password
+      description: "An outbound proxy monitors can be checked through, configured\
+        \ via YAML"
+    ProxyType:
+      type: string
+      description: The protocol Kuvasz uses to open a tunnel through a proxy
+      enum:
+      - HTTP
+      - SOCKS5
+      x-enum-descriptions:
+      - "An HTTP proxy, tunneling every connection with the CONNECT method"
+      - A SOCKS5 proxy
     PushMonitorCreateDto:
       required:
       - clientSecret
@@ -7912,6 +7996,14 @@ components:
             \ believes that it has no outbound connectivity. Useful for monitors that\
             \ target the local network, since those don't depend on it at all."
           default: false
+        proxy:
+          type: string
+          description: "The name of a proxy defined in the configuration, that the\
+            \ uptime checks of the monitor are routed through. The proxy resolves\
+            \ the host, and the latency covers the connection to the proxy and the\
+            \ establishment of the tunnel. If null, the monitor is checked over a\
+            \ direct connection."
+          nullable: true
     TcpMonitorDetailsDto:
       required:
       - category
@@ -7931,6 +8023,7 @@ components:
       - name
       - nextUptimeCheck
       - port
+      - proxy
       - statusPages
       - timeoutMs
       - updatedAt
@@ -8054,6 +8147,14 @@ components:
           description: "Whether the monitor should keep being checked even when Kuvasz\
             \ believes that it has no outbound connectivity. Useful for monitors that\
             \ target the local network, since those don't depend on it at all."
+        proxy:
+          type: string
+          description: "The name of a proxy defined in the configuration, that the\
+            \ uptime checks of the monitor are routed through. The proxy resolves\
+            \ the host, and the latency covers the connection to the proxy and the\
+            \ establishment of the tunnel. If null, the monitor is checked over a\
+            \ direct connection."
+          nullable: true
     TcpMonitorDto:
       required:
       - category
@@ -8068,6 +8169,7 @@ components:
       - metricsHistoryEnabled
       - name
       - port
+      - proxy
       - timeoutMs
       - updatedAt
       - uptimeCheckInterval
@@ -8140,6 +8242,14 @@ components:
           description: "Whether the monitor should keep being checked even when Kuvasz\
             \ believes that it has no outbound connectivity. Useful for monitors that\
             \ target the local network, since those don't depend on it at all."
+        proxy:
+          type: string
+          description: "The name of a proxy defined in the configuration, that the\
+            \ uptime checks of the monitor are routed through. The proxy resolves\
+            \ the host, and the latency covers the connection to the proxy and the\
+            \ establishment of the tunnel. If null, the monitor is checked over a\
+            \ direct connection."
+          nullable: true
     TcpMonitorStatsDto:
       required:
       - id
@@ -8263,6 +8373,14 @@ components:
             \ believes that it has no outbound connectivity. Useful for monitors that\
             \ target the local network, since those don't depend on it at all."
           nullable: false
+        proxy:
+          type: string
+          description: "The name of a proxy defined in the configuration, that the\
+            \ uptime checks of the monitor are routed through. The proxy resolves\
+            \ the host, and the latency covers the connection to the proxy and the\
+            \ establishment of the tunnel. If null, the monitor is checked over a\
+            \ direct connection."
+          nullable: true
     TcpMonitoringStatsDto:
       required:
       - actual

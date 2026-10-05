@@ -18,4 +18,5 @@ class TcpMonitorImportAdapter(dto: TcpMonitorExportDto) : TcpMonitorCreator {
     override val metricsHistoryEnabled: Boolean = dto.metricsHistoryEnabled
     override val category: String? = dto.category
     override val ignoreConnectivityCheck: Boolean = dto.ignoreConnectivityCheck
+    override val proxy: String? = dto.proxy
 }

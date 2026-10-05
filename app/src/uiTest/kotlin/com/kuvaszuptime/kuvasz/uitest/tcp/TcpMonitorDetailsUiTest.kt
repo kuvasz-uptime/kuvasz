@@ -48,6 +48,19 @@ class TcpMonitorDetailsUiTest(private val tcpMonitorRepository: TcpMonitorReposi
             assertThat(details.pauseControl).isVisible()
         }
 
+        "the heading shows the proxy of the monitor, and flags one that is not configured anymore" {
+            val proxied = createTcpMonitor(tcpMonitorRepository, monitorName = "TCP Proxied", proxy = "office-network")
+            val dangling = createTcpMonitor(tcpMonitorRepository, monitorName = "TCP Dangling", proxy = "removed-proxy")
+
+            val page = newPage()
+            val details = TcpMonitorDetailsPage(page)
+            details.navigate(proxied.id)
+            assertThat(details.proxyBadge).containsText("office-network")
+
+            details.navigate(dangling.id)
+            assertThat(details.proxyBadge).containsText(Messages.proxyNotConfiguredBadge())
+        }
+
         "a monitor under an active maintenance window shows the maintenance indicator in its heading" {
             val monitor = createTcpMonitor(tcpMonitorRepository, monitorName = "Maintained TCP Detail Monitor")
             createMaintenanceWindow(

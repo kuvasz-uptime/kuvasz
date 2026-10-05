@@ -1,27 +1,27 @@
 package com.kuvaszuptime.kuvasz.services.monitor
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
-import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
-import com.kuvaszuptime.kuvasz.jooq.tables.PendingFailure.PENDING_FAILURE
 import com.kuvaszuptime.kuvasz.jooq.enums.DnsResponseCode
 import com.kuvaszuptime.kuvasz.jooq.enums.DnsTransport
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
+import com.kuvaszuptime.kuvasz.jooq.tables.PendingFailure.PENDING_FAILURE
 import com.kuvaszuptime.kuvasz.mocks.createDnsMonitor
-import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createDockerMonitor
+import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPendingFailure
+import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.importing.DnsMonitorImportAdapter
-import com.kuvaszuptime.kuvasz.models.dto.importing.HttpMonitorImportAdapter
 import com.kuvaszuptime.kuvasz.models.dto.importing.DockerMonitorImportAdapter
+import com.kuvaszuptime.kuvasz.models.dto.importing.HttpMonitorImportAdapter
 import com.kuvaszuptime.kuvasz.models.dto.importing.IcmpMonitorImportAdapter
 import com.kuvaszuptime.kuvasz.models.dto.importing.PushMonitorImportAdapter
 import com.kuvaszuptime.kuvasz.models.dto.importing.TcpMonitorImportAdapter
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorExportDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.docker.DockerMonitorExportDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorExportDto
@@ -39,20 +39,22 @@ import com.kuvaszuptime.kuvasz.models.monitor.dns.recordMatchersAsList
 import com.kuvaszuptime.kuvasz.repositories.DnsMetricsLogRepository
 import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.DnsResolutionSnapshotRepository
+import com.kuvaszuptime.kuvasz.repositories.DockerMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMetricsLogRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMetricsLogRepository
-import com.kuvaszuptime.kuvasz.repositories.DockerMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.check.dns.DnsCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.tcp.TcpCheckScheduler
+import com.kuvaszuptime.kuvasz.services.proxy.NonExistingProxyException
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageCacheInvalidator
+import com.kuvaszuptime.kuvasz.testutils.PROXIES
 import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
 import com.kuvaszuptime.kuvasz.validation.NonExistingDockerHostException
 import io.kotest.assertions.throwables.shouldThrow
@@ -70,10 +72,10 @@ import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.mockk.mockk
 import io.mockk.verify
 import io.reactivex.rxjava3.subscribers.TestSubscriber
-import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
-@MicronautTest(environments = ["docker-hosts"])
+@MicronautTest(environments = ["docker-hosts", PROXIES])
 class MonitorImporterTest(
     private val monitorImporter: MonitorImporter,
     private val httpMonitorRepository: HttpMonitorRepository,
@@ -179,6 +181,95 @@ class MonitorImporterTest(
                     result.receivedCnt shouldBe 1
                     httpMonitorRepository.findByName("persisted-http").shouldNotBeNull()
                         .crossOriginHeaderPropagation shouldBe true
+                }
+            }
+
+            `when`("a new monitor is checked through a configured proxy") {
+                monitorImporter.importHttpMonitorConfigs(
+                    listOf(httpAdapter("proxied-http", proxy = "office-network")),
+                    dryRun = false,
+                )
+
+                then("it should persist the monitor with its proxy") {
+                    httpMonitorRepository.findByName("proxied-http").shouldNotBeNull().proxy shouldBe "office-network"
+                }
+            }
+
+            `when`("a new monitor is checked through a proxy that is not configured") {
+                val ex = shouldThrow<NonExistingProxyException> {
+                    monitorImporter.importHttpMonitorConfigs(
+                        listOf(httpAdapter("dangling-proxy-http", proxy = "not-configured")),
+                        dryRun = false,
+                    )
+                }
+
+                then("it should reject it") {
+                    ex.message shouldBe "Non-existing proxy found: not-configured."
+                    httpMonitorRepository.findByName("dangling-proxy-http").shouldBeNull()
+                }
+            }
+
+            // A YAML monitor whose proxy was removed from the config between two restarts is re-imported as it was
+            `when`("an existing monitor is checked through a proxy that is not configured anymore") {
+                val existing = createHttpMonitor(
+                    httpMonitorRepository,
+                    monitorName = "kept-http",
+                    proxy = "removed-proxy",
+                )
+
+                val result = monitorImporter.importHttpMonitorConfigs(
+                    listOf(httpAdapter("kept-http", proxy = "removed-proxy")),
+                    dryRun = false,
+                )
+
+                then("it should keep the monitor with its proxy") {
+                    result.imported shouldContainExactly listOf(MonitorID(MonitorType.HTTP_SSL, "kept-http"))
+                    with(httpMonitorRepository.findByName("kept-http").shouldNotBeNull()) {
+                        id shouldBe existing.id
+                        proxy shouldBe "removed-proxy"
+                    }
+                }
+            }
+
+            `when`("a new TCP monitor is checked through a configured proxy") {
+                monitorImporter.importTcpMonitorConfigs(
+                    listOf(tcpAdapter("proxied-tcp", proxy = "office-network")),
+                    dryRun = false,
+                )
+
+                then("it should persist the monitor with its proxy") {
+                    tcpMonitorRepository.findByName("proxied-tcp").shouldNotBeNull().proxy shouldBe "office-network"
+                }
+            }
+
+            `when`("a new TCP monitor is checked through a proxy that is not configured") {
+                val ex = shouldThrow<NonExistingProxyException> {
+                    monitorImporter.importTcpMonitorConfigs(
+                        listOf(tcpAdapter("dangling-proxy-tcp", proxy = "not-configured")),
+                        dryRun = false,
+                    )
+                }
+
+                then("it should reject it") {
+                    ex.message shouldBe "Non-existing proxy found: not-configured."
+                    tcpMonitorRepository.findByName("dangling-proxy-tcp").shouldBeNull()
+                }
+            }
+
+            `when`("an existing TCP monitor is checked through a proxy that is not configured anymore") {
+                val existing = createTcpMonitor(tcpMonitorRepository, monitorName = "kept-tcp", proxy = "removed-proxy")
+
+                val result = monitorImporter.importTcpMonitorConfigs(
+                    listOf(tcpAdapter("kept-tcp", proxy = "removed-proxy")),
+                    dryRun = false,
+                )
+
+                then("it should keep the monitor with its proxy") {
+                    result.imported shouldContainExactly listOf(MonitorID(MonitorType.TCP, "kept-tcp"))
+                    with(tcpMonitorRepository.findByName("kept-tcp").shouldNotBeNull()) {
+                        id shouldBe existing.id
+                        proxy shouldBe "removed-proxy"
+                    }
                 }
             }
 
@@ -765,9 +856,14 @@ class MonitorImporterTest(
         )
     )
 
-    private fun httpAdapter(name: String, latencyHistoryEnabled: Boolean = true) = HttpMonitorImportAdapter(
+    private fun httpAdapter(
+        name: String,
+        latencyHistoryEnabled: Boolean = true,
+        proxy: String? = null,
+    ) = HttpMonitorImportAdapter(
         HttpMonitorExportDto(
             name = name,
+            proxy = proxy,
             url = "https://example.com",
             sensitiveUrl = false,
             uptimeCheckInterval = 60,
@@ -793,7 +889,11 @@ class MonitorImporterTest(
         )
     )
 
-    private fun tcpAdapter(name: String, metricsHistoryEnabled: Boolean = true) = TcpMonitorImportAdapter(
+    private fun tcpAdapter(
+        name: String,
+        metricsHistoryEnabled: Boolean = true,
+        proxy: String? = null,
+    ) = TcpMonitorImportAdapter(
         TcpMonitorExportDto(
             name = name,
             host = "1.2.3.4",
@@ -807,6 +907,7 @@ class MonitorImporterTest(
             metricsHistoryEnabled = metricsHistoryEnabled,
             category = null,
             ignoreConnectivityCheck = false,
+            proxy = proxy,
         )
     )
 

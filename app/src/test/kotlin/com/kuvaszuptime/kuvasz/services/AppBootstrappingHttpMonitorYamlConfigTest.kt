@@ -1,5 +1,8 @@
 package com.kuvaszuptime.kuvasz.services
 
+import ch.qos.logback.classic.Logger
+import ch.qos.logback.classic.spi.ILoggingEvent
+import ch.qos.logback.core.read.ListAppender
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
@@ -15,6 +18,7 @@ import com.kuvaszuptime.kuvasz.resetDatabase
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorActions
 import com.kuvaszuptime.kuvasz.testAppContext
+import com.kuvaszuptime.kuvasz.testutils.PROXIES
 import com.kuvaszuptime.kuvasz.testutils.getBean
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
@@ -29,10 +33,12 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.exceptions.BeanInstantiationException
 import kotlinx.coroutines.delay
 import org.jooq.DSLContext
+import org.slf4j.LoggerFactory
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
@@ -349,5 +355,57 @@ class AppBootstrappingHttpMonitorYamlConfigTest : StringSpec({
         }
 
         ex.message shouldContain "Non-existing integration ID found: slack:non-existing."
+    }
+
+    val proxiedMonitorIds = mutableMapOf<String, Long>()
+
+    "8. step: the app is started with monitors in the YAML config that are checked through proxies" {
+        appContext = testAppContext("yaml-monitors-proxied", PROXIES)
+        val monitorsInDb = getMonitorRepository().fetchAll() shouldHaveSize 3
+
+        monitorsInDb.single { it.name == "proxied-1" }.proxy shouldBe "corporate-egress"
+        // Trimmed, like in the API
+        monitorsInDb.single { it.name == "proxied-2" }.proxy shouldBe "office-network"
+        monitorsInDb.single { it.name == "direct-1" }.proxy.shouldBeNull()
+        getAppConfig().isHttpMonitorExternalWriteDisabled() shouldBe true
+
+        monitorsInDb.forEach { proxiedMonitorIds[it.name] = it.id }
+    }
+
+    /**
+     * The very same YAML snippet is re-imported as an update of the existing monitors, so the one whose proxy was
+     * removed from the config in the meantime has to be kept - its checks report the dangling reference.
+     */
+    "9. step: the app is restarted with the same YAML config, but one of the proxies was removed" {
+        val logs = ListAppender<ILoggingEvent>().apply { start() }
+        val bootstrapperLogger = LoggerFactory.getLogger(AppBootstrapper::class.java) as Logger
+        bootstrapperLogger.addAppender(logs)
+        try {
+            appContext = testAppContext("yaml-monitors-proxied", "proxies-without-corporate-egress")
+        } finally {
+            bootstrapperLogger.detachAppender(logs)
+        }
+
+        val monitorsInDb = getMonitorRepository().fetchAll() shouldHaveSize 3
+        val danglingMonitor = monitorsInDb.single { it.name == "proxied-1" }
+        danglingMonitor.proxy shouldBe "corporate-egress"
+        danglingMonitor.id shouldBe proxiedMonitorIds["proxied-1"]
+        // It stays scheduled, so its checks can report the missing proxy
+        getCheckScheduler().getScheduledUptimeChecks()[danglingMonitor.id].shouldNotBeNull()
+
+        logs.list.map { it.formattedMessage }.forOne { message ->
+            message shouldContain "checked through a proxy that is not configured"
+            message shouldContain "proxied-1 (HTTP, ID: ${danglingMonitor.id}, proxy: corporate-egress)"
+            message shouldNotContain "proxied-2"
+            message shouldNotContain "direct-1"
+        }
+    }
+
+    "10. step: the app is restarted with a new monitor in the YAML config on a proxy that is not configured" {
+        val ex = shouldThrow<BeanInstantiationException> {
+            testAppContext("yaml-monitors-proxied-changed", "proxies-without-corporate-egress")
+        }
+
+        ex.message shouldContain "Non-existing proxy found: corporate-egress."
     }
 })

@@ -34,6 +34,7 @@ public class TcpMonitor implements Serializable {
     private OffsetDateTime updatedAt;
     private String category;
     private Boolean ignoreConnectivityCheck;
+    private String proxy;
 
     public TcpMonitor() {}
 
@@ -53,6 +54,7 @@ public class TcpMonitor implements Serializable {
         this.updatedAt = value.updatedAt;
         this.category = value.category;
         this.ignoreConnectivityCheck = value.ignoreConnectivityCheck;
+        this.proxy = value.proxy;
     }
 
     public TcpMonitor(
@@ -70,7 +72,8 @@ public class TcpMonitor implements Serializable {
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt,
         String category,
-        Boolean ignoreConnectivityCheck
+        Boolean ignoreConnectivityCheck,
+        String proxy
     ) {
         this.id = id;
         this.name = name;
@@ -87,6 +90,7 @@ public class TcpMonitor implements Serializable {
         this.updatedAt = updatedAt;
         this.category = category;
         this.ignoreConnectivityCheck = ignoreConnectivityCheck;
+        this.proxy = proxy;
     }
 
     /**
@@ -314,6 +318,21 @@ public class TcpMonitor implements Serializable {
         return this;
     }
 
+    /**
+     * Getter for <code>kuvasz.tcp_monitor.proxy</code>.
+     */
+    public String getProxy() {
+        return this.proxy;
+    }
+
+    /**
+     * Setter for <code>kuvasz.tcp_monitor.proxy</code>.
+     */
+    public TcpMonitor setProxy(String proxy) {
+        this.proxy = proxy;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -413,6 +432,12 @@ public class TcpMonitor implements Serializable {
         }
         else if (!this.ignoreConnectivityCheck.equals(other.ignoreConnectivityCheck))
             return false;
+        if (this.proxy == null) {
+            if (other.proxy != null)
+                return false;
+        }
+        else if (!this.proxy.equals(other.proxy))
+            return false;
         return true;
     }
 
@@ -435,6 +460,7 @@ public class TcpMonitor implements Serializable {
         result = prime * result + ((this.updatedAt == null) ? 0 : this.updatedAt.hashCode());
         result = prime * result + ((this.category == null) ? 0 : this.category.hashCode());
         result = prime * result + ((this.ignoreConnectivityCheck == null) ? 0 : this.ignoreConnectivityCheck.hashCode());
+        result = prime * result + ((this.proxy == null) ? 0 : this.proxy.hashCode());
         return result;
     }
 
@@ -457,6 +483,7 @@ public class TcpMonitor implements Serializable {
         sb.append(", ").append(updatedAt);
         sb.append(", ").append(category);
         sb.append(", ").append(ignoreConnectivityCheck);
+        sb.append(", ").append(proxy);
 
         sb.append(")");
         return sb.toString();

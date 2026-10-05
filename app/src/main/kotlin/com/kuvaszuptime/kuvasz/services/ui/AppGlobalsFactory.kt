@@ -10,6 +10,7 @@ import com.kuvaszuptime.kuvasz.security.oidc.OIDC_PROVIDER_NAME
 import com.kuvaszuptime.kuvasz.services.VersionChecker
 import com.kuvaszuptime.kuvasz.services.connectivity.ConnectivityChecker
 import com.kuvaszuptime.kuvasz.services.docker.DockerHostRegistry
+import com.kuvaszuptime.kuvasz.services.proxy.ProxyRegistry
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.monitor.SharedMonitorActions
 import io.micronaut.context.annotation.Context
@@ -39,6 +40,7 @@ class AppGlobalsFactory {
         apiKeyConfig: ApiKeyConfig?,
         connectivityChecker: ConnectivityChecker?,
         dockerHostRegistry: DockerHostRegistry?,
+        proxyRegistry: ProxyRegistry,
     ) = AppGlobals(
         editabilityState = AppGlobals.EditabilityState(
             areHttpMonitorsReadOnly = { appConfig.isHttpMonitorExternalWriteDisabled() },
@@ -66,6 +68,7 @@ class AppGlobalsFactory {
             .mapValues { (_, configs) -> configs.toSet() }
             .toMap(),
         configuredDockerHosts = dockerHostRegistry?.configuredHosts?.keys.orEmpty().sorted(),
+        configuredProxies = proxyRegistry.configuredProxies.keys.sorted(),
         versionInfo = { versionChecker.getVersionInfo() },
         connectivityStatus = { connectivityChecker?.getStatus() },
         defaultStatusPageSettings = AppGlobals.DefaultStatusPageSettings(

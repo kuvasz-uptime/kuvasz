@@ -8,7 +8,9 @@ import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationResult
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
+import com.kuvaszuptime.kuvasz.services.proxy.ProxyRegistry
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import com.kuvaszuptime.kuvasz.util.loggerFor
 import com.kuvaszuptime.kuvasz.util.toUri
 import jakarta.inject.Singleton
 
@@ -18,11 +20,23 @@ class SSLChecker(
     private val eventDispatcher: EventDispatcher,
     private val sslEventRepository: SSLEventRepository,
     private val databaseEventHandler: DatabaseEventHandler,
+    private val proxyRegistry: ProxyRegistry,
 ) {
 
+    companion object {
+        private val logger = loggerFor<SSLChecker>()
+    }
+
     fun check(monitor: HttpMonitorRecord) {
+        val proxy = monitor.proxy?.let { name ->
+            // The uptime check already reports the missing proxy, an SSL event would only blame the certificate
+            proxyRegistry[name] ?: run {
+                logger.warn("Skipping the SSL check of monitor (${monitor.name}), its proxy [$name] is not configured")
+                return
+            }
+        }
         val previousEvent = sslEventRepository.getPreviousEventByMonitorId(monitorId = monitor.id)
-        when (val result = sslValidator.validateHttps(monitor.url.toUri())) {
+        when (val result = sslValidator.validateHttps(monitor.url.toUri(), proxy)) {
             is SSLValidationResult.Invalid ->
                 SSLInvalidEvent(
                     monitor = monitor,

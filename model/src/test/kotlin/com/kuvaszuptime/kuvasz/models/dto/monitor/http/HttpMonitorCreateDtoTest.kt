@@ -364,6 +364,7 @@ class HttpMonitorCreateDtoDefaultsTest : BehaviorSpec({
             dto.forceNoCache shouldBe HttpMonitorDefaults.FORCE_NO_CACHE
             dto.followRedirects shouldBe HttpMonitorDefaults.FOLLOW_REDIRECTS
             dto.crossOriginHeaderPropagation shouldBe HttpMonitorDefaults.CROSS_ORIGIN_HEADER_PROPAGATION
+            dto.proxy shouldBe null
             dto.sslExpiryThreshold shouldBe HttpMonitorDefaults.SSL_EXPIRY_THRESHOLD_DAYS
             dto.integrations shouldBe emptyList()
             dto.expectedStatusCodes shouldBe emptyList()
@@ -400,6 +401,23 @@ class HttpMonitorCreateDtoDefaultsTest : BehaviorSpec({
                 baseDto.copy(category = "   ").toMonitorRecord(emptySet()).category shouldBe null
                 baseDto.copy(category = " Core services ").toMonitorRecord(emptySet()).category shouldBe
                     "Core services"
+            }
+        }
+    }
+
+    given("the toMonitorRecord() mapping of the proxy") {
+        val baseDto = HttpMonitorCreateDto(
+            name = "Test Monitor",
+            url = "https://example.com",
+            uptimeCheckInterval = 60,
+        )
+
+        `when`("the proxy is null, blank or padded with whitespace") {
+            then("it should be persisted as null (a direct connection) or trimmed") {
+                baseDto.copy(proxy = null).toMonitorRecord(emptySet()).proxy shouldBe null
+                baseDto.copy(proxy = "   ").toMonitorRecord(emptySet()).proxy shouldBe null
+                baseDto.copy(proxy = " corporate-egress ").toMonitorRecord(emptySet()).proxy shouldBe
+                    "corporate-egress"
             }
         }
     }

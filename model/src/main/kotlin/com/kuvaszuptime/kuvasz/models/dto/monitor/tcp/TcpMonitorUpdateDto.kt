@@ -68,4 +68,7 @@ data class TcpMonitorUpdateDto(
     @get:NotNull
     @param:Schema(description = MonitorDocs.IGNORE_CONNECTIVITY_CHECK, required = false, nullable = false)
     val ignoreConnectivityCheck: Boolean?,
+
+    @param:Schema(description = TcpMonitorDocs.PROXY, required = false, nullable = true)
+    val proxy: String?,
 ) : WithCategory

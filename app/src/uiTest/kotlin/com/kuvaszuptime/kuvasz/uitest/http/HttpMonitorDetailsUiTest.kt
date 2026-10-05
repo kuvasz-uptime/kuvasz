@@ -74,6 +74,20 @@ class HttpMonitorDetailsUiTest(private val httpMonitorRepository: HttpMonitorRep
             assertThat(details.pauseControl).isVisible()
         }
 
+        "the heading flags a proxy that is not configured anymore" {
+            val monitor = createHttpMonitor(
+                httpMonitorRepository,
+                monitorName = "Dangling Proxy",
+                proxy = "removed-proxy",
+            )
+
+            val page = newPage()
+            val details = HttpMonitorDetailsPage(page)
+            details.navigate(monitor.id)
+
+            assertThat(details.proxyBadge).containsText(Messages.proxyNotConfiguredBadge())
+        }
+
         "a monitor under an active maintenance window shows the maintenance indicator in its heading" {
             val monitor = createHttpMonitor(httpMonitorRepository, monitorName = "Maintained Detail Monitor")
             createMaintenanceWindow(

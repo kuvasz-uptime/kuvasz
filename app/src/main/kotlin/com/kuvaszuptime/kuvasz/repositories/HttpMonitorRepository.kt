@@ -10,14 +10,15 @@ import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent.SSL_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorSummary
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
-import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.http.idWithName
-import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorSummary
+import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import com.kuvaszuptime.kuvasz.util.nullIfBlank
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import org.jooq.Record
@@ -73,6 +74,12 @@ class HttpMonitorRepository(
 
     fun fetchAll(): List<HttpMonitorRecord> = dslContext
         .selectFrom(HTTP_MONITOR)
+        .fetch()
+
+    fun fetchWithProxyNotIn(proxyNames: Collection<String>): List<HttpMonitorRecord> = dslContext
+        .selectFrom(HTTP_MONITOR)
+        .where(HTTP_MONITOR.PROXY.isNotNull)
+        .and(HTTP_MONITOR.PROXY.notIn(proxyNames))
         .fetch()
 
     override fun fetchByEnabled(enabled: Boolean): List<HttpMonitorRecord> = dslContext
@@ -149,6 +156,7 @@ class HttpMonitorRepository(
                 .set(HTTP_MONITOR.REQUEST_METHOD, updatedMonitor.requestMethod)
                 .set(HTTP_MONITOR.FOLLOW_REDIRECTS, updatedMonitor.followRedirects)
                 .set(HTTP_MONITOR.CROSS_ORIGIN_HEADER_PROPAGATION, updatedMonitor.crossOriginHeaderPropagation)
+                .set(HTTP_MONITOR.PROXY, updatedMonitor.proxy.nullIfBlank())
                 .set(HTTP_MONITOR.METRICS_HISTORY_ENABLED, updatedMonitor.metricsHistoryEnabled)
                 .set(HTTP_MONITOR.FORCE_NO_CACHE, updatedMonitor.forceNoCache)
                 .set(HTTP_MONITOR.SSL_EXPIRY_THRESHOLD, updatedMonitor.sslExpiryThreshold)
@@ -232,6 +240,7 @@ class HttpMonitorRepository(
             HTTP_MONITOR.FORCE_NO_CACHE.`as`(HttpMonitorDetailsDto::forceNoCache.name),
             HTTP_MONITOR.FOLLOW_REDIRECTS.`as`(HttpMonitorDetailsDto::followRedirects.name),
             HTTP_MONITOR.CROSS_ORIGIN_HEADER_PROPAGATION.`as`(HttpMonitorDetailsDto::crossOriginHeaderPropagation.name),
+            HTTP_MONITOR.PROXY.`as`(HttpMonitorDetailsDto::proxy.name),
             HTTP_MONITOR.REQUEST_METHOD.`as`(HttpMonitorDetailsDto::requestMethod.name),
             HTTP_MONITOR.SSL_EXPIRY_THRESHOLD.`as`(HttpMonitorDetailsDto::sslExpiryThreshold.name),
             HTTP_MONITOR.FAILURE_COUNT_THRESHOLD.`as`(HttpMonitorDetailsDto::failureCountThreshold.name),

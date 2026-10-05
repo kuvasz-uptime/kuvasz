@@ -1,11 +1,13 @@
 package com.kuvaszuptime.kuvasz.services.check.http
 
 import com.kuvaszuptime.kuvasz.config.AppConfig
+import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResponse
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
 import com.kuvaszuptime.kuvasz.models.monitor.http.safeDisplayUrl
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.services.proxy.ProxyNotConfiguredException
 import com.kuvaszuptime.kuvasz.util.isServerRelatedError
 import com.kuvaszuptime.kuvasz.util.loggerFor
 import io.micronaut.core.io.buffer.ByteBuffer
@@ -14,6 +16,7 @@ import io.micronaut.http.client.DefaultHttpClientConfiguration
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.HttpClientConfiguration
 import io.micronaut.http.client.annotation.Client
+import io.micronaut.http.client.exceptions.HttpClientException
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.http.exceptions.HttpException
 import io.micronaut.retry.annotation.Retryable
@@ -32,6 +35,7 @@ class HttpUptimeChecker(
     private val monitorRepository: HttpMonitorRepository,
     private val checkRequestConfigurator: HttpCheckRequestConfigurator,
     private val checkResponseEvaluator: HttpCheckResponseEvaluator,
+    private val proxiedHttpClients: ProxiedHttpClientRegistry,
 ) {
 
     companion object {
@@ -71,7 +75,7 @@ class HttpUptimeChecker(
             // E.g. the dispatcher is shut down under a check that outlived the shutdown's grace period
             throw ex
         } catch (error: Exception) {
-            checkResponseEvaluator.evaluateError(monitor, error)
+            checkResponseEvaluator.evaluateError(monitor, error.withProxyOf(monitor))
         }
         logger.debug("HTTP uptime check for monitor (${monitor.name}) finished")
         if (doAfter != null) {
@@ -90,9 +94,10 @@ class HttpUptimeChecker(
     )
     suspend fun sendHttpRequest(monitor: HttpMonitorRecord, uri: URI): HttpCheckResponse {
         logger.debug("Sending HTTP request to $uri (${monitor.name})")
+        val client = clientFor(monitor)
         val request = checkRequestConfigurator.fromMonitor(monitor, uri)
         val start = System.currentTimeMillis()
-        val httpResponse = httpClient.exchange(
+        val httpResponse = client.exchange(
             request,
             Argument.of(ByteBuffer::class.java),
             Argument.of(ByteBuffer::class.java),
@@ -107,10 +112,29 @@ class HttpUptimeChecker(
             latency = latency
         )
     }
+
+    /**
+     * Names the proxy in a failure of a proxied check, unless the target answered: the client does not, e.g. it
+     * reports a proxy whose name can't be resolved as a bare "Connect Error".
+     */
+    private fun Exception.withProxyOf(monitor: HttpMonitorRecord): Exception {
+        val proxy = monitor.proxy
+        return if (proxy == null || this is HttpClientResponseException || this is ProxyNotConfiguredException) {
+            this
+        } else {
+            HttpClientException(Messages.proxyCheckFailed(proxy, message.orEmpty()), this)
+        }
+    }
+
+    private fun clientFor(monitor: HttpMonitorRecord): HttpClient =
+        monitor.proxy?.let { proxy -> proxiedHttpClients.clientFor(proxy) ?: throw ProxyNotConfiguredException(proxy) }
+            ?: httpClient
 }
 
-@Singleton
-class HttpCheckerClientConfiguration(
+/**
+ * The settings shared by every client that checks HTTP monitors, whether it connects directly or through a proxy.
+ */
+abstract class BaseHttpCheckerClientConfiguration(
     config: ApplicationConfiguration,
     private val appConfig: AppConfig,
 ) : HttpClientConfiguration(config) {
@@ -130,7 +154,13 @@ class HttpCheckerClientConfiguration(
         DefaultHttpClientConfiguration.DefaultHttp2ClientConfiguration()
 
     companion object {
-        private const val EVENT_LOOP_GROUP = "uptime-check"
+        const val EVENT_LOOP_GROUP = "uptime-check"
         const val DEFAULT_READ_TIMEOUT_SECONDS = 30L
     }
 }
+
+@Singleton
+class HttpCheckerClientConfiguration(
+    config: ApplicationConfiguration,
+    appConfig: AppConfig,
+) : BaseHttpCheckerClientConfiguration(config, appConfig)

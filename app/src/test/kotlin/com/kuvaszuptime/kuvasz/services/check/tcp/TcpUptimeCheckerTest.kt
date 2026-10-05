@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.services.check.tcp
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
+import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.models.events.TcpMonitorDownEvent
@@ -9,6 +10,7 @@ import com.kuvaszuptime.kuvasz.repositories.TcpMetricsLogRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
+import com.kuvaszuptime.kuvasz.testutils.PROXIES
 import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
@@ -18,9 +20,10 @@ import io.micronaut.test.extensions.kotest5.MicronautKotest5Extension.getMock
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import io.reactivex.rxjava3.subscribers.TestSubscriber
 
-@MicronautTest(startApplication = false)
+@MicronautTest(startApplication = false, environments = [PROXIES])
 class TcpUptimeCheckerTest(
     private val uptimeChecker: TcpUptimeChecker,
     private val monitorRepository: TcpMonitorRepository,
@@ -169,6 +172,48 @@ class TcpUptimeCheckerTest(
 
                 then("no metrics log should be inserted") {
                     metricsLogRepository.fetchLatestByMonitorId(monitor.id).shouldBeEmpty()
+                }
+            }
+
+            `when`("the monitor is checked through a configured proxy") {
+                val monitor = createTcpMonitor(monitorRepository, host = "db.internal", proxy = "office-network")
+                val mock = getMock(connectExecutor)
+                every {
+                    mock.execute(monitor.host, monitor.port, monitor.timeoutMs, match { it.name == "office-network" })
+                } returns TcpCheckResult(isConnected = true, latencyMs = 25, error = null)
+
+                val upSubscriber = TestSubscriber<TcpMonitorUpEvent>()
+                eventDispatcher.subscribeToTcpMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
+
+                uptimeChecker.check(monitor)
+
+                then("the connection is made through the proxy") {
+                    upSubscriber.awaitCount(1)
+                    upSubscriber.values().shouldHaveSize(1)
+                    upSubscriber.values().first().latencyInMs shouldBe 25
+                }
+            }
+
+            `when`("the monitor is checked through a proxy that is not configured") {
+                val monitor = createTcpMonitor(monitorRepository, host = "dangling.internal", proxy = "removed")
+                val mock = getMock(connectExecutor)
+
+                val downSubscriber = TestSubscriber<TcpMonitorDownEvent>()
+                eventDispatcher.subscribeToTcpMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
+
+                uptimeChecker.check(monitor)
+
+                then("a DOWN event names the missing proxy") {
+                    downSubscriber.awaitCount(1)
+                    downSubscriber.values().shouldHaveSize(1)
+                    val downEvent = downSubscriber.values().first()
+                    downEvent.uptimeStatus shouldBe UptimeStatus.DOWN
+                    downEvent.error shouldBe Messages.proxyNotConfigured("removed")
+                    downEvent.latencyInMs shouldBe null
+                }
+
+                then("the target is not connected to directly instead") {
+                    verify(exactly = 0) { mock.execute(monitor.host, any(), any(), any()) }
                 }
             }
         }

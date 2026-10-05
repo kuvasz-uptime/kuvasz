@@ -18,3 +18,10 @@ docker-hosts:
     url: unix:///var/run/kuvasz-e2e-not-a-real-docker.sock
   - name: vps-1
     url: tcp://127.0.0.1:1
+proxies:
+  - name: corporate-egress
+    url: http://10.0.0.10:3128
+    username: e2e-proxy-user
+    password: e2e-proxy-password
+  - name: office-network
+    url: socks5://127.0.0.1:1080

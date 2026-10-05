@@ -86,6 +86,7 @@ fun createHttpMonitor(
     failureCountThreshold: Long = 1L,
     sensitiveUrl: Boolean = false,
     category: String? = null,
+    proxy: String? = null,
 ): HttpMonitorRecord {
     val monitor = HttpMonitorRecord()
         .setName(monitorName)
@@ -100,6 +101,7 @@ fun createHttpMonitor(
         .setForceNoCache(forceNoCache)
         .setFollowRedirects(followRedirects)
         .setCrossOriginHeaderPropagation(crossOriginHeaderPropagation)
+        .setProxy(proxy)
         .setSslExpiryThreshold(sslExpiryThreshold)
         .setIntegrations(integrations.toTypedArray())
         .setExpectedStatusCodes(expectedStatusCodes.toTypedArray())
@@ -333,6 +335,7 @@ fun createTcpMonitor(
     integrations: List<IntegrationID> = emptyList(),
     metricsHistoryEnabled: Boolean = true,
     category: String? = null,
+    proxy: String? = null,
 ): TcpMonitorRecord {
     val monitor = TcpMonitorRecord()
         .setName(monitorName)
@@ -347,6 +350,7 @@ fun createTcpMonitor(
         .setIntegrations(integrations.toTypedArray())
         .setMetricsHistoryEnabled(metricsHistoryEnabled)
         .setCategory(category)
+        .setProxy(proxy)
     return repository.returningInsert(monitor)
 }
 

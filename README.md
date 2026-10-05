@@ -38,6 +38,7 @@ If you want to get started quickly, please refer to the [**Deployment guide**](h
 - **TCP port monitoring**: Check whether any TCP service — databases, SMTP, SSH, message brokers, and more — accepts connections, and track connect latency.
 - **DNS monitoring**: Check that a name resolves, assert on the returned records (`A`, `MX`, `TXT`, `NS`, and more) with exact, substring or regex matchers, verify the response code, and optionally get notified when the resolved records change behind your back.
 - **Docker monitoring**: Check whether your containers are actually running and healthy - including their healthchecks, exit codes and OOM kills - through the Docker daemon, locally or remotely (TLS and mutual TLS included), and optionally track their CPU and memory usage.
+- **Checks through proxies**: Route the checks of selected HTTP and TCP monitors through an HTTP or SOCKS5 proxy (with or without authentication), e.g. a corporate egress proxy, or a SOCKS5 proxy into a private network.
 - **Notifications on a per-monitor basis**: Configure different notification channels for each monitor, allowing you to tailor alerts to your specific needs.
 - **Status pages**: Create public or private status pages to keep your users or your own team informed about the status of your services.
 - **Sleek UI**: Kuvasz has a modern, responsive, and user-friendly interface that makes it easy to manage your monitors.

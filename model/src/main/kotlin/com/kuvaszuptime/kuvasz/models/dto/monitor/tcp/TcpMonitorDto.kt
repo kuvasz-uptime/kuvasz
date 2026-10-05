@@ -39,6 +39,8 @@ data class TcpMonitorDto(
     val category: String? = null,
     @param:Schema(description = MonitorDocs.IGNORE_CONNECTIVITY_CHECK, required = true)
     val ignoreConnectivityCheck: Boolean,
+    @param:Schema(description = TcpMonitorDocs.PROXY, required = true, nullable = true)
+    val proxy: String?,
 ) {
     companion object {
         fun fromMonitorRecord(record: TcpMonitorRecord) = TcpMonitorDto(
@@ -57,6 +59,7 @@ data class TcpMonitorDto(
             updatedAt = record.updatedAt,
             category = record.category,
             ignoreConnectivityCheck = record.ignoreConnectivityCheck,
+            proxy = record.proxy,
         )
     }
 }

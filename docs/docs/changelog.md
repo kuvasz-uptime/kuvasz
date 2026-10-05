@@ -12,6 +12,16 @@ Docker monitors are fully integrated across _Kuvasz_: they're manageable via the
 
 ---
 
+**🔀 Checking monitors through proxies**
+
+[**HTTP**](management/http-monitors.md#proxy) and [**TCP monitors**](management/tcp-monitors.md#proxy) can be checked through an outbound **HTTP** or **SOCKS5** [**proxy**](management/proxies.md) now (with or without authentication), e.g. a **corporate egress proxy**, or a SOCKS5 proxy into a **private network** (like `ssh -D` through a bastion host).
+
+!!! tip "Using the connectivity check?"
+
+    Its probe never goes through a proxy, so make sure to read [**Proxies and the connectivity check**](management/proxies.md#proxies-and-the-connectivity-check) before enabling both.
+
+---
+
 **🖥️ A fully redesigned dashboard** 
 
 ![New dashboard](images/ui/dashboard.webp)
@@ -44,6 +54,7 @@ The new [**connectivity check**](features/connectivity-check.md) periodically di
 
 ### Docs
 
+- Added a recipe about [**reaching a proxy over TLS with a stunnel sidecar**](management/proxies.md#reaching-a-proxy-over-tls-with-a-stunnel-sidecar), since _Kuvasz_ can't talk TLS to a proxy itself.
 - Added a new recipe about [**running Kuvasz as a non-root user**](management/examples.md#running-kuvasz-as-a-non-root-user) (optionally without any capabilities, and with a read-only root filesystem), including the things to look out for with **ICMP** and **Docker** monitors. The [**Docker Compose example**](setup/installation.md#2-docker-compose-file) comes with the related settings too, commented out.
 
 ## 4.4.0 <small>2026-09-15</small> { id="4.4.0" data-toc-label="4.4.0" }

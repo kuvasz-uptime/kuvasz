@@ -121,6 +121,7 @@ class TcpMonitorConfigDefaultValuesTest(applicationContext: ApplicationContext) 
                 monitorConfig.metricsHistoryEnabled shouldBe TcpMonitorDefaults.METRICS_HISTORY_ENABLED
                 monitorConfig.integrations.shouldBeNull()
                 monitorConfig.ignoreConnectivityCheck shouldBe MonitorDefaults.IGNORE_CONNECTIVITY_CHECK
+                monitorConfig.proxy.shouldBeNull()
             }
         }
     }

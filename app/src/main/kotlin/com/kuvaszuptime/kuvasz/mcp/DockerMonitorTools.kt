@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.mcp
 
 import com.kuvaszuptime.kuvasz.controllers.monitor.CheckDockerMonitorsWritable
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_APP_SETTINGS
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_DOCKER_HOSTS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_INTEGRATIONS
 import com.kuvaszuptime.kuvasz.mcp.schemas.DeleteResultSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.DockerMonitorCreatorSchema
@@ -64,6 +65,7 @@ class DockerMonitorTools(
         description = "Creates a new Docker container monitor. Only 'name', 'dockerHost', 'container' and " +
             "'uptimeCheckInterval' are required; all other fields use sensible defaults. " +
             "'dockerHost' must name a Docker host configured in the YAML config, which cannot be created here. " +
+            "The configured Docker hosts can be found via the $LIST_DOCKER_HOSTS tool. " +
             "Refer to the docs for the default values: https://kuvasz-uptime.dev/management/docker-monitors/." +
             "The available integrations can be found via the $LIST_INTEGRATIONS tool." +
             "This tool will work only if 'areDockerMonitorsReadOnly' from the $GET_APP_SETTINGS tool " +

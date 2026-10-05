@@ -16,6 +16,17 @@ class HttpMonitorFormModal(page: Page) : ModalView(page) {
     val crossOriginHeaderPropagationToggle: Locator
         get() = modal.locator("input[name='crossOriginHeaderPropagation']")
 
+    /** Picks a proxy from the dropdown. Request settings have to be expanded first. */
+    fun setProxy(value: String): HttpMonitorFormModal {
+        pickFromDropdown(proxyField, value)
+        return this
+    }
+
+    fun clearProxy(): HttpMonitorFormModal {
+        clearProxyField()
+        return this
+    }
+
     fun setName(value: String): HttpMonitorFormModal {
         nameInput.fill(value)
         return this

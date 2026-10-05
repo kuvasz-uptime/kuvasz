@@ -62,6 +62,42 @@ services:
     ports:
       - "8081:8080"
       - "8443:8443"
+  # Outbound proxies to check HTTP and TCP monitors through. A host-run Kuvasz (./gradlew app:run) reaches them on localhost,
+  # and the "proxies" block of application-local.yml registers them. Behind them, the names of the services of this
+  # file resolve (e.g. http://http-echo:8080), which a host-run Kuvasz can't reach directly, so a monitor of such a
+  # target is only UP through a proxy.
+  # The SOCKS5 ports avoid 1080 and 1081, which the test suite's MockServers use.
+  squid:
+    # Stock config: CONNECT is only allowed to the SSL ports, so a plain HTTP target is refused with a 403
+    image: ubuntu/squid:6.6-24.04_edge
+    ports:
+      - "3128:3128"
+  squid-any-port:
+    # The same Squid, but configured to tunnel to any port, so plain HTTP targets work through it too
+    image: ubuntu/squid:6.6-24.04_edge
+    volumes:
+      - ./squid-any-port.conf:/etc/squid/squid.conf:ro
+    ports:
+      - "3131:3128"
+  proxy-open:
+    # HTTP CONNECT on 3128, SOCKS5 on 1080, without authentication
+    image: ghcr.io/tarampampam/3proxy:2.3.0
+    environment:
+      # Its own default resolvers are public ones, which know nothing about the names of the services of this file
+      PRIMARY_RESOLVER: 127.0.0.11
+    ports:
+      - "3129:3128"
+      - "11080:1080"
+  proxy-auth:
+    # The same as proxy-open, but both protocols require a username and a password
+    image: ghcr.io/tarampampam/3proxy:2.3.0
+    environment:
+      PRIMARY_RESOLVER: 127.0.0.11
+      PROXY_LOGIN: kuvasz
+      PROXY_PASSWORD: kuvasz-proxy-password
+    ports:
+      - "3130:3128"
+      - "11081:1080"
   mcp-inspector:
     image: ghcr.io/modelcontextprotocol/inspector:latest
     ports:

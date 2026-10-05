@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.dto.docker.DockerHostAuthMethod
 import com.kuvaszuptime.kuvasz.models.dto.docker.DockerHostDto
+import com.kuvaszuptime.kuvasz.models.dto.proxy.ProxyDto
 import com.kuvaszuptime.kuvasz.models.dto.settings.SettingsDto
 import com.kuvaszuptime.kuvasz.models.settings.ConnectivityState
 import com.kuvaszuptime.kuvasz.models.theme.ThemeOption
@@ -28,7 +29,12 @@ private const val OIDC_WEB_ORIGIN_ID = "oidc-web-origin"
 private const val OIDC_POST_LOGOUT_REDIRECT_PATH = "/auth/logout"
 private const val OIDC_CALLBACK_PATH = "/oauth/callback/oidc"
 
-fun renderSettings(globals: AppGlobals, settings: SettingsDto, dockerHosts: List<DockerHostDto>) =
+fun renderSettings(
+    globals: AppGlobals,
+    settings: SettingsDto,
+    dockerHosts: List<DockerHostDto>,
+    proxies: List<ProxyDto>,
+) =
     withLayout(
         globals,
         title = Messages.settings(),
@@ -320,6 +326,23 @@ fun renderSettings(globals: AppGlobals, settings: SettingsDto, dockerHosts: List
                         }
                     }
                     dockerHosts.forEach { dockerHostSettingsRow(it) }
+                }
+            }
+            // Proxies
+            settingsCard(
+                title = Messages.proxiesSettings(),
+                icon = Icon.ROUTE_SQUARE,
+            ) {
+                div {
+                    classes(DIVIDE_Y)
+                    testId("proxies-settings")
+                    if (proxies.isEmpty()) {
+                        span {
+                            classes(TEXT_SECONDARY)
+                            +Messages.notConfigured()
+                        }
+                    }
+                    proxies.forEach { proxySettingsRow(it) }
                 }
             }
             // Exporter settings
@@ -765,6 +788,26 @@ private fun FlowContent.dockerHostSettingsRow(host: DockerHostDto) {
                 host.apiVersion?.let { +Messages.dockerHostApiVersion(it) } ?: run {
                     tooltip(Messages.dockerHostApiVersionUnknownTooltip())
                     +Messages.dockerHostApiVersionUnknown()
+                }
+            }
+        }
+    }
+}
+
+private fun FlowContent.proxySettingsRow(proxy: ProxyDto) {
+    div {
+        testId("proxy-settings-row")
+        settingsLabel(label = proxy.name, value = "${proxy.host}:${proxy.port}", multi = true) {
+            span {
+                classes(BADGE, MS_2)
+                testId("proxy-type")
+                +proxy.type.name
+            }
+            if (proxy.authenticated) {
+                span {
+                    classes(BADGE, MS_2)
+                    testId("proxy-authenticated")
+                    +Messages.proxyAuthenticated()
                 }
             }
         }

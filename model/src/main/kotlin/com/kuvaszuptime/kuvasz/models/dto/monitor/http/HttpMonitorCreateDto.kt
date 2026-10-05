@@ -59,6 +59,8 @@ data class HttpMonitorCreateDto(
         defaultValue = HttpMonitorDefaults.CROSS_ORIGIN_HEADER_PROPAGATION.toString()
     )
     override val crossOriginHeaderPropagation: Boolean = HttpMonitorDefaults.CROSS_ORIGIN_HEADER_PROPAGATION,
+    @param:Schema(description = HttpMonitorDocs.PROXY, required = false, nullable = true)
+    override val proxy: String? = null,
     @param:Schema(
         description = HttpMonitorDocs.SSL_EXPIRY_THRESHOLD,
         required = false,

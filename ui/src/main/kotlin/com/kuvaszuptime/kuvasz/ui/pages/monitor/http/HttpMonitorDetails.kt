@@ -16,7 +16,7 @@ fun renderHttpMonitorDetailsPage(
         globals = globals,
         monitor = monitor,
         typeUiConfig = MonitorTypeUiConfig.HTTP,
-        heading = { httpMonitorDetailsHeading(monitor) },
+        heading = { httpMonitorDetailsHeading(monitor, globals.configuredProxies) },
         upsertModal = { modalId -> httpMonitorCreateUpdateModal(modalId, monitor, globals) },
         content = { httpMonitorDetailsContent(monitor, stats) },
     )

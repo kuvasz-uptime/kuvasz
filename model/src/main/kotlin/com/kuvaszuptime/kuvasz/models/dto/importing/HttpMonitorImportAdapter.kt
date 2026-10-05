@@ -18,6 +18,7 @@ class HttpMonitorImportAdapter(dto: HttpMonitorExportDto) : HttpMonitorCreator {
     override val forceNoCache: Boolean = dto.forceNoCache
     override val followRedirects: Boolean = dto.followRedirects
     override val crossOriginHeaderPropagation: Boolean = dto.crossOriginHeaderPropagation
+    override val proxy: String? = dto.proxy
     override val sslExpiryThreshold: Int = dto.sslExpiryThreshold
     override val failureCountThreshold: Long = dto.failureCountThreshold
     override val integrations: List<String> = dto.integrations.map { it.toString() }

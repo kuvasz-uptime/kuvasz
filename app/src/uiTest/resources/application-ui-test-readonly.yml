@@ -3,6 +3,7 @@ http-monitors:
   - name: yaml-http-monitor
     url: https://example.com
     uptime-check-interval: 60
+    proxy: corporate-egress
 push-monitors:
   - name: yaml-push-monitor
     client-secret: yaml-push-monitor-secret-0123456789abc
@@ -16,6 +17,7 @@ tcp-monitors:
     host: 127.0.0.1
     port: 8080
     uptime-check-interval: 60
+    proxy: office-network
 docker-monitors:
   - name: yaml-docker-monitor
     docker-host: local

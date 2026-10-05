@@ -5,7 +5,6 @@ import com.kuvaszuptime.kuvasz.models.ExpectedHeaderNotFoundException
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResponse
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
-import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.PendingFailureRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import io.kotest.core.spec.style.ShouldSpec
@@ -21,9 +20,9 @@ import io.mockk.verify
 
 class HttpResponseHeaderCheckerTest : ShouldSpec({
 
-    val mockUptimeRepo = mockk<HttpUptimeEventRepository>(relaxed = true)
+    val mockUptimeRepo = mockUptimeEventRepository()
     val mockDbEventHandler = mockk<DatabaseEventHandler>(relaxed = true)
-    val mockPendingFailureRepo = mockk<PendingFailureRepository>(relaxed = true)
+    val mockPendingFailureRepo = mockk<PendingFailureRepository>()
     val dispatcher = EventDispatcher()
     val checker = HttpResponseHeaderChecker(dispatcher, mockUptimeRepo, mockDbEventHandler, mockPendingFailureRepo)
 

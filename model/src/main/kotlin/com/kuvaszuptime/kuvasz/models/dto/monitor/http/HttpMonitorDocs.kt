@@ -20,6 +20,9 @@ object HttpMonitorDocs {
         "Whether to send the custom request headers to a redirect target whose origin (scheme, host and port) " +
             "differs from the origin of the monitored URL. If false, the custom request headers are withheld from " +
             "such redirect targets."
+    const val PROXY =
+        "The name of a proxy defined in the configuration, that both the uptime and the SSL checks of the monitor " +
+            "are routed through. If null, the monitor is checked over a direct connection."
     const val EXPECTED_STATUS_CODES =
         "List of expected HTTP status codes for the monitor. If the response code is not in this list, the monitor " +
             "will be marked as DOWN. By default, every 2xx status will be considered as UP. 1xx, 2xx, 3xx and 4xx " +

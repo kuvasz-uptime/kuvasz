@@ -36,6 +36,7 @@ import com.kuvaszuptime.kuvasz.security.api.HeaderApiKeyReader.Companion.API_KEY
 import com.kuvaszuptime.kuvasz.services.check.MonitorCheckScheduler
 import com.kuvaszuptime.kuvasz.services.connectivity.ConnectivityCheckScheduler
 import com.kuvaszuptime.kuvasz.services.docker.DockerHostRegistry
+import com.kuvaszuptime.kuvasz.services.proxy.ProxyRegistry
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowImporter
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowScheduler
@@ -77,6 +78,7 @@ class AppBootstrapper(
     private val apiKeyConfig: ApiKeyConfig?,
     private val connectivityCheckScheduler: ConnectivityCheckScheduler?,
     private val dockerHostRegistry: DockerHostRegistry?,
+    private val proxyRegistry: ProxyRegistry,
 ) {
 
     @Suppress("ProtectedMemberInFinalClass")
@@ -133,6 +135,8 @@ class AppBootstrapper(
         sanitizeIntegrationsOfMonitors()
         // Warn about the Docker monitors that reference a host that is not configured anymore
         warnAboutDanglingDockerHosts()
+        // Warn about the monitors that are checked through a proxy that is not configured anymore
+        warnAboutDanglingProxies()
         // Importing status pages from config if any are present
         processYamlStatusPageConfigs()
         // Importing maintenance windows from config if any are present
@@ -205,6 +209,28 @@ class AppBootstrapper(
             "The following Docker monitors reference a Docker host that is not configured, so their checks will " +
                 "fail until it is added back: " +
                 danglingMonitors.joinToString { "${it.name} (ID: ${it.id}, host: ${it.dockerHost})" }
+        )
+    }
+
+    /**
+     * Like a Docker host, a dangling proxy is not sanitized: clearing it would silently switch the monitor to a
+     * direct connection, which can't reach the same targets. It is kept and its checks report it instead.
+     */
+    private fun warnAboutDanglingProxies() {
+        val configuredProxies = proxyRegistry.configuredProxies.keys
+        val describe = { type: String, name: String, id: Long, proxy: String? ->
+            "$name ($type, ID: $id, proxy: $proxy)"
+        }
+        val danglingMonitors =
+            httpMonitorRepository.fetchWithProxyNotIn(configuredProxies)
+                .map { describe("HTTP", it.name, it.id, it.proxy) } +
+                tcpMonitorRepository.fetchWithProxyNotIn(configuredProxies)
+                    .map { describe("TCP", it.name, it.id, it.proxy) }
+        if (danglingMonitors.isEmpty()) return
+
+        logger.warn(
+            "The following monitors are checked through a proxy that is not configured, so their checks will fail " +
+                "until it is added back: " + danglingMonitors.joinToString()
         )
     }
 
