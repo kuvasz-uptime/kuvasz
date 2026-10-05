@@ -7996,6 +7996,14 @@ components:
             \ believes that it has no outbound connectivity. Useful for monitors that\
             \ target the local network, since those don't depend on it at all."
           default: false
+        proxy:
+          type: string
+          description: "The name of a proxy defined in the configuration, that the\
+            \ uptime checks of the monitor are routed through. The proxy resolves\
+            \ the host, and the latency covers the connection to the proxy and the\
+            \ establishment of the tunnel. If null, the monitor is checked over a\
+            \ direct connection."
+          nullable: true
     TcpMonitorDetailsDto:
       required:
       - category
@@ -8015,6 +8023,7 @@ components:
       - name
       - nextUptimeCheck
       - port
+      - proxy
       - statusPages
       - timeoutMs
       - updatedAt
@@ -8138,6 +8147,14 @@ components:
           description: "Whether the monitor should keep being checked even when Kuvasz\
             \ believes that it has no outbound connectivity. Useful for monitors that\
             \ target the local network, since those don't depend on it at all."
+        proxy:
+          type: string
+          description: "The name of a proxy defined in the configuration, that the\
+            \ uptime checks of the monitor are routed through. The proxy resolves\
+            \ the host, and the latency covers the connection to the proxy and the\
+            \ establishment of the tunnel. If null, the monitor is checked over a\
+            \ direct connection."
+          nullable: true
     TcpMonitorDto:
       required:
       - category
@@ -8152,6 +8169,7 @@ components:
       - metricsHistoryEnabled
       - name
       - port
+      - proxy
       - timeoutMs
       - updatedAt
       - uptimeCheckInterval
@@ -8224,6 +8242,14 @@ components:
           description: "Whether the monitor should keep being checked even when Kuvasz\
             \ believes that it has no outbound connectivity. Useful for monitors that\
             \ target the local network, since those don't depend on it at all."
+        proxy:
+          type: string
+          description: "The name of a proxy defined in the configuration, that the\
+            \ uptime checks of the monitor are routed through. The proxy resolves\
+            \ the host, and the latency covers the connection to the proxy and the\
+            \ establishment of the tunnel. If null, the monitor is checked over a\
+            \ direct connection."
+          nullable: true
     TcpMonitorStatsDto:
       required:
       - id
@@ -8347,6 +8373,14 @@ components:
             \ believes that it has no outbound connectivity. Useful for monitors that\
             \ target the local network, since those don't depend on it at all."
           nullable: false
+        proxy:
+          type: string
+          description: "The name of a proxy defined in the configuration, that the\
+            \ uptime checks of the monitor are routed through. The proxy resolves\
+            \ the host, and the latency covers the connection to the proxy and the\
+            \ establishment of the tunnel. If null, the monitor is checked over a\
+            \ direct connection."
+          nullable: true
     TcpMonitoringStatsDto:
       required:
       - actual

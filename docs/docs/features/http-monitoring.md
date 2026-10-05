@@ -18,6 +18,7 @@ _Kuvasz_ monitors your websites and services by **periodically sending requests*
 - accepted status codes (default is 2xx)
 - keyword matching in the response body, with the option to ignore case and also to reverse the match (i.e. to alert if the desired keyword is present in the response body)
 - expected headers in the response
+- an optional [proxy](../management/proxies.md) (HTTP or SOCKS5) to route the checks through, including the SSL check
 
 ![Kuvasz evaluation settings](../images/features/new_monitor_modal.webp)
 

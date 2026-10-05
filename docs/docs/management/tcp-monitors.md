@@ -21,6 +21,7 @@
       latency-threshold-ms: 1000 # (6)!
       failure-count-threshold: 1 # (7)!
       ignore-connectivity-check: false # (12)!
+      proxy: "office-network" # (13)!
       enabled: true # (8)!
       metrics-history-enabled: true # (9)!
       integrations: # (10)!
@@ -40,6 +41,7 @@
       10. **Integrations**: A list of integrations to assign to the monitor. The format is `"{integration-type}:{integration-name}"`, where `integration-type` is the type of the integration (e.g. `email`, `slack`, etc.), and `integration-name` is the name of the integration as defined in the `integrations` section of your YAML file. Example: `email:my-email-integration`.
       11. **Category**: An optional, free-form category to group the monitor on the status pages (e.g. a product or service name).
       12. **Ignore connectivity check**: Whether the monitor should keep being checked even while _Kuvasz_ considers its own outbound connectivity lost. Defaults to false.
+      13. **Proxy**: The name of a [proxy](proxies.md) defined in the `proxies` section of your YAML file, that the checks of the monitor are routed through. Defaults to `null`, which means a direct connection.
 
 === "API (expert)"
 
@@ -93,6 +95,21 @@ The **hostname or IP address** to connect to. Can be a domain name (e.g. `exampl
 <!-- md:yaml_prop `port` -->
 
 The **TCP port** to connect to. Must be between 1 and 65535.
+
+### Proxy <!-- md:config proxies.md -->
+
+<!-- md:version 4.5.0 -->
+<!-- md:default empty -->
+<!-- md:type string -->
+<!-- md:yaml_prop `proxy` -->
+
+The **name of a** [**proxy**](proxies.md) that the checks of the monitor are routed through, as defined in the `proxies` section of your configuration file. Leave it empty to check the monitor over a **direct connection**, which is the default.
+
+- The proxy resolves the [host](#host), so a target that only resolves behind the proxy can be monitored too.
+- The measured latency covers **reaching the proxy and the establishment of the tunnel**, so take it into account when you set a [latency threshold](#latency-threshold).
+- Some HTTP proxies (e.g. _Squid_ with its default configuration) only open tunnels towards port 443, and refuse every other [port](#port) with a `403`. See the [**limitations**](proxies.md#limitations).
+
+A newly set proxy **must be configured**, and if it's removed from the configuration later, the monitor is kept, but its checks fail until the proxy is added back, or the monitor is pointed to another one. See [**Referencing proxies from monitors**](proxies.md#referencing-proxies-from-monitors) for the details.
 
 ### Uptime check interval
 
@@ -181,6 +198,10 @@ Enable it for monitors that **don't depend on the outbound connectivity** of _Ku
 !!!info
 
     This flag has **no effect at all** when the [connectivity check](../setup/configuration.md#connectivity-check) is disabled, which is the default. You can set it freely regardless, so it's already in place if you decide to turn the feature on later.
+
+!!!tip "Monitors checked through a proxy"
+
+    The connectivity check never goes through a [proxy](proxies.md), so it's usually a good idea to enable this flag for the monitors that are checked through one. See [**Proxies and the connectivity check**](proxies.md#proxies-and-the-connectivity-check) for the details.
 
 ## Common operations
 

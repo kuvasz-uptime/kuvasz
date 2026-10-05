@@ -166,7 +166,7 @@ The `maintenanceWindows` affecting a monitor (and whether it is currently `inMai
 
 <!-- md:version 4.5.0 -->
 
-Both are defined in the YAML configuration only, so they can be listed, but not created through the MCP server. The listed names are what `create-docker-monitor` and `create-http-monitor` accept in their `dockerHost` and `proxy` fields.
+Both are defined in the YAML configuration only, so they can be listed, but not created through the MCP server. The listed names are what `create-docker-monitor` accepts in its `dockerHost` field, and what `create-http-monitor` and `create-tcp-monitor` accept in their `proxy` fields.
 
 | Tool                | Description                                                                                                                         |
 |---------------------|-------------------------------------------------------------------------------------------------------------------------------------|

@@ -45,6 +45,12 @@ That's what [**`ignoreConnectivityCheck`**](../management/http-monitors.md#ignor
 
 [**Docker monitors**](../management/docker-monitors.md#ignore-connectivity-check) are the only exception to the defaults: they have it **enabled out of the box**, since a container reached through a local socket, or on the same LAN, doesn't depend on the internet access of _Kuvasz_ at all.
 
+## Monitors checked through a proxy
+
+The probe is **always a direct TCP connection**, it never goes through the [**proxies**](../management/proxies.md) your monitors might use. So on a network where the internet is **only reachable through a proxy**, the default targets can never be reached, and _Kuvasz_ would **suspend every monitor**, including the proxied ones, even though their proxy works fine.
+
+If you use proxies, either **point the** [**targets**](../setup/configuration.md#connectivity-check-targets) **at your proxies**, or **opt the proxied monitors out** with `ignoreConnectivityCheck`. The latter is the better fit when some of your monitors are checked directly, and some of them through a proxy. See [**Proxies and the connectivity check**](../management/proxies.md#proxies-and-the-connectivity-check) for the details and the examples.
+
 ## How do I know that the checks are suspended?
 
 The suspended state is **never silent**:

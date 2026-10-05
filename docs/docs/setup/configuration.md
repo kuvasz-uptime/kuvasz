@@ -843,6 +843,8 @@ The targets are dialed one by one and **the first one that accepts the connectio
 
 Any TCP endpoint is a valid target, not only DNS servers, so on an isolated network you can just as well point it at your own gateway, or at any internal host that is **always** reachable while your network is healthy.
 
+The targets are **always dialed directly**, never through a [proxy](../management/proxies.md). If your monitors reach the internet through proxies, take a look at [**Proxies and the connectivity check**](../management/proxies.md#proxies-and-the-connectivity-check).
+
 ### Connectivity check interval
 
 <!-- md:version 4.5.0 -->

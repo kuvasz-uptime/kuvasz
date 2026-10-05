@@ -19,6 +19,7 @@ These two settings cover **different failure modes** and are meant to complement
 - connection timeout (1-30000 milliseconds)
 - optional connect-latency threshold that triggers a DOWN event
 - consecutive failure count threshold
+- an optional [proxy](../management/proxies.md) (HTTP or SOCKS5) to route the checks through
 
 ## Configuration <!-- md:config ../management/tcp-monitors.md -->
 
