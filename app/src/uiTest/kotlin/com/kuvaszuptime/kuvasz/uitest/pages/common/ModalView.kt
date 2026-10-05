@@ -74,6 +74,20 @@ abstract class ModalView(protected val page: Page) {
         textbox.press("Enter")
     }
 
+    // The proxy field of the HTTP and TCP monitor forms
+    protected val proxyField: Locator get() = modal.getByTestId("proxy-select")
+
+    // The picked proxy, as the chip TomSelect renders for it. There is none for a direct connection.
+    val selectedProxy: Locator get() = proxyField.locator(".ts-control .item")
+
+    // The select TomSelect hides, which still tells whether the field is disabled.
+    val proxySelect: Locator get() = proxyField.locator("select")
+
+    // Switches the monitor to a direct connection, through the clear button of the widget.
+    protected fun clearProxyField() {
+        proxyField.locator(".clear-button").click()
+    }
+
     /**
      * Picks an existing option by clicking it, the way a person does. A field that takes no new values has no
      * "add new" row for a keypress to fall back on, and committing the typed text with Enter only works

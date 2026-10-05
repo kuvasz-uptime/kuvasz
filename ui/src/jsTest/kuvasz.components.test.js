@@ -1012,7 +1012,7 @@ test('TCP validators enforce port, timeout and the optional latency threshold', 
     const msgs = {
         portInvalid: 'PORT', timeoutMsInvalid: 'TS', latencyThresholdInvalid: 'LT',
     };
-    const buildForm = () => upsertTcpMonitorForm(null, msgs, 'category-select', false, 0);
+    const buildForm = () => upsertTcpMonitorForm(null, msgs, 'category-select', false, 'proxy-select', [], '(not configured)', 0);
 
     // port: valid 1..65535
     assertValidatorBoundaries(buildForm, 'port', 'validatePort', 'PORT', [
@@ -1066,90 +1066,100 @@ test('Docker host select re-offers a host that is no longer configured, marked a
     assert.equal(form.dockerHost, 'removed');
 });
 
-test('HTTP proxy validator rejects a proxy that is not configured, unless the monitor already had it', () => {
-    const buildForm = () => upsertHttpMonitorForm(
-        null, {proxyNotConfigured: 'NC'}, 'category-select', false, 'select', [], 'proxy-select', ['egress'],
-        '(not configured)', 0,
-    );
+const proxiedFormFactories = {
+    HTTP: (errorMessages = {}) => upsertHttpMonitorForm(
+        null, errorMessages, 'category-select', false, 'select', [], 'proxy-select', ['egress'], '(not configured)', 0,
+    ),
+    TCP: (errorMessages = {}) => upsertTcpMonitorForm(
+        null, errorMessages, 'category-select', false, 'proxy-select', ['egress'], '(not configured)', 0,
+    ),
+};
 
-    // No proxy means a direct connection, which is always fine
-    assertValidatorBoundaries(buildForm, 'proxy', 'validateProxy', 'NC', [['', false], [null, false], ['egress', false]]);
-    // A proxy that is not configured is what a clone of a monitor with a since-removed proxy would carry
-    assertValidatorBoundaries(buildForm, 'proxy', 'validateProxy', 'NC', [['removed', true]]);
+Object.entries(proxiedFormFactories).forEach(([type, buildProxiedForm]) => {
+    test(`${type} proxy validator rejects a proxy that is not configured, unless the monitor already had it`, () => {
+        const buildForm = () => buildProxiedForm({proxyNotConfigured: 'NC'});
 
-    // The monitor that already has such a proxy may keep it...
-    const update = buildForm();
-    update.populateTypeFields({proxy: 'removed'});
-    Object.assign(update, {errors: {}, isUpdate: true});
-    update.validateProxy();
-    assert.equal(update.errors.proxy, null);
+        // No proxy means a direct connection, which is always fine
+        assertValidatorBoundaries(buildForm, 'proxy', 'validateProxy', 'NC', [['', false], [null, false], ['egress', false]]);
+        // A proxy that is not configured is what a clone of a monitor with a since-removed proxy would carry
+        assertValidatorBoundaries(buildForm, 'proxy', 'validateProxy', 'NC', [['removed', true]]);
 
-    // ...but it can't be pointed to another proxy that is not configured either
-    update.proxy = 'other-removed';
-    update.validateProxy();
-    assert.equal(update.errors.proxy, 'NC');
-});
+        // The monitor that already has such a proxy may keep it...
+        const update = buildForm();
+        update.populateTypeFields({proxy: 'removed'});
+        Object.assign(update, {errors: {}, isUpdate: true});
+        update.validateProxy();
+        assert.equal(update.errors.proxy, null);
 
-test('HTTP proxy select re-offers a proxy that is no longer configured, marked as such', () => {
-    const tomSelect = fakeTomSelect();
-    const form = upsertHttpMonitorForm(
-        null, {}, 'category-select', false, 'select', [], 'proxy-select', ['egress'], '(not configured)', 0,
-    );
-
-    withCategorySelect(tomSelect, () => form.populateTypeFields({proxy: 'removed'}));
-
-    assert.deepEqual(tomSelect.options, [
-        {value: 'egress', text: 'egress'},
-        {value: 'removed', text: 'removed (not configured)'},
-    ]);
-    assert.deepEqual(tomSelect.items, ['removed']);
-    assert.equal(form.proxy, 'removed');
-    assert.equal(form.storedProxy, 'removed');
-});
-
-test('HTTP proxy select only offers the configured proxies without a stored one', () => {
-    const tomSelect = fakeTomSelect();
-    const form = upsertHttpMonitorForm(
-        null, {}, 'category-select', false, 'select', [], 'proxy-select', ['egress'], '(not configured)', 0,
-    );
-
-    withCategorySelect(tomSelect, () => form.populateTypeFields({proxy: 'egress'}));
-    assert.deepEqual(tomSelect.options, [{value: 'egress', text: 'egress'}]);
-    assert.deepEqual(tomSelect.items, ['egress']);
-    assert.equal(form.proxy, 'egress');
-
-    const directTomSelect = fakeTomSelect();
-    withCategorySelect(directTomSelect, () => form.populateTypeFields(null));
-    assert.deepEqual(directTomSelect.options, [{value: 'egress', text: 'egress'}]);
-    assert.deepEqual(directTomSelect.items, []);
-    assert.equal(form.proxy, '');
-});
-
-test('HTTP proxy select drops the dangling proxy of the previous monitor in the shared modal', () => {
-    const tomSelect = fakeTomSelect();
-    const form = upsertHttpMonitorForm(
-        null, {}, 'category-select', false, 'select', [], 'proxy-select', ['egress'], '(not configured)', 0,
-    );
-
-    withCategorySelect(tomSelect, () => {
-        form.populateTypeFields({proxy: 'removed'});
-        form.populateTypeFields({proxy: 'egress'});
+        // ...but it can't be pointed to another proxy that is not configured either
+        update.proxy = 'other-removed';
+        update.validateProxy();
+        assert.equal(update.errors.proxy, 'NC');
     });
 
-    assert.deepEqual(tomSelect.options, [{value: 'egress', text: 'egress'}]);
-    assert.equal(form.proxy, 'egress');
-});
+    test(`${type} proxy is validated with the rest of the form`, () => {
+        const form = buildProxiedForm({proxyNotConfigured: 'NC'});
+        form.populateFrom(null);
+        form.proxy = 'removed';
 
-test('HTTP request body sends the proxy, or null for a direct connection', () => {
-    const form = upsertHttpMonitorForm(
-        null, {}, 'category-select', false, 'select', [], 'proxy-select', ['egress'], '(not configured)', 0,
-    );
+        form.validate();
 
-    form.populateFrom({name: 'site', url: 'https://example.com', proxy: 'egress'});
-    assert.equal(form.buildRequestBody().proxy, 'egress');
+        assert.equal(form.errors.proxy, 'NC');
+    });
 
-    form.proxy = '';
-    assert.equal(form.buildRequestBody().proxy, null);
+    test(`${type} proxy select re-offers a proxy that is no longer configured, marked as such`, () => {
+        const tomSelect = fakeTomSelect();
+        const form = buildProxiedForm();
+
+        withCategorySelect(tomSelect, () => form.populateTypeFields({proxy: 'removed'}));
+
+        assert.deepEqual(tomSelect.options, [
+            {value: 'egress', text: 'egress'},
+            {value: 'removed', text: 'removed (not configured)'},
+        ]);
+        assert.deepEqual(tomSelect.items, ['removed']);
+        assert.equal(form.proxy, 'removed');
+        assert.equal(form.storedProxy, 'removed');
+    });
+
+    test(`${type} proxy select only offers the configured proxies without a stored one`, () => {
+        const tomSelect = fakeTomSelect();
+        const form = buildProxiedForm();
+
+        withCategorySelect(tomSelect, () => form.populateTypeFields({proxy: 'egress'}));
+        assert.deepEqual(tomSelect.options, [{value: 'egress', text: 'egress'}]);
+        assert.deepEqual(tomSelect.items, ['egress']);
+        assert.equal(form.proxy, 'egress');
+
+        const directTomSelect = fakeTomSelect();
+        withCategorySelect(directTomSelect, () => form.populateTypeFields(null));
+        assert.deepEqual(directTomSelect.options, [{value: 'egress', text: 'egress'}]);
+        assert.deepEqual(directTomSelect.items, []);
+        assert.equal(form.proxy, '');
+    });
+
+    test(`${type} proxy select drops the dangling proxy of the previous monitor in the shared modal`, () => {
+        const tomSelect = fakeTomSelect();
+        const form = buildProxiedForm();
+
+        withCategorySelect(tomSelect, () => {
+            form.populateTypeFields({proxy: 'removed'});
+            form.populateTypeFields({proxy: 'egress'});
+        });
+
+        assert.deepEqual(tomSelect.options, [{value: 'egress', text: 'egress'}]);
+        assert.equal(form.proxy, 'egress');
+    });
+
+    test(`${type} request body sends the proxy, or null for a direct connection`, () => {
+        const form = buildProxiedForm();
+
+        form.populateFrom({name: 'proxied', proxy: 'egress'});
+        assert.equal(form.buildRequestBody().proxy, 'egress');
+
+        form.proxy = '';
+        assert.equal(form.buildRequestBody().proxy, null);
+    });
 });
 
 test('Docker containers are listed only while the modal is open', () => {
@@ -1471,7 +1481,7 @@ test('ICMP populateFrom copies a source and falls back to defaults', () => {
 });
 
 test('TCP populateFrom copies a source and falls back to defaults', () => {
-    const form = upsertTcpMonitorForm(null, {}, 'category-select', false, 0);
+    const form = upsertTcpMonitorForm(null, {}, 'category-select', false, 'proxy-select', [], '(not configured)', 0);
 
     form.populateFrom({
         name: 'Src', host: 'example.com', port: 5432, uptimeCheckInterval: 120,
@@ -1753,7 +1763,7 @@ test('monitor forms populate and reset the category', () => {
         upsertHttpMonitorForm(null, {}, 'category-select', false, 'select', [], 'proxy-select', [], '(not configured)', 0),
         upsertPushMonitorForm(null, {}, 'category-select', false, 0),
         upsertIcmpMonitorForm(null, {}, 'category-select', false, 0),
-        upsertTcpMonitorForm(null, {}, 'category-select', false, 0),
+        upsertTcpMonitorForm(null, {}, 'category-select', false, 'proxy-select', [], '(not configured)', 0),
         upsertDnsMonitorForm(null, {}, 'category-select', false, 0),
     ];
     forms.forEach((form) => {
@@ -1972,7 +1982,7 @@ test('upsert updates an existing monitor without touching its enabled state and 
     const browser = stubBrowser(t);
     let isBodyRead = false;
     const requests = stubRequests(t, {ok: true, json: async () => { isBodyRead = true; return {id: 7}; }});
-    const form = upsertTcpMonitorForm({id: 7, name: 'db', host: 'db.local', port: '5432'}, {}, 'category-select', false, 0);
+    const form = upsertTcpMonitorForm({id: 7, name: 'db', host: 'db.local', port: '5432'}, {}, 'category-select', false, 'proxy-select', [], '(not configured)', 0);
     form.resetState();
 
     await form.upsert();
@@ -2155,7 +2165,7 @@ const monitorFormFactories = {
         upsertHttpMonitorForm(monitor, {}, 'category-select', isNameLocked, 'select', [], 'proxy-select', [], '(not configured)', 0),
     push: (monitor = null, isNameLocked = false) => upsertPushMonitorForm(monitor, {}, 'category-select', isNameLocked, 0),
     icmp: (monitor = null, isNameLocked = false) => upsertIcmpMonitorForm(monitor, {}, 'category-select', isNameLocked, 0),
-    tcp: (monitor = null, isNameLocked = false) => upsertTcpMonitorForm(monitor, {}, 'category-select', isNameLocked, 0),
+    tcp: (monitor = null, isNameLocked = false) => upsertTcpMonitorForm(monitor, {}, 'category-select', isNameLocked, 'proxy-select', [], '(not configured)', 0),
     dns: (monitor = null, isNameLocked = false) => upsertDnsMonitorForm(monitor, {}, 'category-select', isNameLocked, 0),
 };
 

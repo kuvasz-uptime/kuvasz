@@ -35,6 +35,7 @@ data class TcpMonitorSchema(
     val updatedAt: OffsetDateTime,
     val category: String?,
     val ignoreConnectivityCheck: Boolean,
+    val proxy: String?,
 ) {
     companion object {
         fun fromDto(dto: TcpMonitorDto) = TcpMonitorSchema(
@@ -53,6 +54,7 @@ data class TcpMonitorSchema(
             updatedAt = dto.updatedAt,
             category = dto.category,
             ignoreConnectivityCheck = dto.ignoreConnectivityCheck,
+            proxy = dto.proxy,
         )
     }
 }
@@ -75,6 +77,7 @@ data class TcpMonitorDetailsSchema(
     val updatedAt: OffsetDateTime,
     val category: String?,
     val ignoreConnectivityCheck: Boolean,
+    val proxy: String?,
     val uptimeStatus: UptimeStatus?,
     val uptimeStatusStartedAt: OffsetDateTime?,
     val lastUptimeCheck: OffsetDateTime?,
@@ -101,6 +104,7 @@ data class TcpMonitorDetailsSchema(
             updatedAt = dto.updatedAt,
             category = dto.category,
             ignoreConnectivityCheck = dto.ignoreConnectivityCheck,
+            proxy = dto.proxy,
             uptimeStatus = dto.uptimeStatus,
             uptimeStatusStartedAt = dto.uptimeStatusStartedAt,
             lastUptimeCheck = dto.lastUptimeCheck,
@@ -194,6 +198,7 @@ data class TcpMonitorCreatorSchema(
     val failureCountThreshold: Long?,
     val category: String? = null,
     val ignoreConnectivityCheck: Boolean?,
+    val proxy: String? = null,
     val enabled: Boolean?,
     val integrations: List<String>?,
     val metricsHistoryEnabled: Boolean?,
@@ -208,6 +213,7 @@ data class TcpMonitorCreatorSchema(
         failureCountThreshold = failureCountThreshold ?: TcpMonitorDefaults.FAILURE_COUNT_THRESHOLD,
         category = category,
         ignoreConnectivityCheck = ignoreConnectivityCheck ?: MonitorDefaults.IGNORE_CONNECTIVITY_CHECK,
+        proxy = proxy,
         enabled = enabled ?: TcpMonitorDefaults.MONITOR_ENABLED,
         integrations = integrations.orEmpty(),
         metricsHistoryEnabled = metricsHistoryEnabled ?: TcpMonitorDefaults.METRICS_HISTORY_ENABLED

@@ -16,7 +16,7 @@ fun renderTcpMonitorDetailsPage(
         globals = globals,
         monitor = monitor,
         typeUiConfig = MonitorTypeUiConfig.TCP,
-        heading = { tcpMonitorDetailsHeading(monitor) },
+        heading = { tcpMonitorDetailsHeading(monitor, globals.configuredProxies) },
         upsertModal = { modalId -> tcpMonitorCreateUpdateModal(modalId, monitor, globals) },
         content = { tcpMonitorDetailsContent(monitor, stats) },
     )

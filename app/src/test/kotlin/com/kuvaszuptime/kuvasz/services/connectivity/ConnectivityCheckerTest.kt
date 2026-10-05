@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.services.check.tcp.TcpCheckResult
 import com.kuvaszuptime.kuvasz.services.check.tcp.TcpConnectExecutor
 import com.kuvaszuptime.kuvasz.services.network.BoundedHostnameResolver
 import com.kuvaszuptime.kuvasz.services.network.SystemHostnameResolver
+import com.kuvaszuptime.kuvasz.services.proxy.ProxyTunnel
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.booleans.shouldBeFalse
@@ -29,7 +30,7 @@ import kotlin.system.measureTimeMillis
 class ConnectivityCheckerTest : BehaviorSpec({
 
     val resolver = BoundedHostnameResolver(SystemHostnameResolver())
-    val executor = TcpConnectExecutor(resolver)
+    val executor = TcpConnectExecutor(resolver, ProxyTunnel(resolver))
     // The very dispatcher the application injects into the checker
     val dispatcher = ScheduledCheckDispatchers(AppConfig()).default
 

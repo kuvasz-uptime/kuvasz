@@ -58,4 +58,6 @@ data class TcpMonitorDetailsDto(
     override val category: String?,
     @param:Schema(description = MonitorDocs.IGNORE_CONNECTIVITY_CHECK, required = true)
     override val ignoreConnectivityCheck: Boolean,
+    @param:Schema(description = TcpMonitorDocs.PROXY, required = true, nullable = true)
+    val proxy: String?,
 ) : MonitorDetailsDto

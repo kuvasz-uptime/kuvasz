@@ -7,14 +7,15 @@ import com.kuvaszuptime.kuvasz.jooq.tables.TcpUptimeEvent.TCP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.TcpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.TcpMonitorSummary
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
-import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
+import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.models.monitor.tcp.idWithName
-import com.kuvaszuptime.kuvasz.models.dto.monitor.TcpMonitorSummary
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import com.kuvaszuptime.kuvasz.util.nullIfBlank
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import org.jooq.Record
@@ -62,6 +63,12 @@ class TcpMonitorRepository(
 
     fun fetchAll(): List<TcpMonitorRecord> = dslContext
         .selectFrom(TCP_MONITOR)
+        .fetch()
+
+    fun fetchWithProxyNotIn(proxyNames: Collection<String>): List<TcpMonitorRecord> = dslContext
+        .selectFrom(TCP_MONITOR)
+        .where(TCP_MONITOR.PROXY.isNotNull)
+        .and(TCP_MONITOR.PROXY.notIn(proxyNames))
         .fetch()
 
     override fun fetchByEnabled(enabled: Boolean): List<TcpMonitorRecord> = dslContext
@@ -136,6 +143,7 @@ class TcpMonitorRepository(
                 .set(TCP_MONITOR.METRICS_HISTORY_ENABLED, updatedMonitor.metricsHistoryEnabled)
                 .set(TCP_MONITOR.CATEGORY, updatedMonitor.normalizedCategory)
                 .set(TCP_MONITOR.IGNORE_CONNECTIVITY_CHECK, updatedMonitor.ignoreConnectivityCheck)
+                .set(TCP_MONITOR.PROXY, updatedMonitor.proxy.nullIfBlank())
                 .set(TCP_MONITOR.UPDATED_AT, getCurrentTimestamp())
                 .where(TCP_MONITOR.ID.eq(updatedMonitor.id))
                 .returning(TCP_MONITOR.asterisk())
@@ -191,6 +199,7 @@ class TcpMonitorRepository(
             TCP_MONITOR.UPTIME_CHECK_INTERVAL.`as`(TcpMonitorDetailsDto::uptimeCheckInterval.name),
             TCP_MONITOR.TIMEOUT_MS.`as`(TcpMonitorDetailsDto::timeoutMs.name),
             TCP_MONITOR.LATENCY_THRESHOLD_MS.`as`(TcpMonitorDetailsDto::latencyThresholdMs.name),
+            TCP_MONITOR.PROXY.`as`(TcpMonitorDetailsDto::proxy.name),
             TCP_MONITOR.FAILURE_COUNT_THRESHOLD.`as`(TcpMonitorDetailsDto::failureCountThreshold.name),
             TCP_MONITOR.METRICS_HISTORY_ENABLED.`as`(TcpMonitorDetailsDto::metricsHistoryEnabled.name),
             TCP_MONITOR.ENABLED.`as`(TcpMonitorDetailsDto::enabled.name),

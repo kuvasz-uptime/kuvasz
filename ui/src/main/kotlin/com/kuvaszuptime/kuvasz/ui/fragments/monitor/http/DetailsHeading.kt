@@ -33,11 +33,5 @@ internal fun FlowContent.httpMonitorDetailsHeading(monitor: HttpMonitorDetailsDt
                 }
             }
         }
-        monitor.proxy?.let { proxy ->
-            li {
-                classes(LIST_INLINE_ITEM, ALIGN_MIDDLE)
-                testId("proxy-badge")
-                proxyBadge(proxy, configuredProxies)
-            }
-        }
+        monitor.proxy?.let { proxy -> listItemProxyBadge(proxy, configuredProxies) }
     }

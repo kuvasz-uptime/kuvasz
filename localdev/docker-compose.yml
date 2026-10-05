@@ -62,7 +62,7 @@ services:
     ports:
       - "8081:8080"
       - "8443:8443"
-  # Outbound proxies to check HTTP monitors through. A host-run Kuvasz (./gradlew app:run) reaches them on localhost,
+  # Outbound proxies to check HTTP and TCP monitors through. A host-run Kuvasz (./gradlew app:run) reaches them on localhost,
   # and the "proxies" block of application-local.yml registers them. Behind them, the names of the services of this
   # file resolve (e.g. http://http-echo:8080), which a host-run Kuvasz can't reach directly, so a monitor of such a
   # target is only UP through a proxy.

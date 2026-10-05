@@ -20,10 +20,12 @@ import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
+import com.kuvaszuptime.kuvasz.testutils.PROXIES
 import com.kuvaszuptime.kuvasz.testutils.shouldHaveError
 import com.kuvaszuptime.kuvasz.testutils.shouldHaveInputValidationError
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.micronaut.http.client.HttpClient
@@ -32,7 +34,7 @@ import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.modelcontextprotocol.client.McpSyncClient
 import io.modelcontextprotocol.spec.McpSchema
 
-@MicronautTest(environments = ["full-integrations-setup"])
+@MicronautTest(environments = ["full-integrations-setup", PROXIES])
 class TcpMonitorToolsTest(
     @param:Client("/") private val client: HttpClient,
     private val tcpMonitorRepository: TcpMonitorRepository,
@@ -60,7 +62,7 @@ class TcpMonitorToolsTest(
         given("the get-tcp-monitor-details tool") {
 
             `when`("get-tcp-monitor-details is called with a valid ID") {
-                val monitor = createTcpMonitor(tcpMonitorRepository)
+                val monitor = createTcpMonitor(tcpMonitorRepository, proxy = "corporate-egress")
                 val response = callToolWithMcpClient(GET_TCP_MONITOR_DETAILS, mapOf("monitorId" to monitor.id))
 
                 then("it should return the details in both structured and text content") {
@@ -71,6 +73,7 @@ class TcpMonitorToolsTest(
                     details.name shouldBe monitor.name
                     details.ignoreConnectivityCheck shouldBe monitor.ignoreConnectivityCheck
                     details.port shouldBe monitor.port
+                    details.proxy shouldBe "corporate-egress"
 
                     response.contentAs<TcpMonitorDetailsSchema>() shouldBe details
                 }
@@ -131,6 +134,7 @@ class TcpMonitorToolsTest(
                         uptimeCheckInterval shouldBe 60
                         enabled shouldBe true
                         ignoreConnectivityCheck shouldBe MonitorDefaults.IGNORE_CONNECTIVITY_CHECK
+                        proxy.shouldBeNull()
 
                         response.contentAs<TcpMonitorSchema>() shouldBe this
                     }
@@ -156,6 +160,48 @@ class TcpMonitorToolsTest(
                         .ignoreConnectivityCheck shouldBe true
                     tcpMonitorRepository.findByName("mcp-created-tcp-monitor-ignoring-connectivity")
                         .shouldNotBeNull().ignoreConnectivityCheck shouldBe true
+                }
+            }
+
+            `when`("create-tcp-monitor is called with a configured proxy") {
+                val response = callToolWithMcpClient(
+                    CREATE_TCP_MONITOR,
+                    mapOf(
+                        "name" to "mcp-created-proxied-tcp-monitor",
+                        "host" to "db.internal",
+                        "port" to 5432,
+                        "uptimeCheckInterval" to 60,
+                        "proxy" to "office-network",
+                    )
+                )
+
+                then("it should create the monitor with the given proxy") {
+                    response.isError shouldBe false
+
+                    response.structuredContentAs<TcpMonitorSchema>().shouldNotBeNull().proxy shouldBe "office-network"
+                    tcpMonitorRepository.findByName("mcp-created-proxied-tcp-monitor").shouldNotBeNull()
+                        .proxy shouldBe "office-network"
+                }
+            }
+
+            `when`("create-tcp-monitor is called with a proxy that is not configured") {
+                val response = callTool(
+                    CREATE_TCP_MONITOR,
+                    mapOf(
+                        "name" to "mcp-created-tcp-monitor-with-unknown-proxy",
+                        "host" to "db.internal",
+                        "port" to 5432,
+                        "uptimeCheckInterval" to 60,
+                        "proxy" to "not-configured",
+                    )
+                )
+
+                then("it should return an invalid-params protocol error and not create the monitor") {
+                    response.shouldHaveError(
+                        McpSchema.ErrorCodes.INVALID_PARAMS,
+                        "Non-existing proxy found: not-configured."
+                    )
+                    tcpMonitorRepository.findByName("mcp-created-tcp-monitor-with-unknown-proxy").shouldBeNull()
                 }
             }
 

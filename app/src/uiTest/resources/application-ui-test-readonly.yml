@@ -17,6 +17,7 @@ tcp-monitors:
     host: 127.0.0.1
     port: 8080
     uptime-check-interval: 60
+    proxy: office-network
 docker-monitors:
   - name: yaml-docker-monitor
     docker-host: local

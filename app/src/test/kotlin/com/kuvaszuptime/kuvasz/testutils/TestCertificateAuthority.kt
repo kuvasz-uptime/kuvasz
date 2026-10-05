@@ -64,6 +64,13 @@ class TestCertificateAuthority private constructor(private val directory: Path) 
     val trustStorePassword: String = PASSWORD
 
     /**
+     * The CA's certificate in PEM, for the clients that don't take a trust store.
+     */
+    val caPem: Path by lazy {
+        directory.resolve("ca.pem").also { Files.writeString(it, pem("CERTIFICATE", caCertificate.encoded)) }
+    }
+
+    /**
      * Issues a server certificate for [dnsName].
      *
      * @param startDate relative to now in keytool's format, e.g. `-3d`, which makes an already expired certificate

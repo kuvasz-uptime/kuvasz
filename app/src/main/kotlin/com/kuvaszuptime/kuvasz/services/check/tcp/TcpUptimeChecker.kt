@@ -11,6 +11,7 @@ import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.check.isDownNow
+import com.kuvaszuptime.kuvasz.services.proxy.ProxyRegistry
 import com.kuvaszuptime.kuvasz.util.loggerFor
 import jakarta.inject.Singleton
 
@@ -23,6 +24,7 @@ class TcpUptimeChecker(
     private val eventDispatcher: EventDispatcher,
     private val pendingFailureRepository: PendingFailureRepository,
     private val monitorRepository: TcpMonitorRepository,
+    private val proxyRegistry: ProxyRegistry,
 ) {
     fun check(
         monitor: TcpMonitorRecord,
@@ -30,7 +32,7 @@ class TcpUptimeChecker(
     ) {
         logger.debug("Starting TCP check for monitor [${monitor.name}] on ${monitor.host}:${monitor.port}")
 
-        val checkResult = connectExecutor.execute(monitor.host, monitor.port, monitor.timeoutMs)
+        val checkResult = connect(monitor)
 
         if (monitor.metricsHistoryEnabled) {
             metricsLogRepository.insertLog(
@@ -47,6 +49,17 @@ class TcpUptimeChecker(
                 logger.debug("Calling doAfter() hook on monitor with name [${upToDateMonitor.name}]")
                 doAfter(upToDateMonitor)
             }
+        }
+    }
+
+    private fun connect(monitor: TcpMonitorRecord): TcpCheckResult {
+        val proxyName = monitor.proxy
+        val proxy = proxyName?.let { proxyRegistry[it] }
+
+        return if (proxyName != null && proxy == null) {
+            TcpCheckResult(isConnected = false, latencyMs = null, error = Messages.proxyNotConfigured(proxyName))
+        } else {
+            connectExecutor.execute(monitor.host, monitor.port, monitor.timeoutMs, proxy)
         }
     }
 

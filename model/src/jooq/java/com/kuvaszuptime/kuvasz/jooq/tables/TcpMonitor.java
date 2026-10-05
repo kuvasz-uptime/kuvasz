@@ -139,6 +139,11 @@ public class TcpMonitor extends TableImpl<TcpMonitorRecord> {
      */
     public final TableField<TcpMonitorRecord, Boolean> IGNORE_CONNECTIVITY_CHECK = createField(DSL.name("ignore_connectivity_check"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("false"), SQLDataType.BOOLEAN)), this, "");
 
+    /**
+     * The column <code>kuvasz.tcp_monitor.proxy</code>.
+     */
+    public final TableField<TcpMonitorRecord, String> PROXY = createField(DSL.name("proxy"), SQLDataType.CLOB, this, "");
+
     private TcpMonitor(Name alias, Table<TcpMonitorRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }
@@ -208,7 +213,7 @@ public class TcpMonitor extends TableImpl<TcpMonitorRecord> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.asList(Indexes.TCP_MONITOR_CATEGORY_IDX, Indexes.TCP_MONITOR_ENABLED_IDX);
+        return Arrays.asList(Indexes.TCP_MONITOR_CATEGORY_IDX, Indexes.TCP_MONITOR_ENABLED_IDX, Indexes.TCP_MONITOR_PROXY_IDX);
     }
 
     @Override

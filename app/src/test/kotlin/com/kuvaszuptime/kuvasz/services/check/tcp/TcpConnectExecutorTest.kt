@@ -1,8 +1,13 @@
 package com.kuvaszuptime.kuvasz.services.check.tcp
 
+import com.kuvaszuptime.kuvasz.models.dto.proxy.ProxyType
 import com.kuvaszuptime.kuvasz.services.network.BoundedHostnameResolver
 import com.kuvaszuptime.kuvasz.services.network.HostnameResolver
 import com.kuvaszuptime.kuvasz.services.network.SystemHostnameResolver
+import com.kuvaszuptime.kuvasz.services.proxy.ConfiguredProxy
+import com.kuvaszuptime.kuvasz.services.proxy.ProxyCredentials
+import com.kuvaszuptime.kuvasz.services.proxy.ProxyTunnel
+import com.kuvaszuptime.kuvasz.testutils.TestConnectProxy
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
@@ -10,17 +15,20 @@ import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.ints.shouldBeLessThan
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldStartWith
 import org.mockserver.integration.ClientAndServer
 import java.net.InetAddress
+import java.net.UnknownHostException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicInteger
 
 class TcpConnectExecutorTest : BehaviorSpec({
 
     val resolver = BoundedHostnameResolver(SystemHostnameResolver())
-    val executor = TcpConnectExecutor(resolver)
+    val executor = TcpConnectExecutor(resolver, ProxyTunnel(resolver))
 
     lateinit var mockServer: ClientAndServer
 
@@ -78,7 +86,7 @@ class TcpConnectExecutorTest : BehaviorSpec({
             InetAddress.getLoopbackAddress()
         }
         val hangingResolution = BoundedHostnameResolver(HostnameResolver(hangingResolver))
-        val hangingExecutor = TcpConnectExecutor(hangingResolution)
+        val hangingExecutor = TcpConnectExecutor(hangingResolution, ProxyTunnel(hangingResolution))
 
         `when`("a check runs against it") {
             val timeoutMs = 200
@@ -107,7 +115,7 @@ class TcpConnectExecutorTest : BehaviorSpec({
             InetAddress.getByName("127.0.0.1")
         }
         val slowResolution = BoundedHostnameResolver(HostnameResolver(slowResolver))
-        val slowExecutor = TcpConnectExecutor(slowResolution)
+        val slowExecutor = TcpConnectExecutor(slowResolution, ProxyTunnel(slowResolution))
 
         `when`("a check connects to an open port through it") {
             val result = slowExecutor.execute("slow-but-ok.example", mockServer.localPort, timeoutMs = 5000)
@@ -136,7 +144,7 @@ class TcpConnectExecutorTest : BehaviorSpec({
             InetAddress.getLoopbackAddress()
         }
         val blockingResolution = BoundedHostnameResolver(HostnameResolver(blockingResolver))
-        val dedupExecutor = TcpConnectExecutor(blockingResolution)
+        val dedupExecutor = TcpConnectExecutor(blockingResolution, ProxyTunnel(blockingResolution))
 
         `when`("several checks target the same unresolved host at once") {
             val threads = (1..CONCURRENT_CHECKS).map {
@@ -155,8 +163,113 @@ class TcpConnectExecutorTest : BehaviorSpec({
             blockingResolution.close()
         }
     }
+
+    given("a TcpConnectExecutor that connects through a proxy") {
+
+        // Only the proxy can resolve this name, so a check that connects to it proves the target is never resolved
+        // locally
+        val proxyOnlyHost = "localhost"
+        val localResolution = BoundedHostnameResolver(
+            HostnameResolver { host ->
+                if (host == proxyOnlyHost) throw UnknownHostException(host) else InetAddress.getByName(host)
+            }
+        )
+        val proxiedExecutor = TcpConnectExecutor(localResolution, ProxyTunnel(localResolution))
+        val connectProxy = TestConnectProxy()
+        val authenticatedProxy = TestConnectProxy(CREDENTIALS.username, CREDENTIALS.password)
+
+        fun proxy(port: Int, credentials: ProxyCredentials? = null) = ConfiguredProxy(
+            name = "corporate-egress",
+            type = ProxyType.HTTP,
+            host = "127.0.0.1",
+            port = port,
+            credentials = credentials,
+        )
+
+        `when`("the target port is open") {
+            val result = proxiedExecutor.execute(proxyOnlyHost, mockServer.localPort, 5000, proxy(connectProxy.port))
+
+            then("it reports a successful connection, established by the proxy that resolved the target") {
+                result.isConnected.shouldBeTrue()
+                result.latencyMs.shouldNotBeNull() shouldBeGreaterThanOrEqual 0
+                result.error.shouldBeNull()
+                connectProxy.tunnels shouldContainExactly listOf("$proxyOnlyHost:${mockServer.localPort}")
+            }
+        }
+
+        `when`("the same target is checked without the proxy") {
+            val result = proxiedExecutor.execute(proxyOnlyHost, mockServer.localPort, timeoutMs = 2000)
+
+            then("it fails on the local resolution of the target") {
+                result.isConnected.shouldBeFalse()
+                result.error.shouldNotBeNull() shouldContain proxyOnlyHost
+            }
+        }
+
+        `when`("the proxy can't connect to the target") {
+            val throwaway = ClientAndServer.startClientAndServer(0)
+            val closedPort = throwaway.localPort
+            throwaway.stop()
+
+            val result = proxiedExecutor.execute("127.0.0.1", closedPort, 5000, proxy(connectProxy.port))
+
+            then("it reports a failed connection with the refusal of the proxy, naming the proxy") {
+                result.isConnected.shouldBeFalse()
+                result.latencyMs.shouldBeNull()
+                result.error.shouldNotBeNull().let { error ->
+                    error shouldStartWith "The check through the proxy \"corporate-egress\" failed"
+                    error shouldContain "502"
+                }
+            }
+        }
+
+        `when`("the proxy requires credentials") {
+            val authenticated = proxiedExecutor.execute(
+                "127.0.0.1",
+                mockServer.localPort,
+                5000,
+                proxy(authenticatedProxy.port, CREDENTIALS),
+            )
+            val wrongCredentials = proxiedExecutor.execute(
+                "127.0.0.1",
+                mockServer.localPort,
+                5000,
+                proxy(authenticatedProxy.port, ProxyCredentials(CREDENTIALS.username, "wrong")),
+            )
+
+            then("only the check with the right credentials connects") {
+                authenticated.isConnected.shouldBeTrue()
+                wrongCredentials.isConnected.shouldBeFalse()
+                wrongCredentials.latencyMs.shouldBeNull()
+                wrongCredentials.error.shouldNotBeNull() shouldContain "407"
+            }
+        }
+
+        `when`("the proxy is unreachable") {
+            val throwaway = ClientAndServer.startClientAndServer(0)
+            val closedPort = throwaway.localPort
+            throwaway.stop()
+
+            val result = proxiedExecutor.execute("127.0.0.1", mockServer.localPort, 2000, proxy(closedPort))
+
+            // The target itself is reachable, so a fallback to a direct connection would have succeeded
+            then("it reports a failed connection naming the proxy, instead of connecting directly") {
+                result.isConnected.shouldBeFalse()
+                result.latencyMs.shouldBeNull()
+                result.error.shouldNotBeNull() shouldStartWith
+                    "The check through the proxy \"corporate-egress\" failed"
+            }
+        }
+
+        afterSpec {
+            connectProxy.close()
+            authenticatedProxy.close()
+            localResolution.close()
+        }
+    }
 }) {
     companion object {
+        private val CREDENTIALS = ProxyCredentials(username = "kuvasz", password = "s3cret")
         private const val RESOLVER_HANG_MS = 3000L
         private const val SLOW_RESOLVER_MS = 500L
         private const val CONCURRENT_CHECKS = 5

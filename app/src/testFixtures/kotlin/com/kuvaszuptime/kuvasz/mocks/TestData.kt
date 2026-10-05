@@ -335,6 +335,7 @@ fun createTcpMonitor(
     integrations: List<IntegrationID> = emptyList(),
     metricsHistoryEnabled: Boolean = true,
     category: String? = null,
+    proxy: String? = null,
 ): TcpMonitorRecord {
     val monitor = TcpMonitorRecord()
         .setName(monitorName)
@@ -349,6 +350,7 @@ fun createTcpMonitor(
         .setIntegrations(integrations.toTypedArray())
         .setMetricsHistoryEnabled(metricsHistoryEnabled)
         .setCategory(category)
+        .setProxy(proxy)
     return repository.returningInsert(monitor)
 }
 

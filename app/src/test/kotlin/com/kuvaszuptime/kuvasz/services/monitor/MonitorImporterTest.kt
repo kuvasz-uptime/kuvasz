@@ -231,6 +231,48 @@ class MonitorImporterTest(
                 }
             }
 
+            `when`("a new TCP monitor is checked through a configured proxy") {
+                monitorImporter.importTcpMonitorConfigs(
+                    listOf(tcpAdapter("proxied-tcp", proxy = "office-network")),
+                    dryRun = false,
+                )
+
+                then("it should persist the monitor with its proxy") {
+                    tcpMonitorRepository.findByName("proxied-tcp").shouldNotBeNull().proxy shouldBe "office-network"
+                }
+            }
+
+            `when`("a new TCP monitor is checked through a proxy that is not configured") {
+                val ex = shouldThrow<NonExistingProxyException> {
+                    monitorImporter.importTcpMonitorConfigs(
+                        listOf(tcpAdapter("dangling-proxy-tcp", proxy = "not-configured")),
+                        dryRun = false,
+                    )
+                }
+
+                then("it should reject it") {
+                    ex.message shouldBe "Non-existing proxy found: not-configured."
+                    tcpMonitorRepository.findByName("dangling-proxy-tcp").shouldBeNull()
+                }
+            }
+
+            `when`("an existing TCP monitor is checked through a proxy that is not configured anymore") {
+                val existing = createTcpMonitor(tcpMonitorRepository, monitorName = "kept-tcp", proxy = "removed-proxy")
+
+                val result = monitorImporter.importTcpMonitorConfigs(
+                    listOf(tcpAdapter("kept-tcp", proxy = "removed-proxy")),
+                    dryRun = false,
+                )
+
+                then("it should keep the monitor with its proxy") {
+                    result.imported shouldContainExactly listOf(MonitorID(MonitorType.TCP, "kept-tcp"))
+                    with(tcpMonitorRepository.findByName("kept-tcp").shouldNotBeNull()) {
+                        id shouldBe existing.id
+                        proxy shouldBe "removed-proxy"
+                    }
+                }
+            }
+
             `when`("a monitor references a non-configured integration") {
                 val ghostIntegration = IntegrationID(IntegrationType.SLACK, "ghost")
                 val httpMonitor = HttpMonitorImportAdapter(
@@ -847,7 +889,11 @@ class MonitorImporterTest(
         )
     )
 
-    private fun tcpAdapter(name: String, metricsHistoryEnabled: Boolean = true) = TcpMonitorImportAdapter(
+    private fun tcpAdapter(
+        name: String,
+        metricsHistoryEnabled: Boolean = true,
+        proxy: String? = null,
+    ) = TcpMonitorImportAdapter(
         TcpMonitorExportDto(
             name = name,
             host = "1.2.3.4",
@@ -861,6 +907,7 @@ class MonitorImporterTest(
             metricsHistoryEnabled = metricsHistoryEnabled,
             category = null,
             ignoreConnectivityCheck = false,
+            proxy = proxy,
         )
     )
 

@@ -1,0 +1,16 @@
+tcp-monitors:
+  - name: proxied-1
+    host: db.internal
+    port: 5432
+    uptime-check-interval: 120
+    proxy: corporate-egress
+  - name: proxied-2
+    host: cache.internal
+    port: 6379
+    uptime-check-interval: 120
+    proxy: office-network
+  - name: proxied-3
+    host: queue.internal
+    port: 5672
+    uptime-check-interval: 120
+    proxy: corporate-egress

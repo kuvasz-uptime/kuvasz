@@ -1223,10 +1223,41 @@ const monitorForm = ({
 });
 
 /*
- The proxy of an HTTP monitor can only be picked from the proxies of the YAML config. A monitor keeps a proxy that has
- been removed from the config since, until the field is changed, so an edit that does not touch it can't silently
- switch the monitor to a direct connection.
+ The proxy of an HTTP or a TCP monitor can only be picked from the proxies of the YAML config. A monitor keeps a proxy
+ that has been removed from the config since, until the field is changed, so an edit that does not touch it can't
+ silently switch the monitor to a direct connection.
 */
+const proxyField = (proxySelectId, configuredProxies, notConfiguredProxySuffix) => ({
+    configuredProxies: configuredProxies || [],
+    storedProxy: '',
+
+    populateProxy(source) {
+        // The list page edits every monitor through one shared modal, so the options are rebuilt on each populate:
+        // the dangling proxy of one monitor must not be offered for the next one
+        const proxy = source?.proxy || '';
+        resetTomSelectState(proxySelectId, (ts) => {
+            ts.clearOptions();
+            this.configuredProxies.forEach(configured => ts.addOption({value: configured, text: configured}));
+            if (proxy && !this.configuredProxies.includes(proxy)) {
+                ts.addOption({value: proxy, text: `${proxy} ${notConfiguredProxySuffix}`});
+            }
+            if (proxy) {
+                ts.addItem(proxy, true);
+            }
+        });
+        // Clearing the widget re-binds it to Alpine, so the value is only set once it's done
+        this.proxy = proxy;
+        this.storedProxy = proxy;
+    },
+
+    validateProxy() {
+        // Only an existing monitor may keep a proxy that was removed from the config since, a clone of it may not
+        const isDangling = this.proxy && !this.configuredProxies.includes(this.proxy)
+            && !(this.isUpdate && this.proxy === this.storedProxy);
+        this.errors.proxy = isDangling ? this.errorMessages.proxyNotConfigured : null;
+    },
+});
+
 const upsertHttpMonitorForm = (
     monitor,
     errorMessages,
@@ -1248,9 +1279,8 @@ const upsertHttpMonitorForm = (
         isNameLocked,
         globalIntegrationCount,
     }),
+    ...proxyField(proxySelectId, configuredProxies, notConfiguredProxySuffix),
     supportedHttpStatusCodes: supportedHttpStatusCodes || [],
-    configuredProxies: configuredProxies || [],
-    storedProxy: '',
 
     populateTypeFields(source) {
         this.url = source?.url || '';
@@ -1281,23 +1311,7 @@ const upsertHttpMonitorForm = (
         resetTomSelectState(acceptedStatusCodeSelectId, (ts) => {
             this.selectedHttpStatusCodes.forEach(code => ts.addItem(code, true));
         });
-
-        // The list page edits every monitor through one shared modal, so the options are rebuilt on each populate:
-        // the dangling proxy of one monitor must not be offered for the next one
-        const proxy = source?.proxy || '';
-        resetTomSelectState(proxySelectId, (ts) => {
-            ts.clearOptions();
-            this.configuredProxies.forEach(configured => ts.addOption({value: configured, text: configured}));
-            if (proxy && !this.configuredProxies.includes(proxy)) {
-                ts.addOption({value: proxy, text: `${proxy} ${notConfiguredProxySuffix}`});
-            }
-            if (proxy) {
-                ts.addItem(proxy, true);
-            }
-        });
-        // Clearing the widget re-binds it to Alpine, so the value is only set once it's done
-        this.proxy = proxy;
-        this.storedProxy = proxy;
+        this.populateProxy(source);
     },
 
     isValidHttpHeaderName(headerName) {
@@ -1361,13 +1375,6 @@ const upsertHttpMonitorForm = (
         } else {
             this.errors.url = isValidUrl(this.url) ? null : this.errorMessages.urlInvalid;
         }
-    },
-
-    validateProxy() {
-        // Only an existing monitor may keep a proxy that was removed from the config since, a clone of it may not
-        const isDangling = this.proxy && !this.configuredProxies.includes(this.proxy)
-            && !(this.isUpdate && this.proxy === this.storedProxy);
-        this.errors.proxy = isDangling ? this.errorMessages.proxyNotConfigured : null;
     },
 
     validateSslExpiryThreshold() {
@@ -1554,7 +1561,16 @@ const upsertIcmpMonitorForm = (monitor, errorMessages, categorySelectId, isNameL
     },
 });
 
-const upsertTcpMonitorForm = (monitor, errorMessages, categorySelectId, isNameLocked, globalIntegrationCount) => ({
+const upsertTcpMonitorForm = (
+    monitor,
+    errorMessages,
+    categorySelectId,
+    isNameLocked,
+    proxySelectId,
+    configuredProxies,
+    notConfiguredProxySuffix,
+    globalIntegrationCount
+) => ({
     ...monitorForm({
         api: tcpMonitorApi,
         pagePath: '/tcp-monitors',
@@ -1564,6 +1580,7 @@ const upsertTcpMonitorForm = (monitor, errorMessages, categorySelectId, isNameLo
         isNameLocked,
         globalIntegrationCount,
     }),
+    ...proxyField(proxySelectId, configuredProxies, notConfiguredProxySuffix),
 
     populateTypeFields(source) {
         this.host = source?.host || '';
@@ -1572,11 +1589,13 @@ const upsertTcpMonitorForm = (monitor, errorMessages, categorySelectId, isNameLo
         this.timeoutMs = source?.timeoutMs || 5000;
         this.latencyThresholdMs = source?.latencyThresholdMs ?? '';
         this.metricsHistoryEnabled = source?.metricsHistoryEnabled ?? true;
+        this.populateProxy(source);
     },
 
     validateTypeFields() {
         this.validateHost();
         this.validatePort();
+        this.validateProxy();
         this.validateUptimeCheckInterval();
         this.validateTimeoutMs();
         this.validateLatencyThreshold();
@@ -1613,6 +1632,7 @@ const upsertTcpMonitorForm = (monitor, errorMessages, categorySelectId, isNameLo
             timeoutMs: this.timeoutMs,
             latencyThresholdMs: isBlankNumber(this.latencyThresholdMs) ? null : parseInt(this.latencyThresholdMs),
             metricsHistoryEnabled: this.metricsHistoryEnabled,
+            proxy: this.proxy || null,
         };
     },
 });
@@ -2166,8 +2186,8 @@ const renderDockerContainerOption = (data, escape) => {
 };
 
 /*
- The proxy select of the HTTP monitors. Its options are the configured proxies, which only the YAML config can define,
- so nothing can be created here, and clearing it means a direct connection.
+ The proxy select of the HTTP and the TCP monitors. Its options are the configured proxies, which only the YAML config
+ can define, so nothing can be created here, and clearing it means a direct connection.
 */
 const initProxySelect = (selector) => {
     new TomSelect(selector, {

@@ -395,7 +395,7 @@ class AppBootstrappingHttpMonitorYamlConfigTest : StringSpec({
 
         logs.list.map { it.formattedMessage }.forOne { message ->
             message shouldContain "checked through a proxy that is not configured"
-            message shouldContain "proxied-1 (ID: ${danglingMonitor.id}, proxy: corporate-egress)"
+            message shouldContain "proxied-1 (HTTP, ID: ${danglingMonitor.id}, proxy: corporate-egress)"
             message shouldNotContain "proxied-2"
             message shouldNotContain "direct-1"
         }

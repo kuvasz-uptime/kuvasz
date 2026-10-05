@@ -51,4 +51,6 @@ data class TcpMonitorCreateDto(
         defaultValue = MonitorDefaults.IGNORE_CONNECTIVITY_CHECK.toString(),
     )
     override val ignoreConnectivityCheck: Boolean = MonitorDefaults.IGNORE_CONNECTIVITY_CHECK,
+    @param:Schema(description = TcpMonitorDocs.PROXY, required = false, nullable = true)
+    override val proxy: String? = null,
 ) : TcpMonitorCreator

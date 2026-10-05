@@ -19,6 +19,7 @@ data class TcpMonitorExportDto(
     val metricsHistoryEnabled: Boolean,
     val category: String? = null,
     val ignoreConnectivityCheck: Boolean = MonitorDefaults.IGNORE_CONNECTIVITY_CHECK,
+    val proxy: String? = null,
 ) {
     companion object {
         fun fromMonitorRecord(record: TcpMonitorRecord): TcpMonitorExportDto {
@@ -35,6 +36,7 @@ data class TcpMonitorExportDto(
                 metricsHistoryEnabled = record.metricsHistoryEnabled,
                 category = record.category,
                 ignoreConnectivityCheck = record.ignoreConnectivityCheck,
+                proxy = record.proxy,
             )
         }
     }

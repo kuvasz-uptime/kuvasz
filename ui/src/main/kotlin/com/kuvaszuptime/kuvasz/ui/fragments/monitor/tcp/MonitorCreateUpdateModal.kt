@@ -14,6 +14,7 @@ internal fun FlowContent.tcpMonitorCreateUpdateModal(
     monitor: TcpMonitorDetailsDto?,
     globals: AppGlobals,
 ) {
+    val proxySelectId = "tcp-monitor-proxy-select"
     monitorUpsertModal(
         modalId = modalId,
         typeUiConfig = MonitorTypeUiConfig.TCP,
@@ -31,6 +32,12 @@ internal fun FlowContent.tcpMonitorCreateUpdateModal(
             "timeoutMsInvalid" to Messages.errorTimeoutMsInvalid(),
             "latencyThresholdInvalid" to Messages.errorLatencyThresholdInvalid(),
             "failureCountThresholdInvalid" to Messages.errorFailureCountThresholdInvalid(),
+            "proxyNotConfigured" to Messages.errorProxyNotConfigured(),
+        ),
+        extraFormArgs = listOf(
+            "'$proxySelectId'",
+            globals.configuredProxies.asJsonString(),
+            Messages.proxyNotConfiguredSuffix().asJsonString(),
         ),
     ) { isReadOnlyMode ->
         // Host
@@ -57,6 +64,18 @@ internal fun FlowContent.tcpMonitorCreateUpdateModal(
                 required = true,
                 onInput = "validatePort()",
                 disabledIf = "$isReadOnlyMode",
+            )
+        }
+        // Proxy
+        div {
+            classes(MB_3)
+            testId("proxy-select")
+            proxySelector(
+                selectId = proxySelectId,
+                description = Messages.tcpProxyDescription(),
+                isReadOnlyMode = isReadOnlyMode,
+                currentProxy = monitor?.proxy,
+                configuredProxies = globals.configuredProxies,
             )
         }
         // Uptime check interval

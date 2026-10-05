@@ -43,6 +43,16 @@ class TcpMonitorFormModal(page: Page) : ModalView(page) {
         return this
     }
 
+    fun setProxy(value: String): TcpMonitorFormModal {
+        pickFromDropdown(proxyField, value)
+        return this
+    }
+
+    fun clearProxy(): TcpMonitorFormModal {
+        clearProxyField()
+        return this
+    }
+
     fun save() {
         saveButton.click()
     }

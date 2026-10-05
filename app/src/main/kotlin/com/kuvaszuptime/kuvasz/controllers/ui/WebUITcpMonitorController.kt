@@ -73,7 +73,7 @@ class WebUITcpMonitorController(
             categoryFilter = CategoryFilter.fromQueryParam(category),
         )
 
-        return renderTcpMonitorList(monitors, appGlobals.editabilityState)
+        return renderTcpMonitorList(monitors, appGlobals.editabilityState, appGlobals.configuredProxies)
     }
 
     @Get("/tcp-monitors/fragments/details-heading/{monitorId}")
@@ -83,7 +83,7 @@ class WebUITcpMonitorController(
     fun tcpMonitorHeading(@PathVariable monitorId: Long): String {
         val monitor = monitorActions.getMonitorDetails(monitorId)
         return buildString {
-            append(renderTcpMonitorDetailsHeading(monitor))
+            append(renderTcpMonitorDetailsHeading(monitor, appGlobals.configuredProxies))
             append(
                 renderTcpUptimeSummary(
                     monitor = monitor,

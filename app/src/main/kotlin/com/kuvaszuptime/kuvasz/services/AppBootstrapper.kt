@@ -217,15 +217,20 @@ class AppBootstrapper(
      * direct connection, which can't reach the same targets. It is kept and its checks report it instead.
      */
     private fun warnAboutDanglingProxies() {
-        val danglingMonitors = httpMonitorRepository.fetchAll().filter { monitor ->
-            monitor.proxy?.let { proxyRegistry[it] == null } == true
+        val configuredProxies = proxyRegistry.configuredProxies.keys
+        val describe = { type: String, name: String, id: Long, proxy: String? ->
+            "$name ($type, ID: $id, proxy: $proxy)"
         }
+        val danglingMonitors =
+            httpMonitorRepository.fetchWithProxyNotIn(configuredProxies)
+                .map { describe("HTTP", it.name, it.id, it.proxy) } +
+                tcpMonitorRepository.fetchWithProxyNotIn(configuredProxies)
+                    .map { describe("TCP", it.name, it.id, it.proxy) }
         if (danglingMonitors.isEmpty()) return
 
         logger.warn(
             "The following monitors are checked through a proxy that is not configured, so their checks will fail " +
-                "until it is added back: " +
-                danglingMonitors.joinToString { "${it.name} (ID: ${it.id}, proxy: ${it.proxy})" }
+                "until it is added back: " + danglingMonitors.joinToString()
         )
     }
 

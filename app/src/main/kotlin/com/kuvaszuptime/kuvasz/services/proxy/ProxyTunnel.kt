@@ -30,6 +30,7 @@ class ProxyTunnel(private val hostnameResolver: BoundedHostnameResolver) {
         const val CRLF = "\r\n"
         const val MAX_RESPONSE_HEAD_BYTES = 16 * 1024
         const val MIN_TIMEOUT_MS = 1
+        val PRINTABLE_ASCII = '!'..'~'
         val IPV4_LITERAL = Regex("""\d{1,3}(\.\d{1,3}){3}""")
         val SUCCESSFUL_STATUSES = 200..299
 
@@ -76,9 +77,13 @@ class ProxyTunnel(private val hostnameResolver: BoundedHostnameResolver) {
      * @throws IOException if the proxy can't be reached, it refuses to open the tunnel, or it does not open it in time.
      */
     fun open(proxy: ConfiguredProxy, targetHost: String, targetPort: Int, timeoutMs: Int): Socket {
-        // It would end up in the request line of a CONNECT, where a line break could smuggle in further headers
-        if (targetHost.any { it.isWhitespace() || it.isISOControl() }) {
-            throw IOException("The target host contains whitespace or control characters")
+        // Both handshakes send the host as ASCII, so anything else would reach the proxy garbled, and in the request
+        // line of a CONNECT, a line break could even smuggle in further headers
+        if (targetHost.any { it !in PRINTABLE_ASCII }) {
+            throw IOException(
+                "The target host can only contain printable ASCII characters, without whitespace. " +
+                    "An internationalized domain name has to be given in its punycode form (xn--...)."
+            )
         }
         val start = System.nanoTime()
         // Each step gets what the previous ones left over, but never 0, which would mean no timeout at all

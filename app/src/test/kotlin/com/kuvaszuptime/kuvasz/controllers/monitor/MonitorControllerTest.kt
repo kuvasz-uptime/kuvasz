@@ -117,6 +117,20 @@ class MonitorControllerTest(
             requestBody = null,
         )
 
+        fun proxiedTcpExportDto(name: String, proxy: String) = TcpMonitorExportDto(
+            name = name,
+            host = "db.internal",
+            port = 5432,
+            uptimeCheckInterval = 60,
+            timeoutMs = 5000,
+            latencyThresholdMs = null,
+            failureCountThreshold = 1,
+            enabled = true,
+            integrations = emptySet(),
+            metricsHistoryEnabled = true,
+            proxy = proxy,
+        )
+
         given("MonitorController's getMonitorsExport() endpoint") {
             `when`("there are monitors in the database") {
                 val httpMonitor = createHttpMonitor(
@@ -223,6 +237,7 @@ class MonitorControllerTest(
                     latencyThresholdMs = 250,
                     failureCountThreshold = 3L,
                     metricsHistoryEnabled = false,
+                    proxy = "office-network",
                 )
                 val dnsMonitor = createDnsMonitor(
                     dnsMonitorRepository,
@@ -393,6 +408,7 @@ class MonitorControllerTest(
                         firstMonitor.enabled shouldBe tcpMonitor.enabled
                         firstMonitor.ignoreConnectivityCheck shouldBe tcpMonitor.ignoreConnectivityCheck
                         firstMonitor.metricsHistoryEnabled shouldBe tcpMonitor.metricsHistoryEnabled
+                        firstMonitor.proxy shouldBe null
                         firstMonitor.integrations shouldContainExactlyInAnyOrder setOf(
                             IntegrationID(IntegrationType.SLACK, "global"),
                             IntegrationID(IntegrationType.EMAIL, "global"),
@@ -409,6 +425,7 @@ class MonitorControllerTest(
                         secondMonitor.enabled shouldBe tcpMonitor2.enabled
                         secondMonitor.ignoreConnectivityCheck shouldBe tcpMonitor2.ignoreConnectivityCheck
                         secondMonitor.metricsHistoryEnabled shouldBe tcpMonitor2.metricsHistoryEnabled
+                        secondMonitor.proxy shouldBe "office-network"
                         secondMonitor.integrations.shouldBeEmpty()
                     }
 
@@ -690,6 +707,49 @@ class MonitorControllerTest(
                         "Non-existing proxy found: not-configured."
                     httpMonitorRepository.findByName("should-survive").shouldNotBeNull()
                     httpMonitorRepository.findByName("proxied-http").shouldBeNull()
+                }
+            }
+
+            `when`("a TCP monitor in the uploaded YAML is checked through a configured proxy") {
+                val yamlContent = buildYamlImportContent(
+                    tcpMonitors = listOf(proxiedTcpExportDto(name = "proxied-tcp", proxy = "office-network"))
+                )
+                val multipartBody = MultipartBody.builder()
+                    .addPart("file", "monitors.yml", MediaType.APPLICATION_YAML_TYPE, yamlContent)
+                    .build()
+                val request = HttpRequest.POST("/api/v2/monitors/import/yaml?dryRun=false", multipartBody)
+                    .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                    .accept(MediaType.APPLICATION_JSON_TYPE)
+
+                then("it should import the monitor with its proxy") {
+                    val response = client.exchange(request, MonitorImportResultDto::class.java).awaitFirst()
+
+                    response.status shouldBe HttpStatus.OK
+                    tcpMonitorRepository.findByName("proxied-tcp").shouldNotBeNull().proxy shouldBe "office-network"
+                }
+            }
+
+            `when`("a TCP monitor in the uploaded YAML is checked through a proxy that is not configured") {
+                createTcpMonitor(tcpMonitorRepository, monitorName = "should-survive")
+                val yamlContent = buildYamlImportContent(
+                    tcpMonitors = listOf(proxiedTcpExportDto(name = "proxied-tcp", proxy = "not-configured"))
+                )
+                val multipartBody = MultipartBody.builder()
+                    .addPart("file", "monitors.yml", MediaType.APPLICATION_YAML_TYPE, yamlContent)
+                    .build()
+                val request = HttpRequest.POST("/api/v2/monitors/import/yaml?dryRun=false", multipartBody)
+                    .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
+                    .accept(MediaType.APPLICATION_JSON_TYPE)
+
+                then("it should reject the whole import, instead of silently checking it over a direct connection") {
+                    val response = shouldThrow<HttpClientResponseException> {
+                        client.exchange(request, ServiceError::class.java).awaitFirst()
+                    }
+                    response.status shouldBe HttpStatus.BAD_REQUEST
+                    response.response.getBodyAs<ServiceError>()?.message shouldBe
+                        "Non-existing proxy found: not-configured."
+                    tcpMonitorRepository.findByName("should-survive").shouldNotBeNull()
+                    tcpMonitorRepository.findByName("proxied-tcp").shouldBeNull()
                 }
             }
 

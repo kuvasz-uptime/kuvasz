@@ -35,6 +35,29 @@ class TcpMonitorListUiTest(private val tcpMonitorRepository: TcpMonitorRepositor
                 .isVisible(LocatorAssertions.IsVisibleOptions().setTimeout(AUTO_REFRESH_TIMEOUT_MS))
         }
 
+        "the rows flag the monitors checked through a proxy, and the ones whose proxy is not configured anymore" {
+            createTcpMonitor(tcpMonitorRepository, monitorName = "Proxied Row", proxy = "corporate-egress")
+            createTcpMonitor(tcpMonitorRepository, monitorName = "Dangling Proxy Row", proxy = "removed-proxy")
+            createTcpMonitor(tcpMonitorRepository, monitorName = "Direct Row")
+
+            val page = newPage()
+            val list = TcpMonitorListPage(page)
+            list.navigate()
+
+            with(list.rowByName("Proxied Row")) {
+                assertThat(getByTestId("proxy-badge")).isVisible()
+                assertThat(getByTestId("proxy-not-configured-badge")).hasCount(0)
+            }
+            with(list.rowByName("Dangling Proxy Row")) {
+                assertThat(getByTestId("proxy-not-configured-badge")).isVisible()
+                assertThat(getByTestId("proxy-badge")).hasCount(0)
+            }
+            with(list.rowByName("Direct Row")) {
+                assertThat(getByTestId("proxy-badge")).hasCount(0)
+                assertThat(getByTestId("proxy-not-configured-badge")).hasCount(0)
+            }
+        }
+
         "each row exposes configure, clone, pause and delete action buttons" {
             createTcpMonitor(tcpMonitorRepository, monitorName = "Actions Monitor")
 

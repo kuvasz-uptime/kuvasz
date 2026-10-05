@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
 fun renderTcpMonitorList(
     monitors: List<TcpMonitorDetailsDto>,
     editabilityState: AppGlobals.EditabilityState,
+    configuredProxies: List<String>,
 ): String =
     renderMonitorList(
         monitors = monitors,
@@ -18,4 +19,5 @@ fun renderTcpMonitorList(
             uptimeStatusChangedColumn(),
             timestampColumn(Messages.nextCheck(), D_SM_TABLE_CELL) { it.nextUptimeCheck },
         ),
+        nameBadge = { monitor -> monitor.proxy?.let { proxyIconBadge(it, configuredProxies) } },
     )

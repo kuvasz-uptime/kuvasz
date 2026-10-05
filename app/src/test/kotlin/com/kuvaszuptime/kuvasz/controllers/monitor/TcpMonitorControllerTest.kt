@@ -29,6 +29,7 @@ import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.check.tcp.TcpCheckResult
 import com.kuvaszuptime.kuvasz.services.check.tcp.TcpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.tcp.TcpConnectExecutor
+import com.kuvaszuptime.kuvasz.testutils.PROXIES
 import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
 import com.kuvaszuptime.kuvasz.util.getBodyAs
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
@@ -61,7 +62,7 @@ import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
-@MicronautTest(environments = ["full-integrations-setup"])
+@MicronautTest(environments = ["full-integrations-setup", PROXIES])
 class TcpMonitorControllerTest(
     @param:Client("/") private val client: HttpClient,
     private val monitorClient: TcpMonitorClient,
@@ -78,7 +79,8 @@ class TcpMonitorControllerTest(
 
     @MockBean(TcpConnectExecutor::class)
     fun connectExecutorMock(): TcpConnectExecutor = mockk {
-        every { execute(any(), any(), any()) } returns TcpCheckResult(isConnected = true, latencyMs = 10, error = null)
+        every { execute(any(), any(), any(), any()) } returns
+            TcpCheckResult(isConnected = true, latencyMs = 10, error = null)
     }
 
     init {
@@ -244,10 +246,21 @@ class TcpMonitorControllerTest(
                     response.name shouldBe monitor.name
                     response.host shouldBe monitor.host
                     response.port shouldBe monitor.port
+                    response.proxy.shouldBeNull()
                     response.uptimeStatus.shouldBeNull()
                     response.maintenanceWindows.map { it.name } shouldBe listOf("active-window")
                     response.maintenanceWindows.single().active shouldBe true
                     response.inMaintenance shouldBe true
+                }
+            }
+
+            `when`("the monitor is checked through a proxy") {
+                val monitor = createTcpMonitor(monitorRepository, proxy = "office-network")
+
+                val response = monitorClient.getMonitorDetails(monitor.id)
+
+                then("it should return the proxy") {
+                    response.proxy shouldBe "office-network"
                 }
             }
 
@@ -289,6 +302,7 @@ class TcpMonitorControllerTest(
                     createdMonitor.host shouldBe "127.0.0.1"
                     createdMonitor.port shouldBe 5432
                     createdMonitor.uptimeCheckInterval shouldBe 60L
+                    createdMonitor.proxy.shouldBeNull()
                 }
 
                 then("it should schedule checks for the monitor") {
@@ -373,6 +387,61 @@ class TcpMonitorControllerTest(
                 then("the details projection should expose the new value too") {
                     monitorRepository.getMonitorWithDetails(monitor.id).shouldNotBeNull()
                         .ignoreConnectivityCheck shouldBe true
+                }
+            }
+
+            `when`("a monitor is created with a configured proxy") {
+                val createdMonitor = monitorClient.createMonitor(
+                    TcpMonitorCreateDto(
+                        name = randomClientSecret(),
+                        host = "db.internal",
+                        port = 5432,
+                        uptimeCheckInterval = 60,
+                        proxy = " office-network ",
+                    )
+                )
+
+                then("it should store the trimmed proxy") {
+                    createdMonitor.proxy shouldBe "office-network"
+                    monitorRepository.findById(createdMonitor.id, null).shouldNotBeNull().proxy shouldBe
+                        "office-network"
+                }
+            }
+
+            `when`("a monitor is created with a proxy that is not configured") {
+                val monitorToCreate = TcpMonitorCreateDto(
+                    name = randomClientSecret(),
+                    host = "db.internal",
+                    port = 5432,
+                    uptimeCheckInterval = 60,
+                    proxy = "not-configured",
+                )
+                val response = shouldThrow<HttpClientResponseException> {
+                    client.exchange(HttpRequest.POST("/api/v2/tcp-monitors", monitorToCreate)).awaitFirst()
+                }
+
+                then("it should return a 400 and not create the monitor") {
+                    response.status shouldBe HttpStatus.BAD_REQUEST
+                    response.response.getBodyAs<ServiceError>()?.message shouldBe
+                        "Non-existing proxy found: not-configured."
+                    monitorRepository.findByName(monitorToCreate.name).shouldBeNull()
+                }
+            }
+
+            `when`("a monitor is created with a blank proxy") {
+                val createdMonitor = monitorClient.createMonitor(
+                    TcpMonitorCreateDto(
+                        name = randomClientSecret(),
+                        host = "db.internal",
+                        port = 5432,
+                        uptimeCheckInterval = 60,
+                        proxy = "  ",
+                    )
+                )
+
+                then("it should be checked over a direct connection") {
+                    createdMonitor.proxy shouldBe null
+                    monitorRepository.findById(createdMonitor.id, null).shouldNotBeNull().proxy shouldBe null
                 }
             }
 
@@ -512,6 +581,84 @@ class TcpMonitorControllerTest(
 
                 then("it should reschedule checks") {
                     checkScheduler.getScheduledUptimeChecks().containsKey(monitor.id) shouldBe true
+                }
+            }
+
+            `when`("a monitor is pointed to a configured proxy") {
+                val monitor = createTcpMonitor(monitorRepository)
+
+                val updateNode = mapper.createObjectNode().put(TcpMonitorUpdateDto::proxy.name, "corporate-egress")
+                val updatedMonitor = monitorClient.updateMonitor(monitor.id, updateNode)
+
+                then("it should be checked through the proxy") {
+                    updatedMonitor.proxy shouldBe "corporate-egress"
+                    monitorRepository.findById(monitor.id, null).shouldNotBeNull().proxy shouldBe "corporate-egress"
+                }
+            }
+
+            `when`("a monitor is pointed to a proxy that is not configured") {
+                val monitor = createTcpMonitor(monitorRepository, proxy = "corporate-egress")
+
+                val updateNode = mapper.createObjectNode().put(TcpMonitorUpdateDto::proxy.name, "not-configured")
+                val response = shouldThrow<HttpClientResponseException> {
+                    client.exchange(HttpRequest.PATCH("/api/v2/tcp-monitors/${monitor.id}", updateNode)).awaitFirst()
+                }
+
+                then("it should return a 400 and keep the previous proxy") {
+                    response.status shouldBe HttpStatus.BAD_REQUEST
+                    response.response.getBodyAs<ServiceError>()?.message shouldBe
+                        "Non-existing proxy found: not-configured."
+                    monitorRepository.findById(monitor.id, null).shouldNotBeNull().proxy shouldBe "corporate-egress"
+                }
+            }
+
+            `when`("the proxy of a monitor is cleared") {
+                val monitor = createTcpMonitor(monitorRepository, proxy = "corporate-egress")
+
+                val updateNode = mapper.createObjectNode().putNull(TcpMonitorUpdateDto::proxy.name)
+                val updatedMonitor = monitorClient.updateMonitor(monitor.id, updateNode)
+
+                then("it should be checked over a direct connection") {
+                    updatedMonitor.proxy shouldBe null
+                    monitorRepository.findById(monitor.id, null).shouldNotBeNull().proxy shouldBe null
+                }
+            }
+
+            `when`("the proxy of a monitor is set to a blank value") {
+                val monitor = createTcpMonitor(monitorRepository, proxy = "corporate-egress")
+
+                val updateNode = mapper.createObjectNode().put(TcpMonitorUpdateDto::proxy.name, " ")
+                val updatedMonitor = monitorClient.updateMonitor(monitor.id, updateNode)
+
+                then("it should be stored as no proxy at all") {
+                    updatedMonitor.proxy shouldBe null
+                    monitorRepository.findById(monitor.id, null).shouldNotBeNull().proxy shouldBe null
+                }
+            }
+
+            `when`("a monitor whose proxy was removed from the config is updated") {
+                val monitor = createTcpMonitor(monitorRepository, proxy = "removed-proxy")
+
+                val updateNode = mapper.createObjectNode().put(TcpMonitorUpdateDto::uptimeCheckInterval.name, 120)
+                val updatedMonitor = monitorClient.updateMonitor(monitor.id, updateNode)
+
+                then("it should keep the proxy and apply the update") {
+                    updatedMonitor.proxy shouldBe "removed-proxy"
+                    updatedMonitor.uptimeCheckInterval shouldBe 120
+                }
+            }
+
+            `when`("a monitor whose proxy was removed from the config is sent with its proxy unchanged") {
+                val monitor = createTcpMonitor(monitorRepository, proxy = "removed-proxy")
+
+                val updateNode = mapper.createObjectNode()
+                    .put(TcpMonitorUpdateDto::proxy.name, " removed-proxy ")
+                    .put(TcpMonitorUpdateDto::uptimeCheckInterval.name, 180)
+                val updatedMonitor = monitorClient.updateMonitor(monitor.id, updateNode)
+
+                then("it should be accepted, as only a newly set proxy has to be configured") {
+                    updatedMonitor.proxy shouldBe "removed-proxy"
+                    updatedMonitor.uptimeCheckInterval shouldBe 180
                 }
             }
 

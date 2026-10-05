@@ -10,12 +10,12 @@ import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent.SSL_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorSummary
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
-import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.http.idWithName
-import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorSummary
+import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.kuvaszuptime.kuvasz.util.nullIfBlank
@@ -74,6 +74,12 @@ class HttpMonitorRepository(
 
     fun fetchAll(): List<HttpMonitorRecord> = dslContext
         .selectFrom(HTTP_MONITOR)
+        .fetch()
+
+    fun fetchWithProxyNotIn(proxyNames: Collection<String>): List<HttpMonitorRecord> = dslContext
+        .selectFrom(HTTP_MONITOR)
+        .where(HTTP_MONITOR.PROXY.isNotNull)
+        .and(HTTP_MONITOR.PROXY.notIn(proxyNames))
         .fetch()
 
     override fun fetchByEnabled(enabled: Boolean): List<HttpMonitorRecord> = dslContext

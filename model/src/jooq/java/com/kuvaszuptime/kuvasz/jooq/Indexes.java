@@ -85,6 +85,7 @@ public class Indexes {
     public static final Index TCP_METRICS_LOG_MONITOR_ID_IDX = Internal.createIndex(DSL.name("tcp_metrics_log_monitor_id_idx"), TcpMetricsLog.TCP_METRICS_LOG, new OrderField[] { TcpMetricsLog.TCP_METRICS_LOG.MONITOR_ID }, false);
     public static final Index TCP_MONITOR_CATEGORY_IDX = Internal.createIndex(DSL.name("tcp_monitor_category_idx"), TcpMonitor.TCP_MONITOR, new OrderField[] { TcpMonitor.TCP_MONITOR.CATEGORY }, false);
     public static final Index TCP_MONITOR_ENABLED_IDX = Internal.createIndex(DSL.name("tcp_monitor_enabled_idx"), TcpMonitor.TCP_MONITOR, new OrderField[] { TcpMonitor.TCP_MONITOR.ENABLED }, false);
+    public static final Index TCP_MONITOR_PROXY_IDX = Internal.createIndex(DSL.name("tcp_monitor_proxy_idx"), TcpMonitor.TCP_MONITOR, new OrderField[] { TcpMonitor.TCP_MONITOR.PROXY }, false);
     public static final Index TCP_UPTIME_EVENT_ENDED_AT_IDX = Internal.createIndex(DSL.name("tcp_uptime_event_ended_at_idx"), TcpUptimeEvent.TCP_UPTIME_EVENT, new OrderField[] { TcpUptimeEvent.TCP_UPTIME_EVENT.ENDED_AT }, false);
     public static final Index TCP_UPTIME_EVENT_MONITOR_IDX = Internal.createIndex(DSL.name("tcp_uptime_event_monitor_idx"), TcpUptimeEvent.TCP_UPTIME_EVENT, new OrderField[] { TcpUptimeEvent.TCP_UPTIME_EVENT.MONITOR_ID }, false);
     public static final Index TCP_UPTIME_EVENT_OPEN_IDX = Internal.createIndex(DSL.name("tcp_uptime_event_open_idx"), TcpUptimeEvent.TCP_UPTIME_EVENT, new OrderField[] { TcpUptimeEvent.TCP_UPTIME_EVENT.MONITOR_ID }, false);

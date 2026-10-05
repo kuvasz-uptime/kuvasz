@@ -113,7 +113,9 @@ class TcpMonitorActions(
         val validatedIntegrations =
             integrationIdValidator.validateIntegrationIds(monitorCreateDto.integrations.orEmpty())
 
-        return monitorRepository.returningInsert(monitorCreateDto.toMonitorRecord(validatedIntegrations))
+        val toCreate = monitorCreateDto.toMonitorRecord(validatedIntegrations).also { validateCreation(it) }
+
+        return monitorRepository.returningInsert(toCreate)
             .also { createdMonitor ->
                 checkScheduler.createChecksForMonitor(createdMonitor)
                 announceCreation()

@@ -73,7 +73,13 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
                 div {
                     classes(MB_3)
                     testId("proxy-select")
-                    proxySelector(proxySelectId, isReadOnlyMode, monitor?.proxy, globals.configuredProxies)
+                    proxySelector(
+                        selectId = proxySelectId,
+                        description = Messages.proxyDescription(),
+                        isReadOnlyMode = isReadOnlyMode,
+                        currentProxy = monitor?.proxy,
+                        configuredProxies = globals.configuredProxies,
+                    )
                 }
                 // Follow Redirects
                 div {
@@ -457,68 +463,6 @@ private fun FlowContent.headersTable(
         div {
             classes(INVALID_FEEDBACK)
             xText("errors.$errorProp")
-        }
-    }
-}
-
-/**
- * The proxy field: a single-value TomSelect over the proxies of the YAML config, which is the only place they can be
- * defined, and clearing it means a direct connection.
- *
- * A monitor may name a proxy that has since been removed from the config, and that value has to survive an edit that
- * does not touch this field, so it is rendered as an option of its own, marked as no longer configured.
- */
-private fun FlowContent.proxySelector(
-    selectId: String,
-    isReadOnlyMode: Boolean,
-    currentProxy: String?,
-    configuredProxies: List<String>,
-) {
-    formLabel(
-        label = Messages.proxyLabel(),
-        inputName = selectId,
-        description = Messages.proxyDescription(),
-        required = false,
-    )
-    select {
-        classes(FORM_SELECT)
-        id = selectId
-        name = selectId
-        attributes["placeholder"] = Messages.proxyDirectConnection()
-        xModel("proxy")
-        xBindErrorClass("proxy")
-        // Deferred, because x-model writes the picked value on this very event and may do so after this handler
-        xOnChange("\$nextTick(() => validateProxy())")
-        xInitNextTick("{ initProxySelect('#$selectId') }")
-        if (isReadOnlyMode) disabled = true
-        // What Alpine binds to while no proxy is picked, i.e. a direct connection
-        option { value = "" }
-        configuredProxies.forEach { proxy ->
-            option {
-                value = proxy
-                selected = proxy == currentProxy
-                +proxy
-            }
-        }
-        currentProxy?.takeIf { it !in configuredProxies }?.let { danglingProxy ->
-            option {
-                value = danglingProxy
-                selected = true
-                +Messages.proxyNotConfiguredOption(danglingProxy)
-            }
-        }
-    }
-    templateTag {
-        xIf("errors.proxy")
-        div {
-            classes(INVALID_FEEDBACK, D_BLOCK)
-            xText("errors.proxy")
-        }
-    }
-    if (configuredProxies.isEmpty()) {
-        div {
-            classes(FORM_TEXT, TEXT_SECONDARY)
-            +Messages.proxyNoneConfigured()
         }
     }
 }

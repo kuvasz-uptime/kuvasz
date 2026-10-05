@@ -14,6 +14,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldEndWith
 import io.kotest.matchers.string.shouldNotContain
+import io.kotest.matchers.string.shouldStartWith
 import io.kotest.matchers.types.shouldBeInstanceOf
 import org.mockserver.configuration.Configuration
 import org.mockserver.integration.ClientAndServer
@@ -331,7 +332,18 @@ class ProxyTunnelTest : ShouldSpec({
                 )
             }
 
-            exception.message shouldBe "The target host contains whitespace or control characters"
+            exception.message shouldStartWith "The target host can only contain printable ASCII characters"
+        }
+
+        should("reject an internationalized target host, which would reach the proxy garbled") {
+            val closedPort = ServerSocket(0).use { it.localPort }
+            listOf(ProxyType.HTTP, ProxyType.SOCKS5).forEach { type ->
+                val exception = shouldThrow<IOException> {
+                    TUNNEL.open(proxy(type, closedPort), "bücher.example", 443, TIMEOUT_MS)
+                }
+
+                exception.message shouldContain "punycode form"
+            }
         }
     }
 

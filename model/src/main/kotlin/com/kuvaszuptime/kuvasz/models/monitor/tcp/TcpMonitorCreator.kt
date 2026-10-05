@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorCreator
 import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
+import com.kuvaszuptime.kuvasz.util.nullIfBlank
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
@@ -44,6 +45,7 @@ interface TcpMonitorCreator : MonitorCreator<TcpMonitorRecord> {
     val enabled: Boolean
     override val integrations: List<String>?
     val metricsHistoryEnabled: Boolean
+    val proxy: String?
 
     override fun toMonitorRecord(validatedIntegrations: Set<IntegrationID>): TcpMonitorRecord =
         TcpMonitorRecord()
@@ -59,4 +61,5 @@ interface TcpMonitorCreator : MonitorCreator<TcpMonitorRecord> {
             .setMetricsHistoryEnabled(metricsHistoryEnabled)
             .setCategory(normalizedCategory)
             .setIgnoreConnectivityCheck(ignoreConnectivityCheck)
+            .setProxy(proxy.nullIfBlank())
 }

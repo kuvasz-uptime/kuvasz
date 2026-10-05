@@ -1,16 +1,28 @@
 package com.kuvaszuptime.kuvasz.services.proxy
 
+import com.kuvaszuptime.kuvasz.config.ConnectivityCheckConfig
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMonitorRecord
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.TcpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorUpdateDto
+import com.kuvaszuptime.kuvasz.models.settings.ConnectivityState
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.resetDatabase
+import com.kuvaszuptime.kuvasz.services.ScheduledCheckDispatchers
 import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorActions
 import com.kuvaszuptime.kuvasz.services.check.http.HttpUptimeChecker
 import com.kuvaszuptime.kuvasz.services.check.ssl.SSLChecker
+import com.kuvaszuptime.kuvasz.services.check.tcp.TcpConnectExecutor
+import com.kuvaszuptime.kuvasz.services.check.tcp.TcpMonitorActions
+import com.kuvaszuptime.kuvasz.services.check.tcp.TcpUptimeChecker
+import com.kuvaszuptime.kuvasz.services.connectivity.ConnectivityChecker
 import com.kuvaszuptime.kuvasz.testAppContext
 import com.kuvaszuptime.kuvasz.testutils.KGenericContainer
 import com.kuvaszuptime.kuvasz.testutils.TestCertificateAuthority
@@ -44,17 +56,22 @@ private const val MOCKSERVER_IMAGE = "mockserver/mockserver:8.0.0"
 private const val NGINX_IMAGE = "nginx:1.30.4-alpine"
 private const val SQUID_IMAGE = "ubuntu/squid:6.6-24.04_edge"
 private const val THREE_PROXY_IMAGE = "ghcr.io/tarampampam/3proxy:2.3.0"
+private const val STUNNEL_IMAGE = "dockurr/stunnel:5.82"
 
 // Neither name resolves outside the Docker network of the spec, so these targets can only be reached through a proxy
 private const val HTTP_TARGET = "internal-http"
 private const val HTTPS_TARGET = "internal-https"
 private const val HTTP_TARGET_PORT = 1080
+private const val CLOSED_TARGET_PORT = 1234
 private const val HTTPS_PORT = 443
 private const val EXPIRED_HTTPS_PORT = 8443
 private const val WRONG_HOST_HTTPS_PORT = 9443
 private const val SQUID_PORT = 3128
 private const val THREE_PROXY_HTTP_PORT = 3128
 private const val THREE_PROXY_SOCKS_PORT = 1080
+private const val TLS_PROXY = "tls-proxy"
+private const val TLS_PROXY_PORT = 3443
+private const val TLS_SIDECAR_PORT = 3128
 private const val PROXY_USERNAME = "kuvasz"
 private const val PROXY_PASSWORD = "s3cr3t"
 
@@ -66,6 +83,33 @@ http_access allow localnet
 http_access deny all
 http_port $SQUID_PORT
 coredump_dir /var/spool/squid
+"""
+
+// Terminates TLS in front of an HTTP proxy, so it stands in for a proxy that can only be reached over TLS
+private const val STUNNEL_SERVER_CONF = """
+foreground = yes
+pid =
+
+[https-proxy]
+accept = $TLS_PROXY_PORT
+connect = proxy-auth:$THREE_PROXY_HTTP_PORT
+cert = /certs/proxy.crt
+key = /certs/proxy.key
+"""
+
+// The sidecar of the recipe in the docs: a plaintext listener for Kuvasz, and TLS with verification towards the proxy
+private const val STUNNEL_SIDECAR_CONF = """
+foreground = yes
+pid =
+
+[tls-proxy]
+client = yes
+accept = 0.0.0.0:$TLS_SIDECAR_PORT
+connect = $TLS_PROXY:$TLS_PROXY_PORT
+verifyChain = yes
+CAfile = /certs/ca.pem
+checkHost = $TLS_PROXY
+sni = $TLS_PROXY
 """
 
 private const val NGINX_CONF = """
@@ -96,12 +140,13 @@ http {
 """
 
 /**
- * Checks HTTP monitors through real proxies - Squid for HTTP CONNECT with its stock config, and 3proxy for HTTP CONNECT
- * and SOCKS5, both anonymous and authenticated - against targets that only resolve inside the Docker network.
+ * Checks HTTP and TCP monitors through real proxies - Squid for HTTP CONNECT with its stock config, and 3proxy for HTTP
+ * CONNECT and SOCKS5, both anonymous and authenticated - against targets that only resolve inside the Docker network.
  *
  * Which proxy carried a request is told by the target, from the address the request came from: each proxy has its own
  * address on the network, and the proxies themselves only log a tunnel once it is closed, while the clients keep them
- * open between the checks.
+ * open between the checks. A TCP check sends nothing the target could record, so only reaching a target whose name
+ * resolves behind the proxies tells it went through one.
  */
 class ProxyE2ETest : BehaviorSpec({
 
@@ -156,8 +201,25 @@ class ProxyE2ETest : BehaviorSpec({
         .waitingFor(Wait.forListeningPort())
 
     val openProxy = threeProxy(authenticated = false)
-    val authProxy = threeProxy(authenticated = true)
-    val containers = listOf(httpTarget, httpsTarget, squid, anyPortSquid, openProxy, authProxy)
+    val authProxy = threeProxy(authenticated = true).withNetworkAliases("proxy-auth")
+
+    // The image replaces its own configuration with the one at /stunnel.conf
+    val tlsProxyCertificate = ca.issue("tls-proxy", TLS_PROXY)
+    val tlsProxy = KGenericContainer(STUNNEL_IMAGE)
+        .withNetwork(network)
+        .withNetworkAliases(TLS_PROXY)
+        .withCopyToContainer(Transferable.of(STUNNEL_SERVER_CONF), "/stunnel.conf")
+        .withCopyToContainer(MountableFile.forHostPath(tlsProxyCertificate.chainPem), "/certs/proxy.crt")
+        .withCopyToContainer(MountableFile.forHostPath(tlsProxyCertificate.keyPem), "/certs/proxy.key")
+        .waitingFor(Wait.forLogMessage(".*Configuration successful.*", 1))
+    val tlsSidecar = KGenericContainer(STUNNEL_IMAGE)
+        .withNetwork(network)
+        .withCopyToContainer(Transferable.of(STUNNEL_SIDECAR_CONF), "/stunnel.conf")
+        .withCopyToContainer(MountableFile.forHostPath(ca.caPem), "/certs/ca.pem")
+        .withExposedPorts(TLS_SIDECAR_PORT)
+        .waitingFor(Wait.forListeningPort())
+
+    val containers = listOf(httpTarget, httpsTarget, squid, anyPortSquid, openProxy, authProxy, tlsProxy, tlsSidecar)
     Startables.deepStart(containers).get(5, TimeUnit.MINUTES)
 
     val closedPort = ServerSocket(0).use { it.localPort }
@@ -195,6 +257,7 @@ class ProxyE2ETest : BehaviorSpec({
                 proxy("auth-http-wrong-password", authProxy.url("http", THREE_PROXY_HTTP_PORT), "wrong"),
                 proxy("auth-socks-wrong-password", authProxy.url("socks5", THREE_PROXY_SOCKS_PORT), "wrong"),
                 proxy("unreachable", "http://localhost:$closedPort"),
+                proxy("tls-sidecar", tlsSidecar.url("http", TLS_SIDECAR_PORT), PROXY_PASSWORD),
             ),
             PROXY_E2E_TRUST_STORE to ca.trustStore.toString(),
             PROXY_E2E_TRUST_STORE_PASSWORD to ca.trustStorePassword,
@@ -205,6 +268,9 @@ class ProxyE2ETest : BehaviorSpec({
     val monitorActions = ctx.getBean<HttpMonitorActions>()
     val uptimeChecker = ctx.getBean<HttpUptimeChecker>()
     val sslChecker = ctx.getBean<SSLChecker>()
+    val tcpMonitorRepository = ctx.getBean<TcpMonitorRepository>()
+    val tcpMonitorActions = ctx.getBean<TcpMonitorActions>()
+    val tcpUptimeChecker = ctx.getBean<TcpUptimeChecker>()
     val mockServer = MockServerClient(httpTarget.host, httpTarget.getMappedPort(HTTP_TARGET_PORT))
 
     afterSpec {
@@ -236,9 +302,22 @@ class ProxyE2ETest : BehaviorSpec({
         return monitorActions.getMonitorDetails(id)
     }
 
-    fun HttpMonitorDetailsDto.shouldBeUp() = withClue(uptimeError) { uptimeStatus shouldBe UptimeStatus.UP }
+    fun tcpMonitor(host: String, port: Int, proxy: String?): TcpMonitorRecord = createTcpMonitor(
+        tcpMonitorRepository,
+        monitorName = "proxied-tcp-${++monitorCount}",
+        host = host,
+        port = port,
+        proxy = proxy,
+    )
 
-    fun HttpMonitorDetailsDto.shouldBeDownWith(error: String) {
+    fun TcpMonitorRecord.checkUptime(): TcpMonitorDetailsDto {
+        tcpUptimeChecker.check(this)
+        return tcpMonitorActions.getMonitorDetails(id)
+    }
+
+    fun MonitorDetailsDto.shouldBeUp() = withClue(uptimeError) { uptimeStatus shouldBe UptimeStatus.UP }
+
+    fun MonitorDetailsDto.shouldBeDownWith(error: String) {
         uptimeStatus shouldBe UptimeStatus.DOWN
         uptimeError.shouldNotBeNull() shouldContain error
     }
@@ -507,6 +586,151 @@ class ProxyE2ETest : BehaviorSpec({
                     openProxy.networkAddress(),
                     authProxy.networkAddress(),
                 )
+            }
+        }
+    }
+
+    given("a TCP target") {
+
+        listOf("squid", "squid-any-port", "open-http", "open-socks", "auth-http", "auth-socks").forEach { proxy ->
+
+            `when`("its open port is checked through $proxy") {
+                val details = tcpMonitor(HTTPS_TARGET, HTTPS_PORT, proxy).checkUptime()
+
+                // Its name only resolves behind the proxies, so it can't have been reached otherwise
+                then("it should be UP") {
+                    details.shouldBeUp()
+                }
+            }
+        }
+
+        `when`("a port that is not an SSL port is checked through an HTTP proxy that only tunnels to those") {
+            val details = tcpMonitor(HTTP_TARGET, HTTP_TARGET_PORT, "squid").checkUptime()
+
+            then("it should be DOWN with the status of the proxy") {
+                details.shouldBeDownWith("The check through the proxy \"squid\" failed")
+                details.shouldBeDownWith("403 Forbidden")
+            }
+        }
+
+        `when`("the same port is checked through an HTTP proxy that is configured to tunnel to any port") {
+            val details = tcpMonitor(HTTP_TARGET, HTTP_TARGET_PORT, "squid-any-port").checkUptime()
+
+            then("it should be UP") {
+                details.shouldBeUp()
+            }
+        }
+
+        mapOf(
+            "open-http" to "502 Bad Gateway",
+            "open-socks" to "connection refused (0x05)",
+        ).forEach { (proxy, reason) ->
+
+            `when`("a closed port is checked through $proxy") {
+                val details = tcpMonitor(HTTPS_TARGET, CLOSED_TARGET_PORT, proxy).checkUptime()
+
+                then("it should be DOWN with the refusal of the proxy") {
+                    details.shouldBeDownWith("The check through the proxy \"$proxy\" failed")
+                    details.shouldBeDownWith(reason)
+                }
+            }
+        }
+
+        mapOf(
+            "auth-http-wrong-password" to "407 Proxy Authentication Required",
+            // 3proxy accepts any credentials in the handshake, and only refuses the tunnel itself
+            "auth-socks-wrong-password" to "connection not allowed by ruleset (0x02)",
+        ).forEach { (proxy, reason) ->
+
+            `when`("it is checked through $proxy") {
+                val details = tcpMonitor(HTTPS_TARGET, HTTPS_PORT, proxy).checkUptime()
+
+                then("it should be DOWN, as the proxy rejects the credentials") {
+                    details.shouldBeDownWith("The check through the proxy \"$proxy\" failed")
+                    details.shouldBeDownWith(reason)
+                }
+            }
+        }
+
+        `when`("it is checked over a direct connection") {
+            val details = tcpMonitor(HTTPS_TARGET, HTTPS_PORT, proxy = null).checkUptime()
+
+            then("it should be DOWN, as its name only resolves behind the proxies") {
+                details.shouldBeDownWith(HTTPS_TARGET)
+            }
+        }
+
+        `when`("it is checked through a proxy that can't be reached") {
+            val details = tcpMonitor(HTTPS_TARGET, HTTPS_PORT, "unreachable").checkUptime()
+
+            then("it should be DOWN, instead of falling back to a direct connection") {
+                details.shouldBeDownWith("The check through the proxy \"unreachable\" failed")
+            }
+        }
+
+        `when`("it is checked through a proxy that is not configured") {
+            val details = tcpMonitor(HTTPS_TARGET, HTTPS_PORT, "gone").checkUptime()
+
+            then("it should be DOWN") {
+                details.shouldBeDownWith("The proxy \"gone\" is not configured")
+            }
+        }
+    }
+
+    given("the connectivity check, while proxies are configured") {
+
+        suspend fun probe(target: String): ConnectivityState {
+            val config = ConnectivityCheckConfig().apply {
+                targets = listOf(target)
+                timeoutSeconds = 2
+            }
+            val checker = ConnectivityChecker(
+                config = config,
+                connectExecutor = ctx.getBean<TcpConnectExecutor>(),
+                dispatcher = ctx.getBean<ScheduledCheckDispatchers>().default,
+            )
+            checker.check(confirmFailures = false)
+            return checker.getStatus().state
+        }
+
+        `when`("it probes a target that is only reachable through the proxies") {
+            val state = probe("$HTTPS_TARGET:$HTTPS_PORT")
+
+            then("it should still connect directly, so the target is unreachable") {
+                state shouldBe ConnectivityState.DOWN
+            }
+        }
+
+        `when`("it probes a target that is reachable directly") {
+            val state = probe("${httpTarget.host}:${httpTarget.getMappedPort(HTTP_TARGET_PORT)}")
+
+            then("it should be UP") {
+                state shouldBe ConnectivityState.UP
+            }
+        }
+    }
+
+    // The recipe of the docs for proxies that can only be reached over TLS
+    given("a proxy that is only reachable over TLS, through a stunnel sidecar") {
+
+        `when`("an HTTPS target is checked through it") {
+            val monitor = monitor("https://$HTTPS_TARGET/", "tls-sidecar")
+            val logOffset = httpsLogOffset()
+            val uptime = monitor.checkUptime()
+            val ssl = monitor.checkSsl()
+
+            then("both of its checks should pass, reached by the proxy behind the TLS hop") {
+                uptime.shouldBeUp()
+                ssl.sslStatus shouldBe SslStatus.VALID
+                httpsRequestsSince(logOffset).shouldNotBeEmpty().forEach { it shouldContain authProxy.networkAddress() }
+            }
+        }
+
+        `when`("a TCP target is checked through it") {
+            val details = tcpMonitor(HTTP_TARGET, HTTP_TARGET_PORT, "tls-sidecar").checkUptime()
+
+            then("it should be UP") {
+                details.shouldBeUp()
             }
         }
     }
