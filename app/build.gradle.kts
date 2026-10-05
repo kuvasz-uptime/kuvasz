@@ -152,6 +152,7 @@ allOpen {
 
 tasks.withType<Test> {
     jvmArgs("-Xmx2048M")
+    maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceIn(1, 3)
 }
 
 /**
@@ -159,8 +160,7 @@ tasks.withType<Test> {
  * cached for the lifetime of the worker JVM, so its footprint grows with the number of specs. Recycling the worker
  * caps that growth, which the suite needs: without it its memory use only ever climbs. The threshold is a trade-off,
  * because the shared Postgres container is a per-JVM singleton that every fork has to start again.
- * It is deliberately not applied to `uiTest`: that suite is smaller than the threshold anyway, and forking it would
- * also mean booting a fresh browser.
+ * It is deliberately not applied to `uiTest`: that suite is smaller than the threshold anyway.
  */
 tasks.named<Test>("test") {
     forkEvery = 100

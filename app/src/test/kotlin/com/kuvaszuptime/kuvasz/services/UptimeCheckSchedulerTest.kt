@@ -11,6 +11,7 @@ import com.kuvaszuptime.kuvasz.services.check.tcp.TcpUptimeChecker
 import com.kuvaszuptime.kuvasz.services.connectivity.ConnectivityChecker
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowService
 import com.kuvaszuptime.kuvasz.testutils.ENABLED_CONNECTIVITY_CHECK
+import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.core.test.TestCase
 import io.kotest.engine.test.TestResult
 import io.kotest.matchers.booleans.shouldBeFalse
@@ -30,12 +31,16 @@ import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
-import kotlinx.coroutines.delay
 import java.util.concurrent.TimeUnit
-import kotlin.time.Duration.Companion.milliseconds
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.Duration.Companion.seconds
 
+/**
+ * Covers the type-independent scheduling logic of [com.kuvaszuptime.kuvasz.services.check.UptimeCheckScheduler]
+ * through the [TcpCheckScheduler], so the specs of the other schedulers only have to test their type-specific parts.
+ */
 @MicronautTest(startApplication = false, environments = [ENABLED_CONNECTIVITY_CHECK])
-class TcpCheckSchedulerTest(
+class UptimeCheckSchedulerTest(
     private val checkScheduler: TcpCheckScheduler,
     private val monitorRepository: TcpMonitorRepository,
     private val uptimeChecker: TcpUptimeChecker,
@@ -44,7 +49,7 @@ class TcpCheckSchedulerTest(
     private val connectivityChecker: ConnectivityChecker,
 ) : DatabaseBehaviorSpec() {
     init {
-        given("the TcpCheckScheduler service") {
+        given("the UptimeCheckScheduler service") {
             `when`("there is an enabled monitor in the database and initialize has been called") {
                 val monitor = createTcpMonitor(monitorRepository)
 
@@ -81,8 +86,9 @@ class TcpCheckSchedulerTest(
             `when`("it initializes the uptime checks") {
                 val monitor1 = createTcpMonitor(monitorRepository, monitorName = "m1", uptimeCheckInterval = 1000)
                 val monitor2 = createTcpMonitor(monitorRepository, monitorName = "m2", uptimeCheckInterval = 30)
+                // The doAfter callback is never called, so the set-up checks won't be re-scheduled meanwhile
                 val uptimeCheckerMock = getMock(uptimeChecker)
-                coEvery { uptimeCheckerMock.check(any(), any()) } coAnswers { delay(10000.milliseconds) }
+                coEvery { uptimeCheckerMock.check(any(), any()) } just Runs
 
                 checkScheduler.initialize()
 
@@ -97,7 +103,7 @@ class TcpCheckSchedulerTest(
             }
 
             `when`("an uptime check is executed") {
-                val monitor = createTcpMonitor(monitorRepository, uptimeCheckInterval = 3)
+                val monitor = createTcpMonitor(monitorRepository, uptimeCheckInterval = 1)
                 val uptimeCheckerMock = getMock(uptimeChecker)
                 coEvery { uptimeCheckerMock.check(monitor, any()) } just Runs
                 val lockRegistryMock = getMock(uptimeCheckLockRegistry)
@@ -105,7 +111,7 @@ class TcpCheckSchedulerTest(
                 coEvery { lockRegistryMock.release(monitor.id) } just Runs
 
                 checkScheduler.initialize()
-                delay(4000.milliseconds) // Wait for the check to be executed
+                eventually(5.seconds) { coVerify(atLeast = 1) { lockRegistryMock.release(monitor.id) } }
 
                 then("it should try to acquire a lock for it & release it afterwards") {
                     coVerifyOrder {
@@ -119,7 +125,7 @@ class TcpCheckSchedulerTest(
             `when`("a monitor is under maintenance") {
                 // Categorized on purpose: a window may cover the monitor through its category, so the scheduler has
                 // to hand the monitor's own category to the lookup. Stubbing it exactly pins that wiring down.
-                val monitor = createTcpMonitor(monitorRepository, uptimeCheckInterval = 3, category = "Payments")
+                val monitor = createTcpMonitor(monitorRepository, uptimeCheckInterval = 1, category = "Payments")
                 val uptimeCheckerMock = getMock(uptimeChecker)
                 val lockRegistryMock = getMock(uptimeCheckLockRegistry)
                 coEvery { lockRegistryMock.tryAcquire(monitor.id) } returns true
@@ -128,17 +134,16 @@ class TcpCheckSchedulerTest(
                 every { maintenanceServiceMock.isUnderMaintenance(monitor.monitorId(), "Payments") } returns true
 
                 checkScheduler.initialize()
-                delay(4000.milliseconds) // Wait for the check to be executed
+                eventually(5.seconds) { coVerify(atLeast = 1) { lockRegistryMock.release(monitor.id) } }
 
                 then("it should skip the check but still acquire and release the lock") {
                     coVerify(atLeast = 1) { lockRegistryMock.tryAcquire(monitor.id) }
                     coVerify(inverse = true) { uptimeCheckerMock.check(any(), any()) }
-                    coVerify(atLeast = 1) { lockRegistryMock.release(monitor.id) }
                 }
             }
 
             `when`("Kuvasz has no outbound connectivity") {
-                val monitor = createTcpMonitor(monitorRepository, uptimeCheckInterval = 3)
+                val monitor = createTcpMonitor(monitorRepository, uptimeCheckInterval = 1)
                 val uptimeCheckerMock = getMock(uptimeChecker)
                 val lockRegistryMock = getMock(uptimeCheckLockRegistry)
                 coEvery { lockRegistryMock.tryAcquire(monitor.id) } returns true
@@ -147,12 +152,11 @@ class TcpCheckSchedulerTest(
                 every { connectivityCheckerMock.isCheckSuppressedFor(any()) } returns true
 
                 checkScheduler.initialize()
-                delay(4000.milliseconds) // Wait for the check to be executed
+                eventually(5.seconds) { coVerify(atLeast = 1) { lockRegistryMock.release(monitor.id) } }
 
                 then("it should skip the check, but still acquire and release the lock") {
                     coVerify(atLeast = 1) { lockRegistryMock.tryAcquire(monitor.id) }
                     coVerify(inverse = true) { uptimeCheckerMock.check(any(), any()) }
-                    coVerify(atLeast = 1) { lockRegistryMock.release(monitor.id) }
 
                     // Skipping must not cancel anything: the check has to resume on its own once the
                     // connectivity is back, without a restart
@@ -164,7 +168,7 @@ class TcpCheckSchedulerTest(
             }
 
             `when`("Kuvasz has no outbound connectivity, but the monitor opted out of the check") {
-                val monitor = createTcpMonitor(monitorRepository, uptimeCheckInterval = 3)
+                val monitor = createTcpMonitor(monitorRepository, uptimeCheckInterval = 1)
                 val uptimeCheckerMock = getMock(uptimeChecker)
                 coEvery { uptimeCheckerMock.check(monitor, any()) } just Runs
                 val lockRegistryMock = getMock(uptimeCheckLockRegistry)
@@ -175,7 +179,7 @@ class TcpCheckSchedulerTest(
                 every { connectivityCheckerMock.isCheckSuppressedFor(monitor) } returns false
 
                 checkScheduler.initialize()
-                delay(4000.milliseconds) // Wait for the check to be executed
+                eventually(5.seconds) { coVerify(atLeast = 1) { lockRegistryMock.release(monitor.id) } }
 
                 then("it should run the check anyway") {
                     coVerify(atLeast = 1) { uptimeCheckerMock.check(monitor, any()) }
@@ -183,23 +187,22 @@ class TcpCheckSchedulerTest(
             }
 
             `when`("a lock can't be acquired for an uptime check") {
-                val monitor = createTcpMonitor(monitorRepository, uptimeCheckInterval = 3)
+                val monitor = createTcpMonitor(monitorRepository, uptimeCheckInterval = 1)
                 val uptimeCheckerMock = getMock(uptimeChecker)
                 val lockRegistryMock = getMock(uptimeCheckLockRegistry)
                 coEvery { lockRegistryMock.tryAcquire(monitor.id) } returns false
 
                 checkScheduler.initialize()
-                delay(4000.milliseconds) // Wait for the check to be executed
+                eventually(5.seconds) { coVerify(atLeast = 1) { lockRegistryMock.tryAcquire(monitor.id) } }
 
                 then("it should not run the check") {
-                    coVerify(atLeast = 1) { lockRegistryMock.tryAcquire(monitor.id) }
                     coVerify(inverse = true) { uptimeCheckerMock.check(any(), any()) }
                     coVerify(inverse = true) { lockRegistryMock.release(monitor.id) }
                 }
             }
 
             `when`("an uptime check calls the passed doAfter callback") {
-                val monitor = createTcpMonitor(monitorRepository, uptimeCheckInterval = 3)
+                val monitor = createTcpMonitor(monitorRepository, uptimeCheckInterval = 1)
                 val uptimeCheckerMock = getMock(uptimeChecker)
                 coEvery { uptimeCheckerMock.check(monitor, captureLambda()) } coAnswers {
                     lambda<(TcpMonitorRecord) -> Unit>().captured.invoke(monitor)
@@ -210,7 +213,7 @@ class TcpCheckSchedulerTest(
 
                 checkScheduler.initialize()
                 val checkBefore = checkScheduler.getScheduledUptimeChecks()[monitor.id].shouldNotBeNull()
-                delay(4000.milliseconds) // Wait for the check to be executed
+                eventually(5.seconds) { coVerify(atLeast = 1) { lockRegistryMock.release(monitor.id) } }
 
                 then("the next check should be re-scheduled via the check's callback") {
                     coVerifyOrder {
@@ -224,7 +227,7 @@ class TcpCheckSchedulerTest(
             }
 
             `when`("an uptime check calls the doAfter callback with a disabled monitor") {
-                val monitor = createTcpMonitor(monitorRepository, uptimeCheckInterval = 3)
+                val monitor = createTcpMonitor(monitorRepository, uptimeCheckInterval = 1)
                 val disabledMonitor = monitorRepository.findById(monitor.id, null).shouldNotBeNull()
                     .also { it.enabled = false }
                 val uptimeCheckerMock = getMock(uptimeChecker)
@@ -237,7 +240,7 @@ class TcpCheckSchedulerTest(
 
                 checkScheduler.initialize()
                 val checkBefore = checkScheduler.getScheduledUptimeChecks()[monitor.id].shouldNotBeNull()
-                delay(4000.milliseconds) // Wait for the check to be executed
+                eventually(5.seconds) { coVerify(atLeast = 1) { lockRegistryMock.release(monitor.id) } }
 
                 then("the check should not be re-scheduled") {
                     coVerify(atLeast = 1) { uptimeCheckerMock.check(monitor, any()) }
@@ -247,7 +250,7 @@ class TcpCheckSchedulerTest(
             }
 
             `when`("an uptime check calls the doAfter callback with an unschedulable monitor") {
-                val monitor = createTcpMonitor(monitorRepository, uptimeCheckInterval = 3)
+                val monitor = createTcpMonitor(monitorRepository, uptimeCheckInterval = 1)
                 val unschedulableMonitor = monitorRepository.findById(monitor.id, null).shouldNotBeNull()
                     .also { it.uptimeCheckInterval = 0 }
                 val uptimeCheckerMock = getMock(uptimeChecker)
@@ -260,7 +263,7 @@ class TcpCheckSchedulerTest(
 
                 checkScheduler.initialize()
                 val checkBefore = checkScheduler.getScheduledUptimeChecks()[monitor.id].shouldNotBeNull()
-                delay(4000.milliseconds) // Wait for the check to be executed
+                eventually(5.seconds) { coVerify(atLeast = 1) { lockRegistryMock.release(monitor.id) } }
 
                 then("the re-scheduling should fail, leaving the previous check in place") {
                     coVerify(atLeast = 1) { uptimeCheckerMock.check(monitor, any()) }
@@ -270,7 +273,7 @@ class TcpCheckSchedulerTest(
             }
 
             `when`("an uptime check throws an exception") {
-                val monitor = createTcpMonitor(monitorRepository, uptimeCheckInterval = 3)
+                val monitor = createTcpMonitor(monitorRepository, uptimeCheckInterval = 1)
                 val uptimeCheckerMock = getMock(uptimeChecker)
                 coEvery { uptimeCheckerMock.check(monitor, any()) } throws Exception("bad")
                 val lockRegistryMock = getMock(uptimeCheckLockRegistry)
@@ -278,7 +281,29 @@ class TcpCheckSchedulerTest(
                 coEvery { lockRegistryMock.release(monitor.id) } just Runs
 
                 checkScheduler.initialize()
-                delay(4000.milliseconds) // Wait for the check to be executed
+                eventually(5.seconds) { coVerify(atLeast = 1) { lockRegistryMock.release(monitor.id) } }
+
+                then("the lock should be released anyway") {
+                    coVerifyOrder {
+                        lockRegistryMock.tryAcquire(monitor.id)
+                        uptimeCheckerMock.check(monitor, any())
+                        lockRegistryMock.release(monitor.id)
+                    }
+                }
+            }
+
+            `when`("an uptime check gets cancelled") {
+                val monitor = createTcpMonitor(monitorRepository, uptimeCheckInterval = 1)
+                val uptimeCheckerMock = getMock(uptimeChecker)
+                coEvery {
+                    uptimeCheckerMock.check(monitor, any())
+                } throws CancellationException("The task was rejected")
+                val lockRegistryMock = getMock(uptimeCheckLockRegistry)
+                coEvery { lockRegistryMock.tryAcquire(monitor.id) } returns true
+                coEvery { lockRegistryMock.release(monitor.id) } just Runs
+
+                checkScheduler.initialize()
+                eventually(5.seconds) { coVerify(atLeast = 1) { lockRegistryMock.release(monitor.id) } }
 
                 then("the lock should be released anyway") {
                     coVerifyOrder {

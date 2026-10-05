@@ -59,7 +59,9 @@ abstract class UiTestSpec(body: UiTestSpec.() -> Unit = {}) : StringSpec() {
             openContexts.forEachIndexed { index, tracked ->
                 if (failed) {
                     PlaywrightSupport.artifactsDir.mkdirs()
-                    val base = "${testCase.name.name.sanitizedForFile()}-$index"
+                    // Prefixed with the spec, as multiple specs may share a test name (even in parallel forks)
+                    val specName = testCase.spec::class.simpleName
+                    val base = "$specName-${testCase.name.name.sanitizedForFile()}-$index"
                     tracked.context.tracing().stop(
                         Tracing.StopOptions().setPath(artifactPath("$base-trace.zip"))
                     )
