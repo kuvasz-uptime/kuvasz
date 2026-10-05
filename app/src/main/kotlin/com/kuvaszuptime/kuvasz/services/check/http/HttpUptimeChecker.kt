@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.services.check.http
 
 import com.kuvaszuptime.kuvasz.config.AppConfig
+import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResponse
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
@@ -15,6 +16,7 @@ import io.micronaut.http.client.DefaultHttpClientConfiguration
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.HttpClientConfiguration
 import io.micronaut.http.client.annotation.Client
+import io.micronaut.http.client.exceptions.HttpClientException
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.http.exceptions.HttpException
 import io.micronaut.retry.annotation.Retryable
@@ -73,7 +75,7 @@ class HttpUptimeChecker(
             // E.g. the dispatcher is shut down under a check that outlived the shutdown's grace period
             throw ex
         } catch (error: Exception) {
-            checkResponseEvaluator.evaluateError(monitor, error)
+            checkResponseEvaluator.evaluateError(monitor, error.withProxyOf(monitor))
         }
         logger.debug("HTTP uptime check for monitor (${monitor.name}) finished")
         if (doAfter != null) {
@@ -109,6 +111,19 @@ class HttpUptimeChecker(
             httpResponse = httpResponse,
             latency = latency
         )
+    }
+
+    /**
+     * Names the proxy in a failure of a proxied check, unless the target answered: the client does not, e.g. it
+     * reports a proxy whose name can't be resolved as a bare "Connect Error".
+     */
+    private fun Exception.withProxyOf(monitor: HttpMonitorRecord): Exception {
+        val proxy = monitor.proxy
+        return if (proxy == null || this is HttpClientResponseException || this is ProxyNotConfiguredException) {
+            this
+        } else {
+            HttpClientException(Messages.proxyCheckFailed(proxy, message.orEmpty()), this)
+        }
     }
 
     private fun clientFor(monitor: HttpMonitorRecord): HttpClient =

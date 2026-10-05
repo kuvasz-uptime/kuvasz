@@ -2,8 +2,8 @@ package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationResult
 import com.kuvaszuptime.kuvasz.services.check.ssl.SSLValidator
-import com.kuvaszuptime.kuvasz.services.check.tcp.BoundedHostnameResolver
-import com.kuvaszuptime.kuvasz.services.check.tcp.SystemHostnameResolver
+import com.kuvaszuptime.kuvasz.services.network.BoundedHostnameResolver
+import com.kuvaszuptime.kuvasz.services.network.SystemHostnameResolver
 import com.kuvaszuptime.kuvasz.services.proxy.ProxyTunnel
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.assertions.retry

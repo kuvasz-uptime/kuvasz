@@ -5,10 +5,10 @@ import com.kuvaszuptime.kuvasz.config.ConnectivityCheckConfig
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.settings.ConnectivityState
 import com.kuvaszuptime.kuvasz.services.ScheduledCheckDispatchers
-import com.kuvaszuptime.kuvasz.services.check.tcp.BoundedHostnameResolver
-import com.kuvaszuptime.kuvasz.services.check.tcp.SystemHostnameResolver
 import com.kuvaszuptime.kuvasz.services.check.tcp.TcpCheckResult
 import com.kuvaszuptime.kuvasz.services.check.tcp.TcpConnectExecutor
+import com.kuvaszuptime.kuvasz.services.network.BoundedHostnameResolver
+import com.kuvaszuptime.kuvasz.services.network.SystemHostnameResolver
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.booleans.shouldBeFalse

@@ -1,5 +1,8 @@
 package com.kuvaszuptime.kuvasz.services.check.tcp
 
+import com.kuvaszuptime.kuvasz.services.network.BoundedHostnameResolver
+import com.kuvaszuptime.kuvasz.services.network.HostnameResolver
+import com.kuvaszuptime.kuvasz.services.network.SystemHostnameResolver
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue

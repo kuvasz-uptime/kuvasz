@@ -1,4 +1,4 @@
-package com.kuvaszuptime.kuvasz.services.check.tcp
+package com.kuvaszuptime.kuvasz.services.network
 
 import jakarta.annotation.PreDestroy
 import jakarta.inject.Singleton
@@ -68,6 +68,6 @@ class BoundedHostnameResolver(private val hostnameResolver: HostnameResolver) : 
         private val counter = AtomicInteger(0)
 
         override fun newThread(runnable: Runnable): Thread =
-            Thread(runnable, "tcp-dns-resolver-${counter.incrementAndGet()}").apply { isDaemon = true }
+            Thread(runnable, "hostname-resolver-${counter.incrementAndGet()}").apply { isDaemon = true }
     }
 }

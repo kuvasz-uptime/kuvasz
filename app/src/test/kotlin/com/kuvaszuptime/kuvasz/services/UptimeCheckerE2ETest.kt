@@ -27,6 +27,7 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import io.kotest.matchers.string.shouldStartWith
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpStatus
@@ -189,6 +190,29 @@ class UptimeCheckerE2ETest(
                 }
             }
 
+            `when`("it checks a monitor through a proxy, and the target answers with a server error") {
+                val monitor = createHttpMonitor(
+                    repository = monitorRepository,
+                    url = "$mockServerUrl/proxied-error-path",
+                    proxy = TEST_CONNECT_PROXY,
+                )
+                val subscriber = TestSubscriber<HttpMonitorDownEvent>()
+                eventDispatcher.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(subscriber) }
+
+                val request = getRequest("/proxied-error-path")
+                mockServer.`when`(request).respond(response().withStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.code))
+
+                uptimeChecker.check(monitor)
+
+                then("it should report the answer of the target, without blaming the proxy") {
+                    val expectedEvent = subscriber.awaitCount(1).values().first()
+
+                    expectedEvent.monitor.id shouldBe monitor.id
+                    expectedEvent.status shouldBe HttpStatus.INTERNAL_SERVER_ERROR
+                    expectedEvent.error.message.shouldNotBeNull() shouldNotContain "through the proxy"
+                }
+            }
+
             `when`("it checks a monitor whose proxy has a name that can't be resolved") {
                 val monitor = createHttpMonitor(
                     repository = monitorRepository,
@@ -207,7 +231,8 @@ class UptimeCheckerE2ETest(
                     val expectedEvent = subscriber.awaitCount(1).values().first()
 
                     expectedEvent.monitor.id shouldBe monitor.id
-                    expectedEvent.error.message.shouldNotBeNull() shouldContain "proxy.invalid"
+                    expectedEvent.error.message.shouldNotBeNull() shouldContain
+                        "The check through the proxy \"unresolvable-proxy\" failed"
                     mockServer.verify(request, VerificationTimes.never())
                 }
             }

@@ -1,9 +1,9 @@
 package com.kuvaszuptime.kuvasz.services.proxy
 
 import com.kuvaszuptime.kuvasz.models.dto.proxy.ProxyType
-import com.kuvaszuptime.kuvasz.services.check.tcp.BoundedHostnameResolver
-import com.kuvaszuptime.kuvasz.services.check.tcp.HostnameResolver
-import com.kuvaszuptime.kuvasz.services.check.tcp.SystemHostnameResolver
+import com.kuvaszuptime.kuvasz.services.network.BoundedHostnameResolver
+import com.kuvaszuptime.kuvasz.services.network.HostnameResolver
+import com.kuvaszuptime.kuvasz.services.network.SystemHostnameResolver
 import com.kuvaszuptime.kuvasz.testutils.TestConnectProxy
 import com.kuvaszuptime.kuvasz.util.elapsedMsSince
 import io.kotest.assertions.throwables.shouldThrow
@@ -102,6 +102,14 @@ private fun OutputStream.send(vararg bytes: Int) {
 // Keeps the connection open until the tunnel is done with it
 private fun DataInputStream.awaitClose() {
     readAllBytes()
+}
+
+// A successful CONNECT response head of exactly [totalBytes], padded out by a header
+private fun responseHeadOf(totalBytes: Int): String {
+    val statusLine = "HTTP/1.1 200 OK\r\n"
+    val headerName = "X-Filler: "
+    val padding = totalBytes - statusLine.length - headerName.length - "\r\n\r\n".length
+    return "$statusLine$headerName${"a".repeat(padding)}\r\n\r\n"
 }
 
 private fun Socket.readBanner(): String = use { String(it.getInputStream().readNBytes(BANNER.length)) }
@@ -232,6 +240,29 @@ class ProxyTunnelTest : ShouldSpec({
             val fake = FakeProxy { input, output ->
                 input.readHead()
                 output.send("HTTP/1.1 200 OK\r\n" + "X-Filler: ${"a".repeat(32 * 1024)}")
+                input.awaitClose()
+            }
+            val exception = shouldThrow<IOException> { openThrough(fake, ProxyType.HTTP) }
+
+            exception.message shouldBe "The response of the proxy to CONNECT is too large"
+        }
+
+        should("accept a response head that is exactly as large as allowed, line endings included") {
+            val head = responseHeadOf(totalBytes = 16 * 1024)
+            FakeProxy { input, output ->
+                input.readHead()
+                output.send(head + BANNER)
+                input.awaitClose()
+            }.use { fake ->
+                TUNNEL.open(proxy(ProxyType.HTTP, fake.port), "example.com", 443, TIMEOUT_MS)
+                    .readBanner() shouldBe BANNER
+            }
+        }
+
+        should("reject a response head that is a single byte larger than allowed") {
+            val fake = FakeProxy { input, output ->
+                input.readHead()
+                output.send(responseHeadOf(totalBytes = 16 * 1024 + 1))
                 input.awaitClose()
             }
             val exception = shouldThrow<IOException> { openThrough(fake, ProxyType.HTTP) }

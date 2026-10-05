@@ -29,8 +29,6 @@ import kotlinx.coroutines.reactive.awaitSingle
 import org.mockserver.integration.ClientAndServer
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
-import java.io.IOException
-import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.Proxy
 import java.net.ServerSocket
@@ -148,8 +146,11 @@ class ProxiedHttpClientRegistryTest : BehaviorSpec({
         }
 
         `when`("a target is checked through a proxy whose name can't be resolved") {
-            then("looking up its client should fail, instead of handing out a client without a route") {
-                shouldThrow<IOException> { registry.clientFor("unresolvable") }
+            then("the check should fail, instead of falling back to a direct connection") {
+                shouldThrow<HttpClientException> {
+                    registry.clientFor("unresolvable").shouldNotBeNull().check("$targetUrl/hello-unresolvable")
+                }
+                target.retrieveRecordedRequests(request().withPath("/hello-unresolvable")).toList() shouldHaveSize 0
             }
         }
 
@@ -237,25 +238,6 @@ class ProxiedHttpClientRegistryTest : BehaviorSpec({
                 config.isExceptionOnErrorStatus shouldBe direct.isExceptionOnErrorStatus
                 config.readTimeout shouldBe direct.readTimeout
                 config.eventLoopGroup shouldBe direct.eventLoopGroup
-            }
-        }
-
-        `when`("the address of the proxy is updated") {
-            val resolvable = ProxiedHttpCheckerClientConfiguration(
-                config = ctx.getBean<ApplicationConfiguration>(),
-                appConfig = ctx.getBean<AppConfig>(),
-                proxy = proxy.copy(host = "localhost"),
-                numOfThreads = 3,
-            )
-            val unresolvedRoute = resolvable.resolveProxy(false, "example.com", 80)
-            val loopback = InetAddress.getLoopbackAddress()
-            resolvable.updateProxyAddress(loopback)
-            val resolvedRoute = resolvable.resolveProxy(false, "example.com", 80)
-
-            then("the client should be routed to the resolved address, so it does not resolve it on its event loop") {
-                unresolvedRoute.address() shouldBe InetSocketAddress.createUnresolved("localhost", 1080)
-                resolvedRoute.type() shouldBe Proxy.Type.SOCKS
-                resolvedRoute.address() shouldBe InetSocketAddress(loopback, 1080)
             }
         }
 

@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.services.proxy
 
 import com.kuvaszuptime.kuvasz.models.dto.proxy.ProxyType
-import com.kuvaszuptime.kuvasz.services.check.tcp.BoundedHostnameResolver
+import com.kuvaszuptime.kuvasz.services.network.BoundedHostnameResolver
 import com.kuvaszuptime.kuvasz.util.closeQuietly
 import com.kuvaszuptime.kuvasz.util.elapsedMsSince
 import com.kuvaszuptime.kuvasz.util.httpStatusCodeOf
@@ -102,7 +102,7 @@ class ProxyTunnel(private val hostnameResolver: BoundedHostnameResolver) {
 
     private fun httpConnect(
         socket: Socket,
-        input: InputStream,
+        input: BudgetedInputStream,
         credentials: ProxyCredentials?,
         targetHost: String,
         targetPort: Int,
@@ -124,7 +124,7 @@ class ProxyTunnel(private val hostnameResolver: BoundedHostnameResolver) {
 
         // The status line is checked before the headers are read, as something that is not an HTTP proxy might never
         // send the empty line that ends them
-        val statusLine = input.readHeadLine(MAX_RESPONSE_HEAD_BYTES)
+        val statusLine = input.readHeadLine()
         val status = httpStatusCodeOf(statusLine)
             ?: throw IOException("The proxy sent an invalid response to CONNECT: [$statusLine]")
         if (status !in SUCCESSFUL_STATUSES) {
@@ -132,16 +132,23 @@ class ProxyTunnel(private val hostnameResolver: BoundedHostnameResolver) {
         }
         // The headers are of no use, but they have to be consumed, because whatever follows them already belongs to
         // the target, e.g. the greeting of a server that speaks first
-        var budget = MAX_RESPONSE_HEAD_BYTES - statusLine.length
         do {
-            val header = input.readHeadLine(budget)
-            budget -= header.length
+            val header = input.readHeadLine()
         } while (header.isNotEmpty())
     }
 
-    private fun InputStream.readHeadLine(maxBytes: Int): String =
-        readHttpLine(maxBytes) { IOException("The response of the proxy to CONNECT is too large") }
-            ?: throw closedDuringHandshake()
+    /**
+     * Reads the next line of the response head, which can be [MAX_RESPONSE_HEAD_BYTES] long as a whole, line endings
+     * included.
+     */
+    private fun BudgetedInputStream.readHeadLine(): String {
+        val bytesLeft = MAX_RESPONSE_HEAD_BYTES - bytesRead
+        if (bytesLeft <= 0) throw responseHeadTooLarge()
+        // The limit of readHttpLine() leaves out the LF that ends the line, so a byte is kept back for it
+        return readHttpLine(bytesLeft - 1) { responseHeadTooLarge() } ?: throw closedDuringHandshake()
+    }
+
+    private fun responseHeadTooLarge() = IOException("The response of the proxy to CONNECT is too large")
 
     private fun socks5Connect(
         socket: Socket,
@@ -260,14 +267,17 @@ class ProxyTunnel(private val hostnameResolver: BoundedHostnameResolver) {
 
         private val input = socket.getInputStream()
 
+        var bytesRead = 0
+            private set
+
         override fun read(): Int {
             socket.soTimeout = remainingMs()
-            return input.read()
+            return input.read().also { if (it != -1) bytesRead++ }
         }
 
         override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
             socket.soTimeout = remainingMs()
-            return input.read(buffer, offset, length)
+            return input.read(buffer, offset, length).also { if (it > 0) bytesRead += it }
         }
     }
 }

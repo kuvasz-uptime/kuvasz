@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.services.check.tcp
 
+import com.kuvaszuptime.kuvasz.services.network.BoundedHostnameResolver
 import com.kuvaszuptime.kuvasz.util.elapsedMsSince
 import jakarta.inject.Singleton
 import java.io.IOException

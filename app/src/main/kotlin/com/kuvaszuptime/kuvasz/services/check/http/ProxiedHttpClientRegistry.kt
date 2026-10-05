@@ -2,7 +2,6 @@ package com.kuvaszuptime.kuvasz.services.check.http
 
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.models.dto.proxy.ProxyType
-import com.kuvaszuptime.kuvasz.services.check.tcp.BoundedHostnameResolver
 import com.kuvaszuptime.kuvasz.services.proxy.ConfiguredProxy
 import com.kuvaszuptime.kuvasz.services.proxy.ProxyRegistry
 import io.micronaut.http.client.HttpClient
@@ -11,12 +10,9 @@ import io.micronaut.runtime.ApplicationConfiguration
 import jakarta.annotation.PreDestroy
 import jakarta.inject.Named
 import jakarta.inject.Singleton
-import java.io.IOException
-import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.Proxy
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.TimeUnit
 
 /**
  * The configuration of the client that checks HTTP monitors through [proxy]. Apart from the route, it is identical
@@ -25,12 +21,9 @@ import java.util.concurrent.TimeUnit
 class ProxiedHttpCheckerClientConfiguration(
     config: ApplicationConfiguration,
     appConfig: AppConfig,
-    private val proxy: ConfiguredProxy,
+    proxy: ConfiguredProxy,
     numOfThreads: Int,
 ) : BaseHttpCheckerClientConfiguration(config, appConfig) {
-
-    @Volatile
-    private var resolvedProxyAddress: InetSocketAddress? = null
 
     init {
         proxyType = when (proxy.type) {
@@ -45,21 +38,6 @@ class ProxiedHttpCheckerClientConfiguration(
         }
         setNumOfThreads(numOfThreads)
     }
-
-    /**
-     * Routes the connections the client opens from now on to [address], the current address of the proxy.
-     */
-    fun updateProxyAddress(address: InetAddress) {
-        resolvedProxyAddress = InetSocketAddress(address, proxy.port)
-    }
-
-    /**
-     * The client would resolve an unresolved proxy address itself, while it sets up a connection on its event loop,
-     * so a slow lookup would hold up every other check of that client. It is resolved upfront instead, and handed
-     * over through [updateProxyAddress].
-     */
-    override fun resolveProxy(isSsl: Boolean, host: String, port: Int): Proxy =
-        resolvedProxyAddress?.let { Proxy(proxyType, it) } ?: super.resolveProxy(isSsl, host, port)
 }
 
 /**
@@ -77,7 +55,6 @@ class ProxiedHttpCheckerClientConfiguration(
 @Singleton
 class ProxiedHttpClientRegistry(
     private val proxyRegistry: ProxyRegistry,
-    private val hostnameResolver: BoundedHostnameResolver,
     private val applicationConfiguration: ApplicationConfiguration,
     private val appConfig: AppConfig,
     @Named(BaseHttpCheckerClientConfiguration.EVENT_LOOP_GROUP)
@@ -85,26 +62,18 @@ class ProxiedHttpClientRegistry(
     private val directConfiguration: HttpCheckerClientConfiguration,
 ) : AutoCloseable {
 
-    private class ProxiedClient(val client: HttpClient, val configuration: ProxiedHttpCheckerClientConfiguration)
-
-    private val clients = ConcurrentHashMap<String, ProxiedClient>()
-    private val lookupTimeoutMs = TimeUnit.SECONDS.toMillis(appConfig.httpCheckTimeoutSeconds).toInt()
+    private val clients = ConcurrentHashMap<String, HttpClient>()
 
     /**
-     * Returns the client of the proxy called [proxyName], with the proxy's address freshly resolved. It blocks on the
-     * lookup, so it must not be called on an event loop.
-     *
-     * @return the client, or null if there is no such proxy.
-     * @throws IOException if the proxy's name can't be resolved within the timeout of the HTTP checks.
+     * Returns the client that checks HTTP monitors through the proxy with the given name, or null if there is no
+     * such proxy.
      */
     fun clientFor(proxyName: String): HttpClient? {
         val proxy = proxyRegistry[proxyName] ?: return null
-        val proxiedClient = clients.computeIfAbsent(proxyName) { createClient(proxy) }
-        proxiedClient.configuration.updateProxyAddress(hostnameResolver.resolve(proxy.host, lookupTimeoutMs))
-        return proxiedClient.client
+        return clients.computeIfAbsent(proxyName) { createClient(proxy) }
     }
 
-    private fun createClient(proxy: ConfiguredProxy): ProxiedClient {
+    private fun createClient(proxy: ConfiguredProxy): HttpClient {
         val configuration = ProxiedHttpCheckerClientConfiguration(
             config = applicationConfiguration,
             appConfig = appConfig,
@@ -113,11 +82,11 @@ class ProxiedHttpClientRegistry(
         )
         // A proxied check has to trust exactly the same certificates as a direct one
         configuration.sslConfiguration = directConfiguration.sslConfiguration
-        return ProxiedClient(client = HttpClient.create(null, configuration), configuration = configuration)
+        return HttpClient.create(null, configuration)
     }
 
     @PreDestroy
     override fun close() {
-        clients.values.forEach { it.client.close() }
+        clients.values.forEach { it.close() }
     }
 }
