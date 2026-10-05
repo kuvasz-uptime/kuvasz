@@ -1,11 +1,13 @@
 ![Kuvasz](docs/docs/images/kuvasz-banner.webp)
 
+[![GitHub sponsors](https://img.shields.io/github/sponsors/adamkobor?logo=githubsponsors&color=pink)](https://github.com/sponsors/adamkobor)
+[![Docker Pulls](https://img.shields.io/docker/pulls/kuvaszmonitoring/kuvasz)](https://hub.docker.com/r/kuvaszmonitoring/kuvasz)
 [![CI](https://github.com/kuvasz-uptime/kuvasz/actions/workflows/main.yml/badge.svg)](https://github.com/kuvasz-uptime/kuvasz/actions/workflows/main.yml)
-[![GitHub known bugs](https://img.shields.io/github/issues-search/kuvasz-uptime/kuvasz?query=is%3Aopen%20label%3Abug&label=known%20bugs&color=red)](https://github.com/kuvasz-uptime/kuvasz/issues?q=is%3Aissue%20state%3Aopen%20label%3Abug)
 [![codecov](https://codecov.io/gh/kuvasz-uptime/kuvasz/branch/main/graph/badge.svg?token=67X0CD3CGY)](https://codecov.io/gh/kuvasz-uptime/kuvasz)
+[![GitHub known bugs](https://img.shields.io/github/issues-search/kuvasz-uptime/kuvasz?query=is%3Aopen%20label%3Abug&label=known%20bugs&color=red)](https://github.com/kuvasz-uptime/kuvasz/issues?q=is%3Aissue%20state%3Aopen%20label%3Abug)
 ![no vibe coded](https://img.shields.io/badge/vibe_coding-0%25-green)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fkuvasz-uptime%2Fkuvasz.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fkuvasz-uptime%2Fkuvasz?ref=badge_shield)
-[![Docker Pulls](https://img.shields.io/docker/pulls/kuvaszmonitoring/kuvasz)](https://hub.docker.com/r/kuvaszmonitoring/kuvasz)
+
 ---
 
 **Kuvasz** [ˈkuvɒs] is an open-source, self-hosted uptime & SSL monitoring service with [**status pages**](https://demo.kuvasz-uptime.dev/status), designed to help you keep track of your websites and services. It provides a modern, user-friendly interface, a powerful REST API + MCP server, maintenance windows and supports multiple notification channels like email, Discord, Slack, Telegram, Microsoft Teams, Apprise, Pushover, PagerDuty and custom webhooks.

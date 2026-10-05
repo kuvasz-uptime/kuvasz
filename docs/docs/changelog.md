@@ -1,5 +1,11 @@
 ## 4.5.0 <small>unreleased</small> { id="4.5.0" data-toc-label="4.5.0" }
 
+!!! question "Make your voice heard!"
+
+    There is a **short questionnaire about Kuvasz** in general, which you can fill out anonymously. It takes only a few minutes, and your feedback is highly appreciated as it helps me to focus on the most important features and improvements in the future. You can find it [**here**](https://forms.gle/Lb1q6CmW8eUgVbNr9).
+
+    _Thanks, Adam_
+
 ### Features
 
 **🐳 Docker monitoring**
@@ -14,7 +20,7 @@ Docker monitors are fully integrated across _Kuvasz_: they're manageable via the
 
 **🖥️ A fully redesigned dashboard** 
 
-![New dashboard](images/ui/dashboard.webp)
+![New dashboard](images/ui/dashboard_full.webp)
 
 Instead of repeating the same set of stat cards for every monitor type in a boring way, the brand new dashboard gives you a single overview of **all of your monitors** now: a **verdict** in the header about what needs your attention, the key figures (**uptime**, **incidents**, **downtime** and **mean time to resolve**), an **uptime timeline** per monitor type, the **recent incidents** (both ongoing and resolved), the **certificates** that need your attention, the **active and upcoming maintenance windows**, and the **least reliable monitors** of the period. The period it covers can be picked with a **period selector** (from the last hour up to the last 30 days).
 
@@ -47,12 +53,6 @@ The new [**connectivity check**](features/connectivity-check.md) periodically di
 - Added a new recipe about [**running Kuvasz as a non-root user**](management/examples.md#running-kuvasz-as-a-non-root-user) (optionally without any capabilities, and with a read-only root filesystem), including the things to look out for with **ICMP** and **Docker** monitors. The [**Docker Compose example**](setup/installation.md#2-docker-compose-file) comes with the related settings too, commented out.
 
 ## 4.4.0 <small>2026-09-15</small> { id="4.4.0" data-toc-label="4.4.0" }
-
-!!! question "Make your voice heard!"
-
-    There is a **short questionnaire about Kuvasz** in general, which you can fill out anonymously. It takes only a few minutes, and your feedback is highly appreciated as it helps me to focus on the most important features and improvements in the future. You can find it [**here**](https://forms.gle/Lb1q6CmW8eUgVbNr9).
-
-    _Thanks, Adam_
 
 ### Features
 
