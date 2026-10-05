@@ -18,10 +18,10 @@ class HttpMonitorFormModal(page: Page) : ModalView(page) {
 
     private val proxyField: Locator get() = modal.getByTestId("proxy-select")
 
-    /** The picked proxy, as the chip TomSelect renders for it. There is none for a direct connection. */
+    // The picked proxy, as the chip TomSelect renders for it. There is none for a direct connection.
     val selectedProxy: Locator get() = proxyField.locator(".ts-control .item")
 
-    /** The select TomSelect hides, which still tells whether the field is disabled. */
+    // The select TomSelect hides, which still tells whether the field is disabled.
     val proxySelect: Locator get() = proxyField.locator("select")
 
     /** Picks a proxy from the dropdown. Request settings have to be expanded first. */

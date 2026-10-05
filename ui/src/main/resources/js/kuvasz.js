@@ -1282,9 +1282,11 @@ const upsertHttpMonitorForm = (
             this.selectedHttpStatusCodes.forEach(code => ts.addItem(code, true));
         });
 
-        // The list page edits every monitor through one shared modal, so a dangling proxy is re-offered on each populate
+        // The list page edits every monitor through one shared modal, so the options are rebuilt on each populate:
+        // the dangling proxy of one monitor must not be offered for the next one
         const proxy = source?.proxy || '';
         resetTomSelectState(proxySelectId, (ts) => {
+            ts.clearOptions();
             this.configuredProxies.forEach(configured => ts.addOption({value: configured, text: configured}));
             if (proxy && !this.configuredProxies.includes(proxy)) {
                 ts.addOption({value: proxy, text: `${proxy} ${notConfiguredProxySuffix}`});

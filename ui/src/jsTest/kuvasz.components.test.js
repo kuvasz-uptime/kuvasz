@@ -1125,6 +1125,21 @@ test('HTTP proxy select only offers the configured proxies without a stored one'
     assert.equal(form.proxy, '');
 });
 
+test('HTTP proxy select drops the dangling proxy of the previous monitor in the shared modal', () => {
+    const tomSelect = fakeTomSelect();
+    const form = upsertHttpMonitorForm(
+        null, {}, 'category-select', false, 'select', [], 'proxy-select', ['egress'], '(not configured)', 0,
+    );
+
+    withCategorySelect(tomSelect, () => {
+        form.populateTypeFields({proxy: 'removed'});
+        form.populateTypeFields({proxy: 'egress'});
+    });
+
+    assert.deepEqual(tomSelect.options, [{value: 'egress', text: 'egress'}]);
+    assert.equal(form.proxy, 'egress');
+});
+
 test('HTTP request body sends the proxy, or null for a direct connection', () => {
     const form = upsertHttpMonitorForm(
         null, {}, 'category-select', false, 'select', [], 'proxy-select', ['egress'], '(not configured)', 0,
@@ -1781,6 +1796,10 @@ const fakeTomSelect = () => {
         instance.value = value;
     };
     instance.addItem = (value) => instance.items.push(value);
+    // The real one keeps the selected options, but the helpers clear the selection before calling it
+    instance.clearOptions = () => {
+        instance.options = [];
+    };
     return instance;
 };
 
