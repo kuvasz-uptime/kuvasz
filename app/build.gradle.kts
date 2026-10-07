@@ -152,7 +152,11 @@ allOpen {
 
 tasks.withType<Test> {
     jvmArgs("-Xmx2048M")
-    maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceIn(1, 3)
+    maxParallelForks = if (System.getenv("CI") != null) {
+        3
+    } else {
+        (Runtime.getRuntime().availableProcessors() / 2).coerceIn(1, 4)
+    }
 }
 
 /**

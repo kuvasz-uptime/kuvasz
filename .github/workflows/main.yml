@@ -16,8 +16,8 @@ on:
       - 'helm/**'
       - 'localdev/**'
 jobs:
-  validate-generated-sources:
-    name: Validate generated sources
+  compile:
+    name: Compile all source sets
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -26,17 +26,49 @@ jobs:
           distribution: temurin
           java-version: 25
       - uses: gradle/actions/setup-gradle@v6
+      - name: Compile main, test and UI test sources
+        run: ./gradlew classes testClasses :app:uiTestClasses
+      - name: Share the build cache with the dependent jobs
+        uses: actions/upload-artifact@v7
+        with:
+          name: gradle-build-cache
+          path: |
+            ~/.gradle/caches/build-cache-1
+            !~/.gradle/caches/build-cache-1/*.lock
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+          overwrite: true
+
+  validate-generated-sources:
+    name: Validate generated sources
+    needs: compile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Restore the build cache of the compile job
+        uses: actions/download-artifact@v8
+        with:
+          name: gradle-build-cache
+          path: ~/.gradle/caches/build-cache-1
       - name: Validate translations
         run: ./gradlew :shared:validateI18n
       - name: Validate that JSON schemas are self-contained
         run: ./gradlew :app:validateJsonSchemas
+      # The spec is written outside the build dir as a side effect of kapt, so a build cache hit wouldn't regenerate it
       - name: Generate OpenAPI spec
-        run: ./gradlew :app:updateApiDoc
+        run: ./gradlew :app:kaptKotlin --rerun
       - name: Validate that generated sources are committed
         run: git diff --quiet --exit-code HEAD --
 
   detekt:
     name: Run static analysis with Detekt
+    needs: compile
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -45,11 +77,17 @@ jobs:
           distribution: temurin
           java-version: 25
       - uses: gradle/actions/setup-gradle@v6
+      - name: Restore the build cache of the compile job
+        uses: actions/download-artifact@v8
+        with:
+          name: gradle-build-cache
+          path: ~/.gradle/caches/build-cache-1
       - name: Run detekt
         run: ./gradlew detektAll
 
   check:
     name: Run tests and generate code coverage report
+    needs: compile
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -62,6 +100,11 @@ jobs:
           distribution: temurin
           java-version: 25
       - uses: gradle/actions/setup-gradle@v6
+      - name: Restore the build cache of the compile job
+        uses: actions/download-artifact@v8
+        with:
+          name: gradle-build-cache
+          path: ~/.gradle/caches/build-cache-1
       - name: Run check
         run: ./gradlew check -x detekt -x detektMain -x detektTest
       - name: Publish JVM test results
@@ -99,6 +142,7 @@ jobs:
 
   ui-tests:
     name: Run UI test suite (unit + E2E)
+    needs: compile
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -111,6 +155,11 @@ jobs:
           distribution: temurin
           java-version: 25
       - uses: gradle/actions/setup-gradle@v6
+      - name: Restore the build cache of the compile job
+        uses: actions/download-artifact@v8
+        with:
+          name: gradle-build-cache
+          path: ~/.gradle/caches/build-cache-1
       - uses: actions/setup-node@v7
         with:
           node-version: 24
