@@ -3,27 +3,27 @@ package com.kuvaszuptime.kuvasz.controllers.monitor
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
-import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
-import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.mocks.createDockerMetricsLogRecord
 import com.kuvaszuptime.kuvasz.mocks.createDockerMonitor
 import com.kuvaszuptime.kuvasz.mocks.createDockerUptimeEventRecord
+import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
+import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.mocks.randomClientSecret
 import com.kuvaszuptime.kuvasz.models.ApiErrorCode
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.ServiceError
-import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.ActualUptimeStats
-import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.docker.DockerMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.docker.DockerMonitorDefaults
 import com.kuvaszuptime.kuvasz.models.dto.monitor.docker.DockerMonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.docker.DockerMonitoringStatsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.ActualUptimeStats
+import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.events.MonitorLifecycleEvent
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.NumericMonitorID
-import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.repositories.DockerMetricsLogRepository
 import com.kuvaszuptime.kuvasz.repositories.DockerMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.check.docker.DockerCheckScheduler
@@ -33,13 +33,14 @@ import com.kuvaszuptime.kuvasz.services.docker.DockerHealthStatus
 import com.kuvaszuptime.kuvasz.services.docker.DockerInspectResult
 import com.kuvaszuptime.kuvasz.services.docker.client.DockerApiClient
 import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
+import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.util.getBodyAs
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
-import io.kotest.matchers.comparables.shouldBeEqualComparingTo
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.comparables.shouldBeEqualComparingTo
 import io.kotest.matchers.date.shouldBeAfter
 import io.kotest.matchers.longs.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldBeNull
@@ -64,7 +65,10 @@ import tools.jackson.databind.node.JsonNodeFactory
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.math.BigDecimal
 import java.time.Duration
+import java.time.OffsetDateTime
 import kotlin.time.Duration.Companion.milliseconds
+
+private val CONTAINER_CREATED_AT = OffsetDateTime.parse("2026-10-07T06:59:12.914442Z")
 
 @MicronautTest(environments = ["full-integrations-setup", "docker-hosts"])
 class DockerMonitorControllerTest(
@@ -90,6 +94,9 @@ class DockerMonitorControllerTest(
                 exitCode = null,
                 oomKilled = false,
                 failingStreak = null,
+                image = null,
+                restartCount = null,
+                createdAt = null,
             ),
             latencyMs = 10,
         )
@@ -107,6 +114,8 @@ class DockerMonitorControllerTest(
                     status = UptimeStatus.UP,
                     endedAt = null,
                     image = "nginx:1.27",
+                    restartCount = 3,
+                    containerCreatedAt = CONTAINER_CREATED_AT,
                 )
 
                 val response = monitorClient.getMonitorsWithDetails(
@@ -129,6 +138,8 @@ class DockerMonitorControllerTest(
                     item.enabled shouldBe monitor.enabled
                     item.uptimeStatus shouldBe UptimeStatus.UP
                     item.image shouldBe "nginx:1.27"
+                    item.restartCount shouldBe 3
+                    item.containerCreatedAt shouldBe CONTAINER_CREATED_AT
                 }
             }
 
@@ -818,6 +829,8 @@ class DockerMonitorControllerTest(
                     status = UptimeStatus.DOWN,
                     endedAt = now,
                     image = "nginx:1.26",
+                    restartCount = 1,
+                    containerCreatedAt = CONTAINER_CREATED_AT.minusDays(1),
                 )
                 createDockerUptimeEventRecord(
                     dslContext,
@@ -826,16 +839,26 @@ class DockerMonitorControllerTest(
                     status = UptimeStatus.UP,
                     endedAt = null,
                     image = "nginx:1.27",
+                    restartCount = 0,
+                    containerCreatedAt = CONTAINER_CREATED_AT,
                 )
 
                 val events = monitorClient.getUptimeEvents(monitor.id)
 
-                then("it should return events in descending order, each with its own image") {
+                then("it should return events in descending order, each with its own container details") {
                     events shouldHaveSize 2
-                    events.first().status shouldBe UptimeStatus.UP
-                    events.first().image shouldBe "nginx:1.27"
-                    events.last().status shouldBe UptimeStatus.DOWN
-                    events.last().image shouldBe "nginx:1.26"
+                    with(events.first()) {
+                        status shouldBe UptimeStatus.UP
+                        image shouldBe "nginx:1.27"
+                        restartCount shouldBe 0
+                        containerCreatedAt shouldBe CONTAINER_CREATED_AT
+                    }
+                    with(events.last()) {
+                        status shouldBe UptimeStatus.DOWN
+                        image shouldBe "nginx:1.26"
+                        restartCount shouldBe 1
+                        containerCreatedAt shouldBe CONTAINER_CREATED_AT.minusDays(1)
+                    }
                 }
             }
 
@@ -1085,7 +1108,7 @@ class DockerMonitorControllerTest(
                 }
             }
         }
-    
+
         given("the category of a Docker monitor") {
             fun createWithCategory(category: String?, monitorName: String = randomClientSecret()) =
                 monitorClient.createMonitor(
@@ -1169,7 +1192,7 @@ class DockerMonitorControllerTest(
                 }
             }
         }
-}
+    }
 
     @MockBean(StatCalculator::class)
     fun mockStatCalculator() = mockk<StatCalculator>()

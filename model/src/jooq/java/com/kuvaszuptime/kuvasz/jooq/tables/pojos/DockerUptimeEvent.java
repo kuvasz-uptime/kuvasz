@@ -26,6 +26,8 @@ public class DockerUptimeEvent implements Serializable {
     private OffsetDateTime endedAt;
     private OffsetDateTime updatedAt;
     private String image;
+    private Integer restartCount;
+    private OffsetDateTime containerCreatedAt;
 
     public DockerUptimeEvent() {}
 
@@ -38,6 +40,8 @@ public class DockerUptimeEvent implements Serializable {
         this.endedAt = value.endedAt;
         this.updatedAt = value.updatedAt;
         this.image = value.image;
+        this.restartCount = value.restartCount;
+        this.containerCreatedAt = value.containerCreatedAt;
     }
 
     public DockerUptimeEvent(
@@ -48,7 +52,9 @@ public class DockerUptimeEvent implements Serializable {
         OffsetDateTime startedAt,
         OffsetDateTime endedAt,
         OffsetDateTime updatedAt,
-        String image
+        String image,
+        Integer restartCount,
+        OffsetDateTime containerCreatedAt
     ) {
         this.id = id;
         this.monitorId = monitorId;
@@ -58,6 +64,8 @@ public class DockerUptimeEvent implements Serializable {
         this.endedAt = endedAt;
         this.updatedAt = updatedAt;
         this.image = image;
+        this.restartCount = restartCount;
+        this.containerCreatedAt = containerCreatedAt;
     }
 
     /**
@@ -180,6 +188,36 @@ public class DockerUptimeEvent implements Serializable {
         return this;
     }
 
+    /**
+     * Getter for <code>kuvasz.docker_uptime_event.restart_count</code>.
+     */
+    public Integer getRestartCount() {
+        return this.restartCount;
+    }
+
+    /**
+     * Setter for <code>kuvasz.docker_uptime_event.restart_count</code>.
+     */
+    public DockerUptimeEvent setRestartCount(Integer restartCount) {
+        this.restartCount = restartCount;
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.docker_uptime_event.container_created_at</code>.
+     */
+    public OffsetDateTime getContainerCreatedAt() {
+        return this.containerCreatedAt;
+    }
+
+    /**
+     * Setter for <code>kuvasz.docker_uptime_event.container_created_at</code>.
+     */
+    public DockerUptimeEvent setContainerCreatedAt(OffsetDateTime containerCreatedAt) {
+        this.containerCreatedAt = containerCreatedAt;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -237,6 +275,18 @@ public class DockerUptimeEvent implements Serializable {
         }
         else if (!this.image.equals(other.image))
             return false;
+        if (this.restartCount == null) {
+            if (other.restartCount != null)
+                return false;
+        }
+        else if (!this.restartCount.equals(other.restartCount))
+            return false;
+        if (this.containerCreatedAt == null) {
+            if (other.containerCreatedAt != null)
+                return false;
+        }
+        else if (!this.containerCreatedAt.equals(other.containerCreatedAt))
+            return false;
         return true;
     }
 
@@ -252,6 +302,8 @@ public class DockerUptimeEvent implements Serializable {
         result = prime * result + ((this.endedAt == null) ? 0 : this.endedAt.hashCode());
         result = prime * result + ((this.updatedAt == null) ? 0 : this.updatedAt.hashCode());
         result = prime * result + ((this.image == null) ? 0 : this.image.hashCode());
+        result = prime * result + ((this.restartCount == null) ? 0 : this.restartCount.hashCode());
+        result = prime * result + ((this.containerCreatedAt == null) ? 0 : this.containerCreatedAt.hashCode());
         return result;
     }
 
@@ -267,6 +319,8 @@ public class DockerUptimeEvent implements Serializable {
         sb.append(", ").append(endedAt);
         sb.append(", ").append(updatedAt);
         sb.append(", ").append(image);
+        sb.append(", ").append(restartCount);
+        sb.append(", ").append(containerCreatedAt);
 
         sb.append(")");
         return sb.toString();

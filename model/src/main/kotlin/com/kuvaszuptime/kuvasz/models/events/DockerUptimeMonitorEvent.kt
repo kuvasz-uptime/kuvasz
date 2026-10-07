@@ -6,10 +6,13 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.DockerMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DockerUptimeEventRecord
 import com.kuvaszuptime.kuvasz.util.toDurationString
 import java.math.BigDecimal
+import java.time.OffsetDateTime
 
 sealed class DockerUptimeMonitorEvent : UptimeMonitorEvent() {
     abstract override val previousEvent: DockerUptimeEventRecord?
     abstract val image: String?
+    abstract val restartCount: Int?
+    abstract val containerCreatedAt: OffsetDateTime?
 }
 
 /**
@@ -21,7 +24,9 @@ sealed class DockerUptimeMonitorEvent : UptimeMonitorEvent() {
  * keeps a metrics history and the container was running. They ride along for their exporters too, since sampling
  * twice would cost another second of the daemon's collection cycle.
  *
- * [image] is the image the container was created from, unknown when the container could not be inspected.
+ * [image] is the image the container was created from, [restartCount] is how many times its restart policy restarted
+ * it, and [containerCreatedAt] tells one container apart from a recreated one. All of them are unknown when the
+ * container could not be inspected.
  */
 data class DockerMonitorUpEvent(
     override val monitor: DockerMonitorRecord,
@@ -30,6 +35,8 @@ data class DockerMonitorUpEvent(
     val cpuUsagePercent: BigDecimal? = null,
     val memoryUsageBytes: Long? = null,
     override val image: String? = null,
+    override val restartCount: Int? = null,
+    override val containerCreatedAt: OffsetDateTime? = null,
 ) : DockerUptimeMonitorEvent() {
 
     override val uptimeStatus = UptimeStatus.UP
@@ -46,6 +53,8 @@ data class DockerMonitorDownEvent(
     override val previousEvent: DockerUptimeEventRecord?,
     val latencyInMs: Int? = null,
     override val image: String? = null,
+    override val restartCount: Int? = null,
+    override val containerCreatedAt: OffsetDateTime? = null,
 ) : DockerUptimeMonitorEvent() {
 
     override val uptimeStatus = UptimeStatus.DOWN

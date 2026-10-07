@@ -19,6 +19,7 @@ import com.kuvaszuptime.kuvasz.services.docker.DockerStatsResult
 import com.kuvaszuptime.kuvasz.services.docker.client.DockerApiClient
 import com.kuvaszuptime.kuvasz.testutils.DOCKER_HOSTS
 import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
+import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -31,15 +32,20 @@ import io.mockk.mockk
 import io.mockk.verify
 import io.reactivex.rxjava3.subscribers.TestSubscriber
 import java.math.BigDecimal
+import java.time.OffsetDateTime
 
 private const val LATENCY_MS = 12
 private const val IMAGE = "nginx:1.27"
+private const val RESTART_COUNT = 2
+private val CREATED_AT = OffsetDateTime.parse("2026-10-07T06:59:12.914442Z")
 
 private fun inspected(
     status: DockerContainerStatus,
     health: DockerHealthStatus = DockerHealthStatus.NONE,
     exitCode: Int? = null,
     image: String = IMAGE,
+    restartCount: Int = RESTART_COUNT,
+    createdAt: OffsetDateTime = CREATED_AT,
 ) = DockerInspectResult.Inspected(
     state = DockerContainerState(
         status = status,
@@ -48,6 +54,8 @@ private fun inspected(
         oomKilled = false,
         failingStreak = null,
         image = image,
+        restartCount = restartCount,
+        createdAt = createdAt,
     ),
     latencyMs = LATENCY_MS,
 )
@@ -121,6 +129,18 @@ class DockerUptimeCheckerTest(
                     }
                 }
 
+                then("the event should be persisted with the restart count and the creation time of the container") {
+                    upSubscriber.awaitCount(1)
+                    with(upSubscriber.values().first()) {
+                        restartCount shouldBe RESTART_COUNT
+                        containerCreatedAt shouldBe CREATED_AT
+                    }
+                    with(uptimeEventRepository.fetchByMonitorId(monitor.id).shouldHaveSize(1).first()) {
+                        restartCount shouldBe RESTART_COUNT
+                        containerCreatedAt shouldBe CREATED_AT
+                    }
+                }
+
                 then("the sample should be written to the metrics log") {
                     val log = metricsLogRepository.fetchLastByMonitorId(monitor.id).shouldNotBeNull()
                     log.cpuUsagePercent shouldBe BigDecimal("37.25")
@@ -179,6 +199,48 @@ class DockerUptimeCheckerTest(
                 }
             }
 
+            `when`("a running container is restarted by its restart policy between two checks") {
+                val monitor = createDockerMonitor(monitorRepository, dockerHost = "local")
+                val mock = getMock(apiClient)
+                every {
+                    mock.inspectContainer(any(), any(), any())
+                } returns inspected(DockerContainerStatus.RUNNING) andThen
+                    inspected(DockerContainerStatus.RUNNING, restartCount = RESTART_COUNT + 1)
+                every { mock.containerStats(any(), any(), any()) } returns DockerStatsResult.Measured(SAMPLE)
+
+                uptimeChecker.check(monitor)
+                uptimeChecker.check(monitor)
+
+                then("the ongoing UP event should carry the new restart count") {
+                    with(uptimeEventRepository.fetchByMonitorId(monitor.id).shouldHaveSize(1).first()) {
+                        status shouldBe UptimeStatus.UP
+                        restartCount shouldBe RESTART_COUNT + 1
+                    }
+                }
+            }
+
+            `when`("the daemon of a running container becomes unreachable") {
+                val monitor = createDockerMonitor(monitorRepository, dockerHost = "local")
+                val mock = getMock(apiClient)
+                every {
+                    mock.inspectContainer(any(), any(), any())
+                } returns inspected(DockerContainerStatus.RUNNING) andThen
+                    DockerInspectResult.Unreachable("connection refused")
+                every { mock.containerStats(any(), any(), any()) } returns DockerStatsResult.Measured(SAMPLE)
+
+                uptimeChecker.check(monitor)
+                uptimeChecker.check(monitor)
+
+                then("the new DOWN event should carry the restart count and creation time over from the UP event") {
+                    val events = uptimeEventRepository.fetchByMonitorId(monitor.id).shouldHaveSize(2)
+                    with(events.single { it.status == UptimeStatus.DOWN }) {
+                        image shouldBe null
+                        restartCount shouldBe RESTART_COUNT
+                        containerCreatedAt shouldBe CREATED_AT
+                    }
+                }
+            }
+
             `when`("the container of a monitor that is already down disappears") {
                 val monitor = createDockerMonitor(monitorRepository, dockerHost = "local")
                 val mock = getMock(apiClient)
@@ -190,11 +252,13 @@ class DockerUptimeCheckerTest(
                 uptimeChecker.check(monitor)
                 uptimeChecker.check(monitor)
 
-                then("the ongoing DOWN event should keep the image it was started with") {
+                then("the ongoing DOWN event should keep the image, restart count and creation time it knew") {
                     with(uptimeEventRepository.fetchByMonitorId(monitor.id).shouldHaveSize(1).first()) {
                         error shouldBe
                             """Reason: There is no container called "${monitor.container}" on the Docker host "local""""
                         image shouldBe IMAGE
+                        restartCount shouldBe RESTART_COUNT
+                        containerCreatedAt shouldBe CREATED_AT
                     }
                 }
             }
@@ -235,6 +299,13 @@ class DockerUptimeCheckerTest(
                     with(downSubscriber.values().shouldHaveSize(1).first()) {
                         error shouldBe """The Docker host "local" cannot be reached: connection refused"""
                         image shouldBe null
+                    }
+                }
+
+                then("with no previous event to carry them over from, the restart count should stay unknown") {
+                    with(uptimeEventRepository.fetchByMonitorId(monitor.id).shouldHaveSize(1).first()) {
+                        restartCount shouldBe null
+                        containerCreatedAt shouldBe null
                     }
                 }
 

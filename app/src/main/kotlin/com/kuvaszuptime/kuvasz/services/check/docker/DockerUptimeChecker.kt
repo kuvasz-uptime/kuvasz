@@ -44,7 +44,17 @@ class DockerUptimeChecker(
         // for a monitor as naming a host that was since removed from the config
         val host = hostRegistry?.get(monitor.dockerHost)
         if (host == null || apiClient == null) {
-            reportDown(monitor, Messages.dockerHostNotConfigured(monitor.dockerHost), latencyMs = null)
+            val error = Messages.dockerHostNotConfigured(monitor.dockerHost)
+            reportDown(
+                monitor = monitor,
+                outcome = DockerCheckOutcome.Down(
+                    error,
+                    latencyMs = null,
+                    image = null,
+                    restartCount = null,
+                    containerCreatedAt = null,
+                )
+            )
         } else {
             val outcome = apiClient
                 .inspectContainer(host, monitor.container, monitor.timeoutMs)
@@ -56,7 +66,7 @@ class DockerUptimeChecker(
 
             when (outcome) {
                 is DockerCheckOutcome.Up -> reportUp(monitor, outcome, stats)
-                is DockerCheckOutcome.Down -> reportDown(monitor, outcome.error, outcome.latencyMs, outcome.image)
+                is DockerCheckOutcome.Down -> reportDown(monitor, outcome)
             }
         }
 
@@ -115,19 +125,23 @@ class DockerUptimeChecker(
             image = outcome.image,
             cpuUsagePercent = stats?.cpuUsagePercentDecimal,
             memoryUsageBytes = stats?.memoryUsageBytes,
+            restartCount = outcome.restartCount,
+            containerCreatedAt = outcome.containerCreatedAt,
         )
         pendingFailureRepository.deleteByMonitorId(monitor.id)
         databaseEventHandler.handleUptimeMonitorEvent(event)
         eventDispatcher.dispatch(event)
     }
 
-    private fun reportDown(monitor: DockerMonitorRecord, error: String, latencyMs: Int?, image: String? = null) {
+    private fun reportDown(monitor: DockerMonitorRecord, outcome: DockerCheckOutcome.Down) {
         val event = DockerMonitorDownEvent(
             monitor = monitor,
-            error = error,
+            error = outcome.error,
             previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(monitor.id),
-            latencyInMs = latencyMs,
-            image = image,
+            latencyInMs = outcome.latencyMs,
+            image = outcome.image,
+            restartCount = outcome.restartCount,
+            containerCreatedAt = outcome.containerCreatedAt,
         )
         if (event.isDownNow(pendingFailureRepository)) {
             databaseEventHandler.handleUptimeMonitorEvent(event)

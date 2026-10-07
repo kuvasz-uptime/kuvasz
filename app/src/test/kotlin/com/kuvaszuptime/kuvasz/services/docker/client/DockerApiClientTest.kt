@@ -19,6 +19,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import java.io.IOException
 import java.nio.file.Path
+import java.time.OffsetDateTime
 
 private val LOCAL_HOST = DockerHost(
     name = "local",
@@ -137,6 +138,24 @@ class DockerApiClientTest : BehaviorSpec({
             }
         }
 
+        `when`("the container reports its restart count and creation time") {
+            val (client, _) = clientReturning(
+                200,
+                """{"Created":"2026-10-07T06:59:12.91444221Z","RestartCount":5,"State":{"Status":"running"}}""",
+            )
+            val result = client.inspectContainer(LOCAL_HOST, "my-app", TIMEOUT_MS)
+
+            then("the restart count should be read") {
+                result.shouldBeInstanceOf<DockerInspectResult.Inspected>()
+                result.state.restartCount shouldBe 5
+            }
+
+            then("the creation time should be truncated to microseconds") {
+                result.shouldBeInstanceOf<DockerInspectResult.Inspected>()
+                result.state.createdAt shouldBe OffsetDateTime.parse("2026-10-07T06:59:12.914442Z")
+            }
+        }
+
         `when`("the container is running and healthy") {
             val (client, transport) = clientReturning(
                 200,
@@ -155,6 +174,8 @@ class DockerApiClientTest : BehaviorSpec({
                 result.state.oomKilled shouldBe false
                 result.state.failingStreak shouldBe 0
                 result.state.image.shouldBeNull()
+                result.state.restartCount.shouldBeNull()
+                result.state.createdAt.shouldBeNull()
                 result.latencyMs shouldBeGreaterThanOrEqual 0
             }
 

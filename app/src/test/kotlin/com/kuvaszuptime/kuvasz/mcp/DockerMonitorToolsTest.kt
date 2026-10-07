@@ -22,6 +22,7 @@ import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.monitor.docker.DockerMonitorDefaults
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.DockerMonitorRepository
+import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.testutils.shouldHaveError
 import com.kuvaszuptime.kuvasz.testutils.shouldHaveInputValidationError
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
@@ -35,6 +36,7 @@ import io.micronaut.http.client.annotation.Client
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.modelcontextprotocol.client.McpSyncClient
 import io.modelcontextprotocol.spec.McpSchema
+import java.time.OffsetDateTime
 
 @MicronautTest(environments = ["full-integrations-setup", "docker-hosts"])
 class DockerMonitorToolsTest(
@@ -83,6 +85,8 @@ class DockerMonitorToolsTest(
                     endedAt = null,
                     error = "The container exited (1)",
                     image = "nginx:1.27",
+                    restartCount = 4,
+                    containerCreatedAt = OffsetDateTime.parse("2026-10-07T06:59:12.914442Z"),
                 )
                 val response = callToolWithMcpClient(GET_DOCKER_MONITOR_DETAILS, mapOf("monitorId" to monitor.id))
 
@@ -96,6 +100,8 @@ class DockerMonitorToolsTest(
                     details.dockerHost shouldBe monitor.dockerHost
                     details.container shouldBe monitor.container
                     details.image shouldBe "nginx:1.27"
+                    details.restartCount shouldBe 4
+                    details.containerCreatedAt shouldBe OffsetDateTime.parse("2026-10-07T06:59:12.914442Z")
 
                     response.contentAs<DockerMonitorDetailsSchema>() shouldBe details
                 }

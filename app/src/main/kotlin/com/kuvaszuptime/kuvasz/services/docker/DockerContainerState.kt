@@ -1,5 +1,7 @@
 package com.kuvaszuptime.kuvasz.services.docker
 
+import java.time.OffsetDateTime
+
 /**
  * The lifecycle states the Docker Engine API can report for a container.
  *
@@ -53,7 +55,9 @@ data class DockerContainerState(
     val exitCode: Int?,
     val oomKilled: Boolean,
     val failingStreak: Int?,
-    val image: String? = null,
+    val image: String?,
+    val restartCount: Int?,
+    val createdAt: OffsetDateTime?,
 )
 
 /**

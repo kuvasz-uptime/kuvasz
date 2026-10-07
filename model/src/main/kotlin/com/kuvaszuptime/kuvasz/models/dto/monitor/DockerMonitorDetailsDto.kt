@@ -20,6 +20,10 @@ data class DockerMonitorDetailsDto(
     val container: String,
     @param:Schema(description = DockerMonitorDocs.IMAGE, required = true, nullable = true)
     val image: String?,
+    @param:Schema(description = DockerMonitorDocs.RESTART_COUNT, required = true, nullable = true)
+    val restartCount: Int?,
+    @param:Schema(description = DockerMonitorDocs.CONTAINER_CREATED_AT, required = true, nullable = true)
+    val containerCreatedAt: OffsetDateTime?,
     @param:Schema(description = MonitorDocs.UPTIME_CHECK_INTERVAL, required = true)
     val uptimeCheckInterval: Int,
     @param:Schema(description = DockerMonitorDocs.TIMEOUT_MS, required = true)

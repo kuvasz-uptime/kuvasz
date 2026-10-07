@@ -142,6 +142,36 @@ public class DockerUptimeEventRecord extends UpdatableRecordImpl<DockerUptimeEve
         return (String) get(7);
     }
 
+    /**
+     * Setter for <code>kuvasz.docker_uptime_event.restart_count</code>.
+     */
+    public DockerUptimeEventRecord setRestartCount(Integer value) {
+        set(8, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.docker_uptime_event.restart_count</code>.
+     */
+    public Integer getRestartCount() {
+        return (Integer) get(8);
+    }
+
+    /**
+     * Setter for <code>kuvasz.docker_uptime_event.container_created_at</code>.
+     */
+    public DockerUptimeEventRecord setContainerCreatedAt(OffsetDateTime value) {
+        set(9, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.docker_uptime_event.container_created_at</code>.
+     */
+    public OffsetDateTime getContainerCreatedAt() {
+        return (OffsetDateTime) get(9);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -165,7 +195,7 @@ public class DockerUptimeEventRecord extends UpdatableRecordImpl<DockerUptimeEve
     /**
      * Create a detached, initialised DockerUptimeEventRecord
      */
-    public DockerUptimeEventRecord(Long id, Long monitorId, UptimeStatus status, String error, OffsetDateTime startedAt, OffsetDateTime endedAt, OffsetDateTime updatedAt, String image) {
+    public DockerUptimeEventRecord(Long id, Long monitorId, UptimeStatus status, String error, OffsetDateTime startedAt, OffsetDateTime endedAt, OffsetDateTime updatedAt, String image, Integer restartCount, OffsetDateTime containerCreatedAt) {
         super(DockerUptimeEvent.DOCKER_UPTIME_EVENT);
 
         setId(id);
@@ -176,6 +206,8 @@ public class DockerUptimeEventRecord extends UpdatableRecordImpl<DockerUptimeEve
         setEndedAt(endedAt);
         setUpdatedAt(updatedAt);
         setImage(image);
+        setRestartCount(restartCount);
+        setContainerCreatedAt(containerCreatedAt);
         resetTouchedOnNotNull();
     }
 
@@ -194,6 +226,8 @@ public class DockerUptimeEventRecord extends UpdatableRecordImpl<DockerUptimeEve
             setEndedAt(value.getEndedAt());
             setUpdatedAt(value.getUpdatedAt());
             setImage(value.getImage());
+            setRestartCount(value.getRestartCount());
+            setContainerCreatedAt(value.getContainerCreatedAt());
             resetTouchedOnNotNull();
         }
     }

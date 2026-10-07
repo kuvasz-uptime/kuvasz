@@ -134,6 +134,11 @@ public class DockerMonitor extends TableImpl<DockerMonitorRecord> {
      */
     public final TableField<DockerMonitorRecord, OffsetDateTime> UPDATED_AT = createField(DSL.name("updated_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false).defaultValue(DSL.field(DSL.raw("now()"), SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "");
 
+    /**
+     * The column <code>kuvasz.docker_monitor.restart_alert_enabled</code>.
+     */
+    public final TableField<DockerMonitorRecord, Boolean> RESTART_ALERT_ENABLED = createField(DSL.name("restart_alert_enabled"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("false"), SQLDataType.BOOLEAN)), this, "");
+
     private DockerMonitor(Name alias, Table<DockerMonitorRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }

@@ -3640,6 +3640,7 @@ components:
       required:
       - category
       - container
+      - containerCreatedAt
       - createdAt
       - dockerHost
       - effectiveIntegrations
@@ -3655,6 +3656,7 @@ components:
       - metricsHistoryEnabled
       - name
       - nextUptimeCheck
+      - restartCount
       - statusPages
       - timeoutMs
       - updatedAt
@@ -3681,6 +3683,20 @@ components:
           type: string
           description: "The image the container was created from, as the latest check\
             \ reported it. Null if the container could not be inspected"
+          nullable: true
+        restartCount:
+          type: integer
+          description: "How many times the container's restart policy has restarted\
+            \ it, as the latest inspection reported it. Reset to zero by a manual\
+            \ start or restart. Null if it is not known yet"
+          format: int32
+          nullable: true
+        containerCreatedAt:
+          type: string
+          description: "When the container was created, as the latest inspection reported\
+            \ it. It changes when the container is recreated. Null if it is not known\
+            \ yet"
+          format: date-time
           nullable: true
         uptimeCheckInterval:
           type: integer
@@ -4013,10 +4029,12 @@ components:
           - $ref: "#/components/schemas/HistoricalUptimeStatsDto"
     DockerUptimeEventDto:
       required:
+      - containerCreatedAt
       - endedAt
       - error
       - id
       - image
+      - restartCount
       - startedAt
       - status
       - updatedAt
@@ -4038,6 +4056,18 @@ components:
           type: string
           description: "The image the container was created from, as last reported\
             \ during the event. Null if the container could not be inspected"
+          nullable: true
+        restartCount:
+          type: integer
+          description: "How many times the container's restart policy has restarted\
+            \ it, as last reported during the event. Null if it is not known"
+          format: int32
+          nullable: true
+        containerCreatedAt:
+          type: string
+          description: "When the container was created, as last reported during the\
+            \ event. Null if it is not known"
+          format: date-time
           nullable: true
         startedAt:
           type: string

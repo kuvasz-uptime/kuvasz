@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.services.docker.DockerContainerState
 import com.kuvaszuptime.kuvasz.services.docker.DockerContainerStatus
 import com.kuvaszuptime.kuvasz.services.docker.DockerHealthStatus
 import com.kuvaszuptime.kuvasz.services.docker.DockerInspectResult
+import java.time.OffsetDateTime
 
 /**
  * The up/down decision of a single Docker check.
@@ -20,12 +21,23 @@ sealed interface DockerCheckOutcome {
 
     val image: String?
 
-    data class Up(override val latencyMs: Int?, override val image: String? = null) : DockerCheckOutcome
+    val restartCount: Int?
+
+    val containerCreatedAt: OffsetDateTime?
+
+    data class Up(
+        override val latencyMs: Int?,
+        override val image: String?,
+        override val restartCount: Int?,
+        override val containerCreatedAt: OffsetDateTime?,
+    ) : DockerCheckOutcome
 
     data class Down(
         val error: String,
         override val latencyMs: Int?,
-        override val image: String? = null,
+        override val image: String?,
+        override val restartCount: Int?,
+        override val containerCreatedAt: OffsetDateTime?,
     ) : DockerCheckOutcome
 }
 
@@ -46,6 +58,9 @@ fun DockerInspectResult.toCheckOutcome(dockerHost: String, container: String): D
             dockerHost
         ),
         latencyMs = latencyMs,
+        image = null,
+        restartCount = null,
+        containerCreatedAt = null,
     )
 
     is DockerInspectResult.DaemonError -> DockerCheckOutcome.Down(
@@ -54,11 +69,17 @@ fun DockerInspectResult.toCheckOutcome(dockerHost: String, container: String): D
             ?.let { Messages.dockerDaemonErrorWithMessage(statusCode.toString(), it.sanitizeAsError()) }
             ?: Messages.dockerDaemonError(statusCode.toString()),
         latencyMs = latencyMs,
+        image = null,
+        restartCount = null,
+        containerCreatedAt = null,
     )
 
     is DockerInspectResult.Unreachable -> DockerCheckOutcome.Down(
         error = Messages.dockerHostUnreachable(dockerHost, error.sanitizeAsError()),
         latencyMs = null,
+        image = null,
+        restartCount = null,
+        containerCreatedAt = null,
     )
 }
 
@@ -67,7 +88,7 @@ private fun DockerContainerState.toCheckOutcome(latencyMs: Int): DockerCheckOutc
     DockerContainerStatus.RUNNING -> if (health == DockerHealthStatus.UNHEALTHY) {
         down(unhealthyReason(), latencyMs)
     } else {
-        DockerCheckOutcome.Up(latencyMs, image)
+        DockerCheckOutcome.Up(latencyMs, image, restartCount, createdAt)
     }
 
     DockerContainerStatus.EXITED -> down(exitedReason(), latencyMs)
@@ -78,7 +99,8 @@ private fun DockerContainerState.toCheckOutcome(latencyMs: Int): DockerCheckOutc
     DockerContainerStatus.DEAD -> down(Messages.dockerStatusDead(), latencyMs)
 }
 
-private fun DockerContainerState.down(error: String, latencyMs: Int) = DockerCheckOutcome.Down(error, latencyMs, image)
+private fun DockerContainerState.down(error: String, latencyMs: Int) =
+    DockerCheckOutcome.Down(error, latencyMs, image, restartCount, createdAt)
 
 /**
  * The streak is only worth reporting above one: the first failure already flips the daemon's verdict to unhealthy,

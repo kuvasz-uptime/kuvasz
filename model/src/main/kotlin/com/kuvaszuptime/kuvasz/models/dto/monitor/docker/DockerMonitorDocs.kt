@@ -7,6 +7,14 @@ object DockerMonitorDocs {
         "Null if the container could not be inspected"
     const val EVENT_IMAGE = "The image the container was created from, as last reported during the event. " +
         "Null if the container could not be inspected"
+    const val RESTART_COUNT = "How many times the container's restart policy has restarted it, as the latest " +
+        "inspection reported it. Reset to zero by a manual start or restart. Null if it is not known yet"
+    const val EVENT_RESTART_COUNT = "How many times the container's restart policy has restarted it, as last " +
+        "reported during the event. Null if it is not known"
+    const val CONTAINER_CREATED_AT = "When the container was created, as the latest inspection reported it. " +
+        "It changes when the container is recreated. Null if it is not known yet"
+    const val EVENT_CONTAINER_CREATED_AT = "When the container was created, as last reported during the event. " +
+        "Null if it is not known"
     const val TIMEOUT_MS = "The Docker API request timeout in milliseconds (1-30000)"
     const val METRICS_HISTORY_ENABLED =
         "Whether metrics history is enabled for the monitor. Beyond recording the history, it also turns on the " +
