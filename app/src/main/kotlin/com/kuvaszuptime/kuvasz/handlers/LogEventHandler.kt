@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
@@ -32,6 +33,9 @@ class LogEventHandler(eventDispatcher: EventDispatcher) {
         eventDispatcher.subscribeToDnsRecordsChangedEvents { event ->
             event.handle()
         }
+        eventDispatcher.subscribeToDockerContainerRestartedEvents { event ->
+            event.handle()
+        }
     }
 
     private fun UptimeMonitorEvent.handle() {
@@ -54,6 +58,11 @@ class LogEventHandler(eventDispatcher: EventDispatcher) {
     }
 
     private fun DnsRecordsChangedEvent.handle() {
+        val message = formatter.toFormattedMessage(this)
+        logger.info(message)
+    }
+
+    private fun DockerContainerRestartedEvent.handle() {
         val message = formatter.toFormattedMessage(this)
         logger.info(message)
     }

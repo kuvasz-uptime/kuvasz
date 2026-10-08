@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.services.check.docker
 import com.kuvaszuptime.kuvasz.handlers.DatabaseEventHandler
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DockerMonitorRecord
+import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerMonitorUpEvent
 import com.kuvaszuptime.kuvasz.repositories.DockerMetricsLogRepository
@@ -131,6 +132,31 @@ class DockerUptimeChecker(
         pendingFailureRepository.deleteByMonitorId(monitor.id)
         databaseEventHandler.handleUptimeMonitorEvent(event)
         eventDispatcher.dispatch(event)
+        if (monitor.restartAlertEnabled) detectRestarts(event)
+    }
+
+    /**
+     * Compares the restart count against the one the previous event recorded. Only an UP check alerts: restarts seen
+     * while the monitor is DOWN are already covered by the DOWN notification, and the DOWN event absorbs them.
+     *
+     * The count is only comparable within the same container: a recreated one starts from zero, and a manual restart
+     * resets it as well, so a changed creation time or a lower count is stored silently.
+     */
+    private fun detectRestarts(event: DockerMonitorUpEvent) {
+        val previousCount = event.previousEvent?.restartCount ?: return
+        val currentCount = event.restartCount ?: return
+        val isSameContainer = event.previousEvent?.containerCreatedAt
+            ?.let { previousCreatedAt -> event.containerCreatedAt?.isEqual(previousCreatedAt) } == true
+
+        if (isSameContainer && currentCount > previousCount) {
+            eventDispatcher.dispatch(
+                DockerContainerRestartedEvent(
+                    monitor = event.monitor,
+                    previousRestartCount = previousCount,
+                    currentRestartCount = currentCount,
+                )
+            )
+        }
     }
 
     private fun reportDown(monitor: DockerMonitorRecord, outcome: DockerCheckOutcome.Down) {

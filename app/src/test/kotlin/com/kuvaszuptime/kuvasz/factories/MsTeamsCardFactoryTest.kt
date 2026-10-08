@@ -36,6 +36,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.CardTextBlock
 import com.kuvaszuptime.kuvasz.models.handlers.MsTeamsAttachment
 import com.kuvaszuptime.kuvasz.models.handlers.MsTeamsMessage
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
+import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
 import com.kuvaszuptime.kuvasz.util.diffToDuration
@@ -194,6 +195,18 @@ class MsTeamsCardFactoryTest(
             message.details().single().text shouldBe "A: [1.1.1.1] → [2.2.2.2]\n\nMX: [mx1.test] → [mx2.test]"
         }
 
+        should("tell how many times the container has been restarted") {
+            val message = factory.fromDockerContainerRestartedEvent(
+                DockerContainerRestartedEvent(
+                    monitor = DockerMonitorRecord().setId(7777).setName("restart_monitor"),
+                    previousRestartCount = 2,
+                    currentRestartCount = 5,
+                )
+            )
+
+            message.details().single().text shouldBe "Restarts since the last check: 3 (total: 5)"
+        }
+
         should("render a multi-line detail as separate paragraphs, without any markdown") {
             val message = factory.fromMaintenanceEvent(
                 MaintenanceWindowStartEvent(
@@ -309,6 +322,16 @@ class MsTeamsCardFactoryTest(
         should("be 'warning' for an upcoming SSL expiry") {
             factory.fromSSLEvent(SSLWillExpireEvent(monitor, generateCertificateInfo(), null))
                 .container().style shouldBe "warning"
+        }
+
+        should("be 'warning' for a restarted container") {
+            factory.fromDockerContainerRestartedEvent(
+                DockerContainerRestartedEvent(
+                    monitor = DockerMonitorRecord().setId(7777).setName("restart_monitor"),
+                    previousRestartCount = 2,
+                    currentRestartCount = 5,
+                )
+            ).container().style shouldBe "warning"
         }
 
         should("be 'accent' for the informational events") {

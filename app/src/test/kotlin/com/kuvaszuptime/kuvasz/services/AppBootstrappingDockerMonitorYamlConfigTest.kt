@@ -109,6 +109,7 @@ class AppBootstrappingDockerMonitorYamlConfigTest : StringSpec({
             secondMonitor.enabled shouldBe DockerMonitorDefaults.MONITOR_ENABLED
             secondMonitor.timeoutMs shouldBe DockerMonitorDefaults.TIMEOUT_MS
             secondMonitor.failureCountThreshold shouldBe DockerMonitorDefaults.FAILURE_COUNT_THRESHOLD
+            secondMonitor.restartAlertEnabled shouldBe DockerMonitorDefaults.RESTART_ALERT_ENABLED
             secondMonitor.integrations shouldBe arrayOf(
                 IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled")
             )
@@ -120,6 +121,7 @@ class AppBootstrappingDockerMonitorYamlConfigTest : StringSpec({
             thirdMonitor.name shouldBe "test3"
             // Explicitly turned off in the YAML, as opposed to the other two which take the default
             thirdMonitor.ignoreConnectivityCheck shouldBe false
+            thirdMonitor.restartAlertEnabled shouldBe true
             thirdMonitor.dockerHost shouldBe "vps-1"
             thirdMonitor.container shouldBe "worker"
             thirdMonitor.uptimeCheckInterval shouldBe 120

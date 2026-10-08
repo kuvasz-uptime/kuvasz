@@ -18,3 +18,4 @@ docker-monitors:
     uptime-check-interval: 120
     enabled: true
     ignore-connectivity-check: false
+    restart-alert-enabled: true

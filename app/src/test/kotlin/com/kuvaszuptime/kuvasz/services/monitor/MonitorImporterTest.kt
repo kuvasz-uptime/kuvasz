@@ -357,7 +357,7 @@ class MonitorImporterTest(
 
             `when`("it receives Docker monitors and dryRun is false") {
                 val result = monitorImporter.importDockerMonitorConfigs(
-                    listOf(dockerAdapter("persisted-docker")),
+                    listOf(dockerAdapter("persisted-docker", restartAlertEnabled = true)),
                     dryRun = false,
                 )
 
@@ -365,6 +365,7 @@ class MonitorImporterTest(
                     result.monitorType shouldBe MonitorType.DOCKER
                     result.receivedCnt shouldBe 1
                     dockerMonitorRepository.findByName("persisted-docker").shouldNotBeNull()
+                        .restartAlertEnabled shouldBe true
                 }
             }
 
@@ -951,6 +952,7 @@ class MonitorImporterTest(
         name: String,
         dockerHost: String = "local",
         metricsHistoryEnabled: Boolean = true,
+        restartAlertEnabled: Boolean = false,
     ) = DockerMonitorImportAdapter(
         DockerMonitorExportDto(
             name = name,
@@ -962,6 +964,7 @@ class MonitorImporterTest(
             enabled = true,
             integrations = emptySet(),
             metricsHistoryEnabled = metricsHistoryEnabled,
+            restartAlertEnabled = restartAlertEnabled,
             category = null,
             ignoreConnectivityCheck = true,
         )

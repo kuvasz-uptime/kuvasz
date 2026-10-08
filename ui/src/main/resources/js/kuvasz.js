@@ -1808,6 +1808,7 @@ const upsertDockerMonitorForm = (
         this.uptimeCheckInterval = source?.uptimeCheckInterval || 60;
         this.timeoutMs = source?.timeoutMs || 5000;
         this.metricsHistoryEnabled = source?.metricsHistoryEnabled ?? false;
+        this.restartAlertEnabled = source?.restartAlertEnabled ?? false;
         this.containerLoadFailed = false;
 
         /*
@@ -1952,6 +1953,7 @@ const upsertDockerMonitorForm = (
             uptimeCheckInterval: this.uptimeCheckInterval,
             timeoutMs: this.timeoutMs,
             metricsHistoryEnabled: this.metricsHistoryEnabled,
+            restartAlertEnabled: this.restartAlertEnabled,
         };
     },
 });

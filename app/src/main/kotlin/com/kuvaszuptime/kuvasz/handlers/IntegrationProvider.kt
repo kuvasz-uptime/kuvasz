@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.handlers
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
@@ -60,6 +61,7 @@ fun MonitorEvent<*>.toIntegrationEventType(): IntegrationEventType = when (this)
     is UptimeMonitorEvent -> toIntegrationEventType()
     is SSLMonitorEvent -> toIntegrationEventType()
     is DnsRecordsChangedEvent -> IntegrationEventType.DNS_RECORDS_CHANGED
+    is DockerContainerRestartedEvent -> IntegrationEventType.DOCKER_CONTAINER_RESTARTED
     is HttpRedirectEvent ->
         throw NotImplementedError("Redirect events are not supported in integrations")
 }

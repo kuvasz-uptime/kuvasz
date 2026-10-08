@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.factories
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.StructuredDnsMonitorDownMessage
@@ -9,6 +10,7 @@ import com.kuvaszuptime.kuvasz.models.events.StructuredDnsMonitorUpMessage
 import com.kuvaszuptime.kuvasz.models.events.StructuredDockerMonitorDownMessage
 import com.kuvaszuptime.kuvasz.models.events.StructuredDockerMonitorUpMessage
 import com.kuvaszuptime.kuvasz.models.events.StructuredDnsRecordsChangedMessage
+import com.kuvaszuptime.kuvasz.models.events.StructuredDockerContainerRestartedMessage
 import com.kuvaszuptime.kuvasz.models.events.StructuredHttpMonitorUpMessage
 import com.kuvaszuptime.kuvasz.models.events.StructuredIcmpMonitorDownMessage
 import com.kuvaszuptime.kuvasz.models.events.StructuredIcmpMonitorUpMessage
@@ -70,6 +72,11 @@ class MsTeamsCardFactory {
             buildCard("${event.getEmoji()} ${it.summary}", it.toDetails(), MessageSeverity.INFO)
         }
 
+    fun fromDockerContainerRestartedEvent(event: DockerContainerRestartedEvent): MsTeamsMessage =
+        event.toStructuredMessage().let {
+            buildCard("${event.getEmoji()} ${it.summary}", it.toDetails(), MessageSeverity.WARNING)
+        }
+
     fun fromMaintenanceEvent(event: MaintenanceWindowEvent): MsTeamsMessage =
         event.toStructuredMessage().let {
             buildCard("${event.getEmoji()} ${it.summary}", it.toDetails(), event.toSeverity())
@@ -118,6 +125,8 @@ class MsTeamsCardFactory {
 
     private fun StructuredDnsRecordsChangedMessage.toDetails(): List<String> =
         listOfNotNull(details.takeIf { it.isNotBlank() })
+
+    private fun StructuredDockerContainerRestartedMessage.toDetails(): List<String> = listOf(details)
 
     private fun String.toCardText(): String = replace(NEWLINES, "\n\n")
 }

@@ -16,6 +16,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
@@ -498,6 +499,22 @@ class TelegramTextFormatterTest : BehaviorSpec(
                 then("it should return the correct message") {
                     formatter.toFormattedMessage(event) shouldBe
                         "ℹ️ <b>DNS records changed for monitor \"drift_monitor\"</b>\nA: [1.1.1.1] → [2.2.2.2]"
+                }
+            }
+        }
+
+        given("toFormattedMessage(event: DockerContainerRestartedEvent)") {
+            `when`("it gets a DockerContainerRestartedEvent") {
+                val event = DockerContainerRestartedEvent(
+                    monitor = DockerMonitorRecord().setId(7777L).setName("restart_monitor"),
+                    previousRestartCount = 2,
+                    currentRestartCount = 5,
+                )
+
+                then("it should return the correct message") {
+                    formatter.toFormattedMessage(event) shouldBe
+                        "⚠️ <b>The container of monitor \"restart_monitor\" has been restarted</b>\n" +
+                            "Restarts since the last check: 3 (total: 5)"
                 }
             }
         }

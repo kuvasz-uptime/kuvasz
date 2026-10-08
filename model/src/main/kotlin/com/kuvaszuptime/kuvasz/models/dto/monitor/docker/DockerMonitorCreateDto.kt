@@ -40,6 +40,12 @@ data class DockerMonitorCreateDto(
         defaultValue = DockerMonitorDefaults.METRICS_HISTORY_ENABLED.toString()
     )
     override val metricsHistoryEnabled: Boolean = DockerMonitorDefaults.METRICS_HISTORY_ENABLED,
+    @param:Schema(
+        description = DockerMonitorDocs.RESTART_ALERT_ENABLED,
+        required = false,
+        defaultValue = DockerMonitorDefaults.RESTART_ALERT_ENABLED.toString()
+    )
+    override val restartAlertEnabled: Boolean = DockerMonitorDefaults.RESTART_ALERT_ENABLED,
     @param:Schema(description = MonitorDocs.CATEGORY, required = false, nullable = true)
     override val category: String? = null,
     @param:Schema(

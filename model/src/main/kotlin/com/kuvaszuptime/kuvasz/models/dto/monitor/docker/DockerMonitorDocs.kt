@@ -19,6 +19,9 @@ object DockerMonitorDocs {
     const val METRICS_HISTORY_ENABLED =
         "Whether metrics history is enabled for the monitor. Beyond recording the history, it also turns on the " +
             "CPU and memory sampling of the container, which costs an extra Docker API call on every check."
+    const val RESTART_ALERT_ENABLED =
+        "Whether a DOCKER_CONTAINER_RESTARTED notification is sent when the restart policy of the container restarts " +
+            "it between two checks. Manual restarts and recreating the container do not trigger it."
     const val MONITORS_405_REASON =
         "Docker monitors are in read-only mode, because they are loaded from a YAML config file"
 }

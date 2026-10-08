@@ -103,6 +103,16 @@ internal fun FlowContent.dockerMonitorCreateUpdateModal(
                 isDisabled = isReadOnlyMode,
             )
         }
+        // Restart alerts
+        div {
+            classes(MB_4)
+            toggleSwitch(
+                propName = "restartAlertEnabled",
+                label = Messages.dockerRestartAlertLabel(),
+                description = Messages.dockerRestartAlertDescription(),
+                isDisabled = isReadOnlyMode,
+            )
+        }
     }
 }
 

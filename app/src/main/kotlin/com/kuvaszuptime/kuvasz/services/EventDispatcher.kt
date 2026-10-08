@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.services
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
@@ -50,6 +51,7 @@ class EventDispatcher {
     private val dockerDownEvents = serializedSubject<DockerMonitorDownEvent>()
     private val httpRedirectEvents = serializedSubject<HttpRedirectEvent>()
     private val dnsRecordsChangedEvents = serializedSubject<DnsRecordsChangedEvent>()
+    private val dockerContainerRestartedEvents = serializedSubject<DockerContainerRestartedEvent>()
     private val sslValidEvents = serializedSubject<SSLValidEvent>()
     private val sslWillExpireEvents = serializedSubject<SSLWillExpireEvent>()
     private val sslInvalidEvents = serializedSubject<SSLInvalidEvent>()
@@ -63,6 +65,7 @@ class EventDispatcher {
             is SSLMonitorEvent -> dispatchSSLEvent(event)
             is HttpRedirectEvent -> httpRedirectEvents.onNext(event)
             is DnsRecordsChangedEvent -> dnsRecordsChangedEvents.onNext(event)
+            is DockerContainerRestartedEvent -> dockerContainerRestartedEvents.onNext(event)
         }
 
     private fun dispatchUptimeEvent(event: UptimeMonitorEvent) =
@@ -145,6 +148,9 @@ class EventDispatcher {
 
     fun subscribeToDnsRecordsChangedEvents(consumer: (DnsRecordsChangedEvent) -> Unit): Disposable =
         dnsRecordsChangedEvents.safeSubscribeOnIo(consumer)
+
+    fun subscribeToDockerContainerRestartedEvents(consumer: (DockerContainerRestartedEvent) -> Unit): Disposable =
+        dockerContainerRestartedEvents.safeSubscribeOnIo(consumer)
 
     fun subscribeToSSLValidEvents(consumer: (SSLValidEvent) -> Unit): Disposable =
         sslValidEvents.safeSubscribeOnIo(consumer)

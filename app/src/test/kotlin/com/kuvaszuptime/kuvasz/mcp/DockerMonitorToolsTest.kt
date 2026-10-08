@@ -162,9 +162,31 @@ class DockerMonitorToolsTest(
                         uptimeCheckInterval shouldBe 60
                         enabled shouldBe true
                         ignoreConnectivityCheck shouldBe DockerMonitorDefaults.IGNORE_CONNECTIVITY_CHECK
+                        restartAlertEnabled shouldBe DockerMonitorDefaults.RESTART_ALERT_ENABLED
 
                         response.contentAs<DockerMonitorSchema>() shouldBe this
                     }
+                }
+            }
+
+            `when`("create-docker-monitor is called with restartAlertEnabled set") {
+                val response = callToolWithMcpClient(
+                    CREATE_DOCKER_MONITOR,
+                    mapOf(
+                        "name" to "mcp-created-docker-monitor-with-restart-alerts",
+                        "dockerHost" to "local",
+                        "container" to "my-app",
+                        "uptimeCheckInterval" to 60,
+                        "restartAlertEnabled" to true,
+                    )
+                )
+
+                then("the created monitor should alert on restarts") {
+                    response.isError shouldBe false
+                    response.structuredContentAs<DockerMonitorSchema>().shouldNotBeNull()
+                        .restartAlertEnabled shouldBe true
+                    dockerMonitorRepository.findByName("mcp-created-docker-monitor-with-restart-alerts")
+                        .shouldNotBeNull().restartAlertEnabled shouldBe true
                 }
             }
 

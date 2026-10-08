@@ -81,6 +81,11 @@ data class StructuredDnsRecordsChangedMessage(
     val details: String,
 ) : StructuredMessage()
 
+data class StructuredDockerContainerRestartedMessage(
+    override val summary: String,
+    val details: String,
+) : StructuredMessage()
+
 sealed class StructuredSSLMessage : StructuredMessage()
 
 data class StructuredSSLValidMessage(

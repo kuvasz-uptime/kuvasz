@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
@@ -80,6 +81,9 @@ object PlainTextMessageFormatter : TextMessageFormatter {
         toStructuredMessage().run { listOfNotNull(summary, error, previousUpTime) }
 
     fun toFormattedMessage(event: DnsRecordsChangedEvent): String =
+        event.toStructuredMessage().run { listOf(summary, details).assemble() }
+
+    fun toFormattedMessage(event: DockerContainerRestartedEvent): String =
         event.toStructuredMessage().run { listOf(summary, details).assemble() }
 
     override fun toFormattedMessage(event: SSLMonitorEvent): String {

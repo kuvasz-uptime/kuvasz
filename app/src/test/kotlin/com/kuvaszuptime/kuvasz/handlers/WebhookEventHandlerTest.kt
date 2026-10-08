@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.factories.WebhookMessageFactory
 import com.kuvaszuptime.kuvasz.mocks.createDnsMonitor
+import com.kuvaszuptime.kuvasz.mocks.createDockerMonitor
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
@@ -11,6 +12,7 @@ import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
@@ -34,6 +36,7 @@ import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
 import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.DnsUptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.DockerMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
@@ -75,6 +78,7 @@ class WebhookEventHandlerTest(
     private val icmpMonitorRepository: IcmpMonitorRepository,
     private val tcpMonitorRepository: TcpMonitorRepository,
     private val dnsMonitorRepository: DnsMonitorRepository,
+    private val dockerMonitorRepository: DockerMonitorRepository,
     private val httpUptimeEventRepository: HttpUptimeEventRepository,
     private val pushUptimeEventRepository: PushUptimeEventRepository,
     private val icmpUptimeEventRepository: IcmpUptimeEventRepository,
@@ -922,6 +926,33 @@ class WebhookEventHandlerTest(
                 eventDispatcher.testDispatch(event)
 
                 then("it should send a drift webhook to all enabled integrations") {
+                    verify(exactly = 1) { webhookServiceSpy.sendWebhookEvent(globalWebhookConfig, any()) }
+                    verify(exactly = 1) { webhookServiceSpy.sendWebhookEvent(otherWebhookConfig, any()) }
+                    verify(inverse = true) { webhookServiceSpy.sendWebhookEvent(disabledWebhookConfig, any()) }
+                }
+            }
+        }
+
+        given("the WebhookEventHandler - Docker restart events") {
+            `when`("it receives a DockerContainerRestartedEvent") {
+                val monitor = createDockerMonitor(
+                    dockerMonitorRepository,
+                    integrations = listOf(
+                        globalWebhookConfig.id,
+                        otherWebhookConfig.id,
+                        disabledWebhookConfig.id,
+                    )
+                )
+                val event = DockerContainerRestartedEvent(
+                    monitor = monitor,
+                    previousRestartCount = 2,
+                    currentRestartCount = 3,
+                )
+                mockSuccessfulHttpResponses()
+
+                eventDispatcher.testDispatch(event)
+
+                then("it should send a restart webhook to all enabled integrations") {
                     verify(exactly = 1) { webhookServiceSpy.sendWebhookEvent(globalWebhookConfig, any()) }
                     verify(exactly = 1) { webhookServiceSpy.sendWebhookEvent(otherWebhookConfig, any()) }
                     verify(inverse = true) { webhookServiceSpy.sendWebhookEvent(disabledWebhookConfig, any()) }

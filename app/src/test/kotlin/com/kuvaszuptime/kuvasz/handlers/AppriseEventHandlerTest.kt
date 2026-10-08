@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.factories.AppriseMessageFactory
 import com.kuvaszuptime.kuvasz.mocks.createDnsMonitor
+import com.kuvaszuptime.kuvasz.mocks.createDockerMonitor
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
@@ -11,6 +12,7 @@ import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
@@ -31,6 +33,7 @@ import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
 import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.DnsUptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.DockerMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
@@ -71,6 +74,7 @@ class AppriseEventHandlerTest(
     private val icmpMonitorRepository: IcmpMonitorRepository,
     private val tcpMonitorRepository: TcpMonitorRepository,
     private val dnsMonitorRepository: DnsMonitorRepository,
+    private val dockerMonitorRepository: DockerMonitorRepository,
     private val httpUptimeEventRepository: HttpUptimeEventRepository,
     private val pushUptimeEventRepository: PushUptimeEventRepository,
     private val icmpUptimeEventRepository: IcmpUptimeEventRepository,
@@ -938,6 +942,40 @@ class AppriseEventHandlerTest(
 
                     slot.forAll { message ->
                         message.allText() shouldContain "DNS records changed for monitor \"${monitor.name}\""
+                    }
+                }
+            }
+        }
+
+        given("the AppriseEventHandler - Docker restart events") {
+            `when`("it receives a DockerContainerRestartedEvent") {
+                val monitor = createDockerMonitor(
+                    dockerMonitorRepository,
+                    integrations = listOf(
+                        globalAppriseConfig.id,
+                        otherAppriseConfig.id,
+                        disabledAppriseConfig.id,
+                    )
+                )
+                val event = DockerContainerRestartedEvent(
+                    monitor = monitor,
+                    previousRestartCount = 2,
+                    currentRestartCount = 3,
+                )
+                mockSuccessfulHttpResponse()
+
+                eventDispatcher.testDispatch(event)
+
+                then("it should send a restart notification to all enabled integrations") {
+                    val slot = mutableListOf<AppriseMessage>()
+
+                    verify(exactly = 1) { appriseServiceSpy.sendMessage(globalAppriseConfig, capture(slot)) }
+                    verify(exactly = 1) { appriseServiceSpy.sendMessage(otherAppriseConfig, capture(slot)) }
+                    verify(inverse = true) { appriseServiceSpy.sendMessage(disabledAppriseConfig, any()) }
+
+                    slot.forAll { message ->
+                        message.allText() shouldContain
+                            "The container of monitor \"${monitor.name}\" has been restarted"
                     }
                 }
             }

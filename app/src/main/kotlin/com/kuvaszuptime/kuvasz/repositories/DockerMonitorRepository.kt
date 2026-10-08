@@ -134,6 +134,7 @@ class DockerMonitorRepository(
                 .set(DOCKER_MONITOR.ENABLED, updatedMonitor.enabled)
                 .set(DOCKER_MONITOR.INTEGRATIONS, updatedMonitor.integrations)
                 .set(DOCKER_MONITOR.METRICS_HISTORY_ENABLED, updatedMonitor.metricsHistoryEnabled)
+                .set(DOCKER_MONITOR.RESTART_ALERT_ENABLED, updatedMonitor.restartAlertEnabled)
                 .set(DOCKER_MONITOR.CATEGORY, updatedMonitor.normalizedCategory)
                 .set(DOCKER_MONITOR.IGNORE_CONNECTIVITY_CHECK, updatedMonitor.ignoreConnectivityCheck)
                 .set(DOCKER_MONITOR.UPDATED_AT, getCurrentTimestamp())
@@ -192,6 +193,7 @@ class DockerMonitorRepository(
             DOCKER_MONITOR.TIMEOUT_MS.`as`(DockerMonitorDetailsDto::timeoutMs.name),
             DOCKER_MONITOR.FAILURE_COUNT_THRESHOLD.`as`(DockerMonitorDetailsDto::failureCountThreshold.name),
             DOCKER_MONITOR.METRICS_HISTORY_ENABLED.`as`(DockerMonitorDetailsDto::metricsHistoryEnabled.name),
+            DOCKER_MONITOR.RESTART_ALERT_ENABLED.`as`(DockerMonitorDetailsDto::restartAlertEnabled.name),
             DOCKER_MONITOR.ENABLED.`as`(DockerMonitorDetailsDto::enabled.name),
             DOCKER_MONITOR.CREATED_AT.`as`(DockerMonitorDetailsDto::createdAt.name),
             DOCKER_MONITOR.UPDATED_AT.`as`(DockerMonitorDetailsDto::updatedAt.name),

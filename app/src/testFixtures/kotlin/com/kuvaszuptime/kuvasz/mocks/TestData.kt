@@ -366,6 +366,7 @@ fun createDockerMonitor(
     integrations: List<IntegrationID> = emptyList(),
     metricsHistoryEnabled: Boolean = true,
     category: String? = null,
+    restartAlertEnabled: Boolean = false,
 ): DockerMonitorRecord {
     val monitor = DockerMonitorRecord()
         .setName(monitorName)
@@ -379,6 +380,7 @@ fun createDockerMonitor(
         .setIntegrations(integrations.toTypedArray())
         .setMetricsHistoryEnabled(metricsHistoryEnabled)
         .setCategory(category)
+        .setRestartAlertEnabled(restartAlertEnabled)
     return repository.returningInsert(monitor)
 }
 

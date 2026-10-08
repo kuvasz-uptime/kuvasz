@@ -135,6 +135,7 @@ class DockerMonitorControllerTest(
                     item.timeoutMs shouldBe monitor.timeoutMs
                     item.failureCountThreshold shouldBe monitor.failureCountThreshold
                     item.metricsHistoryEnabled shouldBe true
+                    item.restartAlertEnabled shouldBe false
                     item.enabled shouldBe monitor.enabled
                     item.uptimeStatus shouldBe UptimeStatus.UP
                     item.image shouldBe "nginx:1.27"
@@ -348,6 +349,27 @@ class DockerMonitorControllerTest(
                     val createdMonitor = monitorRepository.findByName(monitorName)
                     createdMonitor.shouldNotBeNull()
                     createdMonitor.metricsHistoryEnabled shouldBe false
+                }
+            }
+
+            `when`("restartAlertEnabled is set to true when creating a monitor") {
+                val monitorName = randomClientSecret()
+                val createDto = DockerMonitorCreateDto(
+                    name = monitorName,
+                    dockerHost = "local",
+                    container = "my-app",
+                    uptimeCheckInterval = 60,
+                    restartAlertEnabled = true,
+                )
+
+                val response = client.toBlocking().exchange(
+                    HttpRequest.POST("/api/v2/docker-monitors/", createDto).header("X-Api-Key", "test"),
+                    String::class.java
+                )
+
+                then("it should create the monitor with restartAlertEnabled=true and return 201") {
+                    response.status shouldBe HttpStatus.CREATED
+                    monitorRepository.findByName(monitorName).shouldNotBeNull().restartAlertEnabled shouldBe true
                 }
             }
 
@@ -585,6 +607,20 @@ class DockerMonitorControllerTest(
                 then("it should accept it, since only the creation is validated against the configured hosts") {
                     updatedMonitor.dockerHost shouldBe "not-configured"
                     monitorRepository.findById(monitor.id, null).shouldNotBeNull().dockerHost shouldBe "not-configured"
+                }
+            }
+
+            `when`("restartAlertEnabled is updated to true") {
+                val monitor = createDockerMonitor(monitorRepository, restartAlertEnabled = false)
+
+                val updatedMonitor = monitorClient.updateMonitor(
+                    monitor.id,
+                    mapper.createObjectNode().put("restartAlertEnabled", true),
+                )
+
+                then("it should update the monitor") {
+                    updatedMonitor.restartAlertEnabled shouldBe true
+                    monitorRepository.findById(monitor.id, null).shouldNotBeNull().restartAlertEnabled shouldBe true
                 }
             }
 

@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.services.integrations
 
 import com.kuvaszuptime.kuvasz.factories.MsTeamsCardFactory
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
@@ -50,6 +51,9 @@ class MsTeamsWebhookService(
 
     fun sendEvent(integrationConfig: IntegrationConfig, event: DnsRecordsChangedEvent): Single<String> =
         sendMessage(integrationConfig, cardFactory.fromDnsRecordsChangedEvent(event))
+
+    fun sendEvent(integrationConfig: IntegrationConfig, event: DockerContainerRestartedEvent): Single<String> =
+        sendMessage(integrationConfig, cardFactory.fromDockerContainerRestartedEvent(event))
 
     fun sendEvent(integrationConfig: IntegrationConfig, event: MaintenanceWindowEvent): Single<String> =
         sendMessage(integrationConfig, cardFactory.fromMaintenanceEvent(event))

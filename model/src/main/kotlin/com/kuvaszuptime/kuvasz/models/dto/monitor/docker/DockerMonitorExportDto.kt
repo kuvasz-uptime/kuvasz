@@ -15,6 +15,7 @@ data class DockerMonitorExportDto(
     val enabled: Boolean,
     val integrations: Set<IntegrationID>,
     val metricsHistoryEnabled: Boolean,
+    val restartAlertEnabled: Boolean = DockerMonitorDefaults.RESTART_ALERT_ENABLED,
     val category: String? = null,
     val ignoreConnectivityCheck: Boolean = DockerMonitorDefaults.IGNORE_CONNECTIVITY_CHECK,
 ) {
@@ -30,6 +31,7 @@ data class DockerMonitorExportDto(
                 enabled = record.enabled,
                 integrations = record.integrations.toSet(),
                 metricsHistoryEnabled = record.metricsHistoryEnabled,
+                restartAlertEnabled = record.restartAlertEnabled,
                 category = record.category,
                 ignoreConnectivityCheck = record.ignoreConnectivityCheck,
             )

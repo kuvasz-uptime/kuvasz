@@ -2,7 +2,9 @@ package com.kuvaszuptime.kuvasz.services.check.docker
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.jooq.tables.records.DockerMonitorRecord
 import com.kuvaszuptime.kuvasz.mocks.createDockerMonitor
+import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerMonitorUpEvent
 import com.kuvaszuptime.kuvasz.repositories.DockerMetricsLogRepository
@@ -411,6 +413,167 @@ class DockerUptimeCheckerTest(
 
                 then("it should be called with the up-to-date monitor") {
                     called shouldBe 1
+                }
+            }
+        }
+
+        given("DockerUptimeChecker restart alerts") {
+
+            fun restartSubscriber() = TestSubscriber<DockerContainerRestartedEvent>().also { subscriber ->
+                eventDispatcher.subscribeToDockerContainerRestartedEvents { it.forwardToSubscriber(subscriber) }
+            }
+
+            fun checkWith(monitor: DockerMonitorRecord, vararg inspections: DockerInspectResult) {
+                val mock = getMock(apiClient)
+                every { mock.inspectContainer(any(), any(), any()) } returnsMany inspections.toList()
+                every { mock.containerStats(any(), any(), any()) } returns DockerStatsResult.Measured(SAMPLE)
+                repeat(inspections.size) { uptimeChecker.check(monitor) }
+            }
+
+            `when`("the restart policy restarted a running container between two checks") {
+                val monitor = createDockerMonitor(monitorRepository, restartAlertEnabled = true)
+                val subscriber = restartSubscriber()
+
+                checkWith(
+                    monitor,
+                    inspected(DockerContainerStatus.RUNNING),
+                    inspected(DockerContainerStatus.RUNNING, restartCount = RESTART_COUNT + 2),
+                )
+
+                then("exactly one restart event should be dispatched with both counts") {
+                    subscriber.awaitCount(1)
+                    with(subscriber.values().shouldHaveSize(1).first()) {
+                        this.monitor.id shouldBe monitor.id
+                        previousRestartCount shouldBe RESTART_COUNT
+                        currentRestartCount shouldBe RESTART_COUNT + 2
+                    }
+                }
+            }
+
+            `when`("the monitor is checked for the first time") {
+                val monitor = createDockerMonitor(monitorRepository, restartAlertEnabled = true)
+                val subscriber = restartSubscriber()
+
+                checkWith(monitor, inspected(DockerContainerStatus.RUNNING))
+
+                then("the restart count should be stored silently") {
+                    uptimeEventRepository.fetchByMonitorId(monitor.id).single().restartCount shouldBe RESTART_COUNT
+                    subscriber.values().shouldBeEmpty()
+                }
+            }
+
+            `when`("restart alerts are disabled on the monitor") {
+                val monitor = createDockerMonitor(monitorRepository, restartAlertEnabled = false)
+                val subscriber = restartSubscriber()
+
+                checkWith(
+                    monitor,
+                    inspected(DockerContainerStatus.RUNNING),
+                    inspected(DockerContainerStatus.RUNNING, restartCount = RESTART_COUNT + 1),
+                )
+
+                then("no restart event should be dispatched, but the count should still be recorded") {
+                    uptimeEventRepository.fetchByMonitorId(monitor.id).single().restartCount shouldBe RESTART_COUNT + 1
+                    subscriber.values().shouldBeEmpty()
+                }
+            }
+
+            `when`("the restart count is lower than before, because the container was restarted manually") {
+                val monitor = createDockerMonitor(monitorRepository, restartAlertEnabled = true)
+                val subscriber = restartSubscriber()
+
+                checkWith(
+                    monitor,
+                    inspected(DockerContainerStatus.RUNNING),
+                    inspected(DockerContainerStatus.RUNNING, restartCount = 0),
+                )
+
+                then("the lower count should be stored silently") {
+                    uptimeEventRepository.fetchByMonitorId(monitor.id).single().restartCount shouldBe 0
+                    subscriber.values().shouldBeEmpty()
+                }
+            }
+
+            `when`("the container was recreated, with a higher restart count") {
+                val monitor = createDockerMonitor(monitorRepository, restartAlertEnabled = true)
+                val subscriber = restartSubscriber()
+                val recreatedAt = CREATED_AT.plusHours(1)
+
+                checkWith(
+                    monitor,
+                    inspected(DockerContainerStatus.RUNNING),
+                    inspected(DockerContainerStatus.RUNNING, restartCount = RESTART_COUNT + 1, createdAt = recreatedAt),
+                )
+
+                then("the count of the new container should be stored silently") {
+                    with(uptimeEventRepository.fetchByMonitorId(monitor.id).single()) {
+                        restartCount shouldBe RESTART_COUNT + 1
+                        containerCreatedAt.toInstant() shouldBe recreatedAt.toInstant()
+                    }
+                    subscriber.values().shouldBeEmpty()
+                }
+            }
+
+            `when`("the container is caught restarting, which takes the monitor DOWN") {
+                val monitor = createDockerMonitor(monitorRepository, restartAlertEnabled = true)
+                val subscriber = restartSubscriber()
+
+                checkWith(
+                    monitor,
+                    inspected(DockerContainerStatus.RUNNING),
+                    inspected(DockerContainerStatus.RESTARTING, restartCount = RESTART_COUNT + 1),
+                    inspected(DockerContainerStatus.RUNNING, restartCount = RESTART_COUNT + 1),
+                )
+
+                then("the DOWN event should absorb the restart, so it is not alerted on again after recovering") {
+                    val events = uptimeEventRepository.fetchByMonitorId(monitor.id).shouldHaveSize(3)
+                    events.single { it.status == UptimeStatus.DOWN }.restartCount shouldBe RESTART_COUNT + 1
+                    subscriber.values().shouldBeEmpty()
+                }
+            }
+
+            `when`("the container restarts while the DOWN is still pending its failure threshold") {
+                val monitor = createDockerMonitor(
+                    monitorRepository,
+                    restartAlertEnabled = true,
+                    failureCountThreshold = 2,
+                )
+                val subscriber = restartSubscriber()
+
+                checkWith(
+                    monitor,
+                    inspected(DockerContainerStatus.RUNNING),
+                    inspected(DockerContainerStatus.RESTARTING, restartCount = RESTART_COUNT + 1),
+                    inspected(DockerContainerStatus.RUNNING, restartCount = RESTART_COUNT + 2),
+                )
+
+                then("no DOWN should have been recorded, and the next UP check should alert on every restart") {
+                    uptimeEventRepository.fetchByMonitorId(monitor.id).single().status shouldBe UptimeStatus.UP
+                    subscriber.awaitCount(1)
+                    with(subscriber.values().shouldHaveSize(1).first()) {
+                        previousRestartCount shouldBe RESTART_COUNT
+                        currentRestartCount shouldBe RESTART_COUNT + 2
+                    }
+                }
+            }
+
+            `when`("the container restarts while its daemon cannot be reached") {
+                val monitor = createDockerMonitor(monitorRepository, restartAlertEnabled = true)
+                val subscriber = restartSubscriber()
+
+                checkWith(
+                    monitor,
+                    inspected(DockerContainerStatus.RUNNING),
+                    DockerInspectResult.Unreachable("connection refused"),
+                    inspected(DockerContainerStatus.RUNNING, restartCount = RESTART_COUNT + 1),
+                )
+
+                then("the count carried over to the DOWN event should let the recovery alert on the restart") {
+                    subscriber.awaitCount(1)
+                    with(subscriber.values().shouldHaveSize(1).first()) {
+                        previousRestartCount shouldBe RESTART_COUNT
+                        currentRestartCount shouldBe RESTART_COUNT + 1
+                    }
                 }
             }
         }

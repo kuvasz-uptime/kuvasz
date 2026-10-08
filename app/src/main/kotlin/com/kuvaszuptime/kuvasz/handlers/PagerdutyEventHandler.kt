@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
@@ -67,6 +68,10 @@ class PagerdutyEventHandler(
     // to a set it already alerted about into the still-open alert of the earlier change, dropping it silently.
     private val DnsRecordsChangedEvent.deduplicationKey: String
         get() = "kuvasz_dns_drift_${monitor.id}_${UUID.randomUUID()}"
+
+    // A restart is a point-in-time signal as well, so every occurrence gets its own, never resolved alert
+    private val DockerContainerRestartedEvent.deduplicationKey: String
+        get() = "kuvasz_docker_restart_${monitor.id}_${UUID.randomUUID()}"
 
     override fun handleMaintenanceEvent(event: MaintenanceWindowEvent) {
         val integrationKeys = filterMaintenanceTargets(event).map { (it as PagerdutyConfig).integrationKey }
@@ -153,6 +158,20 @@ class PagerdutyEventHandler(
     override fun handleDnsRecordsChangedEvent(event: DnsRecordsChangedEvent) {
         val integrationKeys = filterTargetConfigs(event).map { (it as PagerdutyConfig).integrationKey }
         // Resolved once, so that a single change stays one alert identity across every targeted integration
+        val deduplicationKey = event.deduplicationKey
+        integrationKeys.forEach { integrationKey ->
+            val request = event.toTriggerRequest(
+                serviceKey = integrationKey,
+                deduplicationKey = deduplicationKey,
+                severity = PagerdutySeverity.WARNING,
+            )
+            apiClient.triggerAlert(request).handleResponse()
+        }
+    }
+
+    override fun handleDockerContainerRestartedEvent(event: DockerContainerRestartedEvent) {
+        val integrationKeys = filterTargetConfigs(event).map { (it as PagerdutyConfig).integrationKey }
+        // Resolved once, so that a single restart stays one alert identity across every targeted integration
         val deduplicationKey = event.deduplicationKey
         integrationKeys.forEach { integrationKey ->
             val request = event.toTriggerRequest(

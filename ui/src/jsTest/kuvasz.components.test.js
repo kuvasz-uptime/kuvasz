@@ -1066,6 +1066,25 @@ test('Docker host select re-offers a host that is no longer configured, marked a
     assert.equal(form.dockerHost, 'removed');
 });
 
+test('Docker populateTypeFields copies the toggles and falls back to them being off', () => {
+    const form = upsertDockerMonitorForm(
+        null, {}, 'category-select', false, 'host-select', 'container-select', ['local'], '(not configured)', 0,
+    );
+
+    withCategorySelect(fakeTomSelect(), () => form.populateTypeFields({
+        dockerHost: 'local', container: 'my-app', uptimeCheckInterval: 120, timeoutMs: 10000,
+        metricsHistoryEnabled: true, restartAlertEnabled: true,
+    }));
+    assert.deepEqual(form.typeRequestBody(), {
+        dockerHost: 'local', container: 'my-app', uptimeCheckInterval: 120, timeoutMs: 10000,
+        metricsHistoryEnabled: true, restartAlertEnabled: true,
+    });
+
+    withCategorySelect(fakeTomSelect(), () => form.populateTypeFields(null));
+    assert.equal(form.metricsHistoryEnabled, false);
+    assert.equal(form.restartAlertEnabled, false);
+});
+
 const proxiedFormFactories = {
     HTTP: (errorMessages = {}) => upsertHttpMonitorForm(
         null, errorMessages, 'category-select', false, 'select', [], 'proxy-select', ['egress'], '(not configured)', 0,

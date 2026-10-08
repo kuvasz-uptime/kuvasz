@@ -86,7 +86,10 @@ class DockerMonitorCrudUiTest(private val dockerMonitorRepository: DockerMonitor
 
             // Editing through the list's shared modal, which is the path that re-populates the selects
             list.navigate()
-            list.configureMonitor(name).setUptimeCheckInterval("120").save()
+            // The save reloads the list in place, so navigating before that reload has started would get aborted by it
+            page.waitForRequest({ it.isNavigationRequest }) {
+                list.configureMonitor(name).setUptimeCheckInterval("120").save()
+            }
 
             list.navigate()
             val reopened = list.configureMonitor(name)

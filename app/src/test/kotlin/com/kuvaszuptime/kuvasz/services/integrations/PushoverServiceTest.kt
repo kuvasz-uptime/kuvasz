@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.services.integrations
 import com.kuvaszuptime.kuvasz.factories.PushoverMessageFactory
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.DockerMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.MaintenanceWindowRecord
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
@@ -17,6 +18,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.PushoverPriority
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
 import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
+import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
@@ -201,7 +203,7 @@ class PushoverServiceTest(
             messageSlot.captured.tags.shouldBeNull()
         }
 
-        // Maintenance and DNS drift events never carry a tag, so there would be no way to call them off
+        // Maintenance, DNS drift and Docker restart events never carry a tag, so there would be no way to call them off
         should("never escalate the events that cannot be resolved later") {
             val mockClient = getMock(client)
             val messageSlot = slot<PushoverMessage>()
@@ -219,6 +221,17 @@ class PushoverServiceTest(
                     monitor = DnsMonitorRecord().setId(2222).setName("drift_monitor"),
                     previousRecords = mapOf(DnsRecordType.A to listOf("1.1.1.1")),
                     currentRecords = mapOf(DnsRecordType.A to listOf("2.2.2.2")),
+                ),
+            ).blockingGet() shouldBe "OK"
+            messageSlot.captured.priority shouldBe PushoverPriority.NORMAL
+            messageSlot.captured.tags.shouldBeNull()
+
+            pushoverService.sendEvent(
+                target,
+                DockerContainerRestartedEvent(
+                    monitor = DockerMonitorRecord().setId(7777).setName("restart_monitor"),
+                    previousRestartCount = 2,
+                    currentRestartCount = 3,
                 ),
             ).blockingGet() shouldBe "OK"
             messageSlot.captured.priority shouldBe PushoverPriority.NORMAL

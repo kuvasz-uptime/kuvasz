@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.models.events
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.MonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.DockerMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsSnapshotRecords
 import com.kuvaszuptime.kuvasz.models.events.MonitorEvent.Companion.DETAILS_MAX_LENGTH
@@ -59,6 +60,21 @@ data class DnsRecordsChangedEvent(
             }
             .joinToString("\n")
             .sanitizeAsDetails()
+}
+
+data class DockerContainerRestartedEvent(
+    override val monitor: DockerMonitorRecord,
+    val previousRestartCount: Int,
+    val currentRestartCount: Int,
+) : MonitorEvent<DockerMonitorRecord>() {
+
+    override fun toStructuredMessage() = StructuredDockerContainerRestartedMessage(
+        summary = Messages.dockerContainerRestarted(monitor.name),
+        details = Messages.dockerContainerRestartedDetails(
+            (currentRestartCount - previousRestartCount).toString(),
+            currentRestartCount.toString(),
+        ),
+    )
 }
 
 /**

@@ -105,6 +105,7 @@ class DockerMonitorConfigDefaultValuesTest(applicationContext: ApplicationContex
                 monitorConfig.timeoutMs shouldBe DockerMonitorDefaults.TIMEOUT_MS
                 monitorConfig.failureCountThreshold shouldBe DockerMonitorDefaults.FAILURE_COUNT_THRESHOLD
                 monitorConfig.metricsHistoryEnabled shouldBe DockerMonitorDefaults.METRICS_HISTORY_ENABLED
+                monitorConfig.restartAlertEnabled shouldBe DockerMonitorDefaults.RESTART_ALERT_ENABLED
                 monitorConfig.integrations.shouldBeNull()
             }
         }

@@ -32,6 +32,8 @@ data class DockerMonitorDetailsDto(
     val failureCountThreshold: Long,
     @param:Schema(description = DockerMonitorDocs.METRICS_HISTORY_ENABLED, required = true)
     val metricsHistoryEnabled: Boolean,
+    @param:Schema(description = DockerMonitorDocs.RESTART_ALERT_ENABLED, required = true)
+    val restartAlertEnabled: Boolean,
     @param:Schema(description = MonitorDocs.ENABLED, required = true)
     override val enabled: Boolean,
     @param:Schema(description = MonitorDocs.CREATED_AT, required = true)

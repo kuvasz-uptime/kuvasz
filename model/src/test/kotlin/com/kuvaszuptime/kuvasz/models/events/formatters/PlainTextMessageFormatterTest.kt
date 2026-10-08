@@ -19,6 +19,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
@@ -661,6 +662,22 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
 
                 then("they should be stripped while the entry separators survive") {
                     event.toStructuredMessage().details shouldBe "TXT: [old] → [newnull]"
+                }
+            }
+        }
+
+        given("toFormattedMessage(event: DockerContainerRestartedEvent)") {
+            `when`("it gets a DockerContainerRestartedEvent") {
+                val event = DockerContainerRestartedEvent(
+                    monitor = DockerMonitorRecord().setId(7777L).setName("restart_monitor"),
+                    previousRestartCount = 2,
+                    currentRestartCount = 5,
+                )
+
+                then("it should return the correct message") {
+                    formatter.toFormattedMessage(event) shouldBe
+                        "The container of monitor \"restart_monitor\" has been restarted\n" +
+                            "Restarts since the last check: 3 (total: 5)"
                 }
             }
         }

@@ -12,6 +12,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
@@ -214,6 +215,11 @@ class GenericWebhookService(
             monitor = testDockerMonitorRecord,
             previousEvent = null,
             latencyInMs = 8,
+        ),
+        DockerContainerRestartedEvent(
+            monitor = testDockerMonitorRecord,
+            previousRestartCount = 2,
+            currentRestartCount = 3,
         ),
     )
 

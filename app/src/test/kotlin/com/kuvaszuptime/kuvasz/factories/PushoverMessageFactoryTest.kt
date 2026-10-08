@@ -18,6 +18,7 @@ import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
@@ -161,6 +162,19 @@ class PushoverMessageFactoryTest(
 
             message.title shouldBe "ℹ️ drift_monitor"
             message.detailLines() shouldBe listOf("A: [1.1.1.1] → [2.2.2.2]", "MX: [mx1.test] → [mx2.test]")
+        }
+
+        should("tell how many times the container has been restarted") {
+            val message = factory.fromDockerContainerRestartedEvent(
+                DockerContainerRestartedEvent(
+                    monitor = DockerMonitorRecord().setId(7777).setName("restart_monitor"),
+                    previousRestartCount = 2,
+                    currentRestartCount = 5,
+                )
+            )
+
+            message.title shouldBe "⚠️ restart_monitor"
+            message.detailLines() shouldBe listOf("Restarts since the last check: 3 (total: 5)")
         }
     }
 
@@ -307,6 +321,13 @@ class PushoverMessageFactoryTest(
                     monitor = DnsMonitorRecord().setId(2222).setName("drift_monitor"),
                     previousRecords = mapOf(DnsRecordType.A to listOf("1.1.1.1")),
                     currentRecords = mapOf(DnsRecordType.A to listOf("2.2.2.2")),
+                )
+            ).priority shouldBe PushoverPriority.NORMAL
+            factory.fromDockerContainerRestartedEvent(
+                DockerContainerRestartedEvent(
+                    monitor = DockerMonitorRecord().setId(7777).setName("restart_monitor"),
+                    previousRestartCount = 2,
+                    currentRestartCount = 5,
                 )
             ).priority shouldBe PushoverPriority.NORMAL
             factory.fromMaintenanceEvent(MaintenanceWindowStartEvent(maintenanceWindow())).priority shouldBe

@@ -3623,6 +3623,12 @@ components:
             \ recording the history, it also turns on the CPU and memory sampling\
             \ of the container, which costs an extra Docker API call on every check."
           default: false
+        restartAlertEnabled:
+          type: boolean
+          description: Whether a DOCKER_CONTAINER_RESTARTED notification is sent when
+            the restart policy of the container restarts it between two checks. Manual
+            restarts and recreating the container do not trigger it.
+          default: false
         category:
           maxLength: 100
           type: string
@@ -3656,6 +3662,7 @@ components:
       - metricsHistoryEnabled
       - name
       - nextUptimeCheck
+      - restartAlertEnabled
       - restartCount
       - statusPages
       - timeoutMs
@@ -3716,6 +3723,11 @@ components:
           description: "Whether metrics history is enabled for the monitor. Beyond\
             \ recording the history, it also turns on the CPU and memory sampling\
             \ of the container, which costs an extra Docker API call on every check."
+        restartAlertEnabled:
+          type: boolean
+          description: Whether a DOCKER_CONTAINER_RESTARTED notification is sent when
+            the restart policy of the container restarts it between two checks. Manual
+            restarts and recreating the container do not trigger it.
         enabled:
           type: boolean
           description: "Whether the monitor is enabled. If false, the monitor will\
@@ -3806,6 +3818,7 @@ components:
       - integrations
       - metricsHistoryEnabled
       - name
+      - restartAlertEnabled
       - timeoutMs
       - updatedAt
       - uptimeCheckInterval
@@ -3842,6 +3855,11 @@ components:
           description: "Whether metrics history is enabled for the monitor. Beyond\
             \ recording the history, it also turns on the CPU and memory sampling\
             \ of the container, which costs an extra Docker API call on every check."
+        restartAlertEnabled:
+          type: boolean
+          description: Whether a DOCKER_CONTAINER_RESTARTED notification is sent when
+            the restart policy of the container restarts it between two checks. Manual
+            restarts and recreating the container do not trigger it.
         enabled:
           type: boolean
           description: "Whether the monitor is enabled. If false, the monitor will\
@@ -3979,6 +3997,12 @@ components:
           description: "Whether metrics history is enabled for the monitor. Beyond\
             \ recording the history, it also turns on the CPU and memory sampling\
             \ of the container, which costs an extra Docker API call on every check."
+          nullable: false
+        restartAlertEnabled:
+          type: boolean
+          description: Whether a DOCKER_CONTAINER_RESTARTED notification is sent when
+            the restart policy of the container restarts it between two checks. Manual
+            restarts and recreating the container do not trigger it.
           nullable: false
         category:
           maxLength: 100
@@ -5796,6 +5820,7 @@ components:
       - DNS_RECORDS_CHANGED
       - DOCKER_UP
       - DOCKER_DOWN
+      - DOCKER_CONTAINER_RESTARTED
       - SSL_VALID
       - SSL_INVALID
       - SSL_WILL_EXPIRE

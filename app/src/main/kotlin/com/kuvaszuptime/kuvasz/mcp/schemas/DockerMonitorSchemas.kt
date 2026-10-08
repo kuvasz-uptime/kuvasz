@@ -30,6 +30,7 @@ data class DockerMonitorSchema(
     val timeoutMs: Int,
     val failureCountThreshold: Long,
     val metricsHistoryEnabled: Boolean,
+    val restartAlertEnabled: Boolean,
     val enabled: Boolean,
     val integrations: Set<String>,
     val createdAt: OffsetDateTime,
@@ -47,6 +48,7 @@ data class DockerMonitorSchema(
             timeoutMs = dto.timeoutMs,
             failureCountThreshold = dto.failureCountThreshold,
             metricsHistoryEnabled = dto.metricsHistoryEnabled,
+            restartAlertEnabled = dto.restartAlertEnabled,
             enabled = dto.enabled,
             integrations = dto.integrations.map { it.toString() }.toSet(),
             createdAt = dto.createdAt,
@@ -72,6 +74,7 @@ data class DockerMonitorDetailsSchema(
     val timeoutMs: Int,
     val failureCountThreshold: Long,
     val metricsHistoryEnabled: Boolean,
+    val restartAlertEnabled: Boolean,
     val enabled: Boolean,
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime,
@@ -100,6 +103,7 @@ data class DockerMonitorDetailsSchema(
             timeoutMs = dto.timeoutMs,
             failureCountThreshold = dto.failureCountThreshold,
             metricsHistoryEnabled = dto.metricsHistoryEnabled,
+            restartAlertEnabled = dto.restartAlertEnabled,
             enabled = dto.enabled,
             createdAt = dto.createdAt,
             updatedAt = dto.updatedAt,
@@ -209,6 +213,7 @@ data class DockerMonitorCreatorSchema(
     val enabled: Boolean?,
     val integrations: List<String>?,
     val metricsHistoryEnabled: Boolean?,
+    val restartAlertEnabled: Boolean?,
 ) {
     fun toDto() = DockerMonitorCreateDto(
         name = name,
@@ -222,6 +227,7 @@ data class DockerMonitorCreatorSchema(
         enabled = enabled ?: DockerMonitorDefaults.MONITOR_ENABLED,
         integrations = integrations.orEmpty(),
         metricsHistoryEnabled = metricsHistoryEnabled ?: DockerMonitorDefaults.METRICS_HISTORY_ENABLED,
+        restartAlertEnabled = restartAlertEnabled ?: DockerMonitorDefaults.RESTART_ALERT_ENABLED,
     )
 }
 
