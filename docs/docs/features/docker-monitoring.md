@@ -26,6 +26,21 @@ The monitor is UP while the container is **running and not reported unhealthy** 
 
 The **image** the container was created from is recorded with every uptime event as well, so the incident list and the monitor's details page tell you which version was running when something went wrong - handy when a container went down right after an update.
 
+### Restarts
+
+A container whose **restart policy** brings it back after a crash can look perfectly healthy: if it's running again by the next check, the monitor stays UP, and the crash goes unnoticed. That's why every check also records **how many times the restart policy has restarted the container** (`RestartCount`), together with **when the container was created**.
+
+When [**restart alerts**](../management/docker-monitors.md#restart-alerts-enabled) are enabled on a monitor, an increase of that count triggers a dedicated [**`DOCKER_CONTAINER_RESTARTED`**](notifications.md#docker-events) notification, telling how many times the container was restarted since the previous check. A restart **never marks the monitor DOWN**, and it doesn't affect its uptime either. To keep the notifications meaningful:
+
+- Only an **UP check** sends one. If a check catches the container while it's restarting (and so the monitor goes DOWN), the [DOWN notification](notifications.md#uptime-events) already tells you about it, so the restarts that happen while the monitor is DOWN don't trigger another one. The restarts that happened **before the monitor went DOWN** - e.g. while the [failure count threshold](../management/docker-monitors.md#failure-count-threshold) wasn't reached yet - are reported by the next UP check.
+- **A manual restart** (`docker restart`) resets the count to zero, and **a recreated container** (e.g. after `docker compose up` with a new image) starts from zero too. Neither of them is a restart of the restart policy, so they are recorded silently. If the restart policy restarts the container **after a manual restart**, but before the next check, those restarts are still reported, counted from zero. If the count ends up higher than the one before the manual restart, though, the reset can't be told apart from fewer restarts, so the notification reports fewer restarts than actually happened.
+- If a check **can't inspect the container** (e.g. the daemon is unreachable), the last known count is kept, so the restarts that happened meanwhile are still reported once the container can be inspected again.
+- The checks are suspended during [**maintenance windows**](maintenance-windows.md), so the restarts that happened during one are reported by the first UP check after it.
+
+When [**metrics history**](../management/docker-monitors.md#metrics-history-enabled) is enabled, the checks that found the container restarted are also marked on the metrics chart of the monitor's details page, and the count can be exported as a [**metric**](../management/metrics-exporters.md#docker-container-restart-count) too.
+
+![Chart with Docker container restart](../images/features/docker_restart_chart.webp)
+
 ### Docker hosts
 
 The daemons _Kuvasz_ talks to are called **Docker hosts**, and they are **defined in your configuration file**, not on the UI. A host can be the **local daemon** through its unix socket, or a **remote one** over TCP, optionally secured with **TLS or mutual TLS**. Each of them has a name, and a monitor refers to its host by that name.
@@ -38,6 +53,8 @@ When [**metrics history**](../management/docker-monitors.md#metrics-history-enab
 
 Sampling is **opt-in**, because it isn't free: it costs an **extra Docker API call** on every check, and the daemon needs two reads of the counters to calculate the CPU usage, which comes out of the monitor's [**timeout**](../management/docker-monitors.md#timeout).
 
+![Chart with Docker metrics](../images/features/docker_resources_chart.webp)
+
 !!!info "About the latency"
 
     Docker checks measure latency too, but it is the **round-trip to the Docker daemon**, not anything about the container itself. That's why it isn't charted on the UI: it is only exported as an [**operational metric**](../management/metrics-exporters.md#docker-api-latest-latency), which is useful for watching a remote daemon.
@@ -49,6 +66,7 @@ Sampling is **opt-in**, because it isn't free: it costs an **extra Docker API ca
 - the timeout of the Docker API requests (1-30000 milliseconds)
 - consecutive failure count threshold
 - whether resource (CPU and memory) usage should be sampled and recorded
+- whether you should be notified when the restart policy of the container restarts it
 
 ## Compatibility
 

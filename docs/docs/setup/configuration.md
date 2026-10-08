@@ -972,6 +972,7 @@ You can find the full configuration example below, which includes all the option
       docker-latest-latency: true
       docker-latest-cpu-usage: true
       docker-latest-memory-usage: true
+      docker-latest-restart-count: true
     ---
     admin-auth:
       username: YourSuperSecretUsername
@@ -1069,6 +1070,7 @@ You can find the full configuration example below, which includes all the option
     ENABLE_DOCKER_LATEST_LATENCY_EXPORT=true
     ENABLE_DOCKER_LATEST_CPU_USAGE_EXPORT=true
     ENABLE_DOCKER_LATEST_MEMORY_USAGE_EXPORT=true
+    ENABLE_DOCKER_LATEST_RESTART_COUNT_EXPORT=true
     # SMTP is optional, only needed for the email integration
     SMTP_CONFIG_HOST=your.smtp.server
     SMTP_CONFIG_PORT=465

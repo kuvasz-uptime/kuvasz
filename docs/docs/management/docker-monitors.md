@@ -24,6 +24,7 @@
       ignore-connectivity-check: true # (11)!
       enabled: true # (7)!
       metrics-history-enabled: false # (8)!
+      restart-alert-enabled: false # (12)!
       integrations: # (9)!
         - "slack:devops_channel"
     # ... other monitors
@@ -40,6 +41,7 @@
       9. **Integrations**: A list of integrations to assign to the monitor. The format is `"{integration-type}:{integration-name}"`, where `integration-type` is the type of the integration (e.g. `email`, `slack`, etc.), and `integration-name` is the name of the integration as defined in the `integrations` section of your YAML file. Example: `email:my-email-integration`.
       10. **Category**: An optional, free-form category to group the monitor on the status pages (e.g. a product or service name).
       11. **Ignore connectivity check**: Whether the monitor should keep being checked even while _Kuvasz_ considers its own outbound connectivity lost. Defaults to **true**, unlike on the other monitor types.
+      12. **Restart alerts enabled**: Whether a notification is sent when the restart policy of the container restarts it. Defaults to false.
 
 === "API (expert)"
 
@@ -149,6 +151,15 @@ The number of **consecutive failures** that should occur before the monitor is c
 Whether the **CPU and memory usage** of the container is sampled and recorded on every check. The samples are charted on the monitor's details page, and exported as [**metrics**](metrics-exporters.md#docker-container-cpu-usage) too. If you disable it on a monitor that has already recorded metrics history, the **existing history will be deleted**.
 
 Unlike on the other monitor types, it's **disabled by default**, because every sample costs an **extra Docker API call**, and the daemon takes about **a second** to answer it. The samples are only taken while the container is running.
+
+### Restart alerts enabled
+
+<!-- md:version 4.5.0 -->
+<!-- md:default `false` -->
+<!-- md:type boolean -->
+<!-- md:yaml_prop `restart-alert-enabled` -->
+
+Whether a dedicated **`DOCKER_CONTAINER_RESTARTED` notification** is sent to the assigned [integrations](#integrations) when the **restart policy** of the container restarts it, even if the container is running again by the next check. The restart count is **recorded regardless** of this setting, only the notification is opt-in. See [**Restarts**](../features/docker-monitoring.md#restarts) for when exactly it fires.
 
 ### Integrations <!-- md:config ../management/integrations.md -->
 
