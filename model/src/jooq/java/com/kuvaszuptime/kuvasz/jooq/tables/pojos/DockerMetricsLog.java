@@ -24,6 +24,8 @@ public class DockerMetricsLog implements Serializable {
     private Long memoryUsageBytes;
     private Long memoryLimitBytes;
     private OffsetDateTime createdAt;
+    private Integer restartCount;
+    private OffsetDateTime containerCreatedAt;
 
     public DockerMetricsLog() {}
 
@@ -35,6 +37,8 @@ public class DockerMetricsLog implements Serializable {
         this.memoryUsageBytes = value.memoryUsageBytes;
         this.memoryLimitBytes = value.memoryLimitBytes;
         this.createdAt = value.createdAt;
+        this.restartCount = value.restartCount;
+        this.containerCreatedAt = value.containerCreatedAt;
     }
 
     public DockerMetricsLog(
@@ -44,7 +48,9 @@ public class DockerMetricsLog implements Serializable {
         BigDecimal cpuUsagePercent,
         Long memoryUsageBytes,
         Long memoryLimitBytes,
-        OffsetDateTime createdAt
+        OffsetDateTime createdAt,
+        Integer restartCount,
+        OffsetDateTime containerCreatedAt
     ) {
         this.id = id;
         this.monitorId = monitorId;
@@ -53,6 +59,8 @@ public class DockerMetricsLog implements Serializable {
         this.memoryUsageBytes = memoryUsageBytes;
         this.memoryLimitBytes = memoryLimitBytes;
         this.createdAt = createdAt;
+        this.restartCount = restartCount;
+        this.containerCreatedAt = containerCreatedAt;
     }
 
     /**
@@ -160,6 +168,36 @@ public class DockerMetricsLog implements Serializable {
         return this;
     }
 
+    /**
+     * Getter for <code>kuvasz.docker_metrics_log.restart_count</code>.
+     */
+    public Integer getRestartCount() {
+        return this.restartCount;
+    }
+
+    /**
+     * Setter for <code>kuvasz.docker_metrics_log.restart_count</code>.
+     */
+    public DockerMetricsLog setRestartCount(Integer restartCount) {
+        this.restartCount = restartCount;
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.docker_metrics_log.container_created_at</code>.
+     */
+    public OffsetDateTime getContainerCreatedAt() {
+        return this.containerCreatedAt;
+    }
+
+    /**
+     * Setter for <code>kuvasz.docker_metrics_log.container_created_at</code>.
+     */
+    public DockerMetricsLog setContainerCreatedAt(OffsetDateTime containerCreatedAt) {
+        this.containerCreatedAt = containerCreatedAt;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -211,6 +249,18 @@ public class DockerMetricsLog implements Serializable {
         }
         else if (!this.createdAt.equals(other.createdAt))
             return false;
+        if (this.restartCount == null) {
+            if (other.restartCount != null)
+                return false;
+        }
+        else if (!this.restartCount.equals(other.restartCount))
+            return false;
+        if (this.containerCreatedAt == null) {
+            if (other.containerCreatedAt != null)
+                return false;
+        }
+        else if (!this.containerCreatedAt.equals(other.containerCreatedAt))
+            return false;
         return true;
     }
 
@@ -225,6 +275,8 @@ public class DockerMetricsLog implements Serializable {
         result = prime * result + ((this.memoryUsageBytes == null) ? 0 : this.memoryUsageBytes.hashCode());
         result = prime * result + ((this.memoryLimitBytes == null) ? 0 : this.memoryLimitBytes.hashCode());
         result = prime * result + ((this.createdAt == null) ? 0 : this.createdAt.hashCode());
+        result = prime * result + ((this.restartCount == null) ? 0 : this.restartCount.hashCode());
+        result = prime * result + ((this.containerCreatedAt == null) ? 0 : this.containerCreatedAt.hashCode());
         return result;
     }
 
@@ -239,6 +291,8 @@ public class DockerMetricsLog implements Serializable {
         sb.append(", ").append(memoryUsageBytes);
         sb.append(", ").append(memoryLimitBytes);
         sb.append(", ").append(createdAt);
+        sb.append(", ").append(restartCount);
+        sb.append(", ").append(containerCreatedAt);
 
         sb.append(")");
         return sb.toString();

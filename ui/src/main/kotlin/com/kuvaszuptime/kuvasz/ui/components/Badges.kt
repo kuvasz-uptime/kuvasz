@@ -234,11 +234,12 @@ internal fun FlowContent.inlineStatusBadge(
     text: String,
     color: Color = Color.DEFAULT,
     icon: Icon? = null,
-    tooltip: String? = null
+    tooltip: String? = null,
+    tooltipHtml: Boolean = false,
 ) {
     span {
         classes(STATUS, color.bgColor, color.textColor)
-        tooltip?.let { tooltip(it) }
+        tooltip?.let { tooltip(it, html = tooltipHtml) }
         icon?.let { icon(it) }
         +text
     }

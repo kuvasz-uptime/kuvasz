@@ -11,6 +11,10 @@ object DockerMonitorDocs {
         "inspection reported it. Reset to zero by a manual start or restart. Null if it is not known yet"
     const val EVENT_RESTART_COUNT = "How many times the container's restart policy has restarted it, as last " +
         "reported during the event. Null if it is not known"
+    const val METRICS_RESTART_COUNT = "How many times the container's restart policy had restarted it at the time " +
+        "of the check. Null if the container could not be inspected"
+    const val METRICS_CONTAINER_CREATED_AT = "When the container was created, as the check found it. It tells the " +
+        "restart counts of a recreated container apart. Null if the container could not be inspected"
     const val CONTAINER_CREATED_AT = "When the container was created, as the latest inspection reported it. " +
         "It changes when the container is recreated. Null if it is not known yet"
     const val EVENT_CONTAINER_CREATED_AT = "When the container was created, as last reported during the event. " +

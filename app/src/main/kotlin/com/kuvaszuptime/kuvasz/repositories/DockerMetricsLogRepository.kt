@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import java.time.Duration
+import java.time.OffsetDateTime
 
 @Singleton
 class DockerMetricsLogRepository(dslContext: DSLContext) :
@@ -34,7 +35,13 @@ class DockerMetricsLogRepository(dslContext: DSLContext) :
      * not running, or the daemon could not answer the sampling call. The row is still written for the latency, which
      * every check produces.
      */
-    fun insertLog(monitorId: Long, latencyMs: Int, stats: DockerContainerStats?) {
+    fun insertLog(
+        monitorId: Long,
+        latencyMs: Int,
+        stats: DockerContainerStats?,
+        restartCount: Int? = null,
+        containerCreatedAt: OffsetDateTime? = null,
+    ) {
         dslContext.insertInto(DOCKER_METRICS_LOG)
             .set(
                 DockerMetricsLogRecord()
@@ -43,6 +50,8 @@ class DockerMetricsLogRepository(dslContext: DSLContext) :
                     .setCpuUsagePercent(stats?.cpuUsagePercentDecimal)
                     .setMemoryUsageBytes(stats?.memoryUsageBytes)
                     .setMemoryLimitBytes(stats?.memoryLimitBytes)
+                    .setRestartCount(restartCount)
+                    .setContainerCreatedAt(containerCreatedAt)
                     .setCreatedAt(getCurrentTimestamp())
             )
             .execute()
@@ -72,6 +81,8 @@ class DockerMetricsLogRepository(dslContext: DSLContext) :
             DOCKER_METRICS_LOG.CPU_USAGE_PERCENT.`as`(DockerMetricsLogDto::cpuUsagePercent.name),
             DOCKER_METRICS_LOG.MEMORY_USAGE_BYTES.`as`(DockerMetricsLogDto::memoryUsageBytes.name),
             DOCKER_METRICS_LOG.MEMORY_LIMIT_BYTES.`as`(DockerMetricsLogDto::memoryLimitBytes.name),
+            DOCKER_METRICS_LOG.RESTART_COUNT.`as`(DockerMetricsLogDto::restartCount.name),
+            DOCKER_METRICS_LOG.CONTAINER_CREATED_AT.`as`(DockerMetricsLogDto::containerCreatedAt.name),
             DOCKER_METRICS_LOG.CREATED_AT.`as`(DockerMetricsLogDto::createdAt.name),
         )
             .from(DOCKER_METRICS_LOG)

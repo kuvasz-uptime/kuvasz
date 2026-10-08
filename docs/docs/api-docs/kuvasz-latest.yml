@@ -3523,11 +3523,13 @@ components:
         \ by"
     DockerMetricsLogDto:
       required:
+      - containerCreatedAt
       - cpuUsagePercent
       - createdAt
       - id
       - memoryLimitBytes
       - memoryUsageBytes
+      - restartCount
       type: object
       properties:
         id:
@@ -3550,6 +3552,19 @@ components:
           description: "The memory limit of the container in bytes, null if the daemon\
             \ reported no usable sample"
           format: int64
+          nullable: true
+        restartCount:
+          type: integer
+          description: How many times the container's restart policy had restarted
+            it at the time of the check. Null if the container could not be inspected
+          format: int32
+          nullable: true
+        containerCreatedAt:
+          type: string
+          description: "When the container was created, as the check found it. It\
+            \ tells the restart counts of a recreated container apart. Null if the\
+            \ container could not be inspected"
+          format: date-time
           nullable: true
         createdAt:
           type: string
@@ -7246,6 +7261,7 @@ components:
       - dockerLatestCpuUsage
       - dockerLatestLatency
       - dockerLatestMemoryUsage
+      - dockerLatestRestartCount
       - dockerUptimeStatus
       - httpLatestLatency
       - httpUptimeStatus
@@ -7307,6 +7323,9 @@ components:
         dockerLatestMemoryUsage:
           type: boolean
           description: Whether Docker container memory usage exporter is enabled
+        dockerLatestRestartCount:
+          type: boolean
+          description: Whether Docker container restart count exporter is enabled
     SettingsDto.SmtpConfigDto:
       required:
       - host

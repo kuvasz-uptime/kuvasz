@@ -922,6 +922,8 @@ class DockerMonitorControllerTest(
                         monitorId = monitor.id,
                         cpuUsagePercent = cpu,
                         memoryUsageBytes = memory,
+                        restartCount = 2,
+                        containerCreatedAt = CONTAINER_CREATED_AT,
                     )
                 }
 
@@ -980,6 +982,8 @@ class DockerMonitorControllerTest(
                     latest.cpuUsagePercent.shouldNotBeNull() shouldBeEqualComparingTo BigDecimal("30.00")
                     latest.memoryUsageBytes shouldBe 300L
                     latest.memoryLimitBytes shouldBe 8_388_608L
+                    latest.restartCount shouldBe 2
+                    latest.containerCreatedAt shouldBe CONTAINER_CREATED_AT
                 }
             }
 

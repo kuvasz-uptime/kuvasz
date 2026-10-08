@@ -216,6 +216,8 @@ internal fun FlowContent.monitorMetricsBlock(
             |cpuUsage: "${Messages.dockerCpuUsageBlockTitle()}",
             |memoryUsage: "${Messages.dockerMemoryUsageBlockTitle()}",
             |memoryLimit: "${Messages.dockerMemoryLimit()}",
+            |containerRestarted: "${Messages.dockerContainerHasRestarted()}",
+            |containerRestartedDetails: "${Messages.dockerContainerRestartedDetails("{delta}", "{total}")}",
             |},
             |"$DEFAULT_METRICS_PERIOD"
             |)

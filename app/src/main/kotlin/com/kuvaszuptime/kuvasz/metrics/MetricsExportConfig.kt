@@ -60,4 +60,7 @@ interface MetricsExportConfig {
 
     @get:Bindable(defaultValue = "false")
     val dockerLatestMemoryUsage: Boolean
+
+    @get:Bindable(defaultValue = "false")
+    val dockerLatestRestartCount: Boolean
 }

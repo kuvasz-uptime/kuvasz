@@ -141,6 +141,8 @@ data class DockerMetricsLogSchema(
     val cpuUsagePercent: BigDecimal?,
     val memoryUsageBytes: Long?,
     val memoryLimitBytes: Long?,
+    val restartCount: Int?,
+    val containerCreatedAt: OffsetDateTime?,
     val createdAt: OffsetDateTime,
 ) {
     companion object {
@@ -149,6 +151,8 @@ data class DockerMetricsLogSchema(
             cpuUsagePercent = dto.cpuUsagePercent,
             memoryUsageBytes = dto.memoryUsageBytes,
             memoryLimitBytes = dto.memoryLimitBytes,
+            restartCount = dto.restartCount,
+            containerCreatedAt = dto.containerCreatedAt,
             createdAt = dto.createdAt,
         )
     }

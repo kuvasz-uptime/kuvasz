@@ -317,7 +317,13 @@ class DockerMonitorToolsTest(
             `when`("get-docker-monitor-stats is called for a monitor with metrics history") {
                 val monitor = createDockerMonitor(dockerMonitorRepository, metricsHistoryEnabled = true)
                 createDockerMetricsLogRecord(dslContext, monitorId = monitor.id, latencyMs = 10)
-                createDockerMetricsLogRecord(dslContext, monitorId = monitor.id, latencyMs = 20)
+                createDockerMetricsLogRecord(
+                    dslContext,
+                    monitorId = monitor.id,
+                    latencyMs = 20,
+                    restartCount = 1,
+                    containerCreatedAt = OffsetDateTime.parse("2026-10-07T06:59:12.914442Z"),
+                )
 
                 val response = callToolWithMcpClient(GET_DOCKER_MONITOR_STATS, mapOf("monitorId" to monitor.id))
 
@@ -328,6 +334,9 @@ class DockerMonitorToolsTest(
                         cpuStats.shouldNotBeNull()
                         memoryStats.shouldNotBeNull()
                         metricsLogs.shouldNotBeEmpty()
+                        metricsLogs.first().restartCount shouldBe 1
+                        metricsLogs.first().containerCreatedAt shouldBe
+                            OffsetDateTime.parse("2026-10-07T06:59:12.914442Z")
 
                         response.contentAs<DockerMonitorStatsSchema>() shouldBe this
                     }

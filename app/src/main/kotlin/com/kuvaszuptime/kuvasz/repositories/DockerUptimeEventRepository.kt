@@ -86,6 +86,14 @@ class DockerUptimeEventRepository(private val dslContext: DSLContext) : UptimeEv
             uptimeRecords.last()
         }
 
+    fun fetchLatestRestartCount(monitorId: Long): Int? = dslContext
+        .select(DOCKER_UPTIME_EVENT.RESTART_COUNT)
+        .from(DOCKER_UPTIME_EVENT)
+        .where(DOCKER_UPTIME_EVENT.MONITOR_ID.eq(monitorId))
+        .orderBy(DOCKER_UPTIME_EVENT.UPDATED_AT.desc(), DOCKER_UPTIME_EVENT.ID.desc())
+        .limit(1)
+        .fetchOne(DOCKER_UPTIME_EVENT.RESTART_COUNT)
+
     fun endEventById(eventId: Long, endedAt: OffsetDateTime, ctx: DSLContext = dslContext) = ctx
         .update(DOCKER_UPTIME_EVENT)
         .set(DOCKER_UPTIME_EVENT.ENDED_AT, endedAt)

@@ -37,6 +37,21 @@ class DockerMonitorCrudUiTest(private val dockerMonitorRepository: DockerMonitor
             dockerMonitorRepository.findByName(name).shouldNotBeNull().ignoreConnectivityCheck shouldBe true
         }
 
+        "restart alerts are off by default, and turning them on survives the save" {
+            val page = newPage()
+            val list = DockerMonitorListPage(page)
+            list.navigate()
+
+            val name = "E2E Docker Restart Alerts"
+            val modal = list.openCreateModal().setName(name).setDockerHost("local").setContainer("my-app")
+            assertThat(modal.restartAlertToggle).not().isChecked()
+            modal.enableRestartAlerts().save()
+            page.waitForURL("**/docker-monitors/*")
+
+            dockerMonitorRepository.findByName(name).shouldNotBeNull().restartAlertEnabled shouldBe true
+            assertThat(DockerMonitorDetailsPage(page).openConfigureModal().restartAlertToggle).isChecked()
+        }
+
         "a Docker monitor can be created, edited and deleted entirely through the UI" {
             val page = newPage()
             val list = DockerMonitorListPage(page)

@@ -159,6 +159,8 @@ data class SettingsDto(
             val dockerLatestCpuUsage: Boolean,
             @param:Schema(description = "Whether Docker container memory usage exporter is enabled", required = true)
             val dockerLatestMemoryUsage: Boolean,
+            @param:Schema(description = "Whether Docker container restart count exporter is enabled", required = true)
+            val dockerLatestRestartCount: Boolean,
         )
 
         @Introspected

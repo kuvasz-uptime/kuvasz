@@ -92,7 +92,13 @@ class DockerUptimeChecker(
         if (!monitor.metricsHistoryEnabled) return
         val latencyMs = outcome.latencyMs ?: return
 
-        metricsLogRepository.insertLog(monitorId = monitor.id, latencyMs = latencyMs, stats = stats)
+        metricsLogRepository.insertLog(
+            monitorId = monitor.id,
+            latencyMs = latencyMs,
+            stats = stats,
+            restartCount = outcome.restartCount,
+            containerCreatedAt = outcome.containerCreatedAt,
+        )
     }
 
     /**
@@ -139,20 +145,22 @@ class DockerUptimeChecker(
      * Compares the restart count against the one the previous event recorded. Only an UP check alerts: restarts seen
      * while the monitor is DOWN are already covered by the DOWN notification, and the DOWN event absorbs them.
      *
-     * The count is only comparable within the same container: a recreated one starts from zero, and a manual restart
-     * resets it as well, so a changed creation time or a lower count is stored silently.
+     * The count is only comparable within the same container: a recreated one starts from zero, so a changed creation
+     * time is stored silently. A manual restart resets the count to zero too, so a lower count means one happened
+     * since the previous check, and every restart counted since then was done by the restart policy after it.
      */
     private fun detectRestarts(event: DockerMonitorUpEvent) {
         val previousCount = event.previousEvent?.restartCount ?: return
         val currentCount = event.restartCount ?: return
         val isSameContainer = event.previousEvent?.containerCreatedAt
             ?.let { previousCreatedAt -> event.containerCreatedAt?.isEqual(previousCreatedAt) } == true
+        val baselineCount = if (currentCount < previousCount) 0 else previousCount
 
-        if (isSameContainer && currentCount > previousCount) {
+        if (isSameContainer && currentCount > baselineCount) {
             eventDispatcher.dispatch(
                 DockerContainerRestartedEvent(
                     monitor = event.monitor,
-                    previousRestartCount = previousCount,
+                    previousRestartCount = baselineCount,
                     currentRestartCount = currentCount,
                 )
             )

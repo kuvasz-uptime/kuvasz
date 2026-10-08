@@ -18,6 +18,8 @@ class DockerMonitorFormModal(page: Page) : ModalView(page) {
     val ignoreConnectivityCheckToggle: Locator
         get() = modal.locator("input[name=ignoreConnectivityCheck]")
 
+    val restartAlertToggle: Locator get() = modal.locator("input[name='restartAlertEnabled']")
+
     val uptimeCheckIntervalInput: Locator get() = modal.locator("#docker-uptimeCheckInterval-input")
     val timeoutMsInput: Locator get() = modal.locator("#docker-timeoutMs-input")
 
@@ -65,6 +67,11 @@ class DockerMonitorFormModal(page: Page) : ModalView(page) {
     /** The container field takes a typed-in value too, since the listing is best effort. */
     fun setContainer(value: String): DockerMonitorFormModal {
         pick(containerField, value)
+        return this
+    }
+
+    fun enableRestartAlerts(): DockerMonitorFormModal {
+        restartAlertToggle.check()
         return this
     }
 

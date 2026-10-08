@@ -539,6 +539,8 @@ fun createDockerMetricsLogRecord(
     memoryUsageBytes: Long? = 1_048_576,
     memoryLimitBytes: Long? = 8_388_608,
     createdAt: OffsetDateTime = getCurrentTimestamp(),
+    restartCount: Int? = null,
+    containerCreatedAt: OffsetDateTime? = null,
 ) = dslContext
     .insertInto(DOCKER_METRICS_LOG)
     .set(
@@ -548,6 +550,8 @@ fun createDockerMetricsLogRecord(
             .setCpuUsagePercent(cpuUsagePercent)
             .setMemoryUsageBytes(memoryUsageBytes)
             .setMemoryLimitBytes(memoryLimitBytes)
+            .setRestartCount(restartCount)
+            .setContainerCreatedAt(containerCreatedAt)
             .setCreatedAt(createdAt)
     )
     .returning(DOCKER_METRICS_LOG.asterisk())

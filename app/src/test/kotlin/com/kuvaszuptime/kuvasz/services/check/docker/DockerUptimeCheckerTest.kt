@@ -147,6 +147,8 @@ class DockerUptimeCheckerTest(
                     val log = metricsLogRepository.fetchLastByMonitorId(monitor.id).shouldNotBeNull()
                     log.cpuUsagePercent shouldBe BigDecimal("37.25")
                     log.memoryUsageBytes shouldBe 1_048_576
+                    log.restartCount shouldBe RESTART_COUNT
+                    log.containerCreatedAt shouldBe CREATED_AT
                 }
             }
 
@@ -491,6 +493,26 @@ class DockerUptimeCheckerTest(
                 then("the lower count should be stored silently") {
                     uptimeEventRepository.fetchByMonitorId(monitor.id).single().restartCount shouldBe 0
                     subscriber.values().shouldBeEmpty()
+                }
+            }
+
+            `when`("the restart policy restarted the container after a manual restart reset its count") {
+                val monitor = createDockerMonitor(monitorRepository, restartAlertEnabled = true)
+                val subscriber = restartSubscriber()
+
+                checkWith(
+                    monitor,
+                    inspected(DockerContainerStatus.RUNNING),
+                    inspected(DockerContainerStatus.RUNNING, restartCount = RESTART_COUNT - 1),
+                )
+
+                then("the restarts counted since the reset should be alerted on, counting from zero") {
+                    subscriber.awaitCount(1)
+                    with(subscriber.values().shouldHaveSize(1).first()) {
+                        previousRestartCount shouldBe 0
+                        currentRestartCount shouldBe RESTART_COUNT - 1
+                    }
+                    uptimeEventRepository.fetchByMonitorId(monitor.id).single().restartCount shouldBe RESTART_COUNT - 1
                 }
             }
 
