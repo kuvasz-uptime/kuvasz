@@ -38,6 +38,13 @@ class DockerMonitorDetailsPage(private val page: Page) {
 
     val imageBadge: Locator get() = page.getByTestId("docker-image-badge")
 
+    // The tooltip of the image badge, which is rendered as HTML. Bootstrap moves the rendered `title` into
+    // `data-bs-original-title` when it takes the element over.
+    val imageBadgeTooltip: String?
+        get() = imageBadge.locator(".status").let { badge ->
+            badge.getAttribute("data-bs-original-title") ?: badge.getAttribute("title")
+        }
+
     val metricsPeriodSelector: Locator get() = page.getByTestId("metrics-period-selector")
 
     val configureButton: Locator get() = page.getByTestId("configure-button")

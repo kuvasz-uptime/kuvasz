@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
@@ -52,6 +53,12 @@ abstract class NotificationEventHandler(
             )
             handleDnsRecordsChangedEvent(event)
         }
+        eventDispatcher.subscribeToDockerContainerRestartedEvents { event ->
+            logger.debug(
+                "A ${event::class.simpleName} has been received for monitor with ID: ${event.monitor.id}"
+            )
+            handleDockerContainerRestartedEvent(event)
+        }
     }
 
     protected abstract fun handleUptimeEvent(event: UptimeMonitorEvent)
@@ -61,6 +68,8 @@ abstract class NotificationEventHandler(
     protected abstract fun handleMaintenanceEvent(event: MaintenanceWindowEvent)
 
     protected abstract fun handleDnsRecordsChangedEvent(event: DnsRecordsChangedEvent)
+
+    protected abstract fun handleDockerContainerRestartedEvent(event: DockerContainerRestartedEvent)
 
     private fun UptimeMonitorEvent.logReceipt() =
         logger.debug("A ${this::class.simpleName} has been received for monitor with ID: ${monitor.id}")

@@ -4,7 +4,9 @@
 
 **🐳 Docker monitoring**
 
-[**Docker monitors**](features/docker-monitoring.md) ask the **Docker daemon itself** whether a container is running and healthy, so they catch what a port check misses: crash loops, OOM kills, paused containers, failing healthchecks, and containers without any port at all. The errors tell you **what actually happened**, e.g. _"The container exited (137) after it was OOM killed"_, and the **image** of the container is recorded with every incident. With [**metrics history**](management/docker-monitors.md#metrics-history-enabled) enabled, the **CPU and memory usage** of the container is charted too.
+[**Docker monitors**](features/docker-monitoring.md) ask the **Docker daemon itself** whether a container is running and healthy, so they catch what a port check misses: crash loops, OOM kills, paused containers, failing healthchecks, and containers without any port at all. The errors tell you **what actually happened**, e.g. _"The container exited (137) after it was OOM killed"_, and the **image** of the container is recorded with every incident. The [**restart count**](features/docker-monitoring.md#restarts) is recorded as well, and you can [**get alerted**](management/docker-monitors.md#restart-alerts-enabled) when it goes up. With [**metrics history**](management/docker-monitors.md#metrics-history-enabled) enabled, the **CPU and memory usage** of the container is charted too.
+
+![Chart with Docker metrics](images/features/docker_resources_chart.webp)
 
 The daemons are configured as named [**Docker hosts**](management/docker-hosts.md) in your configuration file: the **local socket**, a **socket proxy**, or a **remote daemon** over TCP with **(mutual) TLS**, from **Engine 19.03** onwards (see the [**compatibility matrix**](features/docker-monitoring.md#compatibility)).
 

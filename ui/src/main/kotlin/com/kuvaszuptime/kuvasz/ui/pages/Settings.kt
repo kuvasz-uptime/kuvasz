@@ -427,6 +427,10 @@ fun renderSettings(
                                         label = Messages.dockerLatestMemoryUsage(),
                                         checked = metersConfig.dockerLatestMemoryUsage
                                     )
+                                    multiSettingsToggle(
+                                        label = Messages.dockerLatestRestartCount(),
+                                        checked = metersConfig.dockerLatestRestartCount
+                                    )
                                 }
                             }
                         }

@@ -39,6 +39,17 @@ class DockerUptimeEventRepository(private val dslContext: DSLContext) : UptimeEv
             .setUpdatedAt(event.dispatchedAt)
             .setImage(event.image)
 
+        // A check that could not inspect the container (an unreachable daemon, a vanished container) carries the known
+        // restart count over, so that the restarts in between are still counted against it once the container is back.
+        // The pair is carried over together, so that a count is never compared against another container's.
+        if (event.restartCount != null && event.containerCreatedAt != null) {
+            eventToInsert.setRestartCount(event.restartCount).setContainerCreatedAt(event.containerCreatedAt)
+        } else {
+            event.previousEvent?.let { previous ->
+                eventToInsert.setRestartCount(previous.restartCount).setContainerCreatedAt(previous.containerCreatedAt)
+            }
+        }
+
         if (event is DockerMonitorDownEvent) {
             eventToInsert.error = event.getPersistableError()
         }
@@ -75,6 +86,14 @@ class DockerUptimeEventRepository(private val dslContext: DSLContext) : UptimeEv
             uptimeRecords.last()
         }
 
+    fun fetchLatestRestartCount(monitorId: Long): Int? = dslContext
+        .select(DOCKER_UPTIME_EVENT.RESTART_COUNT)
+        .from(DOCKER_UPTIME_EVENT)
+        .where(DOCKER_UPTIME_EVENT.MONITOR_ID.eq(monitorId))
+        .orderBy(DOCKER_UPTIME_EVENT.UPDATED_AT.desc(), DOCKER_UPTIME_EVENT.ID.desc())
+        .limit(1)
+        .fetchOne(DOCKER_UPTIME_EVENT.RESTART_COUNT)
+
     fun endEventById(eventId: Long, endedAt: OffsetDateTime, ctx: DSLContext = dslContext) = ctx
         .update(DOCKER_UPTIME_EVENT)
         .set(DOCKER_UPTIME_EVENT.ENDED_AT, endedAt)
@@ -97,6 +116,10 @@ class DockerUptimeEventRepository(private val dslContext: DSLContext) : UptimeEv
             if (newEvent.image != null) {
                 set(DOCKER_UPTIME_EVENT.IMAGE, newEvent.image)
             }
+            if (newEvent.restartCount != null && newEvent.containerCreatedAt != null) {
+                set(DOCKER_UPTIME_EVENT.RESTART_COUNT, newEvent.restartCount)
+                set(DOCKER_UPTIME_EVENT.CONTAINER_CREATED_AT, newEvent.containerCreatedAt)
+            }
             if (newEvent is DockerMonitorDownEvent) {
                 set(DOCKER_UPTIME_EVENT.ERROR, newEvent.getPersistableError())
             }
@@ -111,6 +134,8 @@ class DockerUptimeEventRepository(private val dslContext: DSLContext) : UptimeEv
             DOCKER_UPTIME_EVENT.STATUS.`as`(DockerUptimeEventDto::status.name),
             DOCKER_UPTIME_EVENT.ERROR.`as`(DockerUptimeEventDto::error.name),
             DOCKER_UPTIME_EVENT.IMAGE.`as`(DockerUptimeEventDto::image.name),
+            DOCKER_UPTIME_EVENT.RESTART_COUNT.`as`(DockerUptimeEventDto::restartCount.name),
+            DOCKER_UPTIME_EVENT.CONTAINER_CREATED_AT.`as`(DockerUptimeEventDto::containerCreatedAt.name),
             DOCKER_UPTIME_EVENT.STARTED_AT.`as`(DockerUptimeEventDto::startedAt.name),
             DOCKER_UPTIME_EVENT.ENDED_AT.`as`(DockerUptimeEventDto::endedAt.name),
             DOCKER_UPTIME_EVENT.UPDATED_AT.`as`(DockerUptimeEventDto::updatedAt.name),

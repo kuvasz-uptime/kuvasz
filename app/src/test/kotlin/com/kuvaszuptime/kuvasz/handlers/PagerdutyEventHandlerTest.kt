@@ -11,6 +11,7 @@ import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
@@ -1396,6 +1397,65 @@ class PagerdutyEventHandlerTest(
 
                     verify(exactly = 2) { mockClient.triggerAlert(capture(slot)) }
                     slot.map { it.dedupKey }.toSet() shouldHaveSize 1
+                }
+            }
+        }
+
+        given("the PagerdutyEventHandler - Docker restart events") {
+            `when`("it receives a DockerContainerRestartedEvent") {
+                val monitor = createDockerMonitor(
+                    dockerMonitorRepository,
+                    integrations = listOf(
+                        globalPagerdutyConfig.id,
+                        otherPagerdutyConfig.id,
+                        disabledPagerdutyConfig.id,
+                    )
+                )
+                val event = DockerContainerRestartedEvent(
+                    monitor = monitor,
+                    previousRestartCount = 2,
+                    currentRestartCount = 3,
+                )
+                mockSuccessfulTriggerResponse()
+
+                eventDispatcher.testDispatch(event)
+
+                then("it should trigger a warning alert on PD for each enabled integration") {
+                    val slot = mutableListOf<PagerdutyTriggerRequest>()
+
+                    verify(exactly = 2) { mockClient.triggerAlert(capture(slot)) }
+                    slot.forAll { request ->
+                        request.eventAction shouldBe PagerdutyEventAction.TRIGGER
+                        request.dedupKey shouldStartWith "kuvasz_docker_restart_${monitor.id}_"
+                        request.payload.severity shouldBe PagerdutySeverity.WARNING
+                        request.payload.source shouldBe monitor.name
+                        request.payload.summary shouldBe event.toStructuredMessage().summary
+                    }
+                    slot.forNone { it.routingKey shouldBe disabledPagerdutyConfig.integrationKey }
+                    // Resolved once per event, so one restart stays one alert identity across the integrations
+                    slot.map { it.dedupKey }.toSet() shouldHaveSize 1
+                }
+            }
+
+            `when`("it receives two DockerContainerRestartedEvents") {
+                val monitor = createDockerMonitor(
+                    dockerMonitorRepository,
+                    integrations = listOf(globalPagerdutyConfig.id),
+                )
+                mockSuccessfulTriggerResponse()
+
+                eventDispatcher.testDispatch(
+                    DockerContainerRestartedEvent(monitor = monitor, previousRestartCount = 2, currentRestartCount = 3)
+                )
+                eventDispatcher.testDispatch(
+                    DockerContainerRestartedEvent(monitor = monitor, previousRestartCount = 3, currentRestartCount = 4)
+                )
+
+                then("each restart gets its own dedup key, so PD does not fold the second one into the first") {
+                    val slot = mutableListOf<PagerdutyTriggerRequest>()
+
+                    verify(exactly = 2) { mockClient.triggerAlert(capture(slot)) }
+                    slot.map { it.dedupKey }.toSet() shouldHaveSize 2
                 }
             }
         }

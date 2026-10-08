@@ -30,7 +30,9 @@ const {
     icmpMetricsBlock,
     tcpMetricsBlock,
     dnsMetricsBlock,
+    dockerMetricsBlock,
     buildIncidentAnnotations,
+    buildRestartAnnotations,
     formatChartTimestamp,
     toDateTimeLocalValue,
     anchorPopupToModal,
@@ -516,8 +518,13 @@ const CHART_LABELS = {
     incidentResolved: 'Incident resolved',
     latency: 'Latency',
     packetLoss: 'Packet loss',
+    cpuUsage: 'CPU',
+    memoryUsage: 'Memory',
+    memoryLimit: 'Memory limit',
+    containerRestarted: 'The container has been restarted',
+    containerRestartedDetails: 'Restarts since the last check: {delta} (total: {total})',
 };
-const MARKER_COLORS = {started: 'red', resolved: 'green'};
+const MARKER_COLORS = {started: 'red', resolved: 'green', restarted: 'yellow'};
 const METRICS_LOGS_OF_AN_HOUR = [
     {createdAt: '2024-01-01T00:00:00Z', latencyInMs: 10},
     {createdAt: '2024-01-01T01:00:00Z', latencyInMs: 20},
@@ -731,6 +738,100 @@ const anIncident = (overrides) => ({
     endedAt: '2024-01-01T02:00:00Z',
     details: null,
     ...overrides,
+});
+
+const CONTAINER_CREATED_AT = '2023-12-01T00:00:00.914442Z';
+const aDockerLog = (createdAt, restartCount, containerCreatedAt = CONTAINER_CREATED_AT) => ({
+    createdAt, restartCount, containerCreatedAt, cpuUsagePercent: 1, memoryUsageBytes: 1024, memoryLimitBytes: 2048,
+});
+const buildRestarts = (logs) => buildRestartAnnotations(logs, RANGE_START, RANGE_END, CHART_LABELS, MARKER_COLORS);
+
+test('buildRestartAnnotations marks the checks that found the restart count increased', () => {
+    // Newest first, the way the API returns them
+    const result = buildRestarts([
+        aDockerLog('2024-01-01T04:00:00Z', 5),
+        aDockerLog('2024-01-01T03:00:00Z', 2),
+        aDockerLog('2024-01-01T02:00:00Z', 2),
+        aDockerLog('2024-01-01T01:00:00Z', 1),
+    ]);
+
+    assert.deepEqual(result.xaxis.map(line => line.x), [
+        Date.parse('2024-01-01T02:00:00Z'),
+        Date.parse('2024-01-01T04:00:00Z'),
+    ]);
+    const [first, second] = result.points;
+    assert.equal(first.marker.fillColor, 'yellow');
+    assert.match(first.tooltip.text, /The container has been restarted/);
+    assert.match(first.tooltip.text, /Restarts since the last check: 1 \(total: 2\)/);
+    assert.match(second.tooltip.text, /Restarts since the last check: 3 \(total: 5\)/);
+});
+
+test('buildRestartAnnotations does not mark a count reset to zero by a manual restart', () => {
+    const result = buildRestarts([
+        aDockerLog('2024-01-01T01:00:00Z', 4),
+        aDockerLog('2024-01-01T02:00:00Z', 0),
+    ]);
+
+    assert.deepEqual(result, {xaxis: [], points: []});
+});
+
+test('buildRestartAnnotations counts the restarts after a manual restart from zero', () => {
+    const result = buildRestarts([
+        aDockerLog('2024-01-01T01:00:00Z', 4),
+        aDockerLog('2024-01-01T02:00:00Z', 1),
+    ]);
+
+    assert.deepEqual(result.xaxis.map(line => line.x), [Date.parse('2024-01-01T02:00:00Z')]);
+    assert.match(result.points[0].tooltip.text, /Restarts since the last check: 1 \(total: 1\)/);
+});
+
+test('buildRestartAnnotations does not compare the counts of a recreated container with the old one', () => {
+    const result = buildRestarts([
+        aDockerLog('2024-01-01T01:00:00Z', 1),
+        aDockerLog('2024-01-01T02:00:00Z', 3, '2024-01-01T01:30:00.123456Z'),
+        aDockerLog('2024-01-01T03:00:00Z', 4, '2024-01-01T01:30:00.123456Z'),
+    ]);
+
+    assert.deepEqual(result.xaxis.map(line => line.x), [Date.parse('2024-01-01T03:00:00Z')]);
+    assert.match(result.points[0].tooltip.text, /Restarts since the last check: 1 \(total: 4\)/);
+});
+
+test('buildRestartAnnotations does not mark a count without the creation time of its container', () => {
+    const result = buildRestarts([
+        aDockerLog('2024-01-01T01:00:00Z', 1, null),
+        aDockerLog('2024-01-01T02:00:00Z', 2, null),
+    ]);
+
+    assert.deepEqual(result, {xaxis: [], points: []});
+});
+
+test('buildRestartAnnotations compares across the logs without a restart count', () => {
+    const result = buildRestarts([
+        aDockerLog('2024-01-01T01:00:00Z', 1),
+        aDockerLog('2024-01-01T02:00:00Z', null),
+        aDockerLog('2024-01-01T03:00:00Z', 2),
+    ]);
+
+    assert.deepEqual(result.xaxis.map(line => line.x), [Date.parse('2024-01-01T03:00:00Z')]);
+});
+
+test('buildRestartAnnotations only marks the restarts within the range, but compares against an earlier log', () => {
+    const result = buildRestarts([
+        aDockerLog('2023-12-31T23:00:00Z', 1),
+        aDockerLog('2024-01-01T01:00:00Z', 2),
+        aDockerLog('2024-01-01T13:00:00Z', 3),
+    ]);
+
+    assert.deepEqual(result.xaxis.map(line => line.x), [Date.parse('2024-01-01T01:00:00Z')]);
+});
+
+test('dockerMetricsBlock.transformData shows the restart markers alongside the incident markers', () => {
+    const block = metricsBlockAt(dockerMetricsBlock, NOW);
+    const result = block.transformData({
+        metricsLogs: [aDockerLog('2024-01-01T01:30:00Z', 2), aDockerLog('2024-01-01T01:00:00Z', 1)],
+    }, [anIncident({startedAt: '2024-01-01T01:10:00Z', endedAt: null})]);
+
+    assert.deepEqual(result.annotations.points.map(point => point.marker.fillColor), ['red', 'yellow']);
 });
 
 test('buildIncidentAnnotations marks both ends of an incident within the range', () => {
@@ -1064,6 +1165,25 @@ test('Docker host select re-offers a host that is no longer configured, marked a
         {value: 'removed', text: 'removed (not configured)'},
     ]);
     assert.equal(form.dockerHost, 'removed');
+});
+
+test('Docker populateTypeFields copies the toggles and falls back to them being off', () => {
+    const form = upsertDockerMonitorForm(
+        null, {}, 'category-select', false, 'host-select', 'container-select', ['local'], '(not configured)', 0,
+    );
+
+    withCategorySelect(fakeTomSelect(), () => form.populateTypeFields({
+        dockerHost: 'local', container: 'my-app', uptimeCheckInterval: 120, timeoutMs: 10000,
+        metricsHistoryEnabled: true, restartAlertEnabled: true,
+    }));
+    assert.deepEqual(form.typeRequestBody(), {
+        dockerHost: 'local', container: 'my-app', uptimeCheckInterval: 120, timeoutMs: 10000,
+        metricsHistoryEnabled: true, restartAlertEnabled: true,
+    });
+
+    withCategorySelect(fakeTomSelect(), () => form.populateTypeFields(null));
+    assert.equal(form.metricsHistoryEnabled, false);
+    assert.equal(form.restartAlertEnabled, false);
 });
 
 const proxiedFormFactories = {

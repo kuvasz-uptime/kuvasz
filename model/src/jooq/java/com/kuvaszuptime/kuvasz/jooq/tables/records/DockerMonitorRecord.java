@@ -233,6 +233,21 @@ public class DockerMonitorRecord extends UpdatableRecordImpl<DockerMonitorRecord
         return (OffsetDateTime) get(13);
     }
 
+    /**
+     * Setter for <code>kuvasz.docker_monitor.restart_alert_enabled</code>.
+     */
+    public DockerMonitorRecord setRestartAlertEnabled(Boolean value) {
+        set(14, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.docker_monitor.restart_alert_enabled</code>.
+     */
+    public Boolean getRestartAlertEnabled() {
+        return (Boolean) get(14);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -256,7 +271,7 @@ public class DockerMonitorRecord extends UpdatableRecordImpl<DockerMonitorRecord
     /**
      * Create a detached, initialised DockerMonitorRecord
      */
-    public DockerMonitorRecord(Long id, String name, String dockerHost, String container, Integer uptimeCheckInterval, Integer timeoutMs, Long failureCountThreshold, Boolean enabled, Boolean metricsHistoryEnabled, IntegrationID[] integrations, String category, Boolean ignoreConnectivityCheck, OffsetDateTime createdAt, OffsetDateTime updatedAt) {
+    public DockerMonitorRecord(Long id, String name, String dockerHost, String container, Integer uptimeCheckInterval, Integer timeoutMs, Long failureCountThreshold, Boolean enabled, Boolean metricsHistoryEnabled, IntegrationID[] integrations, String category, Boolean ignoreConnectivityCheck, OffsetDateTime createdAt, OffsetDateTime updatedAt, Boolean restartAlertEnabled) {
         super(DockerMonitor.DOCKER_MONITOR);
 
         setId(id);
@@ -273,6 +288,7 @@ public class DockerMonitorRecord extends UpdatableRecordImpl<DockerMonitorRecord
         setIgnoreConnectivityCheck(ignoreConnectivityCheck);
         setCreatedAt(createdAt);
         setUpdatedAt(updatedAt);
+        setRestartAlertEnabled(restartAlertEnabled);
         resetTouchedOnNotNull();
     }
 
@@ -297,6 +313,7 @@ public class DockerMonitorRecord extends UpdatableRecordImpl<DockerMonitorRecord
             setIgnoreConnectivityCheck(value.getIgnoreConnectivityCheck());
             setCreatedAt(value.getCreatedAt());
             setUpdatedAt(value.getUpdatedAt());
+            setRestartAlertEnabled(value.getRestartAlertEnabled());
             resetTouchedOnNotNull();
         }
     }

@@ -16,6 +16,10 @@ data class DockerUptimeEventDto(
     val error: String?,
     @param:Schema(description = DockerMonitorDocs.EVENT_IMAGE, required = true, nullable = true)
     val image: String?,
+    @param:Schema(description = DockerMonitorDocs.EVENT_RESTART_COUNT, required = true, nullable = true)
+    val restartCount: Int?,
+    @param:Schema(description = DockerMonitorDocs.EVENT_CONTAINER_CREATED_AT, required = true, nullable = true)
+    val containerCreatedAt: OffsetDateTime?,
     @param:Schema(description = UptimeEventDocs.STARTED_AT, required = true)
     val startedAt: OffsetDateTime,
     @param:Schema(description = UptimeEventDocs.ENDED_AT, required = true, nullable = true)

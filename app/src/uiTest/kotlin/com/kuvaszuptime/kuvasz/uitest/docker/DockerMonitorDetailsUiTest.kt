@@ -13,7 +13,10 @@ import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
 import com.kuvaszuptime.kuvasz.uitest.pages.docker.DockerMonitorDetailsPage
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.string.shouldContain
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
+import java.time.OffsetDateTime
 
 @MicronautTest(environments = [PlaywrightSupport.UI_TEST_ENV])
 class DockerMonitorDetailsUiTest(private val dockerMonitorRepository: DockerMonitorRepository) : UiTestSpec() {
@@ -66,6 +69,8 @@ class DockerMonitorDetailsUiTest(private val dockerMonitorRepository: DockerMoni
                 startedAt = getCurrentTimestamp(),
                 endedAt = null,
                 image = "nginx:1.27",
+                restartCount = 3,
+                containerCreatedAt = OffsetDateTime.parse("2026-10-07T06:59:12Z"),
             )
             val unchecked = createDockerMonitor(dockerMonitorRepository, monitorName = "Unchecked Docker Monitor")
 
@@ -73,6 +78,16 @@ class DockerMonitorDetailsUiTest(private val dockerMonitorRepository: DockerMoni
             val details = DockerMonitorDetailsPage(page)
             details.navigate(inspected.id)
             assertThat(details.imageBadge).hasText("nginx:1.27")
+
+            with(details.imageBadgeTooltip.shouldNotBeNull()) {
+                // The values are highlighted, the way the chart tooltips show them
+                shouldContain("${Messages.dockerImageLabel()}: <strong>nginx:1.27</strong><br>")
+                shouldContain("${Messages.dockerRestartCountLabel()}: <strong>3</strong><br>")
+                // The timestamp is kept on one line, so the narrow tooltip doesn't break it between the date and time
+                shouldContain(
+                    "${Messages.dockerContainerCreatedAtLabel()}: <strong class=\"text-nowrap\">2026/10/07 "
+                )
+            }
 
             details.navigate(unchecked.id)
             assertThat(details.heading(unchecked.name)).isVisible()

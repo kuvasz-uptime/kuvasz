@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
@@ -124,6 +125,11 @@ object LogMessageFormatter : TextMessageFormatter {
         event.toStructuredMessage().let { details ->
             listOfNotNull(event.getEmoji() + " " + details.summary, details.details.takeIf { it.isNotBlank() })
                 .assemble()
+        }
+
+    fun toFormattedMessage(event: DockerContainerRestartedEvent): String =
+        event.toStructuredMessage().let { details ->
+            listOf(event.getEmoji() + " " + details.summary, details.details).assemble()
         }
 
     override fun toFormattedMessage(event: MaintenanceWindowEvent): String =

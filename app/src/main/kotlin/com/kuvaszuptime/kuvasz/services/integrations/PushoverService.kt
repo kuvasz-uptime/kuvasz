@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.services.integrations
 
 import com.kuvaszuptime.kuvasz.factories.PushoverMessageFactory
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
@@ -61,6 +62,9 @@ class PushoverService(
 
     fun sendEvent(integrationConfig: IntegrationConfig, event: DnsRecordsChangedEvent): Single<String> =
         sendMessage(integrationConfig, messageFactory.fromDnsRecordsChangedEvent(event))
+
+    fun sendEvent(integrationConfig: IntegrationConfig, event: DockerContainerRestartedEvent): Single<String> =
+        sendMessage(integrationConfig, messageFactory.fromDockerContainerRestartedEvent(event))
 
     fun sendEvent(integrationConfig: IntegrationConfig, event: MaintenanceWindowEvent): Single<String> =
         sendMessage(integrationConfig, messageFactory.fromMaintenanceEvent(event))

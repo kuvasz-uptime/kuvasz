@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
 import com.kuvaszuptime.kuvasz.models.events.MonitorEvent
@@ -86,6 +87,7 @@ class WebhookMessageFactory(private val templateEngine: PebbleEngine) {
         is UptimeMonitorEvent -> PlainTextMessageFormatter.toFormattedMessage(this)
         is SSLMonitorEvent -> PlainTextMessageFormatter.toFormattedMessage(this)
         is DnsRecordsChangedEvent -> PlainTextMessageFormatter.toFormattedMessage(this)
+        is DockerContainerRestartedEvent -> PlainTextMessageFormatter.toFormattedMessage(this)
         is HttpRedirectEvent -> throw NotImplementedError("Redirect events are not supported in webhooks")
     }
 }

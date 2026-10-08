@@ -36,6 +36,14 @@ Drift notifications behave differently from uptime events:
 - They **never create an incident** and never change the monitor's status. The notification contains the previous and the current records, so you can see exactly what changed.
 - On **PagerDuty** a drift alert is triggered as a `warning`, and since it is not tied to an up/down transition, it is **not resolved automatically** - each distinct answer set triggers its own alert.
 
+### Docker events
+
+| Event                        | Description                                                                                                                                                                                                  |
+|------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `DOCKER_CONTAINER_RESTARTED` | Fired, when the **restart policy of a container restarted it** since the previous check (only if [restart alerts](../management/docker-monitors.md#restart-alerts-enabled) are enabled on the monitor) |
+
+Like the DNS drift notifications, restart notifications **never create an incident** and never change the monitor's status, and on **PagerDuty** each of them triggers its own `warning` alert that is **not resolved automatically**. The notification tells how many times the container was restarted since the previous check, and how many times in total. See [**Restarts**](docker-monitoring.md#restarts) for the details.
+
 ### SSL events
 
 | Event             | Description                                                                                            |

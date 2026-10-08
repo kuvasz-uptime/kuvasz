@@ -19,6 +19,8 @@ import tools.jackson.module.kotlin.readValue
 import java.io.IOException
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import java.time.OffsetDateTime
+import java.time.temporal.ChronoUnit
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -257,6 +259,9 @@ class DockerApiClient(private val transport: DockerHttpTransport) {
                 oomKilled = state.oomKilled == true,
                 failingStreak = health?.failingStreak,
                 image = inspected.config?.image?.takeIf { it.isNotBlank() },
+                restartCount = inspected.restartCount,
+                // A stored timestamp keeps only microseconds, so it is truncated to compare equal on the next check
+                createdAt = inspected.created?.truncatedTo(ChronoUnit.MICROS),
             )
         } else {
             null
@@ -292,6 +297,10 @@ class DockerApiClient(private val transport: DockerHttpTransport) {
         val state: StateNode?,
         @param:JsonProperty("Config")
         val config: ConfigNode?,
+        @param:JsonProperty("RestartCount")
+        val restartCount: Int?,
+        @param:JsonProperty("Created")
+        val created: OffsetDateTime?,
     )
 
     private data class ConfigNode(@param:JsonProperty("Image") val image: String?)

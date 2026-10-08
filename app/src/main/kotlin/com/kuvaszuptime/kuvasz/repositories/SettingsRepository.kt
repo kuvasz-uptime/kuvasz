@@ -105,6 +105,7 @@ class SettingsRepository(
             dockerLatestLatency = exportConfig.dockerLatestLatency,
             dockerLatestCpuUsage = exportConfig.dockerLatestCpuUsage,
             dockerLatestMemoryUsage = exportConfig.dockerLatestMemoryUsage,
+            dockerLatestRestartCount = exportConfig.dockerLatestRestartCount,
         ),
         exporters = SettingsDto.MetricsExportSettingsDto.ExporterSettingsDto(
             prometheus = SettingsDto.MetricsExportSettingsDto.ExporterSettingsDto.PrometheusSettingsDto(

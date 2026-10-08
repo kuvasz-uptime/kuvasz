@@ -45,6 +45,10 @@ data class DockerMetricsLogDto(
         required = true,
     )
     val memoryLimitBytes: Long?,
+    @param:Schema(description = DockerMonitorDocs.METRICS_RESTART_COUNT, required = true, nullable = true)
+    val restartCount: Int?,
+    @param:Schema(description = DockerMonitorDocs.METRICS_CONTAINER_CREATED_AT, required = true, nullable = true)
+    val containerCreatedAt: OffsetDateTime?,
     @param:Schema(description = "The timestamp when the metrics were recorded", required = true)
     val createdAt: OffsetDateTime,
 )

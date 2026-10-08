@@ -555,52 +555,89 @@ const formatChartTimestamp = (date) =>
 // SSL incidents are returned for the HTTP monitors too, but they have nothing to do with the metrics of a monitor
 const NON_METRICS_INCIDENT_TYPES = ['SSL'];
 
+// Adds a chart marker: a vertical line and a point on the zero line, the latter carrying the details in a tooltip. The
+// details can be anything (e.g. the error message of a check), so they have to be escaped.
+const addChartMarker = (annotations, timestamp, color, title, details) => {
+    annotations.xaxis.push({
+        x: timestamp,
+        borderColor: color,
+        strokeDashArray: 4,
+    });
+    annotations.points.push({
+        x: timestamp,
+        y: 0,
+        yAxisIndex: 0,
+        marker: {
+            size: 5,
+            fillColor: color,
+            strokeColor: '#fff',
+            strokeWidth: 2,
+        },
+        tooltip: {
+            enabled: true,
+            theme: 'dark',
+            text: `<strong>${escapeHtml(title)}</strong>` +
+                `<div>${formatChartTimestamp(new Date(timestamp))}</div>` +
+                (details ? `<div>${escapeHtml(details)}</div>` : ''),
+        },
+    });
+};
+
 // Builds the chart annotations marking the start and the end of the incidents that fall into the displayed range.
-// Every marker is a vertical line and a point on the zero line, the latter carrying the details of the incident in a
-// tooltip. The details can be anything (e.g. the error message of a check), so they have to be escaped.
 const buildIncidentAnnotations = (incidents, rangeStart, rangeEnd, labels, colors) => {
     const annotations = {xaxis: [], points: []};
     const isInRange = (timestamp) => timestamp >= rangeStart && timestamp <= rangeEnd;
-    const addMarker = (timestamp, color, title, details) => {
-        annotations.xaxis.push({
-            x: timestamp,
-            borderColor: color,
-            strokeDashArray: 4,
-        });
-        annotations.points.push({
-            x: timestamp,
-            y: 0,
-            yAxisIndex: 0,
-            marker: {
-                size: 5,
-                fillColor: color,
-                strokeColor: '#fff',
-                strokeWidth: 2,
-            },
-            tooltip: {
-                enabled: true,
-                theme: 'dark',
-                text: `<strong>${escapeHtml(title)}</strong>` +
-                    `<div>${formatChartTimestamp(new Date(timestamp))}</div>` +
-                    (details ? `<div>${escapeHtml(details)}</div>` : ''),
-            },
-        });
-    };
 
     incidents
         .filter(incident => !NON_METRICS_INCIDENT_TYPES.includes(incident.incidentType))
         .forEach(incident => {
             const startedAt = new Date(incident.startedAt).getTime();
             if (isInRange(startedAt)) {
-                addMarker(startedAt, colors.started, labels.incidentStarted, incident.details);
+                addChartMarker(annotations, startedAt, colors.started, labels.incidentStarted, incident.details);
             }
             if (incident.endedAt) {
                 const endedAt = new Date(incident.endedAt).getTime();
                 if (isInRange(endedAt)) {
-                    addMarker(endedAt, colors.resolved, labels.incidentResolved, incident.details);
+                    addChartMarker(annotations, endedAt, colors.resolved, labels.incidentResolved, incident.details);
                 }
             }
         });
+    return annotations;
+};
+
+/*
+ Marks the checks that found the container restarted by its restart policy since the previous check, the same way the
+ restart alerts do. The counts are only compared within the same container, as a recreated one starts from zero. A
+ manual restart resets the count to zero too, so a lower count means one happened in between, and the restarts counted
+ since then were done by the restart policy after it. A log without a count (the container could not be inspected) is
+ skipped, so the next known count is compared against the last known one. The logs arrive newest first, hence the
+ sorting.
+*/
+const buildRestartAnnotations = (logs, rangeStart, rangeEnd, labels, colors) => {
+    const annotations = {xaxis: [], points: []};
+    const countedLogs = logs
+        .filter(log => log.restartCount !== null && log.restartCount !== undefined)
+        .map(log => ({
+            timestamp: new Date(log.createdAt).getTime(),
+            restartCount: log.restartCount,
+            containerCreatedAt: log.containerCreatedAt ? new Date(log.containerCreatedAt).getTime() : null,
+        }))
+        .sort((a, b) => a.timestamp - b.timestamp);
+    countedLogs.forEach((log, index) => {
+        const previous = countedLogs[index - 1];
+        const isInRange = log.timestamp >= rangeStart && log.timestamp <= rangeEnd;
+        const isSameContainer = previous && log.containerCreatedAt !== null
+            && log.containerCreatedAt === previous.containerCreatedAt;
+        if (!isSameContainer || !isInRange) return;
+
+        const baselineCount = log.restartCount < previous.restartCount ? 0 : previous.restartCount;
+        if (log.restartCount > baselineCount) {
+            const details = labels.containerRestartedDetails
+                .replace('{delta}', String(log.restartCount - baselineCount))
+                .replace('{total}', String(log.restartCount));
+            addChartMarker(annotations, log.timestamp, colors.restarted, labels.containerRestarted, details);
+        }
+    });
     return annotations;
 };
 
@@ -647,6 +684,8 @@ const metricsBlock = ({
     toChartData,
     // Series that start collapsed, still listed in the legend so they can be toggled on
     initiallyHiddenSeries = [],
+    // Markers of a monitor type's own, derived from its logs, shown alongside the incident markers
+    buildLogAnnotations = null,
 }) => {
     return {
         isMonitorEnabled,
@@ -717,6 +756,7 @@ const metricsBlock = ({
             this.markerColors = {
                 started: themeColor("red"),
                 resolved: themeColor("green"),
+                restarted: themeColor("yellow"),
             };
             this.chart = new ApexCharts(document.getElementById(chartElementId), buildChartOptions(this.chartLabels));
             this.chart.render();
@@ -778,11 +818,19 @@ const metricsBlock = ({
         transformData(rawData, incidents) {
             const logs = logsOf(rawData);
             const range = metricsChartRange(this.period, this.now(), logs, incidents);
+            const annotations = buildIncidentAnnotations(
+                incidents, range.start, range.end, this.chartLabels, this.markerColors,
+            );
+            if (buildLogAnnotations) {
+                const logAnnotations = buildLogAnnotations(
+                    logs, range.start, range.end, this.chartLabels, this.markerColors,
+                );
+                annotations.xaxis.push(...logAnnotations.xaxis);
+                annotations.points.push(...logAnnotations.points);
+            }
             return {
                 ...toChartData(logs, this.chartLabels),
-                annotations: buildIncidentAnnotations(
-                    incidents, range.start, range.end, this.chartLabels, this.markerColors,
-                ),
+                annotations,
                 range,
             };
         },
@@ -999,6 +1047,7 @@ const dockerMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, ch
      and flatten it against the bottom of the scale. So the ceiling stays off until it is asked for.
     */
     initiallyHiddenSeries: [chartLabels.memoryLimit],
+    buildLogAnnotations: buildRestartAnnotations,
 });
 
 const hasNonNullValue = (obj) => Object.values(obj).some(value => value !== null);
@@ -1808,6 +1857,7 @@ const upsertDockerMonitorForm = (
         this.uptimeCheckInterval = source?.uptimeCheckInterval || 60;
         this.timeoutMs = source?.timeoutMs || 5000;
         this.metricsHistoryEnabled = source?.metricsHistoryEnabled ?? false;
+        this.restartAlertEnabled = source?.restartAlertEnabled ?? false;
         this.containerLoadFailed = false;
 
         /*
@@ -1952,6 +2002,7 @@ const upsertDockerMonitorForm = (
             uptimeCheckInterval: this.uptimeCheckInterval,
             timeoutMs: this.timeoutMs,
             metricsHistoryEnabled: this.metricsHistoryEnabled,
+            restartAlertEnabled: this.restartAlertEnabled,
         };
     },
 });
@@ -2833,6 +2884,7 @@ if (typeof module !== 'undefined' && module.exports) {
         anchorPopupToModal,
         formatChartTimestamp,
         buildIncidentAnnotations,
+        buildRestartAnnotations,
         isValidUrl,
         isValidSlug,
         isValidIsoDuration,

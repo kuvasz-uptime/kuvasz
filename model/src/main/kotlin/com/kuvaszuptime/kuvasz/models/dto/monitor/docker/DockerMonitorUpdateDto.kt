@@ -55,6 +55,10 @@ data class DockerMonitorUpdateDto(
     @param:Schema(description = DockerMonitorDocs.METRICS_HISTORY_ENABLED, required = false, nullable = false)
     val metricsHistoryEnabled: Boolean?,
 
+    @get:NotNull
+    @param:Schema(description = DockerMonitorDocs.RESTART_ALERT_ENABLED, required = false, nullable = false)
+    val restartAlertEnabled: Boolean?,
+
     @get:Size(max = Validation.MAX_CATEGORY_LENGTH, message = MonitorValidationMessages.CATEGORY_MAX_SIZE)
     @param:Schema(description = MonitorDocs.CATEGORY, required = false, nullable = true)
     override val category: String?,

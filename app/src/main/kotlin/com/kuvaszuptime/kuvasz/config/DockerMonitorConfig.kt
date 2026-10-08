@@ -34,6 +34,9 @@ interface DockerMonitorConfig : DockerMonitorCreator, MonitorConfig {
     @get:Bindable(defaultValue = DockerMonitorDefaults.METRICS_HISTORY_ENABLED.toString())
     override val metricsHistoryEnabled: Boolean
 
+    @get:Bindable(defaultValue = DockerMonitorDefaults.RESTART_ALERT_ENABLED.toString())
+    override val restartAlertEnabled: Boolean
+
     override val category: String?
 
     @get:Bindable(defaultValue = DockerMonitorDefaults.IGNORE_CONNECTIVITY_CHECK.toString())

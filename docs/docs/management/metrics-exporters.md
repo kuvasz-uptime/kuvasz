@@ -33,24 +33,25 @@ every metric has all of them:
 - `name`: the name of the monitor
 - `target`: the target that is monitored (i.e. a URL, an IP address / hostname, a `host:port` pair for TCP monitors, or a `host/container` pair for Docker monitors)
 
-|                               | `name` | `target` |
-|-------------------------------|--------|----------|
-| HTTP uptime status            | ✅     | ✅       |
-| HTTP latest latency           | ✅     | ✅       |
-| SSL status                    | ✅     | ✅       |
-| SSL expiry                    | ✅     | ✅       |
-| Push uptime status            | ✅     | ❌       |
-| ICMP uptime status            | ✅     | ✅       |
-| ICMP latest latency           | ✅     | ✅       |
-| ICMP packet loss              | ✅     | ✅       |
-| TCP uptime status             | ✅     | ✅       |
-| TCP latest latency            | ✅     | ✅       |
-| DNS uptime status             | ✅     | ✅       |
-| DNS latest latency            | ✅     | ✅       |
-| Docker uptime status          | ✅     | ✅       |
-| Docker API latest latency     | ✅     | ✅       |
-| Docker container CPU usage    | ✅     | ✅       |
-| Docker container memory usage | ✅     | ✅       |
+|                                 | `name` | `target` |
+|---------------------------------|--------|----------|
+| HTTP uptime status              | ✅     | ✅       |
+| HTTP latest latency             | ✅     | ✅       |
+| SSL status                      | ✅     | ✅       |
+| SSL expiry                      | ✅     | ✅       |
+| Push uptime status              | ✅     | ❌       |
+| ICMP uptime status              | ✅     | ✅       |
+| ICMP latest latency             | ✅     | ✅       |
+| ICMP packet loss                | ✅     | ✅       |
+| TCP uptime status               | ✅     | ✅       |
+| TCP latest latency              | ✅     | ✅       |
+| DNS uptime status               | ✅     | ✅       |
+| DNS latest latency              | ✅     | ✅       |
+| Docker uptime status            | ✅     | ✅       |
+| Docker API latest latency       | ✅     | ✅       |
+| Docker container CPU usage      | ✅     | ✅       |
+| Docker container memory usage   | ✅     | ✅       |
+| Docker container restart count  | ✅     | ✅       |
 
 ### HTTP uptime status
 
@@ -318,10 +319,6 @@ This metric is exported as a **gauge** and indicates the current uptime status o
 
     ```bash
     ENABLE_DNS_LATEST_LATENCY_EXPORT=true
-    ENABLE_DOCKER_UPTIME_STATUS_EXPORT=true
-    ENABLE_DOCKER_LATEST_LATENCY_EXPORT=true
-    ENABLE_DOCKER_LATEST_CPU_USAGE_EXPORT=true
-    ENABLE_DOCKER_LATEST_MEMORY_USAGE_EXPORT=true
     ```
 
 This metric is exported as a **gauge** and reports the latest recorded resolution latency of the monitored name, in milliseconds. The `target` tag is the queried host.
@@ -415,6 +412,28 @@ This metric is exported as a **gauge** and reports the latest sampled memory usa
 
 Like the CPU usage, it's only reported while there is a fresh sample.
 
+### Docker container restart count
+
+<!-- md:version 4.5.0 -->
+<!-- md:default `false` -->
+<!-- md:type `boolean` -->
+
+=== "YAML"
+
+    ```yaml
+    metrics-exports.docker-latest-restart-count: true
+    ```
+
+=== "ENV"
+
+    ```bash
+    ENABLE_DOCKER_LATEST_RESTART_COUNT_EXPORT=true
+    ```
+
+This metric is exported as a **gauge** and reports how many times the **restart policy** of the container has restarted it, as the latest check found it. The count is updated by every check that records an **UP or DOWN event**, so unlike the resource metrics it **doesn't need** [**metrics history**](docker-monitors.md#metrics-history-enabled). While a failing check is still below the [**failure count threshold**](docker-monitors.md#failure-count-threshold), it records no event, so the metric only catches up with the restarts at the next one.
+
+A manual restart, or recreating the container **resets the count to zero**. When a check can't inspect the container (e.g. the daemon is unreachable), the **last known count is kept**, instead of the metric disappearing.
+
 ## Prometheus
 
 The _Prometheus_ exporter is a built-in exporter that allows you to **expose your metrics** in a format that **can be scraped** by _Prometheus_. It supports the standard _Prometheus_ text format, which is widely used for monitoring and alerting.
@@ -481,6 +500,7 @@ kuvasz_docker_uptime_status{name="my-app",target="local/my-app"} 1.0
 kuvasz_docker_api_latency_latest_milliseconds{name="my-app",target="local/my-app"} 4.0
 kuvasz_docker_cpu_usage_latest_percent{name="my-app",target="local/my-app"} 2.35
 kuvasz_docker_memory_usage_latest_bytes{name="my-app",target="local/my-app"} 5.4525952E7
+kuvasz_docker_restart_count{name="my-app",target="local/my-app"} 3.0
 ```
 
 ### Example config
@@ -509,14 +529,11 @@ kuvasz_docker_memory_usage_latest_bytes{name="my-app",target="local/my-app"} 5.4
         tcp-latest-latency: true
         dns-uptime-status: true
         dns-latest-latency: true
-      docker-uptime-status: true
-      docker-latest-latency: true
-      docker-latest-cpu-usage: true
-      docker-latest-memory-usage: true
         docker-uptime-status: true
         docker-latest-latency: true
         docker-latest-cpu-usage: true
         docker-latest-memory-usage: true
+        docker-latest-restart-count: true
     ```
 
 === "ENV"
@@ -542,6 +559,7 @@ kuvasz_docker_memory_usage_latest_bytes{name="my-app",target="local/my-app"} 5.4
     ENABLE_DOCKER_LATEST_LATENCY_EXPORT=true
     ENABLE_DOCKER_LATEST_CPU_USAGE_EXPORT=true
     ENABLE_DOCKER_LATEST_MEMORY_USAGE_EXPORT=true
+    ENABLE_DOCKER_LATEST_RESTART_COUNT_EXPORT=true
     ```
 
 ## OpenTelemetry
@@ -682,6 +700,7 @@ kuvasz.docker.memory.usage.latest.bytes{name=my-app,target=local/my-app} 5452595
       docker-latest-latency: true
       docker-latest-cpu-usage: true
       docker-latest-memory-usage: true
+      docker-latest-restart-count: true
     ```
 
 === "ENV"
@@ -709,6 +728,7 @@ kuvasz.docker.memory.usage.latest.bytes{name=my-app,target=local/my-app} 5452595
     ENABLE_DOCKER_LATEST_LATENCY_EXPORT=true
     ENABLE_DOCKER_LATEST_CPU_USAGE_EXPORT=true
     ENABLE_DOCKER_LATEST_MEMORY_USAGE_EXPORT=true
+    ENABLE_DOCKER_LATEST_RESTART_COUNT_EXPORT=true
     ```
 
 ## Checking the configuration on the UI

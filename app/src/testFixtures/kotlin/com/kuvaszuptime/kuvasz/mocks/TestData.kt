@@ -366,6 +366,7 @@ fun createDockerMonitor(
     integrations: List<IntegrationID> = emptyList(),
     metricsHistoryEnabled: Boolean = true,
     category: String? = null,
+    restartAlertEnabled: Boolean = false,
 ): DockerMonitorRecord {
     val monitor = DockerMonitorRecord()
         .setName(monitorName)
@@ -379,6 +380,7 @@ fun createDockerMonitor(
         .setIntegrations(integrations.toTypedArray())
         .setMetricsHistoryEnabled(metricsHistoryEnabled)
         .setCategory(category)
+        .setRestartAlertEnabled(restartAlertEnabled)
     return repository.returningInsert(monitor)
 }
 
@@ -510,6 +512,8 @@ fun createDockerUptimeEventRecord(
     error: String? = null,
     updatedAt: OffsetDateTime? = null,
     image: String? = null,
+    restartCount: Int? = null,
+    containerCreatedAt: OffsetDateTime? = null,
 ) = dslContext
     .insertInto(DOCKER_UPTIME_EVENT)
     .set(
@@ -521,6 +525,8 @@ fun createDockerUptimeEventRecord(
             .setEndedAt(endedAt)
             .setError(error)
             .setImage(image)
+            .setRestartCount(restartCount)
+            .setContainerCreatedAt(containerCreatedAt)
     )
     .returning(DOCKER_UPTIME_EVENT.asterisk())
     .fetchOneOrThrow<DockerUptimeEventRecord>()
@@ -533,6 +539,8 @@ fun createDockerMetricsLogRecord(
     memoryUsageBytes: Long? = 1_048_576,
     memoryLimitBytes: Long? = 8_388_608,
     createdAt: OffsetDateTime = getCurrentTimestamp(),
+    restartCount: Int? = null,
+    containerCreatedAt: OffsetDateTime? = null,
 ) = dslContext
     .insertInto(DOCKER_METRICS_LOG)
     .set(
@@ -542,6 +550,8 @@ fun createDockerMetricsLogRecord(
             .setCpuUsagePercent(cpuUsagePercent)
             .setMemoryUsageBytes(memoryUsageBytes)
             .setMemoryLimitBytes(memoryLimitBytes)
+            .setRestartCount(restartCount)
+            .setContainerCreatedAt(containerCreatedAt)
             .setCreatedAt(createdAt)
     )
     .returning(DOCKER_METRICS_LOG.asterisk())

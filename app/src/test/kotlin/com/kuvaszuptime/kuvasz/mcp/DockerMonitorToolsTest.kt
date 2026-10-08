@@ -22,6 +22,7 @@ import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.monitor.docker.DockerMonitorDefaults
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.DockerMonitorRepository
+import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.testutils.shouldHaveError
 import com.kuvaszuptime.kuvasz.testutils.shouldHaveInputValidationError
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
@@ -35,6 +36,7 @@ import io.micronaut.http.client.annotation.Client
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.modelcontextprotocol.client.McpSyncClient
 import io.modelcontextprotocol.spec.McpSchema
+import java.time.OffsetDateTime
 
 @MicronautTest(environments = ["full-integrations-setup", "docker-hosts"])
 class DockerMonitorToolsTest(
@@ -83,6 +85,8 @@ class DockerMonitorToolsTest(
                     endedAt = null,
                     error = "The container exited (1)",
                     image = "nginx:1.27",
+                    restartCount = 4,
+                    containerCreatedAt = OffsetDateTime.parse("2026-10-07T06:59:12.914442Z"),
                 )
                 val response = callToolWithMcpClient(GET_DOCKER_MONITOR_DETAILS, mapOf("monitorId" to monitor.id))
 
@@ -96,6 +100,8 @@ class DockerMonitorToolsTest(
                     details.dockerHost shouldBe monitor.dockerHost
                     details.container shouldBe monitor.container
                     details.image shouldBe "nginx:1.27"
+                    details.restartCount shouldBe 4
+                    details.containerCreatedAt shouldBe OffsetDateTime.parse("2026-10-07T06:59:12.914442Z")
 
                     response.contentAs<DockerMonitorDetailsSchema>() shouldBe details
                 }
@@ -156,9 +162,31 @@ class DockerMonitorToolsTest(
                         uptimeCheckInterval shouldBe 60
                         enabled shouldBe true
                         ignoreConnectivityCheck shouldBe DockerMonitorDefaults.IGNORE_CONNECTIVITY_CHECK
+                        restartAlertEnabled shouldBe DockerMonitorDefaults.RESTART_ALERT_ENABLED
 
                         response.contentAs<DockerMonitorSchema>() shouldBe this
                     }
+                }
+            }
+
+            `when`("create-docker-monitor is called with restartAlertEnabled set") {
+                val response = callToolWithMcpClient(
+                    CREATE_DOCKER_MONITOR,
+                    mapOf(
+                        "name" to "mcp-created-docker-monitor-with-restart-alerts",
+                        "dockerHost" to "local",
+                        "container" to "my-app",
+                        "uptimeCheckInterval" to 60,
+                        "restartAlertEnabled" to true,
+                    )
+                )
+
+                then("the created monitor should alert on restarts") {
+                    response.isError shouldBe false
+                    response.structuredContentAs<DockerMonitorSchema>().shouldNotBeNull()
+                        .restartAlertEnabled shouldBe true
+                    dockerMonitorRepository.findByName("mcp-created-docker-monitor-with-restart-alerts")
+                        .shouldNotBeNull().restartAlertEnabled shouldBe true
                 }
             }
 
@@ -289,7 +317,13 @@ class DockerMonitorToolsTest(
             `when`("get-docker-monitor-stats is called for a monitor with metrics history") {
                 val monitor = createDockerMonitor(dockerMonitorRepository, metricsHistoryEnabled = true)
                 createDockerMetricsLogRecord(dslContext, monitorId = monitor.id, latencyMs = 10)
-                createDockerMetricsLogRecord(dslContext, monitorId = monitor.id, latencyMs = 20)
+                createDockerMetricsLogRecord(
+                    dslContext,
+                    monitorId = monitor.id,
+                    latencyMs = 20,
+                    restartCount = 1,
+                    containerCreatedAt = OffsetDateTime.parse("2026-10-07T06:59:12.914442Z"),
+                )
 
                 val response = callToolWithMcpClient(GET_DOCKER_MONITOR_STATS, mapOf("monitorId" to monitor.id))
 
@@ -300,6 +334,9 @@ class DockerMonitorToolsTest(
                         cpuStats.shouldNotBeNull()
                         memoryStats.shouldNotBeNull()
                         metricsLogs.shouldNotBeEmpty()
+                        metricsLogs.first().restartCount shouldBe 1
+                        metricsLogs.first().containerCreatedAt shouldBe
+                            OffsetDateTime.parse("2026-10-07T06:59:12.914442Z")
 
                         response.contentAs<DockerMonitorStatsSchema>() shouldBe this
                     }

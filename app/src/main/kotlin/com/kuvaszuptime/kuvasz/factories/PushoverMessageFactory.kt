@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.factories
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.StructuredDnsMonitorDownMessage
@@ -9,6 +10,7 @@ import com.kuvaszuptime.kuvasz.models.events.StructuredDnsMonitorUpMessage
 import com.kuvaszuptime.kuvasz.models.events.StructuredDockerMonitorDownMessage
 import com.kuvaszuptime.kuvasz.models.events.StructuredDockerMonitorUpMessage
 import com.kuvaszuptime.kuvasz.models.events.StructuredDnsRecordsChangedMessage
+import com.kuvaszuptime.kuvasz.models.events.StructuredDockerContainerRestartedMessage
 import com.kuvaszuptime.kuvasz.models.events.StructuredHttpMonitorUpMessage
 import com.kuvaszuptime.kuvasz.models.events.StructuredIcmpMonitorDownMessage
 import com.kuvaszuptime.kuvasz.models.events.StructuredIcmpMonitorUpMessage
@@ -59,6 +61,12 @@ class PushoverMessageFactory {
     fun fromDnsRecordsChangedEvent(event: DnsRecordsChangedEvent): PushoverMessage =
         event.toStructuredMessage().let {
             buildMessage("${event.getEmoji()} ${event.monitor.name}", it.summary, it.toDetails(), MessageSeverity.INFO)
+        }
+
+    fun fromDockerContainerRestartedEvent(event: DockerContainerRestartedEvent): PushoverMessage =
+        event.toStructuredMessage().let { message ->
+            val title = "${event.getEmoji()} ${event.monitor.name}"
+            buildMessage(title, message.summary, message.toDetails(), MessageSeverity.WARNING)
         }
 
     fun fromMaintenanceEvent(event: MaintenanceWindowEvent): PushoverMessage =
@@ -123,6 +131,8 @@ class PushoverMessageFactory {
 
     private fun StructuredDnsRecordsChangedMessage.toDetails(): List<String> =
         listOfNotNull(details.takeIf { it.isNotBlank() })
+
+    private fun StructuredDockerContainerRestartedMessage.toDetails(): List<String> = listOf(details)
 
     companion object {
         private const val TITLE_MAX_LENGTH = 250

@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.services.check.docker
 import com.kuvaszuptime.kuvasz.handlers.DatabaseEventHandler
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DockerMonitorRecord
+import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerMonitorUpEvent
 import com.kuvaszuptime.kuvasz.repositories.DockerMetricsLogRepository
@@ -44,7 +45,17 @@ class DockerUptimeChecker(
         // for a monitor as naming a host that was since removed from the config
         val host = hostRegistry?.get(monitor.dockerHost)
         if (host == null || apiClient == null) {
-            reportDown(monitor, Messages.dockerHostNotConfigured(monitor.dockerHost), latencyMs = null)
+            val error = Messages.dockerHostNotConfigured(monitor.dockerHost)
+            reportDown(
+                monitor = monitor,
+                outcome = DockerCheckOutcome.Down(
+                    error,
+                    latencyMs = null,
+                    image = null,
+                    restartCount = null,
+                    containerCreatedAt = null,
+                )
+            )
         } else {
             val outcome = apiClient
                 .inspectContainer(host, monitor.container, monitor.timeoutMs)
@@ -56,7 +67,7 @@ class DockerUptimeChecker(
 
             when (outcome) {
                 is DockerCheckOutcome.Up -> reportUp(monitor, outcome, stats)
-                is DockerCheckOutcome.Down -> reportDown(monitor, outcome.error, outcome.latencyMs, outcome.image)
+                is DockerCheckOutcome.Down -> reportDown(monitor, outcome)
             }
         }
 
@@ -81,7 +92,13 @@ class DockerUptimeChecker(
         if (!monitor.metricsHistoryEnabled) return
         val latencyMs = outcome.latencyMs ?: return
 
-        metricsLogRepository.insertLog(monitorId = monitor.id, latencyMs = latencyMs, stats = stats)
+        metricsLogRepository.insertLog(
+            monitorId = monitor.id,
+            latencyMs = latencyMs,
+            stats = stats,
+            restartCount = outcome.restartCount,
+            containerCreatedAt = outcome.containerCreatedAt,
+        )
     }
 
     /**
@@ -115,19 +132,50 @@ class DockerUptimeChecker(
             image = outcome.image,
             cpuUsagePercent = stats?.cpuUsagePercentDecimal,
             memoryUsageBytes = stats?.memoryUsageBytes,
+            restartCount = outcome.restartCount,
+            containerCreatedAt = outcome.containerCreatedAt,
         )
         pendingFailureRepository.deleteByMonitorId(monitor.id)
         databaseEventHandler.handleUptimeMonitorEvent(event)
         eventDispatcher.dispatch(event)
+        if (monitor.restartAlertEnabled) detectRestarts(event)
     }
 
-    private fun reportDown(monitor: DockerMonitorRecord, error: String, latencyMs: Int?, image: String? = null) {
+    /**
+     * Compares the restart count against the one the previous event recorded. Only an UP check alerts: restarts seen
+     * while the monitor is DOWN are already covered by the DOWN notification, and the DOWN event absorbs them.
+     *
+     * The count is only comparable within the same container: a recreated one starts from zero, so a changed creation
+     * time is stored silently. A manual restart resets the count to zero too, so a lower count means one happened
+     * since the previous check, and every restart counted since then was done by the restart policy after it.
+     */
+    private fun detectRestarts(event: DockerMonitorUpEvent) {
+        val previousCount = event.previousEvent?.restartCount ?: return
+        val currentCount = event.restartCount ?: return
+        val isSameContainer = event.previousEvent?.containerCreatedAt
+            ?.let { previousCreatedAt -> event.containerCreatedAt?.isEqual(previousCreatedAt) } == true
+        val baselineCount = if (currentCount < previousCount) 0 else previousCount
+
+        if (isSameContainer && currentCount > baselineCount) {
+            eventDispatcher.dispatch(
+                DockerContainerRestartedEvent(
+                    monitor = event.monitor,
+                    previousRestartCount = baselineCount,
+                    currentRestartCount = currentCount,
+                )
+            )
+        }
+    }
+
+    private fun reportDown(monitor: DockerMonitorRecord, outcome: DockerCheckOutcome.Down) {
         val event = DockerMonitorDownEvent(
             monitor = monitor,
-            error = error,
+            error = outcome.error,
             previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(monitor.id),
-            latencyInMs = latencyMs,
-            image = image,
+            latencyInMs = outcome.latencyMs,
+            image = outcome.image,
+            restartCount = outcome.restartCount,
+            containerCreatedAt = outcome.containerCreatedAt,
         )
         if (event.isDownNow(pendingFailureRepository)) {
             databaseEventHandler.handleUptimeMonitorEvent(event)

@@ -13,6 +13,7 @@ import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
@@ -66,6 +67,7 @@ class EventDispatcherTest(
     private val receivedSSLEvents = mutableListOf<SSLMonitorEvent>()
     private val receivedMaintenanceEvents = mutableListOf<MaintenanceWindowEvent>()
     private val receivedDriftEvents = mutableListOf<DnsRecordsChangedEvent>()
+    private val receivedRestartEvents = mutableListOf<DockerContainerRestartedEvent>()
 
     init {
         afterContainer {
@@ -73,6 +75,7 @@ class EventDispatcherTest(
             receivedSSLEvents.clear()
             receivedMaintenanceEvents.clear()
             receivedDriftEvents.clear()
+            receivedRestartEvents.clear()
         }
 
         dispatcher.subscribeToHttpMonitorUpEvents { event ->
@@ -89,6 +92,7 @@ class EventDispatcherTest(
         dispatcher.subscribeToSSLMonitorEvents { event -> receivedSSLEvents.add(event) }
         dispatcher.subscribeToMaintenanceWindowEvents { event -> receivedMaintenanceEvents.add(event) }
         dispatcher.subscribeToDnsRecordsChangedEvents { event -> receivedDriftEvents.add(event) }
+        dispatcher.subscribeToDockerContainerRestartedEvents { event -> receivedRestartEvents.add(event) }
 
         given("an event dispatcher") {
 
@@ -216,6 +220,26 @@ class EventDispatcherTest(
                 then("it should be received by the drift subscriber") {
                     eventually(2.seconds) {
                         receivedDriftEvents shouldContainExactlyInAnyOrder listOf(event)
+                    }
+                }
+            }
+        }
+
+        given("the subscription to Docker container restarted events") {
+
+            `when`("a DockerContainerRestartedEvent is dispatched") {
+                val dockerMonitor = createDockerMonitor(dockerMonitorRepository)
+                val event = DockerContainerRestartedEvent(
+                    monitor = dockerMonitor,
+                    previousRestartCount = 2,
+                    currentRestartCount = 3,
+                )
+
+                dispatcher.dispatch(event)
+
+                then("it should be received by the restart subscriber") {
+                    eventually(2.seconds) {
+                        receivedRestartEvents shouldContainExactlyInAnyOrder listOf(event)
                     }
                 }
             }

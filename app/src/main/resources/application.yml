@@ -207,6 +207,7 @@ metrics-exports:
   docker-latest-memory-usage: ${ENABLE_DOCKER_LATEST_MEMORY_USAGE_EXPORT:`false`}
   docker-latest-cpu-usage: ${ENABLE_DOCKER_LATEST_CPU_USAGE_EXPORT:`false`}
   docker-latest-latency: ${ENABLE_DOCKER_LATEST_LATENCY_EXPORT:`false`}
+  docker-latest-restart-count: ${ENABLE_DOCKER_LATEST_RESTART_COUNT_EXPORT:`false`}
 ---
 default-status-page:
   public: ${PUBLISH_DEFAULT_STATUS_PAGE:`false`}

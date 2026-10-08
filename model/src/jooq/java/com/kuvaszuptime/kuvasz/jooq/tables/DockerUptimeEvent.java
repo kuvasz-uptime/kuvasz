@@ -102,6 +102,16 @@ public class DockerUptimeEvent extends TableImpl<DockerUptimeEventRecord> {
      */
     public final TableField<DockerUptimeEventRecord, String> IMAGE = createField(DSL.name("image"), SQLDataType.CLOB, this, "");
 
+    /**
+     * The column <code>kuvasz.docker_uptime_event.restart_count</code>.
+     */
+    public final TableField<DockerUptimeEventRecord, Integer> RESTART_COUNT = createField(DSL.name("restart_count"), SQLDataType.INTEGER, this, "");
+
+    /**
+     * The column <code>kuvasz.docker_uptime_event.container_created_at</code>.
+     */
+    public final TableField<DockerUptimeEventRecord, OffsetDateTime> CONTAINER_CREATED_AT = createField(DSL.name("container_created_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6), this, "");
+
     private DockerUptimeEvent(Name alias, Table<DockerUptimeEventRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }

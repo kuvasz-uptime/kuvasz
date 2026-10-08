@@ -18,6 +18,8 @@ class DockerMonitorFormModal(page: Page) : ModalView(page) {
     val ignoreConnectivityCheckToggle: Locator
         get() = modal.locator("input[name=ignoreConnectivityCheck]")
 
+    val restartAlertToggle: Locator get() = modal.locator("input[name='restartAlertEnabled']")
+
     val uptimeCheckIntervalInput: Locator get() = modal.locator("#docker-uptimeCheckInterval-input")
     val timeoutMsInput: Locator get() = modal.locator("#docker-timeoutMs-input")
 
@@ -68,6 +70,11 @@ class DockerMonitorFormModal(page: Page) : ModalView(page) {
         return this
     }
 
+    fun enableRestartAlerts(): DockerMonitorFormModal {
+        restartAlertToggle.check()
+        return this
+    }
+
     fun setUptimeCheckInterval(value: String): DockerMonitorFormModal {
         uptimeCheckIntervalInput.fill(value)
         return this
@@ -87,11 +94,7 @@ class DockerMonitorFormModal(page: Page) : ModalView(page) {
      * so a focus TomSelect still has pending does not reopen it while the next field is being used.
      */
     private fun pick(field: Locator, value: String) {
-        field.locator(".ts-control").click()
-        val textbox = field.locator(".ts-control input")
-        textbox.fill(value)
-        textbox.press("Enter")
-        textbox.press("Tab")
+        typeAndCommit(field, value).press("Tab")
     }
 
     /**

@@ -20,7 +20,7 @@ internal fun FlowContent.dockerMonitorDetailsHeading(
     monitorDetailsHeading(MonitorTypeUiConfig.DOCKER, monitor) {
         monitorTargetBadge(
             text = "${monitor.dockerHost}/${monitor.container.abbreviate(MONITOR_TARGET_MAX_LENGTH)}",
-            icon = Icon.BRAND_DOCKER,
+            icon = Icon.BOX,
         )
         monitor.image?.let { image ->
             li {
@@ -28,8 +28,9 @@ internal fun FlowContent.dockerMonitorDetailsHeading(
                 testId("docker-image-badge")
                 inlineStatusBadge(
                     text = image.abbreviate(MONITOR_TARGET_MAX_LENGTH),
-                    icon = Icon.BOX,
-                    tooltip = "${Messages.dockerImageLabel()}: $image",
+                    icon = Icon.CUBE_3D_SPHERE,
+                    tooltip = monitor.containerTooltip(image),
+                    tooltipHtml = true,
                 )
             }
         }
@@ -38,6 +39,26 @@ internal fun FlowContent.dockerMonitorDetailsHeading(
                 classes(LIST_INLINE_ITEM, ALIGN_MIDDLE)
                 testId("docker-host-not-configured-badge")
                 danglingDockerHostBadge(monitor.dockerHost)
+            }
+        }
+    }
+
+private fun DockerMonitorDetailsDto.containerTooltip(image: String): String =
+    createHTML(prettyPrint = false).span {
+        +"${Messages.dockerImageLabel()}: "
+        strong { +image }
+        restartCount?.let { count ->
+            br()
+            +"${Messages.dockerRestartCountLabel()}: "
+            strong { +count.toString() }
+        }
+        containerCreatedAt?.let { createdAt ->
+            br()
+            +"${Messages.dockerContainerCreatedAtLabel()}: "
+            // The tooltip is narrow, so the timestamp would otherwise break between its date and time
+            strong {
+                classes(TEXT_NOWRAP)
+                +createdAt.toDateTimeString()
             }
         }
     }

@@ -33,6 +33,7 @@ public class DockerMonitor implements Serializable {
     private Boolean ignoreConnectivityCheck;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
+    private Boolean restartAlertEnabled;
 
     public DockerMonitor() {}
 
@@ -51,6 +52,7 @@ public class DockerMonitor implements Serializable {
         this.ignoreConnectivityCheck = value.ignoreConnectivityCheck;
         this.createdAt = value.createdAt;
         this.updatedAt = value.updatedAt;
+        this.restartAlertEnabled = value.restartAlertEnabled;
     }
 
     public DockerMonitor(
@@ -67,7 +69,8 @@ public class DockerMonitor implements Serializable {
         String category,
         Boolean ignoreConnectivityCheck,
         OffsetDateTime createdAt,
-        OffsetDateTime updatedAt
+        OffsetDateTime updatedAt,
+        Boolean restartAlertEnabled
     ) {
         this.id = id;
         this.name = name;
@@ -83,6 +86,7 @@ public class DockerMonitor implements Serializable {
         this.ignoreConnectivityCheck = ignoreConnectivityCheck;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.restartAlertEnabled = restartAlertEnabled;
     }
 
     /**
@@ -295,6 +299,21 @@ public class DockerMonitor implements Serializable {
         return this;
     }
 
+    /**
+     * Getter for <code>kuvasz.docker_monitor.restart_alert_enabled</code>.
+     */
+    public Boolean getRestartAlertEnabled() {
+        return this.restartAlertEnabled;
+    }
+
+    /**
+     * Setter for <code>kuvasz.docker_monitor.restart_alert_enabled</code>.
+     */
+    public DockerMonitor setRestartAlertEnabled(Boolean restartAlertEnabled) {
+        this.restartAlertEnabled = restartAlertEnabled;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -388,6 +407,12 @@ public class DockerMonitor implements Serializable {
         }
         else if (!this.updatedAt.equals(other.updatedAt))
             return false;
+        if (this.restartAlertEnabled == null) {
+            if (other.restartAlertEnabled != null)
+                return false;
+        }
+        else if (!this.restartAlertEnabled.equals(other.restartAlertEnabled))
+            return false;
         return true;
     }
 
@@ -409,6 +434,7 @@ public class DockerMonitor implements Serializable {
         result = prime * result + ((this.ignoreConnectivityCheck == null) ? 0 : this.ignoreConnectivityCheck.hashCode());
         result = prime * result + ((this.createdAt == null) ? 0 : this.createdAt.hashCode());
         result = prime * result + ((this.updatedAt == null) ? 0 : this.updatedAt.hashCode());
+        result = prime * result + ((this.restartAlertEnabled == null) ? 0 : this.restartAlertEnabled.hashCode());
         return result;
     }
 
@@ -430,6 +456,7 @@ public class DockerMonitor implements Serializable {
         sb.append(", ").append(ignoreConnectivityCheck);
         sb.append(", ").append(createdAt);
         sb.append(", ").append(updatedAt);
+        sb.append(", ").append(restartAlertEnabled);
 
         sb.append(")");
         return sb.toString();

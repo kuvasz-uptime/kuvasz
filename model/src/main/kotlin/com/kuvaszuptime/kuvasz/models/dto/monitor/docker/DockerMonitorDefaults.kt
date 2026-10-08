@@ -5,6 +5,7 @@ object DockerMonitorDefaults {
     const val TIMEOUT_MS = 5000
     const val FAILURE_COUNT_THRESHOLD = 1L
     const val METRICS_HISTORY_ENABLED = false
+    const val RESTART_ALERT_ENABLED = false
 
     // Deviates from MonitorDefaults.IGNORE_CONNECTIVITY_CHECK: a container reached over a local socket does not care
     // whether Kuvasz itself has internet access, and suppressing its checks during an outage would hide real

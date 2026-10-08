@@ -15,6 +15,7 @@ class DockerMonitorImportAdapter(dto: DockerMonitorExportDto) : DockerMonitorCre
     override val enabled: Boolean = dto.enabled
     override val integrations: List<String> = dto.integrations.map { it.toString() }
     override val metricsHistoryEnabled: Boolean = dto.metricsHistoryEnabled
+    override val restartAlertEnabled: Boolean = dto.restartAlertEnabled
     override val category: String? = dto.category
     override val ignoreConnectivityCheck: Boolean = dto.ignoreConnectivityCheck
 }

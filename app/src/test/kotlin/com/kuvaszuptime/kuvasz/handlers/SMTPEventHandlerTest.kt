@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.factories.EmailFactory
 import com.kuvaszuptime.kuvasz.mocks.createDnsMonitor
+import com.kuvaszuptime.kuvasz.mocks.createDockerMonitor
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
@@ -11,6 +12,7 @@ import com.kuvaszuptime.kuvasz.mocks.generateCertificateInfo
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
@@ -30,6 +32,7 @@ import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
 import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.DnsUptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.DockerMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
@@ -67,6 +70,7 @@ class SMTPEventHandlerTest(
     private val icmpMonitorRepository: IcmpMonitorRepository,
     private val tcpMonitorRepository: TcpMonitorRepository,
     private val dnsMonitorRepository: DnsMonitorRepository,
+    private val dockerMonitorRepository: DockerMonitorRepository,
     private val httpUptimeEventRepository: HttpUptimeEventRepository,
     private val pushUptimeEventRepository: PushUptimeEventRepository,
     private val icmpUptimeEventRepository: IcmpUptimeEventRepository,
@@ -996,6 +1000,43 @@ class SMTPEventHandlerTest(
                         email.plainText shouldBe expectedEmail.plainText
                         email.subject shouldBe expectedEmail.subject
                         email.subject shouldContain "[${monitor.name}] DNS records have changed"
+                    }
+                    sentEmails.forNone { fromDisabledConfig ->
+                        fromDisabledConfig.fromRecipient.shouldNotBeNull().address shouldBe
+                            disabledEmailConfig.fromAddress
+                        fromDisabledConfig.toRecipients.single().address shouldBe disabledEmailConfig.toAddress
+                    }
+                }
+            }
+        }
+
+        given("the SMTPEventHandler - Docker restart events") {
+            `when`("it receives a DockerContainerRestartedEvent") {
+                val monitor = createDockerMonitor(
+                    repository = dockerMonitorRepository,
+                    integrations = listOf(
+                        globalEmailConfig.id,
+                        otherEmailConfig.id,
+                        disabledEmailConfig.id,
+                    ),
+                )
+                val event = DockerContainerRestartedEvent(
+                    monitor = monitor,
+                    previousRestartCount = 2,
+                    currentRestartCount = 3,
+                )
+                val expectedEmail = EmailFactory(globalEmailConfig).fromDockerContainerRestartedEvent(event)
+
+                eventDispatcher.testDispatch(event)
+
+                then("it should send a restart email to every enabled integration") {
+                    val sentEmails = mutableListOf<Email>()
+
+                    verify(exactly = 2) { mailerSpy.sendAsync(capture(sentEmails)) }
+                    sentEmails.forAll { email ->
+                        email.plainText shouldBe expectedEmail.plainText
+                        email.subject shouldBe expectedEmail.subject
+                        email.subject shouldContain "[${monitor.name}] The container has been restarted"
                     }
                     sentEmails.forNone { fromDisabledConfig ->
                         fromDisabledConfig.fromRecipient.shouldNotBeNull().address shouldBe

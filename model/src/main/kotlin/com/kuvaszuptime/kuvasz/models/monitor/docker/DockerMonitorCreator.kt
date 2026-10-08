@@ -39,6 +39,7 @@ interface DockerMonitorCreator : MonitorCreator<DockerMonitorRecord> {
     val enabled: Boolean
     override val integrations: List<String>?
     val metricsHistoryEnabled: Boolean
+    val restartAlertEnabled: Boolean
 
     override fun toMonitorRecord(validatedIntegrations: Set<IntegrationID>): DockerMonitorRecord =
         DockerMonitorRecord()
@@ -51,6 +52,7 @@ interface DockerMonitorCreator : MonitorCreator<DockerMonitorRecord> {
             .setEnabled(enabled)
             .setIntegrations(validatedIntegrations.toTypedArray())
             .setMetricsHistoryEnabled(metricsHistoryEnabled)
+            .setRestartAlertEnabled(restartAlertEnabled)
             .setCategory(normalizedCategory)
             .setIgnoreConnectivityCheck(ignoreConnectivityCheck)
 }

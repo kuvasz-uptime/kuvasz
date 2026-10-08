@@ -18,6 +18,7 @@ import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
@@ -153,6 +154,19 @@ class AppriseMessageFactoryTest(
 
             message.detailLines() shouldBe listOf("A: [1.1.1.1] → [2.2.2.2]", "MX: [mx1.test] → [mx2.test]")
         }
+
+        should("tell how many times the container has been restarted") {
+            val message = factory.fromDockerContainerRestartedEvent(
+                DockerContainerRestartedEvent(
+                    monitor = DockerMonitorRecord().setId(7777).setName("restart_monitor"),
+                    previousRestartCount = 2,
+                    currentRestartCount = 5,
+                )
+            )
+
+            message.title shouldBe "⚠️ restart_monitor"
+            message.detailLines() shouldBe listOf("Restarts since the last check: 3 (total: 5)")
+        }
     }
 
     context("the details of the monitor events") {
@@ -258,6 +272,16 @@ class AppriseMessageFactoryTest(
         should("be WARNING for an upcoming SSL expiry") {
             factory.fromSSLEvent(SSLWillExpireEvent(monitor, generateCertificateInfo(), null)).type shouldBe
                 AppriseType.WARNING
+        }
+
+        should("be WARNING for a restarted container") {
+            factory.fromDockerContainerRestartedEvent(
+                DockerContainerRestartedEvent(
+                    monitor = DockerMonitorRecord().setId(7777).setName("restart_monitor"),
+                    previousRestartCount = 2,
+                    currentRestartCount = 5,
+                )
+            ).type shouldBe AppriseType.WARNING
         }
 
         should("be INFO for the informational events") {

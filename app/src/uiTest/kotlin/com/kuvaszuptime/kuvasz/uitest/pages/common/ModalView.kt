@@ -67,11 +67,22 @@ abstract class ModalView(protected val page: Page) {
             categoryField.locator(".clear-button").click()
             return
         }
-        categoryField.locator(".ts-control").click()
-        val textbox = categoryField.locator(".ts-control input")
+        typeAndCommit(categoryField, value)
+    }
+
+    /**
+     * Types [value] into a TomSelect field and commits it with Enter, which takes the highlighted row: the matching
+     * option, or the "add new" one when there is none. TomSelect only re-filters the dropdown after its refresh
+     * throttle (300ms), so Enter is held back until the highlighted row reflects [value]: pressed earlier, it takes
+     * whichever row was highlighted before, typically the first existing option.
+     */
+    protected fun typeAndCommit(field: Locator, value: String): Locator {
+        field.locator(".ts-control").click()
+        val textbox = field.locator(".ts-control input")
         textbox.fill(value)
-        // Enter takes the highlighted row, which is the matching category, or the "add new" one when there is none
+        field.locator(".ts-dropdown .active").filter(Locator.FilterOptions().setHasText(value)).waitFor()
         textbox.press("Enter")
+        return textbox
     }
 
     // The proxy field of the HTTP and TCP monitor forms
@@ -142,11 +153,7 @@ abstract class ModalView(protected val page: Page) {
 
     // Adds [category] to the selection, creating it when no existing category matches.
     fun selectCategory(category: String) {
-        categoriesField.locator(".ts-control").click()
-        val textbox = categoriesField.locator(".ts-control input")
-        textbox.fill(category)
-        // Enter takes the highlighted row, which is the matching category, or the "add new" one when there is none
-        textbox.press("Enter")
+        typeAndCommit(categoriesField, category)
     }
 
     // Clears every selected category through the clear button of the widget.

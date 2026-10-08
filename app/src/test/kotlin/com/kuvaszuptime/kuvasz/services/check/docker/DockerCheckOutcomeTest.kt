@@ -8,6 +8,7 @@ import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldEndWith
 import io.kotest.matchers.types.shouldBeInstanceOf
+import java.time.OffsetDateTime
 
 private const val DOCKER_HOST = "vps-1"
 private const val CONTAINER = "my-app"
@@ -20,6 +21,8 @@ private fun inspected(
     oomKilled: Boolean = false,
     failingStreak: Int? = null,
     image: String? = null,
+    restartCount: Int? = null,
+    createdAt: OffsetDateTime? = null,
 ) = DockerInspectResult.Inspected(
     state = DockerContainerState(
         status = status,
@@ -28,6 +31,8 @@ private fun inspected(
         oomKilled = oomKilled,
         failingStreak = failingStreak,
         image = image,
+        restartCount = restartCount,
+        createdAt = createdAt,
     ),
     latencyMs = LATENCY_MS,
 )
@@ -46,7 +51,12 @@ class DockerCheckOutcomeTest : BehaviorSpec({
                 val outcome = inspected(DockerContainerStatus.RUNNING, health = health).outcome()
 
                 then("it should be UP with the API latency") {
-                    outcome shouldBe DockerCheckOutcome.Up(LATENCY_MS)
+                    outcome shouldBe DockerCheckOutcome.Up(
+                        latencyMs = LATENCY_MS,
+                        image = null,
+                        restartCount = null,
+                        containerCreatedAt = null,
+                    )
                 }
             }
         }
@@ -56,8 +66,11 @@ class DockerCheckOutcomeTest : BehaviorSpec({
 
             then("it should be DOWN, still carrying the API latency") {
                 outcome shouldBe DockerCheckOutcome.Down(
-                    "The container is running, but its healthcheck reports it unhealthy",
-                    LATENCY_MS,
+                    error = "The container is running, but its healthcheck reports it unhealthy",
+                    latencyMs = LATENCY_MS,
+                    image = null,
+                    restartCount = null,
+                    containerCreatedAt = null
                 )
             }
         }
@@ -133,7 +146,13 @@ class DockerCheckOutcomeTest : BehaviorSpec({
                 val outcome = inspected(status).outcome()
 
                 then("it should be DOWN with the matching reason") {
-                    outcome shouldBe DockerCheckOutcome.Down(expectedReason, LATENCY_MS)
+                    outcome shouldBe DockerCheckOutcome.Down(
+                        error = expectedReason,
+                        latencyMs = LATENCY_MS,
+                        image = null,
+                        restartCount = null,
+                        containerCreatedAt = null,
+                    )
                 }
             }
         }
@@ -159,8 +178,11 @@ class DockerCheckOutcomeTest : BehaviorSpec({
 
             then("it should be DOWN naming both the container and the host") {
                 outcome shouldBe DockerCheckOutcome.Down(
-                    """There is no container called "$CONTAINER" on the Docker host "$DOCKER_HOST"""",
-                    LATENCY_MS,
+                    error = """There is no container called "$CONTAINER" on the Docker host "$DOCKER_HOST"""",
+                    latencyMs = LATENCY_MS,
+                    image = null,
+                    restartCount = null,
+                    containerCreatedAt = null,
                 )
             }
         }
@@ -173,8 +195,11 @@ class DockerCheckOutcomeTest : BehaviorSpec({
 
             then("the reason should carry the status code and the message") {
                 outcome shouldBe DockerCheckOutcome.Down(
-                    "The Docker daemon answered 500: something broke",
-                    LATENCY_MS,
+                    error = "The Docker daemon answered 500: something broke",
+                    latencyMs = LATENCY_MS,
+                    image = null,
+                    restartCount = null,
+                    containerCreatedAt = null,
                 )
             }
         }
@@ -212,8 +237,11 @@ class DockerCheckOutcomeTest : BehaviorSpec({
 
             then("it should be DOWN naming the host and the cause") {
                 outcome shouldBe DockerCheckOutcome.Down(
-                    """The Docker host "$DOCKER_HOST" cannot be reached: Connection refused""",
-                    null,
+                    error = """The Docker host "$DOCKER_HOST" cannot be reached: Connection refused""",
+                    latencyMs = null,
+                    image = null,
+                    restartCount = null,
+                    containerCreatedAt = null,
                 )
             }
         }
@@ -242,7 +270,12 @@ class DockerCheckOutcomeTest : BehaviorSpec({
             val outcome = inspected(DockerContainerStatus.RUNNING, image = "nginx:1.27").outcome()
 
             then("it should be carried by the outcome") {
-                outcome shouldBe DockerCheckOutcome.Up(LATENCY_MS, "nginx:1.27")
+                outcome shouldBe DockerCheckOutcome.Up(
+                    latencyMs = LATENCY_MS,
+                    image = "nginx:1.27",
+                    restartCount = null,
+                    containerCreatedAt = null,
+                )
             }
         }
 
@@ -259,6 +292,42 @@ class DockerCheckOutcomeTest : BehaviorSpec({
 
             then("it should be unknown") {
                 outcome.image shouldBe null
+            }
+        }
+    }
+
+    given("the restart count and the creation time of the container") {
+        val createdAt = OffsetDateTime.parse("2026-10-07T06:59:12.914442Z")
+
+        `when`("the container is up") {
+            val outcome = inspected(DockerContainerStatus.RUNNING, restartCount = 3, createdAt = createdAt).outcome()
+
+            then("they should be carried by the outcome") {
+                outcome shouldBe DockerCheckOutcome.Up(
+                    LATENCY_MS,
+                    restartCount = 3,
+                    containerCreatedAt = createdAt,
+                    image = null,
+                )
+            }
+        }
+
+        `when`("the container is down") {
+            val outcome = inspected(DockerContainerStatus.RESTARTING, restartCount = 4, createdAt = createdAt).outcome()
+
+            then("they should be carried by the outcome") {
+                val down = outcome.shouldBeInstanceOf<DockerCheckOutcome.Down>()
+                down.restartCount shouldBe 4
+                down.containerCreatedAt shouldBe createdAt
+            }
+        }
+
+        `when`("the container could not be inspected") {
+            val outcome = DockerInspectResult.Unreachable("connection refused").outcome()
+
+            then("they should be unknown") {
+                outcome.restartCount shouldBe null
+                outcome.containerCreatedAt shouldBe null
             }
         }
     }

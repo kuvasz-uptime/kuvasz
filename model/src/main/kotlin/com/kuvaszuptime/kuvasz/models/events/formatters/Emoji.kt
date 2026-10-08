@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.models.events.formatters
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
@@ -41,6 +42,7 @@ fun MonitorEvent<*>.getEmoji(): String =
             Emoji.ALERT
         is HttpRedirectEvent -> Emoji.INFO
         is DnsRecordsChangedEvent -> Emoji.INFO
+        is DockerContainerRestartedEvent -> Emoji.WARNING
         is SSLValidEvent -> Emoji.LOCK
         is SSLInvalidEvent -> Emoji.ALERT
         is SSLWillExpireEvent -> Emoji.WARNING

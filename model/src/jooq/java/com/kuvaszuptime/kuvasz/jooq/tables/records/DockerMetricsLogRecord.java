@@ -126,6 +126,36 @@ public class DockerMetricsLogRecord extends UpdatableRecordImpl<DockerMetricsLog
         return (OffsetDateTime) get(6);
     }
 
+    /**
+     * Setter for <code>kuvasz.docker_metrics_log.restart_count</code>.
+     */
+    public DockerMetricsLogRecord setRestartCount(Integer value) {
+        set(7, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.docker_metrics_log.restart_count</code>.
+     */
+    public Integer getRestartCount() {
+        return (Integer) get(7);
+    }
+
+    /**
+     * Setter for <code>kuvasz.docker_metrics_log.container_created_at</code>.
+     */
+    public DockerMetricsLogRecord setContainerCreatedAt(OffsetDateTime value) {
+        set(8, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.docker_metrics_log.container_created_at</code>.
+     */
+    public OffsetDateTime getContainerCreatedAt() {
+        return (OffsetDateTime) get(8);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -149,7 +179,7 @@ public class DockerMetricsLogRecord extends UpdatableRecordImpl<DockerMetricsLog
     /**
      * Create a detached, initialised DockerMetricsLogRecord
      */
-    public DockerMetricsLogRecord(Long id, Long monitorId, Integer latencyMs, BigDecimal cpuUsagePercent, Long memoryUsageBytes, Long memoryLimitBytes, OffsetDateTime createdAt) {
+    public DockerMetricsLogRecord(Long id, Long monitorId, Integer latencyMs, BigDecimal cpuUsagePercent, Long memoryUsageBytes, Long memoryLimitBytes, OffsetDateTime createdAt, Integer restartCount, OffsetDateTime containerCreatedAt) {
         super(DockerMetricsLog.DOCKER_METRICS_LOG);
 
         setId(id);
@@ -159,6 +189,8 @@ public class DockerMetricsLogRecord extends UpdatableRecordImpl<DockerMetricsLog
         setMemoryUsageBytes(memoryUsageBytes);
         setMemoryLimitBytes(memoryLimitBytes);
         setCreatedAt(createdAt);
+        setRestartCount(restartCount);
+        setContainerCreatedAt(containerCreatedAt);
         resetTouchedOnNotNull();
     }
 
@@ -176,6 +208,8 @@ public class DockerMetricsLogRecord extends UpdatableRecordImpl<DockerMetricsLog
             setMemoryUsageBytes(value.getMemoryUsageBytes());
             setMemoryLimitBytes(value.getMemoryLimitBytes());
             setCreatedAt(value.getCreatedAt());
+            setRestartCount(value.getRestartCount());
+            setContainerCreatedAt(value.getContainerCreatedAt());
             resetTouchedOnNotNull();
         }
     }

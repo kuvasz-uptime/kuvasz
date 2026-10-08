@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.factories
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEndEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowStartEvent
@@ -44,6 +45,12 @@ class EmailFactory(private val config: EmailNotificationConfig) {
             .withPlainText(formatter.toFormattedMessage(event))
             .buildEmail()
 
+    fun fromDockerContainerRestartedEvent(event: DockerContainerRestartedEvent): Email =
+        createEmailBase()
+            .withSubject(event.getSubject())
+            .withPlainText(formatter.toFormattedMessage(event))
+            .buildEmail()
+
     private fun UptimeMonitorEvent.getSubject(): String =
         "[kuvasz-uptime] - ${getEmoji()} [${monitor.name}] is $uptimeStatus"
 
@@ -59,6 +66,9 @@ class EmailFactory(private val config: EmailNotificationConfig) {
 
     private fun DnsRecordsChangedEvent.getSubject(): String =
         "[kuvasz-uptime] - ${getEmoji()} [${monitor.name}] ${Messages.dnsRecordsHaveChanged()}"
+
+    private fun DockerContainerRestartedEvent.getSubject(): String =
+        "[kuvasz-uptime] - ${getEmoji()} [${monitor.name}] ${Messages.dockerContainerHasRestarted()}"
 
     private fun MaintenanceWindowEvent.getSubject(): String {
         val statusString = when (this) {

@@ -100,6 +100,7 @@ The valid options are the following:
 - `DNS_RECORDS_CHANGED`
 - `DOCKER_UP`
 - `DOCKER_DOWN`
+- `DOCKER_CONTAINER_RESTARTED`
 
 In case you don't specify any event types, or you provide an empty list, the integration **will receive all the events**.
 
@@ -673,7 +674,7 @@ The generic webhook message (if you don't use a custom template) has the followi
     1. **monitorUrn**: A unique identifier of a monitor, formatted as 'type:name'.
     2. **monitorName**: The name of the monitor, which must be unique.
     3. **timestamp**: The timestamp of the event that triggered the webhook, in milliseconds since the Unix epoch.
-    4. **type**: The type of the event that triggered the webhook, which can be one of the following values: `HTTP_UP`, `HTTP_DOWN`, `PUSH_UP`, `PUSH_DOWN`, `ICMP_UP`, `ICMP_DOWN`, `TCP_UP`, `TCP_DOWN`, `DNS_UP`, `DNS_DOWN`, `DNS_RECORDS_CHANGED`, `DOCKER_UP`, `DOCKER_DOWN`, `SSL_VALID`, `SSL_INVALID`, `SSL_WILL_EXPIRE`.
+    4. **type**: The type of the event that triggered the webhook, which can be one of the following values: `HTTP_UP`, `HTTP_DOWN`, `PUSH_UP`, `PUSH_DOWN`, `ICMP_UP`, `ICMP_DOWN`, `TCP_UP`, `TCP_DOWN`, `DNS_UP`, `DNS_DOWN`, `DNS_RECORDS_CHANGED`, `DOCKER_UP`, `DOCKER_DOWN`, `DOCKER_CONTAINER_RESTARTED`, `SSL_VALID`, `SSL_INVALID`, `SSL_WILL_EXPIRE`.
     5. **eventDetails**: A human-readable message with more details about the event.
     6. **monitorId**: A unique, numeric ID of a monitor.
     7. **monitorDetailsUrl**: The relative URL to the monitor details page in the _Kuvasz_ web interface.
@@ -721,6 +722,7 @@ The generic webhook message (if you don't use a custom template) has the followi
             - DNS_RECORDS_CHANGED
             - DOCKER_UP
             - DOCKER_DOWN
+            - DOCKER_CONTAINER_RESTARTED
             - SSL_VALID
             - SSL_INVALID
             - SSL_WILL_EXPIRE

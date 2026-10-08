@@ -84,6 +84,7 @@ metrics-exports:
   docker-latest-memory-usage: true
   docker-latest-cpu-usage: true
   docker-latest-latency: true
+  docker-latest-restart-count: true
 ---
 http-monitors:
   - name: "Tralala #!: j[ő"

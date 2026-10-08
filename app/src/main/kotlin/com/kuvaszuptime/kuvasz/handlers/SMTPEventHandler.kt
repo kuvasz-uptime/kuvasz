@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.handlers
 import com.kuvaszuptime.kuvasz.config.SMTPMailerConfig
 import com.kuvaszuptime.kuvasz.factories.EmailFactory
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
@@ -56,6 +57,13 @@ class SMTPEventHandler(
         filterTargetConfigs(event).forEach { target ->
             val emailFactory = EmailFactory(target as EmailNotificationConfig)
             smtpMailer.sendAsync(emailFactory.fromDnsRecordsChangedEvent(event))
+        }
+    }
+
+    override fun handleDockerContainerRestartedEvent(event: DockerContainerRestartedEvent) {
+        filterTargetConfigs(event).forEach { target ->
+            val emailFactory = EmailFactory(target as EmailNotificationConfig)
+            smtpMailer.sendAsync(emailFactory.fromDockerContainerRestartedEvent(event))
         }
     }
 }
