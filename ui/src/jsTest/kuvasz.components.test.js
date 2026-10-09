@@ -12,6 +12,7 @@ const {
     escapeHtml,
     buildToastMarkup,
     fetchCategories,
+    loadCategoryOptions,
     resetCategorySelect,
     resetCategoryMultiSelect,
     monitorListItem,
@@ -2032,6 +2033,46 @@ test('fetchCategories fails open when the request throws', async () => {
     } finally {
         console.error = originalConsoleError;
     }
+});
+
+// A category select of a modal, returning the listener that loads its options whenever the modal is shown
+const categorySelectOfModal = (tomSelect) => {
+    const listeners = {};
+    const modal = {addEventListener: (event, listener) => listeners[event] = listener};
+    Object.assign(tomSelect, {
+        input: {closest: () => modal},
+        refreshed: 0,
+        addOptions: (options) => options.forEach(tomSelect.addOption),
+        refreshOptions: () => tomSelect.refreshed += 1,
+    });
+    loadCategoryOptions(tomSelect);
+    return listeners['show.bs.modal'];
+};
+
+test('loadCategoryOptions offers the categories once the modal is shown', async () => {
+    const tomSelect = fakeTomSelect();
+    const loadOptions = categorySelectOfModal(tomSelect);
+    assert.deepEqual(tomSelect.options, []);
+
+    await withFetch(async () => ({ok: true, json: async () => ['alerting', 'Payments']}), loadOptions);
+
+    assert.deepEqual(tomSelect.options, [
+        {value: 'alerting', text: 'alerting'},
+        {value: 'Payments', text: 'Payments'},
+    ]);
+    // Nobody is using the field, so its dropdown is left alone
+    assert.equal(tomSelect.refreshed, 0);
+});
+
+test('loadCategoryOptions refreshes a field that was opened before the categories arrived', async () => {
+    const tomSelect = fakeTomSelect();
+    const loadOptions = categorySelectOfModal(tomSelect);
+    tomSelect.isFocused = true;
+
+    await withFetch(async () => ({ok: true, json: async () => ['alerting']}), loadOptions);
+
+    assert.deepEqual(tomSelect.options, [{value: 'alerting', text: 'alerting'}]);
+    assert.equal(tomSelect.refreshed, 1);
 });
 
 // --------- Upsert forms ---------

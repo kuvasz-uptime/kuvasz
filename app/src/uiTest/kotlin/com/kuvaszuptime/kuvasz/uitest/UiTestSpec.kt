@@ -96,6 +96,7 @@ abstract class UiTestSpec(body: UiTestSpec.() -> Unit = {}) : StringSpec() {
             Tracing.StartOptions().setScreenshots(true).setSnapshots(true).setSources(true)
         )
         val page = context.newPage()
+        if (PlaywrightSupport.slow) PlaywrightSupport.emulateSlowMachine(context, page)
         openContexts += TrackedContext(context, page)
         return page
     }

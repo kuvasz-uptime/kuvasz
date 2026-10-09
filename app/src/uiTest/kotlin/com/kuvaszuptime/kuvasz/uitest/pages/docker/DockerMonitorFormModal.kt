@@ -66,7 +66,7 @@ class DockerMonitorFormModal(page: Page) : ModalView(page) {
 
     /** The container field takes a typed-in value too, since the listing is best effort. */
     fun setContainer(value: String): DockerMonitorFormModal {
-        pick(containerField, value)
+        typeAndCommit(containerField, value)
         return this
     }
 
@@ -87,14 +87,6 @@ class DockerMonitorFormModal(page: Page) : ModalView(page) {
 
     fun save() {
         saveButton.click()
-    }
-
-    /**
-     * Types a value into a field that accepts new ones, committing it with Enter, then leaves the field with Tab,
-     * so a focus TomSelect still has pending does not reopen it while the next field is being used.
-     */
-    private fun pick(field: Locator, value: String) {
-        typeAndCommit(field, value).press("Tab")
     }
 
     /**

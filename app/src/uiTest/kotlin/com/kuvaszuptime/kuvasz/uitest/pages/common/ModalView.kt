@@ -73,16 +73,17 @@ abstract class ModalView(protected val page: Page) {
     /**
      * Types [value] into a TomSelect field and commits it with Enter, which takes the highlighted row: the matching
      * option, or the "add new" one when there is none. TomSelect only re-filters the dropdown after its refresh
-     * throttle (300ms), so Enter is held back until the highlighted row reflects [value]: pressed earlier, it takes
-     * whichever row was highlighted before, typically the first existing option.
+     * throttle (300ms), so Enter is held back until that refresh has run and the highlighted row reflects [value]:
+     * pressed earlier, it takes whichever row was highlighted before, and the refresh still pending after the commit
+     * re-opens this dropdown later, taking the focus away from whichever field is being used by then.
      */
-    protected fun typeAndCommit(field: Locator, value: String): Locator {
+    protected fun typeAndCommit(field: Locator, value: String) {
         field.locator(".ts-control").click()
         val textbox = field.locator(".ts-control input")
         textbox.fill(value)
+        page.waitForFunction("select => !select.tomselect.refreshTimeout", field.locator("select").elementHandle())
         field.locator(".ts-dropdown .active").filter(Locator.FilterOptions().setHasText(value)).waitFor()
         textbox.press("Enter")
-        return textbox
     }
 
     // The proxy field of the HTTP and TCP monitor forms

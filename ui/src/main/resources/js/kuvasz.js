@@ -2175,6 +2175,11 @@ const loadCategoryOptions = (tomSelect) => {
     const loadOptions = () => fetchCategories().then(categories => {
         // Already known options are ignored by TomSelect, so re-opening the modal just picks up the new ones
         tomSelect.addOptions(categories.map(category => ({value: category, text: category})));
+        // A field opened before the categories arrived would not offer them until it's reopened. Only the focused
+        // one is refreshed, because the refresh opens the dropdown, which would take the focus from another field.
+        if (tomSelect.isFocused) {
+            tomSelect.refreshOptions();
+        }
     });
     const modal = tomSelect.input.closest('.modal');
     if (modal) {
@@ -2898,6 +2903,7 @@ if (typeof module !== 'undefined' && module.exports) {
         createRandomSecret,
         // Helpers of the category select
         fetchCategories,
+        loadCategoryOptions,
         resetCategorySelect,
         resetCategoryMultiSelect,
         // DOM helpers run after the HTMX swaps

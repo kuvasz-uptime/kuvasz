@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.uitest.pages.statuspage
 
 import com.kuvaszuptime.kuvasz.uitest.pages.common.byRole
+import com.kuvaszuptime.kuvasz.uitest.pages.common.tooltipText
 import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.options.AriaRole
@@ -57,9 +58,6 @@ class PublicStatusPage(private val page: Page) {
             color to segment.evaluate("element => element.style.width").toString()
         }
 
-    // The tooltip of the bar, spelling out the exact numbers behind the segments. Bootstrap moves the rendered
-    // `title` into `data-bs-original-title` when it takes the element over, so that one wins when it's there.
-    fun categoryDistributionTooltip(label: String): String? = categoryDistribution(label).let { bar ->
-        bar.getAttribute("data-bs-original-title") ?: bar.getAttribute("title")
-    }
+    // The tooltip of the bar, spelling out the exact numbers behind the segments
+    fun categoryDistributionTooltip(label: String): String? = categoryDistribution(label).tooltipText()
 }

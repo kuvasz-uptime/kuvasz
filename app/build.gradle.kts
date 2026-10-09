@@ -206,6 +206,8 @@ testing {
                     environment("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "1")
                     // Lets local debugging open a headed browser: `./gradlew :app:uiTest -Dui.headed=true`
                     systemProperty("ui.headed", System.getProperty("ui.headed", "false"))
+                    // Emulates a slow machine to reproduce CI-only races: `./gradlew :app:uiTest -Dui.slow=true`
+                    systemProperty("ui.slow", System.getProperty("ui.slow", "false"))
                     // Point Kotest straight at this source set's project config (which registers the Micronaut
                     // extension + boots the Testcontainers Postgres). Unlike the `test` task, this custom JVM Test
                     // Suite isn't wired up by the Micronaut Gradle plugin, so classpath auto-detection isn't set up.

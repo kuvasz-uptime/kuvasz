@@ -145,6 +145,7 @@ class HttpMonitorListUiTest(private val httpMonitorRepository: HttpMonitorReposi
             val list = HttpMonitorListPage(page)
             list.navigate()
             val allNames = listOf("pays", "plain", "searches")
+            assertThat(list.rows).hasCount(allNames.size)
             list.names shouldBe allNames
             assertThat(list.count).hasText(Messages.monitorCount(allNames.size))
 

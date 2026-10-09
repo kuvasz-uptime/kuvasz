@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.uitest.pages.docker
 
+import com.kuvaszuptime.kuvasz.uitest.pages.common.tooltipText
 import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
 
@@ -27,10 +28,7 @@ class DockerMonitorListPage(private val page: Page) {
     // The label-less badge next to the name, flagging a monitor whose Docker host is not in the config anymore.
     fun danglingHostBadge(name: String): Locator = rowByName(name).getByTestId("docker-host-not-configured-badge")
 
-    // Bootstrap moves the rendered `title` into `data-bs-original-title` when it takes the element over.
-    fun danglingHostBadgeTooltip(name: String): String? = danglingHostBadge(name).let { badge ->
-        badge.getAttribute("data-bs-original-title") ?: badge.getAttribute("title")
-    }
+    fun danglingHostBadgeTooltip(name: String): String? = danglingHostBadge(name).tooltipText()
 
     fun openCreateModal(): DockerMonitorFormModal {
         newMonitorButton.click()
