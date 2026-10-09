@@ -12,8 +12,6 @@ class PushMonitorFormModal(page: Page) : ModalView(page) {
 
     val clientSecretInput: Locator get() = modal.locator("input[x-model='clientSecret']")
 
-    val clientSecret: String get() = clientSecretInput.inputValue()
-
     fun setName(value: String): PushMonitorFormModal {
         nameInput.fill(value)
         return this

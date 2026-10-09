@@ -8,9 +8,9 @@ import com.kuvaszuptime.kuvasz.uitest.pages.push.PushMonitorFormModal
 import com.kuvaszuptime.kuvasz.uitest.pages.push.PushMonitorListPage
 import com.kuvaszuptime.kuvasz.uitest.shouldAcceptAfterFixing
 import com.kuvaszuptime.kuvasz.uitest.shouldRejectWith
-import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
-import io.kotest.matchers.shouldBe
+import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
+import java.util.regex.Pattern
 
 // Exercises the Alpine.js validation in the push monitor create modal.
 @MicronautTest(environments = [PlaywrightSupport.UI_TEST_ENV])
@@ -36,13 +36,16 @@ class PushMonitorFormValidationUiTest : UiTestSpec() {
         "the client secret is auto-populated with a valid value but stays overwritable" {
             val modal = openCreateModal()
 
-            // On open the field is pre-filled with a generated secret that already satisfies the length rule.
-            modal.clientSecret.length shouldBeGreaterThanOrEqual Validation.MIN_CLIENT_SECRET_LENGTH
+            // On open the field is pre-filled with a generated secret that already satisfies the length rule. The
+            // secret is generated when Alpine initializes the form, which can lag behind the modal on a slow machine,
+            // so the value is awaited instead of being read once.
+            assertThat(modal.clientSecretInput)
+                .hasValue(Pattern.compile(".{${Validation.MIN_CLIENT_SECRET_LENGTH},}"))
 
             // The user can replace it with their own value, which the form keeps.
             val customSecret = "a".repeat(Validation.MIN_CLIENT_SECRET_LENGTH)
             modal.setClientSecret(customSecret)
-            modal.clientSecret shouldBe customSecret
+            assertThat(modal.clientSecretInput).hasValue(customSecret)
         }
     }
 
