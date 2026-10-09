@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.mocks
 import com.kuvaszuptime.kuvasz.jooq.enums.DnsResponseCode
 import com.kuvaszuptime.kuvasz.jooq.enums.DnsTransport
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
+import com.kuvaszuptime.kuvasz.jooq.enums.InvestigationStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.DnsMetricsLog.DNS_METRICS_LOG
@@ -10,6 +11,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.DnsUptimeEvent.DNS_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent.HTTP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.IcmpMetricsLog.ICMP_METRICS_LOG
 import com.kuvaszuptime.kuvasz.jooq.tables.IcmpUptimeEvent.ICMP_UPTIME_EVENT
+import com.kuvaszuptime.kuvasz.jooq.tables.IncidentNote.INCIDENT_NOTE
 import com.kuvaszuptime.kuvasz.jooq.tables.MaintenanceWindow.MAINTENANCE_WINDOW
 import com.kuvaszuptime.kuvasz.jooq.tables.PendingFailure.PENDING_FAILURE
 import com.kuvaszuptime.kuvasz.jooq.tables.PushUptimeEvent.PUSH_UPTIME_EVENT
@@ -24,6 +26,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMetricsLogRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpUptimeEventRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.IncidentNoteRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.MaintenanceWindowRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PendingFailureRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
@@ -39,6 +42,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.DockerMetricsLog.DOCKER_METRICS_LOG
 import com.kuvaszuptime.kuvasz.jooq.tables.DockerUptimeEvent.DOCKER_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.TcpMetricsLog.TCP_METRICS_LOG
 import com.kuvaszuptime.kuvasz.jooq.tables.TcpUptimeEvent.TCP_UPTIME_EVENT
+import com.kuvaszuptime.kuvasz.models.IncidentType
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDefaults
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
@@ -168,6 +172,7 @@ fun createHttpUptimeEventRecord(
     endedAt: OffsetDateTime?,
     error: String? = null,
     updatedAt: OffsetDateTime? = null,
+    integrations: Array<IntegrationID> = emptyArray(),
 ) = dslContext
     .insertInto(HTTP_UPTIME_EVENT)
     .set(
@@ -178,6 +183,7 @@ fun createHttpUptimeEventRecord(
             .setUpdatedAt(updatedAt ?: endedAt ?: startedAt)
             .setEndedAt(endedAt)
             .setError(error)
+            .setIntegrations(integrations)
     )
     .returning(HTTP_UPTIME_EVENT.asterisk())
     .fetchOneOrThrow<HttpUptimeEventRecord>()
@@ -213,6 +219,7 @@ fun createSSLEventRecord(
     sslExpiryDate: OffsetDateTime? = null,
     error: String? = null,
     updatedAt: OffsetDateTime? = null,
+    integrations: Array<IntegrationID> = emptyArray(),
 ) = dslContext
     .insertInto(SSL_EVENT)
     .set(
@@ -224,9 +231,35 @@ fun createSSLEventRecord(
             .setEndedAt(endedAt)
             .setSslExpiryDate(sslExpiryDate)
             .setError(error)
+            .setIntegrations(integrations)
     )
     .returning(SSL_EVENT.asterisk())
     .fetchOneOrThrow<SslEventRecord>()
+
+fun createIncidentNote(
+    dslContext: DSLContext,
+    incidentType: IncidentType,
+    eventId: Long,
+    status: InvestigationStatus = InvestigationStatus.INVESTIGATING,
+    content: String = "We are looking into it",
+    timestamp: OffsetDateTime? = null,
+    public: Boolean = false,
+    createdAt: OffsetDateTime = getCurrentTimestamp(),
+) = dslContext
+    .insertInto(INCIDENT_NOTE)
+    .set(
+        IncidentNoteRecord()
+            .setIncidentType(incidentType)
+            .setEventId(eventId)
+            .setStatus(status)
+            .setContent(content)
+            .setTimestamp(timestamp)
+            .setPublic(public)
+            .setCreatedAt(createdAt)
+            .setUpdatedAt(createdAt)
+    )
+    .returning(INCIDENT_NOTE.asterisk())
+    .fetchOneOrThrow<IncidentNoteRecord>()
 
 fun generateCertificateInfo(validTo: OffsetDateTime = getCurrentTimestamp().plusDays(60)) =
     CertificateInfo(validTo)

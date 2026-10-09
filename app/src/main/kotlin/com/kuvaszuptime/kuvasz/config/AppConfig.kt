@@ -57,6 +57,8 @@ class AppConfig {
 
     var useVirtualThreadScheduling: Boolean = false
 
+    var incidentNotesEnabled: Boolean = true
+
     fun disableHttpMonitorExternalWrite() {
         isHttpMonitorExternalWriteDisabled = true
     }

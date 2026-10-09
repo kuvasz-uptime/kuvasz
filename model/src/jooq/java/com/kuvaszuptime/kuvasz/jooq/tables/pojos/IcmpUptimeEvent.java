@@ -5,9 +5,11 @@ package com.kuvaszuptime.kuvasz.jooq.tables.pojos;
 
 
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus;
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID;
 
 import java.io.Serializable;
 import java.time.OffsetDateTime;
+import java.util.Arrays;
 
 
 /**
@@ -25,6 +27,7 @@ public class IcmpUptimeEvent implements Serializable {
     private OffsetDateTime startedAt;
     private OffsetDateTime endedAt;
     private OffsetDateTime updatedAt;
+    private IntegrationID[] integrations;
 
     public IcmpUptimeEvent() {}
 
@@ -36,6 +39,7 @@ public class IcmpUptimeEvent implements Serializable {
         this.startedAt = value.startedAt;
         this.endedAt = value.endedAt;
         this.updatedAt = value.updatedAt;
+        this.integrations = value.integrations;
     }
 
     public IcmpUptimeEvent(
@@ -45,7 +49,8 @@ public class IcmpUptimeEvent implements Serializable {
         String error,
         OffsetDateTime startedAt,
         OffsetDateTime endedAt,
-        OffsetDateTime updatedAt
+        OffsetDateTime updatedAt,
+        IntegrationID[] integrations
     ) {
         this.id = id;
         this.monitorId = monitorId;
@@ -54,6 +59,7 @@ public class IcmpUptimeEvent implements Serializable {
         this.startedAt = startedAt;
         this.endedAt = endedAt;
         this.updatedAt = updatedAt;
+        this.integrations = integrations;
     }
 
     /**
@@ -161,6 +167,21 @@ public class IcmpUptimeEvent implements Serializable {
         return this;
     }
 
+    /**
+     * Getter for <code>kuvasz.icmp_uptime_event.integrations</code>.
+     */
+    public IntegrationID[] getIntegrations() {
+        return this.integrations;
+    }
+
+    /**
+     * Setter for <code>kuvasz.icmp_uptime_event.integrations</code>.
+     */
+    public IcmpUptimeEvent setIntegrations(IntegrationID[] integrations) {
+        this.integrations = integrations;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -212,6 +233,12 @@ public class IcmpUptimeEvent implements Serializable {
         }
         else if (!this.updatedAt.equals(other.updatedAt))
             return false;
+        if (this.integrations == null) {
+            if (other.integrations != null)
+                return false;
+        }
+        else if (!Arrays.deepEquals(this.integrations, other.integrations))
+            return false;
         return true;
     }
 
@@ -226,6 +253,7 @@ public class IcmpUptimeEvent implements Serializable {
         result = prime * result + ((this.startedAt == null) ? 0 : this.startedAt.hashCode());
         result = prime * result + ((this.endedAt == null) ? 0 : this.endedAt.hashCode());
         result = prime * result + ((this.updatedAt == null) ? 0 : this.updatedAt.hashCode());
+        result = prime * result + ((this.integrations == null) ? 0 : Arrays.deepHashCode(this.integrations));
         return result;
     }
 
@@ -240,6 +268,7 @@ public class IcmpUptimeEvent implements Serializable {
         sb.append(", ").append(startedAt);
         sb.append(", ").append(endedAt);
         sb.append(", ").append(updatedAt);
+        sb.append(", ").append(Arrays.deepToString(integrations));
 
         sb.append(")");
         return sb.toString();

@@ -17,6 +17,8 @@ data class IncidentDto(
     val isMonitorEnabled: Boolean,
     @param:Schema(description = "Type of the incident", required = true)
     val incidentType: IncidentType,
+    @param:Schema(description = IncidentDocs.EVENT_ID, required = true)
+    val eventId: Long,
     @param:Schema(description = "Status of the incident", required = true)
     val status: IncidentStatus,
     @param:Schema(description = "Details about the incident, e.g. error message", required = true, nullable = true)

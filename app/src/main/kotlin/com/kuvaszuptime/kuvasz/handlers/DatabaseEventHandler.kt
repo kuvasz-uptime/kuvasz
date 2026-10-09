@@ -7,8 +7,10 @@ import com.kuvaszuptime.kuvasz.models.events.HttpUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.PushUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
+import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.TcpUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.repositories.DnsUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.DockerUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
@@ -16,6 +18,7 @@ import com.kuvaszuptime.kuvasz.repositories.IcmpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpUptimeEventRepository
+import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.util.loggerFor
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
@@ -29,6 +32,7 @@ class DatabaseEventHandler(
     private val dnsUptimeEventRepository: DnsUptimeEventRepository,
     private val dockerUptimeEventRepository: DockerUptimeEventRepository,
     private val sslEventRepository: SSLEventRepository,
+    private val integrationRepository: IntegrationRepository,
     private val dslContext: DSLContext,
 ) {
     companion object {
@@ -108,14 +112,45 @@ class DatabaseEventHandler(
             )
         }
 
-    private fun insertUptimeEvent(currentEvent: UptimeMonitorEvent, txCtx: DSLContext? = null) =
-        when (currentEvent) {
-            is HttpUptimeMonitorEvent -> httpUptimeEventRepository.insertFromMonitorEvent(currentEvent, txCtx)
-            is PushUptimeMonitorEvent -> pushUptimeEventRepository.insertFromMonitorEvent(currentEvent, txCtx)
-            is IcmpUptimeMonitorEvent -> icmpUptimeEventRepository.insertFromMonitorEvent(currentEvent, txCtx)
-            is TcpUptimeMonitorEvent -> tcpUptimeEventRepository.insertFromMonitorEvent(currentEvent, txCtx)
-            is DnsUptimeMonitorEvent -> dnsUptimeEventRepository.insertFromMonitorEvent(currentEvent, txCtx)
-            is DockerUptimeMonitorEvent -> dockerUptimeEventRepository.insertFromMonitorEvent(currentEvent, txCtx)
+    private fun insertUptimeEvent(currentEvent: UptimeMonitorEvent, txCtx: DSLContext? = null): UptimeEventRecord {
+        val integrations = currentEvent.notifiedIntegrations()
+        return when (currentEvent) {
+            is HttpUptimeMonitorEvent ->
+                httpUptimeEventRepository.insertFromMonitorEvent(currentEvent, txCtx, integrations)
+
+            is PushUptimeMonitorEvent ->
+                pushUptimeEventRepository.insertFromMonitorEvent(currentEvent, txCtx, integrations)
+
+            is IcmpUptimeMonitorEvent ->
+                icmpUptimeEventRepository.insertFromMonitorEvent(currentEvent, txCtx, integrations)
+
+            is TcpUptimeMonitorEvent ->
+                tcpUptimeEventRepository.insertFromMonitorEvent(currentEvent, txCtx, integrations)
+
+            is DnsUptimeMonitorEvent ->
+                dnsUptimeEventRepository.insertFromMonitorEvent(currentEvent, txCtx, integrations)
+
+            is DockerUptimeMonitorEvent ->
+                dockerUptimeEventRepository.insertFromMonitorEvent(currentEvent, txCtx, integrations)
+        }
+    }
+
+    /**
+     * The integrations an event is sent to when it opens a new uptime event. Mirrors [NotificationEventHandler], which
+     * doesn't notify about the very first UP event of a monitor.
+     */
+    private fun UptimeMonitorEvent.notifiedIntegrations(): Array<IntegrationID> =
+        if (isUp() && previousEvent == null) {
+            emptyArray()
+        } else {
+            integrationRepository.resolveTargetIntegrationIds(this).toTypedArray()
+        }
+
+    private fun SSLMonitorEvent.notifiedIntegrations(): Array<IntegrationID> =
+        if (this is SSLValidEvent && previousEvent == null) {
+            emptyArray()
+        } else {
+            integrationRepository.resolveTargetIntegrationIds(this).toTypedArray()
         }
 
     private fun updateEvent(currentEvent: UptimeMonitorEvent, previousEvent: UptimeEventRecord) =
@@ -133,11 +168,18 @@ class DatabaseEventHandler(
             if (currentEvent.statusNotEquals(previousEvent)) {
                 dslContext.transaction { config ->
                     sslEventRepository.endEventById(previousEvent.id, currentEvent.dispatchedAt, config.dsl())
-                    sslEventRepository.insertFromMonitorEvent(currentEvent, config.dsl())
+                    sslEventRepository.insertFromMonitorEvent(
+                        event = currentEvent,
+                        ctx = config.dsl(),
+                        integrations = currentEvent.notifiedIntegrations(),
+                    )
                 }
             } else {
                 sslEventRepository.updateEvent(previousEvent.id, currentEvent)
             }
-        } ?: sslEventRepository.insertFromMonitorEvent(currentEvent)
+        } ?: sslEventRepository.insertFromMonitorEvent(
+            event = currentEvent,
+            integrations = currentEvent.notifiedIntegrations(),
+        )
     }
 }

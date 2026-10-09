@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.mcp.ToolNames.CREATE_DNS_MONITOR
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.CREATE_DOCKER_MONITOR
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.CREATE_HTTP_MONITOR
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.CREATE_ICMP_MONITOR
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.CREATE_INCIDENT_NOTE
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.CREATE_MAINTENANCE_WINDOW
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.CREATE_PUSH_MONITOR
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.CREATE_TCP_MONITOR
@@ -14,6 +15,7 @@ import com.kuvaszuptime.kuvasz.mcp.ToolNames.DELETE_DNS_MONITOR
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.DELETE_DOCKER_MONITOR
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.DELETE_HTTP_MONITOR
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.DELETE_ICMP_MONITOR
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.DELETE_INCIDENT_NOTE
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.DELETE_MAINTENANCE_WINDOW
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.DELETE_PUSH_MONITOR
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.DELETE_TCP_MONITOR
@@ -26,6 +28,7 @@ import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_HTTP_MONITOR_DETAILS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_HTTP_MONITOR_STATS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_ICMP_MONITOR_DETAILS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_ICMP_MONITOR_STATS
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_INCIDENT_DETAILS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_MAINTENANCE_WINDOW_DETAILS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_PUSH_MONITOR_DETAILS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_PUSH_MONITOR_STATS
@@ -33,11 +36,11 @@ import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_STATUS_PAGE_DETAILS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_TCP_MONITOR_DETAILS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_TCP_MONITOR_STATS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_DNS_MONITORS
+import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_DOCKER_HOSTS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_DOCKER_MONITORS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_HTTP_MONITORS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_ICMP_MONITORS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_INCIDENTS
-import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_DOCKER_HOSTS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_INTEGRATIONS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_MAINTENANCE_WINDOWS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_PROXIES
@@ -204,6 +207,9 @@ class McpServerAuthTest(
                         LIST_PROXIES,
                         TOGGLE_DOCKER_MONITOR,
                         DELETE_DOCKER_MONITOR,
+                        GET_INCIDENT_DETAILS,
+                        CREATE_INCIDENT_NOTE,
+                        DELETE_INCIDENT_NOTE,
                     )
                 }
             }

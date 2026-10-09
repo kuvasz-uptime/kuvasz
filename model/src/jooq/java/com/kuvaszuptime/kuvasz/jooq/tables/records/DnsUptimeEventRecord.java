@@ -7,6 +7,7 @@ package com.kuvaszuptime.kuvasz.jooq.tables.records;
 import com.kuvaszuptime.kuvasz.jooq.UptimeEventRecord;
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus;
 import com.kuvaszuptime.kuvasz.jooq.tables.DnsUptimeEvent;
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID;
 
 import java.time.OffsetDateTime;
 
@@ -127,6 +128,21 @@ public class DnsUptimeEventRecord extends UpdatableRecordImpl<DnsUptimeEventReco
         return (OffsetDateTime) get(6);
     }
 
+    /**
+     * Setter for <code>kuvasz.dns_uptime_event.integrations</code>.
+     */
+    public DnsUptimeEventRecord setIntegrations(IntegrationID[] value) {
+        set(7, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.dns_uptime_event.integrations</code>.
+     */
+    public IntegrationID[] getIntegrations() {
+        return (IntegrationID[]) get(7);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -150,7 +166,7 @@ public class DnsUptimeEventRecord extends UpdatableRecordImpl<DnsUptimeEventReco
     /**
      * Create a detached, initialised DnsUptimeEventRecord
      */
-    public DnsUptimeEventRecord(Long id, Long monitorId, UptimeStatus status, String error, OffsetDateTime startedAt, OffsetDateTime endedAt, OffsetDateTime updatedAt) {
+    public DnsUptimeEventRecord(Long id, Long monitorId, UptimeStatus status, String error, OffsetDateTime startedAt, OffsetDateTime endedAt, OffsetDateTime updatedAt, IntegrationID[] integrations) {
         super(DnsUptimeEvent.DNS_UPTIME_EVENT);
 
         setId(id);
@@ -160,6 +176,7 @@ public class DnsUptimeEventRecord extends UpdatableRecordImpl<DnsUptimeEventReco
         setStartedAt(startedAt);
         setEndedAt(endedAt);
         setUpdatedAt(updatedAt);
+        setIntegrations(integrations);
         resetTouchedOnNotNull();
     }
 
@@ -177,6 +194,7 @@ public class DnsUptimeEventRecord extends UpdatableRecordImpl<DnsUptimeEventReco
             setStartedAt(value.getStartedAt());
             setEndedAt(value.getEndedAt());
             setUpdatedAt(value.getUpdatedAt());
+            setIntegrations(value.getIntegrations());
             resetTouchedOnNotNull();
         }
     }

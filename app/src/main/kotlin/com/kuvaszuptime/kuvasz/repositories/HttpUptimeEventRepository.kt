@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.event.HttpUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpUptimeMonitorEvent
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.services.UptimeEventCalculationContext
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import jakarta.inject.Singleton
@@ -27,12 +28,17 @@ class HttpUptimeEventRepository(private val dslContext: DSLContext) : UptimeEven
 
     private fun HttpMonitorDownEvent.getPersistableError() = toStructuredMessage().error
 
-    fun insertFromMonitorEvent(event: HttpUptimeMonitorEvent, ctx: DSLContext? = dslContext): HttpUptimeEventRecord {
+    fun insertFromMonitorEvent(
+        event: HttpUptimeMonitorEvent,
+        ctx: DSLContext? = dslContext,
+        integrations: Array<IntegrationID> = emptyArray(),
+    ): HttpUptimeEventRecord {
         val eventToInsert = HttpUptimeEventRecord()
             .setMonitorId(event.monitor.id)
             .setStatus(event.uptimeStatus)
             .setStartedAt(event.dispatchedAt)
             .setUpdatedAt(event.dispatchedAt)
+            .setIntegrations(integrations)
 
         if (event is HttpMonitorDownEvent) {
             eventToInsert.error = event.getPersistableError()

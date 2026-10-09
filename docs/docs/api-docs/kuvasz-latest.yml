@@ -1230,6 +1230,174 @@ paths:
       security:
       - apiKey: []
       - bearerAuth: []
+  /api/v2/incidents/notes/{incidentNoteId}:
+    delete:
+      tags:
+      - Incidents
+      summary: Delete an incident note by ID
+      operationId: deleteIncidentNote
+      parameters:
+      - name: incidentNoteId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "204":
+          description: Successful deletion
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: Incident notes are disabled on this instance (ENABLE_INCIDENT_NOTES=false)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+    patch:
+      tags:
+      - Incidents
+      summary: Update an incident note by ID
+      description: Updates the incident note with the given ID. Only fields that are
+        present in the request body will be updated. Fields not present in the request
+        body will remain unchanged.
+      operationId: updateIncidentNote
+      parameters:
+      - name: incidentNoteId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IncidentNoteUpdateDto"
+        required: true
+      responses:
+        "200":
+          description: Successful update
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncidentNoteDto"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: Incident notes are disabled on this instance (ENABLE_INCIDENT_NOTES=false)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/incidents/{incidentType}/{eventId}:
+    get:
+      tags:
+      - Incidents
+      summary: Get the details of an incident
+      description: "Returns the incident along with its notes, and the integrations\
+        \ that were notified when it started and when it was resolved."
+      operationId: getIncidentDetails
+      parameters:
+      - name: incidentType
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/IncidentType"
+      - name: eventId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncidentDetailsDto"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v2/incidents/{incidentType}/{eventId}/notes:
+    post:
+      tags:
+      - Incidents
+      summary: Add a note to an incident
+      operationId: createIncidentNote
+      parameters:
+      - name: incidentType
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/IncidentType"
+      - name: eventId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IncidentNoteCreateDto"
+        required: true
+      responses:
+        "201":
+          description: Successful creation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncidentNoteDto"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+        "405":
+          description: Incident notes are disabled on this instance (ENABLE_INCIDENT_NOTES=false)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
   /api/v2/integrations:
     get:
       tags:
@@ -5688,10 +5856,45 @@ components:
           type: string
           description: The timestamp when the uptime event was updated
           format: date-time
+    IncidentDetailsDto:
+      required:
+      - incident
+      - integrations
+      - notes
+      - resolutionIntegrations
+      type: object
+      properties:
+        incident:
+          description: The incident itself
+          allOf:
+          - $ref: "#/components/schemas/IncidentDto"
+        notes:
+          type: array
+          description: "The notes of the incident, ordered by their timestamp (or\
+            \ their creation date, if they don't have one)"
+          items:
+            $ref: "#/components/schemas/IncidentNoteDto"
+        integrations:
+          type: array
+          description: The integrations that were notified when the incident started
+          items:
+            type: string
+            description: "A unique identifier for an integration, formatted as 'type:name'."
+            example: email:my-email-integration
+        resolutionIntegrations:
+          type: array
+          description: "The integrations that were notified when the incident was\
+            \ resolved, null if the incident is still ongoing"
+          nullable: true
+          items:
+            type: string
+            description: "A unique identifier for an integration, formatted as 'type:name'."
+            example: email:my-email-integration
     IncidentDto:
       required:
       - details
       - endedAt
+      - eventId
       - incidentType
       - isMonitorEnabled
       - monitorId
@@ -5715,6 +5918,12 @@ components:
           description: Type of the incident
           allOf:
           - $ref: "#/components/schemas/IncidentType"
+        eventId:
+          type: integer
+          description: "ID of the event behind the incident: the ID of the DOWN uptime\
+            \ event, or the ID of the INVALID SSL event in case of SSL incidents.\
+            \ Unique only together with the incident type"
+          format: int64
         status:
           description: Status of the incident
           allOf:
@@ -5736,6 +5945,113 @@ components:
           type: string
           description: When the incident was last updated
           format: date-time
+    IncidentNoteCreateDto:
+      required:
+      - content
+      - status
+      type: object
+      properties:
+        status:
+          description: The state of the investigation the note describes
+          allOf:
+          - $ref: "#/components/schemas/InvestigationStatus"
+        content:
+          minLength: 1
+          type: string
+          description: "The content of the note, as plain text"
+          x-size-message: Incident note content must not be blank
+        timestamp:
+          type: string
+          description: "Optional timestamp of the note, which overrides its creation\
+            \ date where it's displayed (e.g. when it's added later), and orders the\
+            \ notes of the incident"
+          format: date-time
+          nullable: true
+        public:
+          type: boolean
+          description: "Whether the note is shown on the status pages that contain\
+            \ the monitor of the incident. SSL incidents are never shown on status\
+            \ pages, so it has no effect on them"
+          default: false
+    IncidentNoteDto:
+      required:
+      - content
+      - createdAt
+      - eventId
+      - id
+      - incidentType
+      - public
+      - status
+      - timestamp
+      - updatedAt
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the incident note
+          format: int64
+        incidentType:
+          description: Type of the incident the note belongs to
+          allOf:
+          - $ref: "#/components/schemas/IncidentType"
+        eventId:
+          type: integer
+          description: "ID of the event behind the incident the note belongs to, see\
+            \ the incident's eventId"
+          format: int64
+        status:
+          description: The state of the investigation the note describes
+          allOf:
+          - $ref: "#/components/schemas/InvestigationStatus"
+        content:
+          type: string
+          description: "The content of the note, as plain text"
+        timestamp:
+          type: string
+          description: "Optional timestamp of the note, which overrides its creation\
+            \ date where it's displayed (e.g. when it's added later), and orders the\
+            \ notes of the incident"
+          format: date-time
+          nullable: true
+        public:
+          type: boolean
+          description: "Whether the note is shown on the status pages that contain\
+            \ the monitor of the incident. SSL incidents are never shown on status\
+            \ pages, so it has no effect on them"
+        createdAt:
+          type: string
+          description: When the note was created
+          format: date-time
+        updatedAt:
+          type: string
+          description: When the note was last updated
+          format: date-time
+    IncidentNoteUpdateDto:
+      type: object
+      properties:
+        status:
+          description: The state of the investigation the note describes
+          allOf:
+          - $ref: "#/components/schemas/InvestigationStatus"
+        content:
+          minLength: 1
+          type: string
+          description: "The content of the note, as plain text"
+          nullable: false
+          x-size-message: Incident note content must not be blank
+        timestamp:
+          type: string
+          description: "Optional timestamp of the note, which overrides its creation\
+            \ date where it's displayed (e.g. when it's added later), and orders the\
+            \ notes of the incident"
+          format: date-time
+          nullable: true
+        public:
+          type: boolean
+          description: "Whether the note is shown on the status pages that contain\
+            \ the monitor of the incident. SSL incidents are never shown on status\
+            \ pages, so it has no effect on them"
+          nullable: false
     IncidentStatus:
       type: string
       enum:
@@ -5853,6 +6169,12 @@ components:
       - APPRISE
       - PUSHOVER
       - WEBHOOK
+    InvestigationStatus:
+      type: string
+      enum:
+      - INVESTIGATING
+      - IDENTIFIED
+      - RESOLVED
     LatencyLogDto:
       required:
       - createdAt

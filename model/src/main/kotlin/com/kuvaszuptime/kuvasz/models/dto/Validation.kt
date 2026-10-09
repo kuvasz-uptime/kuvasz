@@ -143,3 +143,7 @@ object MaintenanceWindowValidationMessages {
         "cron-based ('cron' + 'duration'), or single ('start' + 'duration'). " +
         "'cron' and 'start' are mutually exclusive, and both 'cron' and 'start' require a 'duration'."
 }
+
+object IncidentNoteValidationMessages {
+    const val CONTENT_NOT_BLANK = "Incident note content must not be blank"
+}

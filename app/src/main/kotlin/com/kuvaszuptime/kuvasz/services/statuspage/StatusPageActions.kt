@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageUpdateDto
 import com.kuvaszuptime.kuvasz.models.statuspage.toStatusPageRecord
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageDataActions.Companion.STATUS_PAGES_CACHE_NAME
+import com.kuvaszuptime.kuvasz.util.entityUpdateMapper
 import com.kuvaszuptime.kuvasz.util.transactionResultWithError
 import com.kuvaszuptime.kuvasz.validation.MonitorIdValidator
 import com.kuvaszuptime.kuvasz.validation.throwIfNotEmpty
@@ -18,11 +19,8 @@ import io.micronaut.validation.validator.Validator
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import org.jooq.SortField
-import tools.jackson.databind.DeserializationFeature
-import tools.jackson.databind.ObjectMapper
 import tools.jackson.databind.node.ObjectNode
 import tools.jackson.module.kotlin.convertValue
-import tools.jackson.module.kotlin.jacksonMapperBuilder
 
 @Singleton
 class StatusPageActions(
@@ -31,10 +29,6 @@ class StatusPageActions(
     private val dslContext: DSLContext,
     private val validator: Validator,
 ) {
-
-    private val objectMapper: ObjectMapper = jacksonMapperBuilder()
-        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-        .build()
 
     fun getStatusPages(
         public: Boolean?,
@@ -79,12 +73,12 @@ class StatusPageActions(
                 statusPageRepository.findById(statusPageId, txCtx).orThrowNotFound(statusPageId.toString())
             val toUpdate = existingStatusPage.into(StatusPage::class.java)
             val filteredUpdates = updates.propertyNames()
-                .fold(objectMapper.createObjectNode()) { acc, fieldName ->
+                .fold(entityUpdateMapper.createObjectNode()) { acc, fieldName ->
                     acc.set(fieldName, updates.get(fieldName))
                 }
-            val updatedStatusPage = objectMapper.updateValue(toUpdate, filteredUpdates)
+            val updatedStatusPage = entityUpdateMapper.updateValue(toUpdate, filteredUpdates)
 
-            objectMapper.convertValue<StatusPageUpdateDto>(updatedStatusPage).let { toValidate ->
+            entityUpdateMapper.convertValue<StatusPageUpdateDto>(updatedStatusPage).let { toValidate ->
                 validator.validate(toValidate).throwIfNotEmpty()
             }
             // Filter out non-existing monitor IDs and normalize the categories before updating. Both columns are

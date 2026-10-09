@@ -24,16 +24,14 @@ import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowService
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageCacheInvalidator
+import com.kuvaszuptime.kuvasz.util.entityUpdateMapper
 import com.kuvaszuptime.kuvasz.util.transactionResultWithError
 import com.kuvaszuptime.kuvasz.validation.IntegrationIdValidator
 import com.kuvaszuptime.kuvasz.validation.throwIfNotEmpty
 import io.micronaut.validation.validator.Validator
 import org.jooq.DSLContext
 import org.jooq.Record
-import tools.jackson.databind.DeserializationFeature
-import tools.jackson.databind.ObjectMapper
 import tools.jackson.databind.node.ObjectNode
-import tools.jackson.module.kotlin.jacksonMapperBuilder
 import java.time.Duration
 
 abstract class MonitorActions<R, D : MonitorDetailsDto>(
@@ -50,10 +48,6 @@ abstract class MonitorActions<R, D : MonitorDetailsDto>(
 ) where R : MonitorRecord, R : Record {
     private val monitorRepository: MonitorRepository<R, D> get() = monitorTypeSupport.repository
     private val monitorType: MonitorType get() = monitorTypeSupport.monitorType
-
-    protected val objectMapper: ObjectMapper = jacksonMapperBuilder()
-        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-        .build()
 
     /**
      * Checks if it's safe to update the monitor's name or delete it at all from the status pages' perspective.
@@ -120,10 +114,10 @@ abstract class MonitorActions<R, D : MonitorDetailsDto>(
         val txCtx = config.dsl()
         val existingMonitor = monitorRepository.findById(monitorId, txCtx).orThrowNotFound(monitorId)
         val filteredUpdates = updates.propertyNames()
-            .fold(objectMapper.createObjectNode()) { acc, fieldName ->
+            .fold(entityUpdateMapper.createObjectNode()) { acc, fieldName ->
                 acc.set(patchAliases[fieldName] ?: fieldName, updates.get(fieldName))
             }
-        val patched = objectMapper.updateValue(existingMonitor.into(pojoType), filteredUpdates)
+        val patched = entityUpdateMapper.updateValue(existingMonitor.into(pojoType), filteredUpdates)
         val updatedMonitor = toRecord(patched)
         // Check if name is present in a non-writable status page as reference
         if (updatedMonitor.name != existingMonitor.name && !isMonitorChangeable(existingMonitor)) {
@@ -152,11 +146,11 @@ abstract class MonitorActions<R, D : MonitorDetailsDto>(
     protected open val patchAliases: Map<String, String> = emptyMap()
 
     private fun <U : Any> Any.asUpdateDto(updateDtoType: Class<U>): U {
-        val tree = objectMapper.valueToTree<ObjectNode>(this)
+        val tree = entityUpdateMapper.valueToTree<ObjectNode>(this)
         patchAliases.forEach { (apiName, recordName) ->
             tree.get(recordName)?.let { tree.set(apiName, it) }
         }
-        return objectMapper.treeToValue(tree, updateDtoType)
+        return entityUpdateMapper.treeToValue(tree, updateDtoType)
     }
 
     protected open fun checkUpdateConstraints(existingMonitor: R, updatedMonitor: R) = Unit

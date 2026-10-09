@@ -18,12 +18,15 @@ import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createTcpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.IncidentType
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentStatus
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.inspectors.forAll
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
@@ -1560,6 +1563,345 @@ class IncidentRepositoryTest(
 
                 then("it should return an empty list") {
                     incidentRepository.getLatestResolvedIncidents(Duration.ofDays(1), limit = 3).shouldBeEmpty()
+                }
+            }
+        }
+
+        given("the eventId of the incidents") {
+
+            `when`("there are uptime and SSL incidents of a monitor") {
+
+                then("each incident should carry the ID of its own event") {
+                    val monitor = createHttpMonitor(httpMonitorRepository)
+                    val uptimeEvent = createHttpUptimeEventRecord(
+                        dslContext,
+                        monitorId = monitor.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp(),
+                        endedAt = null,
+                    )
+                    val sslEvent = createSSLEventRecord(
+                        dslContext,
+                        monitorId = monitor.id,
+                        status = SslStatus.INVALID,
+                        startedAt = getCurrentTimestamp(),
+                        endedAt = null,
+                    )
+
+                    incidentRepository.getIncidents(monitorId = monitor.id, includeResolved = true)
+                        .associate { it.incidentType to it.eventId } shouldBe mapOf(
+                        IncidentType.HTTP to uptimeEvent.id,
+                        IncidentType.SSL to sslEvent.id,
+                    )
+                }
+            }
+        }
+
+        given("the getIncident() method") {
+
+            `when`("the event is an ongoing uptime incident") {
+
+                then("it should be returned, the same way as the lists return it") {
+                    val monitor = createHttpMonitor(httpMonitorRepository)
+                    val event = createHttpUptimeEventRecord(
+                        dslContext,
+                        monitorId = monitor.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp(),
+                        endedAt = null,
+                        error = "Connection refused",
+                    )
+
+                    val incident = incidentRepository.getIncident(IncidentType.HTTP, event.id).shouldNotBeNull()
+
+                    incident shouldBe incidentRepository.getIncidents(monitorId = monitor.id, includeResolved = true)
+                        .single()
+                    incident.status shouldBe IncidentStatus.ONGOING
+                    incident.details shouldBe "Connection refused"
+                }
+            }
+
+            `when`("the event is a resolved SSL incident of a monitor that has its SSL check disabled") {
+
+                then("it should be returned regardless of the monitor's state") {
+                    val monitor = createHttpMonitor(httpMonitorRepository, sslCheckEnabled = false)
+                    val event = createSSLEventRecord(
+                        dslContext,
+                        monitorId = monitor.id,
+                        status = SslStatus.INVALID,
+                        startedAt = getCurrentTimestamp().minusHours(1),
+                        endedAt = getCurrentTimestamp(),
+                        error = "Certificate expired",
+                    )
+
+                    val incident = incidentRepository.getIncident(IncidentType.SSL, event.id).shouldNotBeNull()
+
+                    incident.incidentType shouldBe IncidentType.SSL
+                    incident.eventId shouldBe event.id
+                    incident.status shouldBe IncidentStatus.RESOLVED
+                    incident.isMonitorEnabled shouldBe false
+                }
+            }
+
+            `when`("the event is an incident of a disabled monitor") {
+
+                then("it should be returned") {
+                    val monitor = createPushMonitor(pushMonitorRepository, enabled = false)
+                    val event = createPushUptimeEventRecord(
+                        dslContext,
+                        monitorId = monitor.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp(),
+                        endedAt = null,
+                    )
+
+                    incidentRepository.getIncident(IncidentType.PUSH, event.id)
+                        .shouldNotBeNull()
+                        .isMonitorEnabled shouldBe false
+                }
+            }
+
+            `when`("the event is an incident of a Docker monitor") {
+
+                then("its details should contain the image, like in the lists") {
+                    val monitor = createDockerMonitor(dockerMonitorRepository)
+                    val event = createDockerUptimeEventRecord(
+                        dslContext,
+                        monitorId = monitor.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp(),
+                        endedAt = null,
+                        error = "The container exited (137)",
+                        image = "nginx:1.27",
+                    )
+
+                    incidentRepository.getIncident(IncidentType.DOCKER, event.id)
+                        .shouldNotBeNull()
+                        .details shouldBe "The container exited (137) · Image: nginx:1.27"
+                }
+            }
+
+            `when`("there is an incident of every type") {
+
+                then("each of them should be found by its own type and event ID") {
+                    val now = getCurrentTimestamp()
+                    val httpMonitorId = createHttpMonitor(httpMonitorRepository).id
+                    val eventIds = mapOf(
+                        IncidentType.HTTP to createHttpUptimeEventRecord(
+                            dslContext,
+                            monitorId = httpMonitorId,
+                            status = UptimeStatus.DOWN,
+                            startedAt = now,
+                            endedAt = null,
+                        ).id,
+                        IncidentType.SSL to createSSLEventRecord(
+                            dslContext,
+                            monitorId = httpMonitorId,
+                            status = SslStatus.INVALID,
+                            startedAt = now,
+                            endedAt = null,
+                        ).id,
+                        IncidentType.PUSH to createPushUptimeEventRecord(
+                            dslContext,
+                            monitorId = createPushMonitor(pushMonitorRepository).id,
+                            status = UptimeStatus.DOWN,
+                            startedAt = now,
+                            endedAt = null,
+                        ).id,
+                        IncidentType.ICMP to createIcmpUptimeEventRecord(
+                            dslContext,
+                            monitorId = createIcmpMonitor(icmpMonitorRepository).id,
+                            status = UptimeStatus.DOWN,
+                            startedAt = now,
+                            endedAt = null,
+                        ).id,
+                        IncidentType.TCP to createTcpUptimeEventRecord(
+                            dslContext,
+                            monitorId = createTcpMonitor(tcpMonitorRepository).id,
+                            status = UptimeStatus.DOWN,
+                            startedAt = now,
+                            endedAt = null,
+                        ).id,
+                        IncidentType.DNS to createDnsUptimeEventRecord(
+                            dslContext,
+                            monitorId = createDnsMonitor(dnsMonitorRepository).id,
+                            status = UptimeStatus.DOWN,
+                            startedAt = now,
+                            endedAt = null,
+                        ).id,
+                        IncidentType.DOCKER to createDockerUptimeEventRecord(
+                            dslContext,
+                            monitorId = createDockerMonitor(dockerMonitorRepository).id,
+                            status = UptimeStatus.DOWN,
+                            startedAt = now,
+                            endedAt = null,
+                        ).id,
+                    )
+
+                    eventIds.keys shouldBe IncidentType.entries.toSet()
+                    eventIds.forEach { (type, eventId) ->
+                        incidentRepository.getIncident(type, eventId).shouldNotBeNull().let { incident ->
+                            incident.incidentType shouldBe type
+                            incident.eventId shouldBe eventId
+                        }
+                    }
+                }
+            }
+
+            `when`("the event is not an incident") {
+
+                then("nothing should be returned") {
+                    val monitor = createHttpMonitor(httpMonitorRepository)
+                    val upEvent = createHttpUptimeEventRecord(
+                        dslContext,
+                        monitorId = monitor.id,
+                        status = UptimeStatus.UP,
+                        startedAt = getCurrentTimestamp(),
+                        endedAt = null,
+                    )
+                    val validSslEvent = createSSLEventRecord(
+                        dslContext,
+                        monitorId = monitor.id,
+                        status = SslStatus.VALID,
+                        startedAt = getCurrentTimestamp(),
+                        endedAt = null,
+                    )
+
+                    incidentRepository.getIncident(IncidentType.HTTP, upEvent.id).shouldBeNull()
+                    incidentRepository.getIncident(IncidentType.SSL, validSslEvent.id).shouldBeNull()
+                }
+            }
+
+            `when`("the event ID belongs to another type of event") {
+
+                then("nothing should be returned") {
+                    val monitor = createHttpMonitor(httpMonitorRepository)
+                    val event = createHttpUptimeEventRecord(
+                        dslContext,
+                        monitorId = monitor.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp(),
+                        endedAt = null,
+                    )
+
+                    incidentRepository.getIncident(IncidentType.TCP, event.id).shouldBeNull()
+                    incidentRepository.getIncident(IncidentType.HTTP, event.id + 1).shouldBeNull()
+                }
+            }
+        }
+
+        given("the getNotifiedIntegrations() method") {
+            val opening = listOf(IntegrationID(IntegrationType.SLACK, "a"), IntegrationID(IntegrationType.EMAIL, "b"))
+            val resolving = listOf(IntegrationID(IntegrationType.PAGERDUTY, "c"))
+
+            `when`("the incident is still ongoing") {
+
+                then("only the integrations notified about its start should be returned") {
+                    val monitor = createHttpMonitor(httpMonitorRepository)
+                    val event = createHttpUptimeEventRecord(
+                        dslContext,
+                        monitorId = monitor.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp(),
+                        endedAt = null,
+                        integrations = opening.toTypedArray(),
+                    )
+                    val incident = incidentRepository.getIncident(IncidentType.HTTP, event.id).shouldNotBeNull()
+
+                    incidentRepository.getNotifiedIntegrations(incident) shouldBe NotifiedIntegrations(
+                        started = opening,
+                        resolved = null,
+                    )
+                }
+            }
+
+            `when`("the incident was resolved by an UP event") {
+
+                then("the integrations of the UP event should be returned as the resolving ones") {
+                    val now = getCurrentTimestamp()
+                    val monitor = createHttpMonitor(httpMonitorRepository)
+                    val otherMonitor = createHttpMonitor(httpMonitorRepository)
+                    val event = createHttpUptimeEventRecord(
+                        dslContext,
+                        monitorId = monitor.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = now.minusHours(1),
+                        endedAt = now,
+                        integrations = opening.toTypedArray(),
+                    )
+                    createHttpUptimeEventRecord(
+                        dslContext,
+                        monitorId = monitor.id,
+                        status = UptimeStatus.UP,
+                        startedAt = now,
+                        endedAt = null,
+                        integrations = resolving.toTypedArray(),
+                    )
+                    // Another monitor's event that started at the very same time shouldn't be picked up
+                    createHttpUptimeEventRecord(
+                        dslContext,
+                        monitorId = otherMonitor.id,
+                        status = UptimeStatus.UP,
+                        startedAt = now,
+                        endedAt = null,
+                        integrations = arrayOf(IntegrationID(IntegrationType.DISCORD, "other")),
+                    )
+                    val incident = incidentRepository.getIncident(IncidentType.HTTP, event.id).shouldNotBeNull()
+
+                    incidentRepository.getNotifiedIntegrations(incident) shouldBe NotifiedIntegrations(
+                        started = opening,
+                        resolved = resolving,
+                    )
+                }
+            }
+
+            `when`("an SSL incident was resolved by a WILL_EXPIRE event") {
+
+                then("the integrations of the WILL_EXPIRE event should be returned as the resolving ones") {
+                    val now = getCurrentTimestamp()
+                    val monitor = createHttpMonitor(httpMonitorRepository)
+                    val event = createSSLEventRecord(
+                        dslContext,
+                        monitorId = monitor.id,
+                        status = SslStatus.INVALID,
+                        startedAt = now.minusHours(1),
+                        endedAt = now,
+                        integrations = opening.toTypedArray(),
+                    )
+                    createSSLEventRecord(
+                        dslContext,
+                        monitorId = monitor.id,
+                        status = SslStatus.WILL_EXPIRE,
+                        startedAt = now,
+                        endedAt = null,
+                        integrations = resolving.toTypedArray(),
+                    )
+                    val incident = incidentRepository.getIncident(IncidentType.SSL, event.id).shouldNotBeNull()
+
+                    incidentRepository.getNotifiedIntegrations(incident) shouldBe NotifiedIntegrations(
+                        started = opening,
+                        resolved = resolving,
+                    )
+                }
+            }
+
+            `when`("the incident was resolved, but the event that ended it can't be found") {
+
+                then("the resolving integrations should be empty, but not null") {
+                    val monitor = createHttpMonitor(httpMonitorRepository)
+                    val event = createHttpUptimeEventRecord(
+                        dslContext,
+                        monitorId = monitor.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusHours(1),
+                        endedAt = getCurrentTimestamp(),
+                    )
+                    val incident = incidentRepository.getIncident(IncidentType.HTTP, event.id).shouldNotBeNull()
+
+                    incidentRepository.getNotifiedIntegrations(incident) shouldBe NotifiedIntegrations(
+                        started = emptyList(),
+                        resolved = emptyList(),
+                    )
                 }
             }
         }

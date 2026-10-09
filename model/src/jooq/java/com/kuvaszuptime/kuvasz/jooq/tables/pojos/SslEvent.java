@@ -5,9 +5,11 @@ package com.kuvaszuptime.kuvasz.jooq.tables.pojos;
 
 
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus;
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID;
 
 import java.io.Serializable;
 import java.time.OffsetDateTime;
+import java.util.Arrays;
 
 
 /**
@@ -38,6 +40,7 @@ public class SslEvent implements Serializable {
     private OffsetDateTime endedAt;
     private OffsetDateTime updatedAt;
     private OffsetDateTime sslExpiryDate;
+    private IntegrationID[] integrations;
 
     public SslEvent() {}
 
@@ -50,6 +53,7 @@ public class SslEvent implements Serializable {
         this.endedAt = value.endedAt;
         this.updatedAt = value.updatedAt;
         this.sslExpiryDate = value.sslExpiryDate;
+        this.integrations = value.integrations;
     }
 
     public SslEvent(
@@ -60,7 +64,8 @@ public class SslEvent implements Serializable {
         OffsetDateTime startedAt,
         OffsetDateTime endedAt,
         OffsetDateTime updatedAt,
-        OffsetDateTime sslExpiryDate
+        OffsetDateTime sslExpiryDate,
+        IntegrationID[] integrations
     ) {
         this.id = id;
         this.monitorId = monitorId;
@@ -70,6 +75,7 @@ public class SslEvent implements Serializable {
         this.endedAt = endedAt;
         this.updatedAt = updatedAt;
         this.sslExpiryDate = sslExpiryDate;
+        this.integrations = integrations;
     }
 
     /**
@@ -196,6 +202,21 @@ public class SslEvent implements Serializable {
         return this;
     }
 
+    /**
+     * Getter for <code>kuvasz.ssl_event.integrations</code>.
+     */
+    public IntegrationID[] getIntegrations() {
+        return this.integrations;
+    }
+
+    /**
+     * Setter for <code>kuvasz.ssl_event.integrations</code>.
+     */
+    public SslEvent setIntegrations(IntegrationID[] integrations) {
+        this.integrations = integrations;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -253,6 +274,12 @@ public class SslEvent implements Serializable {
         }
         else if (!this.sslExpiryDate.equals(other.sslExpiryDate))
             return false;
+        if (this.integrations == null) {
+            if (other.integrations != null)
+                return false;
+        }
+        else if (!Arrays.deepEquals(this.integrations, other.integrations))
+            return false;
         return true;
     }
 
@@ -268,6 +295,7 @@ public class SslEvent implements Serializable {
         result = prime * result + ((this.endedAt == null) ? 0 : this.endedAt.hashCode());
         result = prime * result + ((this.updatedAt == null) ? 0 : this.updatedAt.hashCode());
         result = prime * result + ((this.sslExpiryDate == null) ? 0 : this.sslExpiryDate.hashCode());
+        result = prime * result + ((this.integrations == null) ? 0 : Arrays.deepHashCode(this.integrations));
         return result;
     }
 
@@ -283,6 +311,7 @@ public class SslEvent implements Serializable {
         sb.append(", ").append(endedAt);
         sb.append(", ").append(updatedAt);
         sb.append(", ").append(sslExpiryDate);
+        sb.append(", ").append(Arrays.deepToString(integrations));
 
         sb.append(")");
         return sb.toString();

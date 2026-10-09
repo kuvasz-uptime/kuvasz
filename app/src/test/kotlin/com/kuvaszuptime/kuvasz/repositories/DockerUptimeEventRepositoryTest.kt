@@ -4,6 +4,9 @@ import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createDockerMonitor
 import com.kuvaszuptime.kuvasz.mocks.createDockerUptimeEventRecord
+import com.kuvaszuptime.kuvasz.models.events.DockerMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.matchers.shouldBe
@@ -180,6 +183,25 @@ class DockerUptimeEventRepositoryTest(
 
                 then("it should only consider the incidents of the enabled monitors") {
                     dockerUptimeEventRepository.fetchLatestIncidentTimestamp() shouldBe now.minusHours(3)
+                }
+            }
+        }
+
+        given("the insertFromMonitorEvent method") {
+
+            `when`("the integrations notified about the event are given") {
+
+                then("they should be stored along with the event") {
+                    val monitor = createDockerMonitor(dockerMonitorRepository)
+                    val integrations = arrayOf(IntegrationID(IntegrationType.SLACK, "ops"))
+
+                    dockerUptimeEventRepository.insertFromMonitorEvent(
+                        DockerMonitorUpEvent(monitor = monitor, previousEvent = null, latencyInMs = 10),
+                        integrations = integrations,
+                    )
+
+                    dockerUptimeEventRepository.fetchByMonitorId(monitor.id).single().integrations.toList() shouldBe
+                        integrations.toList()
                 }
             }
         }

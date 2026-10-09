@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.PushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.event.PushUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushUptimeMonitorEvent
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.services.UptimeEventCalculationContext
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import jakarta.inject.Singleton
@@ -27,12 +28,17 @@ class PushUptimeEventRepository(private val dslContext: DSLContext) : UptimeEven
 
     private fun PushMonitorDownEvent.getPersistableError() = toStructuredMessage().error
 
-    fun insertFromMonitorEvent(event: PushUptimeMonitorEvent, ctx: DSLContext? = dslContext): PushUptimeEventRecord {
+    fun insertFromMonitorEvent(
+        event: PushUptimeMonitorEvent,
+        ctx: DSLContext? = dslContext,
+        integrations: Array<IntegrationID> = emptyArray(),
+    ): PushUptimeEventRecord {
         val eventToInsert = PushUptimeEventRecord()
             .setMonitorId(event.monitor.id)
             .setStatus(event.uptimeStatus)
             .setStartedAt(event.dispatchedAt)
             .setUpdatedAt(event.dispatchedAt)
+            .setIntegrations(integrations)
 
         if (event is PushMonitorDownEvent) {
             eventToInsert.error = event.getPersistableError()

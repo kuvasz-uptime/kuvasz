@@ -6,19 +6,20 @@ import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.DnsMonitor.DNS_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.DnsUptimeEvent.DNS_UPTIME_EVENT
+import com.kuvaszuptime.kuvasz.jooq.tables.DockerMonitor.DOCKER_MONITOR
+import com.kuvaszuptime.kuvasz.jooq.tables.DockerUptimeEvent.DOCKER_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HTTP_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent.HTTP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.IcmpMonitor.ICMP_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.IcmpUptimeEvent.ICMP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor.PUSH_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.PushUptimeEvent.PUSH_UPTIME_EVENT
-import com.kuvaszuptime.kuvasz.jooq.tables.DockerMonitor.DOCKER_MONITOR
-import com.kuvaszuptime.kuvasz.jooq.tables.DockerUptimeEvent.DOCKER_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.TcpMonitor.TCP_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.TcpUptimeEvent.TCP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.models.IncidentType
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentDto
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentStatus
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
 import org.jooq.Condition
@@ -26,6 +27,8 @@ import org.jooq.DSLContext
 import org.jooq.Field
 import org.jooq.Record
 import org.jooq.Select
+import org.jooq.Table
+import org.jooq.TableField
 import org.jooq.impl.DSL
 import org.jooq.kotlin.and
 import java.time.Duration
@@ -87,6 +90,50 @@ class IncidentRepository(private val dslContext: DSLContext) {
             .fetchInto(IncidentDto::class.java)
     }
 
+    /**
+     * Fetches a single incident by its type and the ID of its event, regardless of its monitor being enabled, unlike
+     * the lists. Returns null if there is no such event, or it's not an incident (e.g. an UP event).
+     */
+    fun getIncident(incidentType: IncidentType, eventId: Long): IncidentDto? =
+        dslContext.incidentSelect(incidentType, eventId).fetchOneInto(IncidentDto::class.java)
+
+    /**
+     * The integrations that were notified when the [incident] started, and when it was resolved. The latter are
+     * recorded on the event that ended the incident, which started at the very same time.
+     */
+    fun getNotifiedIntegrations(incident: IncidentDto): NotifiedIntegrations {
+        val table = incidentEventTables.getValue(incident.incidentType)
+        val resolvingEvent = incident.endedAt?.let { endedAt ->
+            table.monitorId.eq(incident.monitorId).and(table.startedAt.eq(endedAt))
+        }
+        val integrationsByEventId = dslContext
+            .select(table.id, table.integrations)
+            .from(table.events)
+            .where(DSL.or(listOfNotNull(table.id.eq(incident.eventId), resolvingEvent)))
+            .fetchMap(table.id, table.integrations)
+
+        return NotifiedIntegrations(
+            started = integrationsByEventId[incident.eventId].orEmpty().toList(),
+            resolved = incident.endedAt?.let {
+                integrationsByEventId.filterKeys { eventId -> eventId != incident.eventId }
+                    .values
+                    .firstOrNull()
+                    .orEmpty()
+                    .toList()
+            },
+        )
+    }
+
+    private fun DSLContext.incidentSelect(incidentType: IncidentType, eventId: Long) = when (incidentType) {
+        IncidentType.HTTP -> httpUptimeIncidentSelect(states = IncidentStates.ALL, eventId = eventId)
+        IncidentType.SSL -> sslIncidentsSelect(states = IncidentStates.ALL, eventId = eventId)
+        IncidentType.PUSH -> pushUptimeIncidentSelect(states = IncidentStates.ALL, eventId = eventId)
+        IncidentType.ICMP -> icmpUptimeIncidentSelect(states = IncidentStates.ALL, eventId = eventId)
+        IncidentType.TCP -> tcpUptimeIncidentSelect(states = IncidentStates.ALL, eventId = eventId)
+        IncidentType.DNS -> dnsUptimeIncidentSelect(states = IncidentStates.ALL, eventId = eventId)
+        IncidentType.DOCKER -> dockerUptimeIncidentSelect(states = IncidentStates.ALL, eventId = eventId)
+    }
+
     /** The incidents of every type, each of them selected on its own. */
     private fun incidentSelects(
         monitorId: Long?,
@@ -109,13 +156,15 @@ class IncidentRepository(private val dslContext: DSLContext) {
     private fun DSLContext.httpUptimeIncidentSelect(
         monitorId: Long? = null,
         period: Duration? = null,
-        states: IncidentStates
+        states: IncidentStates,
+        eventId: Long? = null,
     ) = this
         .select(
             HTTP_MONITOR.ID.`as`(IncidentDto::monitorId.name),
             HTTP_MONITOR.NAME.`as`(IncidentDto::monitorName.name),
             HTTP_MONITOR.ENABLED.`as`(IncidentDto::isMonitorEnabled.name),
             DSL.inline(IncidentType.HTTP.name).`as`(IncidentDto::incidentType.name),
+            HTTP_UPTIME_EVENT.ID.`as`(IncidentDto::eventId.name),
             DSL.`when`(HTTP_UPTIME_EVENT.ENDED_AT.isNull, IncidentStatus.ONGOING.name)
                 .otherwise(IncidentStatus.RESOLVED.name).`as`(IncidentDto::status.name),
             HTTP_UPTIME_EVENT.ERROR.`as`(IncidentDto::details.name),
@@ -127,11 +176,10 @@ class IncidentRepository(private val dslContext: DSLContext) {
         .join(HTTP_MONITOR).on(HTTP_UPTIME_EVENT.MONITOR_ID.eq(HTTP_MONITOR.ID))
         .where(HTTP_UPTIME_EVENT.STATUS.eq(UptimeStatus.DOWN))
         .apply {
-            // Filter for monitors
-            if (monitorId != null) {
-                and(HTTP_MONITOR.ID.eq(monitorId))
-            } else {
-                and(HTTP_MONITOR.ENABLED.isTrue)
+            when {
+                eventId != null -> and(HTTP_UPTIME_EVENT.ID.eq(eventId))
+                monitorId != null -> and(HTTP_MONITOR.ID.eq(monitorId))
+                else -> and(HTTP_MONITOR.ENABLED.isTrue)
             }
             and(incidentStatesCondition(HTTP_UPTIME_EVENT.ENDED_AT, period, states))
         }
@@ -140,13 +188,15 @@ class IncidentRepository(private val dslContext: DSLContext) {
     private fun DSLContext.pushUptimeIncidentSelect(
         monitorId: Long? = null,
         period: Duration? = null,
-        states: IncidentStates
+        states: IncidentStates,
+        eventId: Long? = null,
     ) = this
         .select(
             PUSH_MONITOR.ID.`as`(IncidentDto::monitorId.name),
             PUSH_MONITOR.NAME.`as`(IncidentDto::monitorName.name),
             PUSH_MONITOR.ENABLED.`as`(IncidentDto::isMonitorEnabled.name),
             DSL.inline(IncidentType.PUSH.name).`as`(IncidentDto::incidentType.name),
+            PUSH_UPTIME_EVENT.ID.`as`(IncidentDto::eventId.name),
             DSL.`when`(PUSH_UPTIME_EVENT.ENDED_AT.isNull, IncidentStatus.ONGOING.name)
                 .otherwise(IncidentStatus.RESOLVED.name).`as`(IncidentDto::status.name),
             PUSH_UPTIME_EVENT.ERROR.`as`(IncidentDto::details.name),
@@ -158,11 +208,10 @@ class IncidentRepository(private val dslContext: DSLContext) {
         .join(PUSH_MONITOR).on(PUSH_UPTIME_EVENT.MONITOR_ID.eq(PUSH_MONITOR.ID))
         .where(PUSH_UPTIME_EVENT.STATUS.eq(UptimeStatus.DOWN))
         .apply {
-            // Filter for monitors
-            if (monitorId != null) {
-                and(PUSH_MONITOR.ID.eq(monitorId))
-            } else {
-                and(PUSH_MONITOR.ENABLED.isTrue)
+            when {
+                eventId != null -> and(PUSH_UPTIME_EVENT.ID.eq(eventId))
+                monitorId != null -> and(PUSH_MONITOR.ID.eq(monitorId))
+                else -> and(PUSH_MONITOR.ENABLED.isTrue)
             }
             and(incidentStatesCondition(PUSH_UPTIME_EVENT.ENDED_AT, period, states))
         }
@@ -171,13 +220,15 @@ class IncidentRepository(private val dslContext: DSLContext) {
     private fun DSLContext.icmpUptimeIncidentSelect(
         monitorId: Long? = null,
         period: Duration? = null,
-        states: IncidentStates
+        states: IncidentStates,
+        eventId: Long? = null,
     ) = this
         .select(
             ICMP_MONITOR.ID.`as`(IncidentDto::monitorId.name),
             ICMP_MONITOR.NAME.`as`(IncidentDto::monitorName.name),
             ICMP_MONITOR.ENABLED.`as`(IncidentDto::isMonitorEnabled.name),
             DSL.inline(IncidentType.ICMP.name).`as`(IncidentDto::incidentType.name),
+            ICMP_UPTIME_EVENT.ID.`as`(IncidentDto::eventId.name),
             DSL.`when`(ICMP_UPTIME_EVENT.ENDED_AT.isNull, IncidentStatus.ONGOING.name)
                 .otherwise(IncidentStatus.RESOLVED.name).`as`(IncidentDto::status.name),
             ICMP_UPTIME_EVENT.ERROR.`as`(IncidentDto::details.name),
@@ -189,10 +240,10 @@ class IncidentRepository(private val dslContext: DSLContext) {
         .join(ICMP_MONITOR).on(ICMP_UPTIME_EVENT.MONITOR_ID.eq(ICMP_MONITOR.ID))
         .where(ICMP_UPTIME_EVENT.STATUS.eq(UptimeStatus.DOWN))
         .apply {
-            if (monitorId != null) {
-                and(ICMP_MONITOR.ID.eq(monitorId))
-            } else {
-                and(ICMP_MONITOR.ENABLED.isTrue)
+            when {
+                eventId != null -> and(ICMP_UPTIME_EVENT.ID.eq(eventId))
+                monitorId != null -> and(ICMP_MONITOR.ID.eq(monitorId))
+                else -> and(ICMP_MONITOR.ENABLED.isTrue)
             }
             and(incidentStatesCondition(ICMP_UPTIME_EVENT.ENDED_AT, period, states))
         }
@@ -201,13 +252,15 @@ class IncidentRepository(private val dslContext: DSLContext) {
     private fun DSLContext.tcpUptimeIncidentSelect(
         monitorId: Long? = null,
         period: Duration? = null,
-        states: IncidentStates
+        states: IncidentStates,
+        eventId: Long? = null,
     ) = this
         .select(
             TCP_MONITOR.ID.`as`(IncidentDto::monitorId.name),
             TCP_MONITOR.NAME.`as`(IncidentDto::monitorName.name),
             TCP_MONITOR.ENABLED.`as`(IncidentDto::isMonitorEnabled.name),
             DSL.inline(IncidentType.TCP.name).`as`(IncidentDto::incidentType.name),
+            TCP_UPTIME_EVENT.ID.`as`(IncidentDto::eventId.name),
             DSL.`when`(TCP_UPTIME_EVENT.ENDED_AT.isNull, IncidentStatus.ONGOING.name)
                 .otherwise(IncidentStatus.RESOLVED.name).`as`(IncidentDto::status.name),
             TCP_UPTIME_EVENT.ERROR.`as`(IncidentDto::details.name),
@@ -219,10 +272,10 @@ class IncidentRepository(private val dslContext: DSLContext) {
         .join(TCP_MONITOR).on(TCP_UPTIME_EVENT.MONITOR_ID.eq(TCP_MONITOR.ID))
         .where(TCP_UPTIME_EVENT.STATUS.eq(UptimeStatus.DOWN))
         .apply {
-            if (monitorId != null) {
-                and(TCP_MONITOR.ID.eq(monitorId))
-            } else {
-                and(TCP_MONITOR.ENABLED.isTrue)
+            when {
+                eventId != null -> and(TCP_UPTIME_EVENT.ID.eq(eventId))
+                monitorId != null -> and(TCP_MONITOR.ID.eq(monitorId))
+                else -> and(TCP_MONITOR.ENABLED.isTrue)
             }
             and(incidentStatesCondition(TCP_UPTIME_EVENT.ENDED_AT, period, states))
         }
@@ -231,13 +284,15 @@ class IncidentRepository(private val dslContext: DSLContext) {
     private fun DSLContext.dockerUptimeIncidentSelect(
         monitorId: Long? = null,
         period: Duration? = null,
-        states: IncidentStates
+        states: IncidentStates,
+        eventId: Long? = null,
     ) = this
         .select(
             DOCKER_MONITOR.ID.`as`(IncidentDto::monitorId.name),
             DOCKER_MONITOR.NAME.`as`(IncidentDto::monitorName.name),
             DOCKER_MONITOR.ENABLED.`as`(IncidentDto::isMonitorEnabled.name),
             DSL.inline(IncidentType.DOCKER.name).`as`(IncidentDto::incidentType.name),
+            DOCKER_UPTIME_EVENT.ID.`as`(IncidentDto::eventId.name),
             DSL.`when`(DOCKER_UPTIME_EVENT.ENDED_AT.isNull, IncidentStatus.ONGOING.name)
                 .otherwise(IncidentStatus.RESOLVED.name).`as`(IncidentDto::status.name),
             DSL.`when`(DOCKER_UPTIME_EVENT.IMAGE.isNull, DOCKER_UPTIME_EVENT.ERROR)
@@ -257,10 +312,10 @@ class IncidentRepository(private val dslContext: DSLContext) {
         .join(DOCKER_MONITOR).on(DOCKER_UPTIME_EVENT.MONITOR_ID.eq(DOCKER_MONITOR.ID))
         .where(DOCKER_UPTIME_EVENT.STATUS.eq(UptimeStatus.DOWN))
         .apply {
-            if (monitorId != null) {
-                and(DOCKER_MONITOR.ID.eq(monitorId))
-            } else {
-                and(DOCKER_MONITOR.ENABLED.isTrue)
+            when {
+                eventId != null -> and(DOCKER_UPTIME_EVENT.ID.eq(eventId))
+                monitorId != null -> and(DOCKER_MONITOR.ID.eq(monitorId))
+                else -> and(DOCKER_MONITOR.ENABLED.isTrue)
             }
             and(incidentStatesCondition(DOCKER_UPTIME_EVENT.ENDED_AT, period, states))
         }
@@ -269,13 +324,15 @@ class IncidentRepository(private val dslContext: DSLContext) {
     private fun DSLContext.dnsUptimeIncidentSelect(
         monitorId: Long? = null,
         period: Duration? = null,
-        states: IncidentStates
+        states: IncidentStates,
+        eventId: Long? = null,
     ) = this
         .select(
             DNS_MONITOR.ID.`as`(IncidentDto::monitorId.name),
             DNS_MONITOR.NAME.`as`(IncidentDto::monitorName.name),
             DNS_MONITOR.ENABLED.`as`(IncidentDto::isMonitorEnabled.name),
             DSL.inline(IncidentType.DNS.name).`as`(IncidentDto::incidentType.name),
+            DNS_UPTIME_EVENT.ID.`as`(IncidentDto::eventId.name),
             DSL.`when`(DNS_UPTIME_EVENT.ENDED_AT.isNull, IncidentStatus.ONGOING.name)
                 .otherwise(IncidentStatus.RESOLVED.name).`as`(IncidentDto::status.name),
             DNS_UPTIME_EVENT.ERROR.`as`(IncidentDto::details.name),
@@ -287,10 +344,10 @@ class IncidentRepository(private val dslContext: DSLContext) {
         .join(DNS_MONITOR).on(DNS_UPTIME_EVENT.MONITOR_ID.eq(DNS_MONITOR.ID))
         .where(DNS_UPTIME_EVENT.STATUS.eq(UptimeStatus.DOWN))
         .apply {
-            if (monitorId != null) {
-                and(DNS_MONITOR.ID.eq(monitorId))
-            } else {
-                and(DNS_MONITOR.ENABLED.isTrue)
+            when {
+                eventId != null -> and(DNS_UPTIME_EVENT.ID.eq(eventId))
+                monitorId != null -> and(DNS_MONITOR.ID.eq(monitorId))
+                else -> and(DNS_MONITOR.ENABLED.isTrue)
             }
             and(incidentStatesCondition(DNS_UPTIME_EVENT.ENDED_AT, period, states))
         }
@@ -300,6 +357,7 @@ class IncidentRepository(private val dslContext: DSLContext) {
         monitorId: Long? = null,
         period: Duration? = null,
         states: IncidentStates,
+        eventId: Long? = null,
     ) = this
         .select(
             HTTP_MONITOR.ID.`as`(IncidentDto::monitorId.name),
@@ -307,6 +365,7 @@ class IncidentRepository(private val dslContext: DSLContext) {
             DSL.field(HTTP_MONITOR.ENABLED.and(HTTP_MONITOR.SSL_CHECK_ENABLED))
                 .`as`(IncidentDto::isMonitorEnabled.name),
             DSL.inline(IncidentType.SSL.name).`as`(IncidentDto::incidentType.name),
+            SSL_EVENT.ID.`as`(IncidentDto::eventId.name),
             DSL.`when`(SSL_EVENT.ENDED_AT.isNull, IncidentStatus.ONGOING.name)
                 .otherwise(IncidentStatus.RESOLVED.name).`as`(IncidentDto::status.name),
             SSL_EVENT.ERROR.`as`(IncidentDto::details.name),
@@ -318,11 +377,10 @@ class IncidentRepository(private val dslContext: DSLContext) {
         .join(HTTP_MONITOR).on(SSL_EVENT.MONITOR_ID.eq(HTTP_MONITOR.ID))
         .where(SSL_EVENT.STATUS.eq(SslStatus.INVALID))
         .apply {
-            // Filter for monitors
-            if (monitorId != null) {
-                and(HTTP_MONITOR.ID.eq(monitorId))
-            } else {
-                and(HTTP_MONITOR.ENABLED.isTrue).and(HTTP_MONITOR.SSL_CHECK_ENABLED.isTrue)
+            when {
+                eventId != null -> and(SSL_EVENT.ID.eq(eventId))
+                monitorId != null -> and(HTTP_MONITOR.ID.eq(monitorId))
+                else -> and(HTTP_MONITOR.ENABLED.isTrue).and(HTTP_MONITOR.SSL_CHECK_ENABLED.isTrue)
             }
             and(incidentStatesCondition(SSL_EVENT.ENDED_AT, period, states))
         }
@@ -418,6 +476,60 @@ class IncidentRepository(private val dslContext: DSLContext) {
             .fetchInto(IncidentDto::class.java)
     }
 
+    private class IncidentEventTable(
+        val id: TableField<*, Long>,
+        val monitorId: TableField<*, Long>,
+        val startedAt: TableField<*, OffsetDateTime>,
+        val integrations: TableField<*, Array<IntegrationID>>,
+    ) {
+        val events: Table<*> get() = checkNotNull(id.table)
+    }
+
+    private val incidentEventTables = mapOf(
+        IncidentType.HTTP to IncidentEventTable(
+            HTTP_UPTIME_EVENT.ID,
+            HTTP_UPTIME_EVENT.MONITOR_ID,
+            HTTP_UPTIME_EVENT.STARTED_AT,
+            HTTP_UPTIME_EVENT.INTEGRATIONS,
+        ),
+        IncidentType.SSL to IncidentEventTable(
+            SSL_EVENT.ID,
+            SSL_EVENT.MONITOR_ID,
+            SSL_EVENT.STARTED_AT,
+            SSL_EVENT.INTEGRATIONS,
+        ),
+        IncidentType.PUSH to IncidentEventTable(
+            PUSH_UPTIME_EVENT.ID,
+            PUSH_UPTIME_EVENT.MONITOR_ID,
+            PUSH_UPTIME_EVENT.STARTED_AT,
+            PUSH_UPTIME_EVENT.INTEGRATIONS,
+        ),
+        IncidentType.ICMP to IncidentEventTable(
+            ICMP_UPTIME_EVENT.ID,
+            ICMP_UPTIME_EVENT.MONITOR_ID,
+            ICMP_UPTIME_EVENT.STARTED_AT,
+            ICMP_UPTIME_EVENT.INTEGRATIONS,
+        ),
+        IncidentType.TCP to IncidentEventTable(
+            TCP_UPTIME_EVENT.ID,
+            TCP_UPTIME_EVENT.MONITOR_ID,
+            TCP_UPTIME_EVENT.STARTED_AT,
+            TCP_UPTIME_EVENT.INTEGRATIONS,
+        ),
+        IncidentType.DNS to IncidentEventTable(
+            DNS_UPTIME_EVENT.ID,
+            DNS_UPTIME_EVENT.MONITOR_ID,
+            DNS_UPTIME_EVENT.STARTED_AT,
+            DNS_UPTIME_EVENT.INTEGRATIONS,
+        ),
+        IncidentType.DOCKER to IncidentEventTable(
+            DOCKER_UPTIME_EVENT.ID,
+            DOCKER_UPTIME_EVENT.MONITOR_ID,
+            DOCKER_UPTIME_EVENT.STARTED_AT,
+            DOCKER_UPTIME_EVENT.INTEGRATIONS,
+        ),
+    )
+
     /** Which incidents are fetched: the ongoing ones, the resolved ones or all of them. */
     private enum class IncidentStates { ONGOING, RESOLVED, ALL }
 
@@ -443,3 +555,8 @@ class IncidentRepository(private val dslContext: DSLContext) {
         }
     }
 }
+
+data class NotifiedIntegrations(
+    val started: List<IntegrationID>,
+    val resolved: List<IntegrationID>?,
+)

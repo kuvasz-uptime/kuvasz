@@ -4,6 +4,15 @@ import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createHttpUptimeEventRecord
+import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
+import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.id
+import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
+import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createDockerMonitor
@@ -70,6 +79,7 @@ class DatabaseEventHandlerTest(
     tcpMonitorRepository: TcpMonitorRepository,
     dockerMonitorRepository: DockerMonitorRepository,
     sslEventRepository: SSLEventRepository,
+    integrationRepository: IntegrationRepository,
     dslContext: DSLContext,
 ) : DatabaseBehaviorSpec() {
     init {
@@ -88,6 +98,7 @@ class DatabaseEventHandlerTest(
             dnsUptimeEventRepositorySpy,
             dockerUptimeEventRepositorySpy,
             sslEventRepositorySpy,
+            integrationRepository,
             dslContext,
         )
 
@@ -1348,10 +1359,176 @@ class DatabaseEventHandlerTest(
                 }
             }
         }
+
+        given("the DatabaseEventHandler - notified integrations") {
+            val explicit = slackConfig("explicit")
+            val global = slackConfig("global", global = true)
+            val unassigned = slackConfig("unassigned")
+            val disabled = slackConfig("disabled", enabled = false)
+            val upOnly = slackConfig(
+                "up-only",
+                excludedEvents = listOf(IntegrationEventType.HTTP_DOWN, IntegrationEventType.SSL_INVALID),
+            )
+            val handler = DatabaseEventHandler(
+                httpUptimeEventRepository,
+                pushUptimeEventRepository,
+                icmpUptimeEventRepository,
+                tcpUptimeEventRepository,
+                dnsUptimeEventRepository,
+                dockerUptimeEventRepository,
+                sslEventRepository,
+                IntegrationRepository(
+                    integrationConfigs = listOf(explicit, global, unassigned, disabled, upOnly),
+                    smtpConfig = null,
+                    templateEngine = null,
+                ),
+                dslContext,
+            )
+            fun monitor() = createHttpMonitor(
+                httpMonitorRepository,
+                integrations = listOf(explicit.id, disabled.id, upOnly.id),
+            )
+
+            `when`("an incident starts, then it gets resolved") {
+                val monitor = monitor()
+                val downEvent = HttpMonitorDownEvent(
+                    monitor = monitor,
+                    status = HttpStatus.INTERNAL_SERVER_ERROR,
+                    previousEvent = null,
+                    error = Exception(),
+                )
+                handler.handleUptimeMonitorEvent(downEvent)
+                val downRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                val upEvent = HttpMonitorUpEvent(
+                    monitor = monitor,
+                    status = HttpStatus.OK,
+                    latency = 100,
+                    previousEvent = downRecord,
+                )
+                handler.handleUptimeMonitorEvent(upEvent)
+
+                then("both events should record the enabled, effective integrations that weren't excluded from them") {
+                    val (downRow, upRow) = httpUptimeEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.id }
+
+                    downRow.integrations.toList() shouldContainExactlyInAnyOrder listOf(explicit.id, global.id)
+                    upRow.integrations.toList() shouldContainExactlyInAnyOrder
+                        listOf(explicit.id, global.id, upOnly.id)
+                }
+            }
+
+            `when`("the very first event of a monitor is an UP event") {
+                val monitor = monitor()
+                handler.handleUptimeMonitorEvent(
+                    HttpMonitorUpEvent(monitor = monitor, status = HttpStatus.OK, latency = 100, previousEvent = null)
+                )
+
+                then("it should record no integrations, as nothing is notified about it") {
+                    httpUptimeEventRepository.fetchByMonitorId(monitor.id).single().integrations.shouldBeEmpty()
+                }
+            }
+
+            `when`("an ongoing incident is updated by a consecutive DOWN event") {
+                val monitor = monitor()
+                val downRecord = createHttpUptimeEventRecord(
+                    dslContext,
+                    monitorId = monitor.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = getCurrentTimestamp().minusMinutes(5),
+                    endedAt = null,
+                )
+                handler.handleUptimeMonitorEvent(
+                    HttpMonitorDownEvent(
+                        monitor = monitor,
+                        status = HttpStatus.INTERNAL_SERVER_ERROR,
+                        previousEvent = downRecord,
+                        error = Exception(),
+                    )
+                )
+
+                then("it should leave the recorded integrations untouched") {
+                    httpUptimeEventRepository.fetchByMonitorId(monitor.id).single().integrations.shouldBeEmpty()
+                }
+            }
+
+            `when`("an SSL incident starts, then it gets resolved by a VALID event") {
+                val monitor = monitor()
+                val invalidEvent = SSLInvalidEvent(
+                    monitor = monitor,
+                    previousEvent = null,
+                    error = SSLValidationError("ssl error"),
+                )
+                handler.handleSSLMonitorEvent(invalidEvent)
+                val invalidRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
+                handler.handleSSLMonitorEvent(
+                    SSLValidEvent(
+                        monitor = monitor,
+                        certInfo = generateCertificateInfo(),
+                        previousEvent = invalidRecord,
+                    )
+                )
+
+                then("both SSL events should record their own notified integrations") {
+                    val (invalidRow, validRow) = sslEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.id }
+
+                    invalidRow.integrations.toList() shouldContainExactlyInAnyOrder listOf(explicit.id, global.id)
+                    validRow.integrations.toList() shouldContainExactlyInAnyOrder
+                        listOf(explicit.id, global.id, upOnly.id)
+                }
+            }
+
+            `when`("an SSL incident gets resolved by a WILL_EXPIRE event") {
+                val monitor = monitor()
+                val invalidRecord = createSSLEventRecord(
+                    dslContext,
+                    monitorId = monitor.id,
+                    status = SslStatus.INVALID,
+                    startedAt = getCurrentTimestamp().minusMinutes(5),
+                    endedAt = null,
+                )
+                handler.handleSSLMonitorEvent(
+                    SSLWillExpireEvent(
+                        monitor = monitor,
+                        certInfo = generateCertificateInfo(),
+                        previousEvent = invalidRecord,
+                    )
+                )
+
+                then("the WILL_EXPIRE event should record the integrations it was sent to") {
+                    val (_, willExpireRow) = sslEventRepository.fetchByMonitorId(monitor.id).sortedBy { it.id }
+
+                    willExpireRow.integrations.toList() shouldContainExactlyInAnyOrder
+                        listOf(explicit.id, global.id, upOnly.id)
+                }
+            }
+
+            `when`("the very first SSL event of a monitor is a VALID event") {
+                val monitor = monitor()
+                handler.handleSSLMonitorEvent(
+                    SSLValidEvent(monitor = monitor, certInfo = generateCertificateInfo(), previousEvent = null)
+                )
+
+                then("it should record no integrations, as nothing is notified about it") {
+                    sslEventRepository.fetchByMonitorId(monitor.id).single().integrations.shouldBeEmpty()
+                }
+            }
+        }
     }
 
     override suspend fun afterTest(testCase: TestCase, result: TestResult) {
         clearAllMocks()
         super.afterTest(testCase, result)
     }
+}
+
+private fun slackConfig(
+    name: String,
+    global: Boolean = false,
+    enabled: Boolean = true,
+    excludedEvents: List<IntegrationEventType>? = null,
+) = object : SlackNotificationConfig {
+    override val webhookUrl = "https://hooks.slack.com/services/irrelevant"
+    override val name = name
+    override val enabled = enabled
+    override val global = global
+    override val excludedEvents = excludedEvents
 }
