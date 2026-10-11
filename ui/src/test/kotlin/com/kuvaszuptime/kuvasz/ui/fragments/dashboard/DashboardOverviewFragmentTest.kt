@@ -124,7 +124,7 @@ class DashboardOverviewFragmentTest : BehaviorSpec({
                 uptimeStats(
                     actual(total = 3, up = 2, down = 1, inMaintenance = 1),
                     inMaintenance = MonitorStateCounts(up = 0, down = 1, pending = 0),
-                ) to Verdict("Down during maintenance: 1", STATUS_GRAY),
+                ) to Verdict("Down during maintenance: 1", STATUS_SECONDARY),
             "every monitor that isn't paused is waiting for its first check" to
                 uptimeStats(actual(total = 2, paused = 1, inProgress = 1)) to
                 Verdict("Waiting for the first checks", STATUS_YELLOW),
@@ -132,12 +132,12 @@ class DashboardOverviewFragmentTest : BehaviorSpec({
                 uptimeStats(
                     actual(total = 3, up = 2, inProgress = 1, inMaintenance = 3),
                     inMaintenance = MonitorStateCounts(up = 2, down = 0, pending = 1),
-                ) to Verdict("In maintenance: 3", STATUS_GRAY),
+                ) to Verdict("In maintenance: 3", STATUS_SECONDARY),
             "the only monitor that isn't paused is pending under maintenance" to
                 uptimeStats(
                     actual(total = 2, paused = 1, inProgress = 1, inMaintenance = 1),
                     inMaintenance = MonitorStateCounts(up = 0, down = 0, pending = 1),
-                ) to Verdict("In maintenance: 1", STATUS_GRAY),
+                ) to Verdict("In maintenance: 1", STATUS_SECONDARY),
             "some monitors are up outside maintenance, while the rest of them are pending under maintenance" to
                 uptimeStats(
                     actual(total = 3, up = 1, inProgress = 2, inMaintenance = 2),
@@ -279,7 +279,7 @@ class DashboardOverviewFragmentTest : BehaviorSpec({
         listOf(
             "it's ongoing" to (IncidentStatus.ONGOING to false) to ongoingState,
             "it's ongoing, under maintenance" to (IncidentStatus.ONGOING to true) to
-                RowState(setOf(STATUS_GRAY), "Maintenance"),
+                RowState(setOf(STATUS_SECONDARY), "Maintenance"),
             "it's resolved" to (IncidentStatus.RESOLVED to false) to resolvedState,
             // A resolved incident isn't alarming anymore, whether its monitor is under maintenance or not
             "it's resolved, under maintenance" to (IncidentStatus.RESOLVED to true) to resolvedState,
@@ -338,7 +338,7 @@ class DashboardOverviewFragmentTest : BehaviorSpec({
                 RowState(setOf(STATUS_RED, STATUS_DOT_ANIMATED), "Down"),
             // The maintenance wins, as it's not alarming then
             "it's down under maintenance" to unreliableMonitor(UptimeStatus.DOWN, inMaintenance = true) to
-                RowState(setOf(STATUS_GRAY), "Maintenance"),
+                RowState(setOf(STATUS_SECONDARY), "Maintenance"),
             "it's up" to unreliableMonitor(UptimeStatus.UP, inMaintenance = false) to
                 RowState(setOf(STATUS_GREEN), "Up"),
             "it hasn't been checked yet" to unreliableMonitor(uptimeStatus = null, inMaintenance = false) to

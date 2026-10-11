@@ -198,7 +198,7 @@ class StatusPageIncidentsTest : BehaviorSpec({
         val data = pageData(generatedAt, zulu, calm, alpha)
 
         `when`("the active incidents are collected") {
-            val active = data.incidentsByMonitor(IncidentsAccordion.ACTIVE)
+            val active = data.ongoingIncidentsByMonitor()
 
             then("only the ongoing ones are there, by their monitors") {
                 active shouldBe listOf(zulu to listOf(ongoing))
@@ -206,7 +206,7 @@ class StatusPageIncidentsTest : BehaviorSpec({
         }
 
         `when`("the resolved incidents are collected") {
-            val resolved = data.incidentsByMonitor(IncidentsAccordion.RESOLVED)
+            val resolved = data.recentlyResolvedIncidentsByMonitor()
 
             then("only the ones resolved within the last day are there, the monitors ordered by their names") {
                 resolved shouldBe listOf(

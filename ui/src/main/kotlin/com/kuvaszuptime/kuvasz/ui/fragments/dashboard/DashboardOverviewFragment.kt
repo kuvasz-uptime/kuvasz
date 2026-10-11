@@ -136,10 +136,10 @@ internal fun DashboardUptimeStats.verdict(): Verdict? = when {
 
     sslStats.invalid > 0 -> Verdict(Messages.dashboardStatusInvalidCertificates(sslStats.invalid), STATUS_RED)
     sslStats.willExpire > 0 -> Verdict(Messages.dashboardStatusExpiringCertificates(), STATUS_YELLOW)
-    inMaintenance.down > 0 -> Verdict(Messages.dashboardStatusDownInMaintenance(inMaintenance.down), STATUS_GRAY)
+    inMaintenance.down > 0 -> Verdict(Messages.dashboardStatusDownInMaintenance(inMaintenance.down), STATUS_SECONDARY)
     outsideMaintenance.up > 0 -> Verdict(Messages.dashboardStatusOperational(), STATUS_GREEN)
     outsideMaintenance.pending > 0 -> Verdict(Messages.dashboardStatusPending(), STATUS_YELLOW)
-    actual.inMaintenance > 0 -> Verdict(Messages.dashboardMaintenanceCount(actual.inMaintenance), STATUS_GRAY)
+    actual.inMaintenance > 0 -> Verdict(Messages.dashboardMaintenanceCount(actual.inMaintenance), STATUS_SECONDARY)
     else -> Verdict(Messages.dashboardStatusPaused(), STATUS_CYAN)
 }
 
@@ -512,7 +512,7 @@ private fun FlowContent.incidentsCard(overview: DashboardOverview) {
 internal data class RowState(val dotClasses: Set<CSSClass>, val label: String)
 
 internal fun IncidentDto.dashboardRowState(inMaintenance: Boolean): RowState = when {
-    status == IncidentStatus.ONGOING && inMaintenance -> RowState(setOf(STATUS_GRAY), Messages.maintenance())
+    status == IncidentStatus.ONGOING && inMaintenance -> RowState(setOf(STATUS_SECONDARY), Messages.maintenance())
     status == IncidentStatus.ONGOING ->
         RowState(setOf(STATUS_RED, STATUS_DOT_ANIMATED), Messages.dashboardIncidentOngoing())
     else -> RowState(setOf(STATUS_GREEN), Messages.dashboardIncidentResolved())
@@ -710,7 +710,7 @@ private fun FlowContent.leastReliableMonitorsCard(overview: DashboardOverview) {
 
 internal val UnreliableMonitor.dashboardRowState: RowState
     get() = when {
-        inMaintenance -> RowState(setOf(STATUS_GRAY), Messages.maintenance())
+        inMaintenance -> RowState(setOf(STATUS_SECONDARY), Messages.maintenance())
         uptimeStatus == UptimeStatus.DOWN -> RowState(setOf(STATUS_RED, STATUS_DOT_ANIMATED), Messages.down())
         uptimeStatus == UptimeStatus.UP -> RowState(setOf(STATUS_GREEN), Messages.up())
         else -> RowState(setOf(STATUS_YELLOW), Messages.inProgress())

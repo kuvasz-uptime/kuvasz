@@ -28,10 +28,10 @@ const {
     upsertStatusPageForm,
     upsertMaintenanceWindowForm,
     incidentNoteForm,
-    resolveIncidentsAccordionState,
-    applyIncidentsAccordionsState,
-    rememberIncidentsAccordionChoice,
-    rememberShownIncidentsAccordions,
+    resolveStatusPageAccordionState,
+    applyStatusPageAccordionsState,
+    rememberStatusPageAccordionChoice,
+    rememberShownStatusPageAccordions,
     showStatusPageIncidents,
     refreshStatusPageIncidentsModal,
     INVESTIGATION_STATUSES,
@@ -3135,33 +3135,33 @@ test('incidentNoteForm.deleteNote deletes the edited note, then reloads the page
 
 // --------- Incidents on the status pages ---------
 
-test('resolveIncidentsAccordionState keeps the default until the visitor chooses', () => {
+test('resolveStatusPageAccordionState keeps the default until the visitor chooses', () => {
     assert.deepEqual(
-        resolveIncidentsAccordionState({isOpenByDefault: true, wasShown: true, isOpenByUser: null}),
+        resolveStatusPageAccordionState({isOpenByDefault: true, wasShown: true, isOpenByUser: null}),
         {isOpen: true, isOpenByUser: null},
     );
     assert.deepEqual(
-        resolveIncidentsAccordionState({isOpenByDefault: false, wasShown: true, isOpenByUser: null}),
+        resolveStatusPageAccordionState({isOpenByDefault: false, wasShown: true, isOpenByUser: null}),
         {isOpen: false, isOpenByUser: null},
     );
 });
 
-test('resolveIncidentsAccordionState keeps the choice of the visitor across the refreshes', () => {
+test('resolveStatusPageAccordionState keeps the choice of the visitor across the refreshes', () => {
     // The active incidents, closed by the visitor
     assert.deepEqual(
-        resolveIncidentsAccordionState({isOpenByDefault: true, wasShown: true, isOpenByUser: false}),
+        resolveStatusPageAccordionState({isOpenByDefault: true, wasShown: true, isOpenByUser: false}),
         {isOpen: false, isOpenByUser: false},
     );
     // The resolved incidents, opened by the visitor
     assert.deepEqual(
-        resolveIncidentsAccordionState({isOpenByDefault: false, wasShown: true, isOpenByUser: true}),
+        resolveStatusPageAccordionState({isOpenByDefault: false, wasShown: true, isOpenByUser: true}),
         {isOpen: true, isOpenByUser: true},
     );
 });
 
-test('resolveIncidentsAccordionState starts over with an accordion that appears again, e.g. on a new outage', () => {
+test('resolveStatusPageAccordionState starts over with an accordion that appears again, e.g. on a new outage', () => {
     assert.deepEqual(
-        resolveIncidentsAccordionState({isOpenByDefault: true, wasShown: false, isOpenByUser: false}),
+        resolveStatusPageAccordionState({isOpenByDefault: true, wasShown: false, isOpenByUser: false}),
         {isOpen: true, isOpenByUser: null},
     );
 });
@@ -3184,7 +3184,7 @@ const fakeAccordionsContent = ({accordions, dataset}) => {
             attributes,
             collapse: {
                 id: `status-page-${key}-incidents-collapse`,
-                dataset: {incidentsAccordion: key},
+                dataset: {statusPageAccordion: key},
                 classList: isOpenByDefault ? fakeClassList('collapse', 'show') : fakeClassList('collapse'),
             },
             toggle: {
@@ -3202,16 +3202,16 @@ const fakeAccordionsContent = ({accordions, dataset}) => {
     return {content, byKey};
 };
 
-test('applyIncidentsAccordionsState applies the choices of the visitor to the refreshed accordions', () => {
+test('applyStatusPageAccordionsState applies the choices of the visitor to the refreshed accordions', () => {
     const {content, byKey} = fakeAccordionsContent({
         accordions: {active: true, resolved: false},
         dataset: {
-            incidentsAccordionsShown: '["active","resolved"]',
-            incidentsAccordionChoices: '{"active":false,"resolved":true}',
+            statusPageAccordionsShown: '["active","resolved"]',
+            statusPageAccordionChoices: '{"active":false,"resolved":true}',
         },
     });
 
-    applyIncidentsAccordionsState(content);
+    applyStatusPageAccordionsState(content);
 
     assert.equal(byKey.active.collapse.classList.contains('show'), false);
     assert.equal(byKey.active.toggle.classList.contains('collapsed'), true);
@@ -3219,72 +3219,72 @@ test('applyIncidentsAccordionsState applies the choices of the visitor to the re
     assert.equal(byKey.resolved.collapse.classList.contains('show'), true);
     assert.equal(byKey.resolved.toggle.classList.contains('collapsed'), false);
     assert.equal(byKey.resolved.attributes['aria-expanded'], 'true');
-    assert.deepEqual(JSON.parse(content.dataset.incidentsAccordionChoices), {active: false, resolved: true});
+    assert.deepEqual(JSON.parse(content.dataset.statusPageAccordionChoices), {active: false, resolved: true});
 });
 
-test('applyIncidentsAccordionsState opens a new outage, but keeps the choice about the resolved incidents', () => {
+test('applyStatusPageAccordionsState opens a new outage, but keeps the choice about the resolved incidents', () => {
     const {content, byKey} = fakeAccordionsContent({
         accordions: {active: true, resolved: false},
         // The active incidents were not there before the refresh, but the visitor had closed them earlier
         dataset: {
-            incidentsAccordionsShown: '["resolved"]',
-            incidentsAccordionChoices: '{"active":false,"resolved":true}',
+            statusPageAccordionsShown: '["resolved"]',
+            statusPageAccordionChoices: '{"active":false,"resolved":true}',
         },
     });
 
-    applyIncidentsAccordionsState(content);
+    applyStatusPageAccordionsState(content);
 
     assert.equal(byKey.active.collapse.classList.contains('show'), true);
     assert.equal(byKey.resolved.collapse.classList.contains('show'), true);
-    assert.deepEqual(JSON.parse(content.dataset.incidentsAccordionChoices), {resolved: true});
+    assert.deepEqual(JSON.parse(content.dataset.statusPageAccordionChoices), {resolved: true});
 });
 
-test('applyIncidentsAccordionsState forgets the choices about the accordions that are gone', () => {
+test('applyStatusPageAccordionsState forgets the choices about the accordions that are gone', () => {
     const {content} = fakeAccordionsContent({
         accordions: {},
-        dataset: {incidentsAccordionsShown: '["active"]', incidentsAccordionChoices: '{"active":false}'},
+        dataset: {statusPageAccordionsShown: '["active"]', statusPageAccordionChoices: '{"active":false}'},
     });
 
-    applyIncidentsAccordionsState(content);
+    applyStatusPageAccordionsState(content);
 
-    assert.deepEqual(JSON.parse(content.dataset.incidentsAccordionChoices), {});
+    assert.deepEqual(JSON.parse(content.dataset.statusPageAccordionChoices), {});
 });
 
-test('applyIncidentsAccordionsState keeps the defaults without any remembered state, even a broken one', () => {
+test('applyStatusPageAccordionsState keeps the defaults without any remembered state, even a broken one', () => {
     const {content, byKey} = fakeAccordionsContent({
         accordions: {active: true, resolved: false},
-        dataset: {incidentsAccordionChoices: '{broken'},
+        dataset: {statusPageAccordionChoices: '{broken'},
     });
 
-    applyIncidentsAccordionsState(content);
+    applyStatusPageAccordionsState(content);
 
     assert.equal(byKey.active.collapse.classList.contains('show'), true);
     assert.equal(byKey.resolved.collapse.classList.contains('show'), false);
 });
 
-test('rememberShownIncidentsAccordions records the accordions that are on the page before the refresh', () => {
+test('rememberShownStatusPageAccordions records the accordions that are on the page before the refresh', () => {
     const {content} = fakeAccordionsContent({accordions: {active: true, resolved: false}, dataset: {}});
 
-    rememberShownIncidentsAccordions(content);
+    rememberShownStatusPageAccordions(content);
 
-    assert.deepEqual(JSON.parse(content.dataset.incidentsAccordionsShown), ['active', 'resolved']);
+    assert.deepEqual(JSON.parse(content.dataset.statusPageAccordionsShown), ['active', 'resolved']);
 });
 
-test('rememberIncidentsAccordionChoice records when the visitor opens or closes an accordion', () => {
+test('rememberStatusPageAccordionChoice records when the visitor opens or closes an accordion', () => {
     const content = {dataset: {}};
-    const collapse = (key) => ({dataset: {incidentsAccordion: key}, closest: () => content});
+    const collapse = (key) => ({dataset: {statusPageAccordion: key}, closest: () => content});
 
-    rememberIncidentsAccordionChoice({type: 'hidden.bs.collapse', target: collapse('active')});
-    rememberIncidentsAccordionChoice({type: 'shown.bs.collapse', target: collapse('resolved')});
-    assert.deepEqual(JSON.parse(content.dataset.incidentsAccordionChoices), {active: false, resolved: true});
+    rememberStatusPageAccordionChoice({type: 'hidden.bs.collapse', target: collapse('active')});
+    rememberStatusPageAccordionChoice({type: 'shown.bs.collapse', target: collapse('resolved')});
+    assert.deepEqual(JSON.parse(content.dataset.statusPageAccordionChoices), {active: false, resolved: true});
 
     // Any other collapsible element is ignored, just like an accordion outside the refreshed part of the page
-    rememberIncidentsAccordionChoice({type: 'shown.bs.collapse', target: {dataset: {}, closest: () => content}});
-    rememberIncidentsAccordionChoice({
+    rememberStatusPageAccordionChoice({type: 'shown.bs.collapse', target: {dataset: {}, closest: () => content}});
+    rememberStatusPageAccordionChoice({
         type: 'shown.bs.collapse',
-        target: {dataset: {incidentsAccordion: 'active'}, closest: () => null},
+        target: {dataset: {statusPageAccordion: 'active'}, closest: () => null},
     });
-    assert.deepEqual(JSON.parse(content.dataset.incidentsAccordionChoices), {active: false, resolved: true});
+    assert.deepEqual(JSON.parse(content.dataset.statusPageAccordionChoices), {active: false, resolved: true});
 });
 
 const withIncidentsModal = (t, {templates, isShown = false}) => {

@@ -356,7 +356,7 @@ class DashboardUiTest(
             dashboard.navigate()
 
             assertThat(dashboard.heading).hasText("Down during maintenance: 1")
-            assertThat(dashboard.statusIndicator).hasClass(Pattern.compile("status-gray"))
+            assertThat(dashboard.statusIndicator).hasClass(Pattern.compile("status-secondary"))
             // The monitors under maintenance are only counted by the maintenance, no matter whether they're up or down
             assertThat(dashboard.statusDetails.getByLabel("Maintenance: 2")).hasText("2")
             assertThat(dashboard.statusDetails.getByLabel("Up: 1")).hasText("1")
@@ -366,12 +366,12 @@ class DashboardUiTest(
             // The incident is listed with the same gray dot as everywhere else, and it isn't counted in red either
             val incidentDot = dashboard.statusDotOf(dashboard.incident("Maintained"))
             assertThat(incidentDot).hasAttribute("aria-label", "Maintenance")
-            assertThat(incidentDot).hasClass(Pattern.compile("status-gray"))
+            assertThat(incidentDot).hasClass(Pattern.compile("status-secondary"))
             assertThat(dashboard.incidentsCountCard).containsText("In maintenance: 1")
             assertThat(dashboard.incidentsCountCard).not().containsText("Ongoing")
             assertThat(dashboard.monitorTypeRow("http").getByLabel("Down: 1")).not().isAttached()
             assertThat(dashboard.statusDotOf(dashboard.leastReliableMonitors.first()))
-                .hasClass(Pattern.compile("status-gray"))
+                .hasClass(Pattern.compile("status-secondary"))
         }
 
         "the dashboard only mentions the maintenance when every monitor that isn't paused is under one" {
@@ -383,7 +383,7 @@ class DashboardUiTest(
             dashboard.navigate()
 
             assertThat(dashboard.heading).hasText("In maintenance: 1")
-            assertThat(dashboard.statusIndicator).hasClass(Pattern.compile("status-gray"))
+            assertThat(dashboard.statusIndicator).hasClass(Pattern.compile("status-secondary"))
             // The monitor is up, but it's only counted by the maintenance
             assertThat(dashboard.statusDetails.getByLabel("Up: 0")).hasText("0")
             assertThat(dashboard.statusDetails.getByLabel("Maintenance: 1")).hasText("1")

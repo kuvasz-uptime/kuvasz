@@ -40,33 +40,35 @@ class PublicStatusPage(private val page: Page) {
     fun monitorCardBody(name: String): Locator =
         page.getByTestId("status-monitor-card").filter(Locator.FilterOptions().setHasText(name))
 
-    fun maintenanceBanner(): Locator = page.getByTestId("status-page-maintenance-banner")
-
     // The "start → end" timeframe pill rendered for scheduled maintenance windows (absent for manual ones).
-    fun maintenanceTimeframe(): Locator = maintenanceBanner().getByTestId("maintenance-window-timeframe")
+    fun maintenanceTimeframe(): Locator = activeMaintenance.root.getByTestId("maintenance-window-timeframe")
 
     // The status dot in the header of a monitor's card, its label tells the status (and the maintenance)
     fun monitorStatusIndicator(name: String): Locator = monitorCardBody(name).getByTestId("monitor-status-indicator")
 
     // The grayed-out, non-pulsing status dot that is rendered while a monitor is under maintenance
     fun monitorMaintenanceIndicator(name: String): Locator =
-        monitorCardBody(name).locator(".status-indicator.status-gray:not(.status-indicator-animated)")
+        monitorCardBody(name).locator(".status-indicator.status-secondary:not(.status-indicator-animated)")
 
     fun title(title: String): Locator = page.getByText(title)
 
-    // The two accordions of the recent incidents below the overall status: the active and the resolved ones
-    val activeIncidents: IncidentsAccordion = IncidentsAccordion("active")
+    // The accordions below the overall status: the active incidents, the active maintenance and the resolved incidents
+    val activeIncidents: StatusPageAccordion = StatusPageAccordion("active-incidents")
 
-    val resolvedIncidents: IncidentsAccordion = IncidentsAccordion("resolved")
+    val activeMaintenance: StatusPageAccordion = StatusPageAccordion("active-maintenance")
 
-    inner class IncidentsAccordion(private val key: String) {
-        val root: Locator = page.getByTestId("status-page-$key-incidents")
+    val resolvedIncidents: StatusPageAccordion = StatusPageAccordion("resolved-incidents")
 
-        val toggle: Locator = page.getByTestId("status-page-$key-incidents-toggle")
+    inner class StatusPageAccordion(private val key: String) {
+        val root: Locator = page.getByTestId("status-page-$key")
 
-        val collapse: Locator = page.locator("#status-page-$key-incidents-collapse")
+        val toggle: Locator = page.getByTestId("status-page-$key-toggle")
 
-        // The cards of the monitors inside the accordion, in the order they are rendered
+        val count: Locator = page.getByTestId("status-page-$key-count")
+
+        val collapse: Locator = page.locator("#status-page-$key-collapse")
+
+        // The cards of the monitors inside an incidents accordion, in the order they are rendered
         val monitorCards: Locator = root.getByTestId("status-page-monitor-incidents")
 
         fun monitorCard(monitorName: String): Locator =
@@ -79,7 +81,7 @@ class PublicStatusPage(private val page: Page) {
          */
         fun waitForRememberedChoice(isOpen: Boolean) {
             PlaywrightAssertions.assertThat(content).hasAttribute(
-                "data-incidents-accordion-choices",
+                "data-status-page-accordion-choices",
                 Pattern.compile(".*\"$key\":$isOpen.*"),
             )
         }

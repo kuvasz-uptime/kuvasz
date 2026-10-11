@@ -299,7 +299,6 @@ internal enum class CSSClass(val className: String) {
     STATUS_CYAN("status-cyan"),
     STATUS_DOT("status-dot"),
     STATUS_DOT_ANIMATED("status-dot-animated"),
-    STATUS_GRAY("status-gray"),
     STATUS_GREEN("status-green"),
     STATUS_INDICATOR("status-indicator"),
     STATUS_INDICATOR_ANIMATED("status-indicator-animated"),

@@ -21,6 +21,8 @@ import java.time.format.DateTimeFormatter
 internal const val STATUS_PAGE_INCIDENTS_MODAL_ID = "status-page-incidents-modal"
 private const val RECENTLY_RESOLVED_HOURS = 24L
 
+internal typealias IncidentsByMonitor = List<Pair<StatusPageMonitorDetailsDto, List<StatusPageIncidentDto>>>
+
 // Every incident of the monitor's history once (an incident spanning multiple days is listed on each of them), the
 // ongoing ones first, then the latest ones
 internal val StatusPageMonitorDetailsDto.incidentsOfHistory: List<StatusPageIncidentDto>
@@ -33,127 +35,27 @@ private val StatusPageIncidentDto.isOngoing: Boolean
     get() = endedAt == null
 
 private val StatusPageIncidentDto.statusColor: CSSClass
-    get() = if (isOngoing) IncidentsAccordion.ACTIVE.statusColor else IncidentsAccordion.RESOLVED.statusColor
-
-/**
- * The two accordions of the recent incidents: the ongoing ones, open by default, and the ones resolved within the last
- * day, closed by default. The [key] identifies them in `kuvasz.js`, which keeps the visitor's choice about them across
- * the refreshes of the page, see `applyIncidentsAccordionsState()`.
- */
-internal enum class IncidentsAccordion(
-    val key: String,
-    val isOpenByDefault: Boolean,
-    val iconColor: CSSClass,
-    val statusColor: CSSClass,
-    val title: String,
-    val icon: Icon,
-) {
-    ACTIVE(
-        "active",
-        isOpenByDefault = true,
-        iconColor = TEXT_RED,
-        statusColor = BG_DANGER,
-        title = Messages.statusPageActiveIncidents(),
-        icon = Icon.FLAME,
-    ),
-    RESOLVED(
-        "resolved",
-        isOpenByDefault = false,
-        iconColor = TEXT_GREEN,
-        statusColor = BG_SUCCESS,
-        title = Messages.statusPageResolvedIncidents(),
-        icon = Icon.FLAME_OFF,
-    );
-
-    val elementId: String = "status-page-$key-incidents"
-    val collapseId: String = "$elementId-collapse"
-}
-
-/**
- * The recent incidents of the page below its overall status, in two accordions: the ongoing incidents, and the ones
- * resolved within the last day, one card per monitor in each. An accordion is only there if it has any incident.
- */
-internal fun FlowContent.statusPageIncidentsAccordions(pageData: StatusPageDataDto) {
-    val active = pageData.incidentsByMonitor(IncidentsAccordion.ACTIVE)
-    val resolved = pageData.incidentsByMonitor(IncidentsAccordion.RESOLVED)
-    if (active.isEmpty() && resolved.isEmpty()) return
-
-    div {
-        classes(CONTAINER_XL, MB_4)
-        incidentsAccordion(IncidentsAccordion.ACTIVE, active)
-        incidentsAccordion(IncidentsAccordion.RESOLVED, resolved)
+    get() = if (isOngoing) {
+        StatusPageAccordion.ACTIVE_INCIDENTS.statusColor
+    } else {
+        StatusPageAccordion.RESOLVED_INCIDENTS.statusColor
     }
-}
 
-internal fun StatusPageDataDto.incidentsByMonitor(
-    accordion: IncidentsAccordion,
-): List<Pair<StatusPageMonitorDetailsDto, List<StatusPageIncidentDto>>> {
+internal fun StatusPageDataDto.ongoingIncidentsByMonitor(): IncidentsByMonitor =
+    incidentsByMonitor { incident -> incident.isOngoing }
+
+internal fun StatusPageDataDto.recentlyResolvedIncidentsByMonitor(): IncidentsByMonitor {
     val resolvedSince = generatedAt.minusHours(RECENTLY_RESOLVED_HOURS)
-    val belongsToAccordion: (StatusPageIncidentDto) -> Boolean = when (accordion) {
-        IncidentsAccordion.ACTIVE -> { incident -> incident.isOngoing }
-        IncidentsAccordion.RESOLVED -> { incident -> incident.endedAt?.isAfter(resolvedSince) == true }
-    }
-    return monitors
+    return incidentsByMonitor { incident -> incident.endedAt?.isAfter(resolvedSince) == true }
+}
+
+private fun StatusPageDataDto.incidentsByMonitor(predicate: (StatusPageIncidentDto) -> Boolean): IncidentsByMonitor =
+    monitors
         .sortedBy { it.name.lowercase() }
-        .map { monitor -> monitor to monitor.incidentsOfHistory.filter(belongsToAccordion) }
+        .map { monitor -> monitor to monitor.incidentsOfHistory.filter(predicate) }
         .filter { (_, incidents) -> incidents.isNotEmpty() }
-}
 
-private fun FlowContent.incidentsAccordion(
-    accordion: IncidentsAccordion,
-    incidentsByMonitor: List<Pair<StatusPageMonitorDetailsDto, List<StatusPageIncidentDto>>>,
-) {
-    if (incidentsByMonitor.isEmpty()) return
-    val isOpen = accordion.isOpenByDefault
-    div {
-        classes(CARD, MB_3)
-        testId(accordion.elementId)
-        div {
-            id = accordion.elementId
-            classes(ACCORDION, ACCORDION_FLUSH)
-            div {
-                classes(ACCORDION_ITEM)
-                h2 {
-                    classes(ACCORDION_HEADER)
-                    button(type = ButtonType.button) {
-                        classes(mutableSetOf(ACCORDION_BUTTON, PX_3).addIf(!isOpen, COLLAPSED))
-                        testId("${accordion.elementId}-toggle")
-                        collapseToggler()
-                        dataBsTarget("#${accordion.collapseId}")
-                        ariaExpanded(isOpen)
-                        ariaControls(accordion.collapseId)
-                        span {
-                            classes(accordion.iconColor, ME_2)
-                            icon(accordion.icon)
-                        }
-                        +accordion.title
-                        span {
-                            classes(BADGE, MS_2)
-                            +incidentsByMonitor.sumOf { (_, incidents) -> incidents.size }.toString()
-                        }
-                        div {
-                            classes(ACCORDION_BUTTON_TOGGLE)
-                            icon(Icon.CHEVRON_DOWN)
-                        }
-                    }
-                }
-                div {
-                    id = accordion.collapseId
-                    classes(mutableSetOf(ACCORDION_COLLAPSE, COLLAPSE).addIf(isOpen, SHOW))
-                    attributes["data-incidents-accordion"] = accordion.key
-                    div {
-                        classes(ACCORDION_BODY, D_FLEX, FLEX_COLUMN, GAP_3, PX_3, PT_0)
-                        incidentsByMonitor.forEach { (monitor, incidents) ->
-                            monitorIncidentsCard(monitor, incidents, accordion.statusColor)
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-private fun FlowContent.monitorIncidentsCard(
+internal fun FlowContent.monitorIncidentsCard(
     monitor: StatusPageMonitorDetailsDto,
     incidents: List<StatusPageIncidentDto>,
     statusColor: CSSClass,
@@ -168,21 +70,6 @@ private fun FlowContent.monitorIncidentsCard(
                 classes(MT_3)
                 publicIncident(incident)
             }
-        }
-    }
-}
-
-/** A card with a stripe of the given status color on its left side. */
-private fun FlowContent.statusCard(statusColor: CSSClass, cardTestId: String, block: DIV.() -> Unit) {
-    div {
-        classes(CARD)
-        testId(cardTestId)
-        div {
-            classes(CARD_STATUS_START, statusColor)
-        }
-        div {
-            classes(CARD_BODY)
-            block()
         }
     }
 }

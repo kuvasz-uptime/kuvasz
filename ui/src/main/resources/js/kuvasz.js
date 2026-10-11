@@ -3072,21 +3072,22 @@ const refreshStatusPageIncidentsModal = () => {
 };
 
 /**
- * Whether an incidents accordion is open after a refresh of the page. The server renders the active incidents open and
- * the resolved ones closed, but the visitor's own choice wins, as long as the accordion stays on the page: one that
- * (re)appears starts from its default again, so e.g. a new outage is never hidden by an earlier choice.
+ * Whether an accordion of a status page is open after a refresh of the page. The server renders the active incidents and
+ * the active maintenance open, and the resolved incidents closed, but the visitor's own choice wins, as long as the
+ * accordion stays on the page: one that (re)appears starts from its default again, so e.g. a new outage is never hidden
+ * by an earlier choice.
  */
-const resolveIncidentsAccordionState = ({isOpenByDefault, wasShown, isOpenByUser}) => {
+const resolveStatusPageAccordionState = ({isOpenByDefault, wasShown, isOpenByUser}) => {
     if (isOpenByUser === null || !wasShown) {
         return {isOpen: isOpenByDefault, isOpenByUser: null};
     }
     return {isOpen: isOpenByUser, isOpenByUser};
 };
 
-const incidentsAccordionsOf = (content) => [...content.querySelectorAll('[data-incidents-accordion]')];
+const statusPageAccordionsOf = (content) => [...content.querySelectorAll('[data-status-page-accordion]')];
 
 // The state is kept as JSON on the refreshed element of the page, which itself is never swapped out
-const readIncidentsAccordionsData = (content, name, fallback) => {
+const readStatusPageAccordionsData = (content, name, fallback) => {
     try {
         return JSON.parse(content.dataset[name] ?? 'null') ?? fallback;
     } catch {
@@ -3095,33 +3096,33 @@ const readIncidentsAccordionsData = (content, name, fallback) => {
 };
 
 // The visitor's choice, by the key of the accordion
-const rememberIncidentsAccordionChoice = (event) => {
-    const key = event.target?.dataset?.incidentsAccordion;
+const rememberStatusPageAccordionChoice = (event) => {
+    const key = event.target?.dataset?.statusPageAccordion;
     const content = event.target?.closest?.(`#${STATUS_PAGE_CONTENT_ID}`);
     if (!key || !content) return;
-    const choices = readIncidentsAccordionsData(content, 'incidentsAccordionChoices', {});
+    const choices = readStatusPageAccordionsData(content, 'statusPageAccordionChoices', {});
     choices[key] = event.type === 'shown.bs.collapse';
-    content.dataset.incidentsAccordionChoices = JSON.stringify(choices);
+    content.dataset.statusPageAccordionChoices = JSON.stringify(choices);
 };
 
-document.addEventListener('shown.bs.collapse', rememberIncidentsAccordionChoice);
-document.addEventListener('hidden.bs.collapse', rememberIncidentsAccordionChoice);
+document.addEventListener('shown.bs.collapse', rememberStatusPageAccordionChoice);
+document.addEventListener('hidden.bs.collapse', rememberStatusPageAccordionChoice);
 
 // Called right before every refresh of the page: the accordions that were there before it
-const rememberShownIncidentsAccordions = (content) => {
-    const keys = incidentsAccordionsOf(content).map(collapse => collapse.dataset.incidentsAccordion);
-    content.dataset.incidentsAccordionsShown = JSON.stringify(keys);
+const rememberShownStatusPageAccordions = (content) => {
+    const keys = statusPageAccordionsOf(content).map(collapse => collapse.dataset.statusPageAccordion);
+    content.dataset.statusPageAccordionsShown = JSON.stringify(keys);
 };
 
-// Called after every refresh of the page, on the refreshed element, see resolveIncidentsAccordionState()
-const applyIncidentsAccordionsState = (content) => {
-    const shownBefore = readIncidentsAccordionsData(content, 'incidentsAccordionsShown', []);
-    const choices = readIncidentsAccordionsData(content, 'incidentsAccordionChoices', {});
+// Called after every refresh of the page, on the refreshed element, see resolveStatusPageAccordionState()
+const applyStatusPageAccordionsState = (content) => {
+    const shownBefore = readStatusPageAccordionsData(content, 'statusPageAccordionsShown', []);
+    const choices = readStatusPageAccordionsData(content, 'statusPageAccordionChoices', {});
     // The choices about the accordions that are gone are forgotten
     const keptChoices = {};
-    incidentsAccordionsOf(content).forEach(collapse => {
-        const key = collapse.dataset.incidentsAccordion;
-        const {isOpen, isOpenByUser} = resolveIncidentsAccordionState({
+    statusPageAccordionsOf(content).forEach(collapse => {
+        const key = collapse.dataset.statusPageAccordion;
+        const {isOpen, isOpenByUser} = resolveStatusPageAccordionState({
             isOpenByDefault: collapse.classList.contains('show'),
             wasShown: shownBefore.includes(key),
             isOpenByUser: choices[key] ?? null,
@@ -3134,7 +3135,7 @@ const applyIncidentsAccordionsState = (content) => {
             keptChoices[key] = isOpenByUser;
         }
     });
-    content.dataset.incidentsAccordionChoices = JSON.stringify(keptChoices);
+    content.dataset.statusPageAccordionChoices = JSON.stringify(keptChoices);
 };
 
 // Exposes helpers and Alpine x-data factories for the Node-based unit tests (see ui/src/jsTest and the :ui:jsTest task)
@@ -3194,10 +3195,10 @@ if (typeof module !== 'undefined' && module.exports) {
         upsertStatusPageForm,
         upsertMaintenanceWindowForm,
         incidentNoteForm,
-        resolveIncidentsAccordionState,
-        applyIncidentsAccordionsState,
-        rememberIncidentsAccordionChoice,
-        rememberShownIncidentsAccordions,
+        resolveStatusPageAccordionState,
+        applyStatusPageAccordionsState,
+        rememberStatusPageAccordionChoice,
+        rememberShownStatusPageAccordions,
         showStatusPageIncidents,
         refreshStatusPageIncidentsModal,
         buildIncidentFilterUrl,

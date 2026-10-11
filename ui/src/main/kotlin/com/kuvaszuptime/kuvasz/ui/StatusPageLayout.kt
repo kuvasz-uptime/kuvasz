@@ -55,17 +55,17 @@ internal fun withStatusPageLayout(
                                         event(REFRESH_STATUS_PAGE_EVENT)
                                     }
                                     select("#$STATUS_PAGE_CONTENT_ID > *")
-                                    // The visitor's choice about the incidents accordions is kept on this element
-                                    // across the refreshes, see applyIncidentsAccordionsState() in kuvasz.js
+                                    // The visitor's choices about the accordions are kept on this element
+                                    // across the refreshes, see applyStatusPageAccordionsState() in kuvasz.js
                                     on(
                                         "htmx:before-swap",
                                         "if (event.detail.shouldSwap) { " +
-                                            "disposeComponents(this); rememberShownIncidentsAccordions(this) }",
+                                            "disposeComponents(this); rememberShownStatusPageAccordions(this) }",
                                     )
                                     on("htmx:after-swap", "reInitTooltips(); refreshStatusPageIncidentsModal()")
                                     // Not right after the swap: the settling of htmx would restore the rendered classes
                                     // of the accordions (they have ids), overwriting the applied state
-                                    on("htmx:after-settle", "applyIncidentsAccordionsState(this)")
+                                    on("htmx:after-settle", "applyStatusPageAccordionsState(this)")
                                 }
                                 statusPageContent(pageData)
                             }
@@ -98,10 +98,8 @@ private fun FlowContent.statusPageContent(pageData: StatusPageDataDto) {
     // Page body
     div {
         classes(PAGE_BODY)
-        // The recent incidents, right below the overall status
-        statusPageIncidentsAccordions(pageData)
-        // Maintenance info block above the monitors
-        maintenanceBanner(pageData)
+        // The recent incidents and the active maintenance, right below the overall status
+        statusPageAccordions(pageData)
         div {
             classes(CONTAINER_XL)
             systemStatusMonitorList(pageData)

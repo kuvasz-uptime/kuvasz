@@ -16,7 +16,7 @@ internal fun FlowContent.uptimeBadgeOfMonitor(monitor: MonitorDetailsDto, withTo
     when {
         monitor.enabled && monitor.inMaintenance -> {
             span {
-                classes(STATUS, STATUS_GRAY)
+                classes(STATUS, STATUS_SECONDARY)
                 tooltip(Messages.statusPageSystemStatusMaintenance())
                 icon(Icon.TOOL)
                 span {
@@ -58,7 +58,7 @@ internal fun FlowContent.uptimeBadgeOfMonitor(monitor: MonitorDetailsDto, withTo
 internal fun FlowContent.uptimeIndicatorOfStatus(uptimeStatus: UptimeStatus?, inMaintenance: Boolean) {
     val statusLabel = uptimeStatus?.literal ?: Messages.inProgress()
     val (color, label) = when {
-        inMaintenance -> STATUS_GRAY to "${Messages.statusPageSystemStatusMaintenance()} ($statusLabel)"
+        inMaintenance -> STATUS_SECONDARY to "${Messages.statusPageSystemStatusMaintenance()} ($statusLabel)"
         uptimeStatus == UptimeStatus.UP -> STATUS_GREEN to statusLabel
         uptimeStatus == UptimeStatus.DOWN -> STATUS_RED to statusLabel
         else -> STATUS_YELLOW to statusLabel
@@ -184,7 +184,7 @@ internal fun FlowContent.sslStatusOfMonitor(
         }
     } else {
         span {
-            classes(STATUS, STATUS_GRAY)
+            classes(STATUS, STATUS_SECONDARY)
             if (withTooltip) {
                 tooltip(Messages.disabled())
             }

@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createHttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createIncidentNote
+import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.models.IncidentType
 import com.kuvaszuptime.kuvasz.models.MonitorType
@@ -93,6 +94,14 @@ class StatusPageIncidentsUiTest(
         "the resolved incidents start closed, and the accordions keep the visitor's choices, unless an outage starts" {
             val recovered = createHttpMonitor(httpMonitorRepository, monitorName = "Recovered API")
             val steady = createHttpMonitor(httpMonitorRepository, monitorName = "Steady API")
+            val maintained = createHttpMonitor(httpMonitorRepository, monitorName = "Maintained API")
+            createMaintenanceWindow(
+                dslContext,
+                name = "Database upgrade",
+                enabled = true,
+                showOnStatusPages = true,
+                monitors = listOf(MonitorID(MonitorType.HTTP_SSL, maintained.name)),
+            )
             val now = OffsetDateTime.now()
             createHttpUptimeEventRecord(
                 dslContext,
@@ -116,6 +125,7 @@ class StatusPageIncidentsUiTest(
                 monitors = listOf(
                     MonitorID(MonitorType.HTTP_SSL, recovered.name),
                     MonitorID(MonitorType.HTTP_SSL, steady.name),
+                    MonitorID(MonitorType.HTTP_SSL, maintained.name),
                 ),
             )
 
@@ -152,9 +162,10 @@ class StatusPageIncidentsUiTest(
             assertThat(active.monitorCard(steady.name).locator(".card-status-start"))
                 .hasClass(Pattern.compile(".*bg-danger.*"))
             assertThat(resolved.collapse).isVisible()
-            page.locator("[data-incidents-accordion]").evaluateAll(
-                "collapses => collapses.map(collapse => collapse.dataset.incidentsAccordion)"
-            ) shouldBe listOf("active", "resolved")
+            // The active maintenance sits between the active and the resolved incidents
+            page.locator("[data-status-page-accordion]").evaluateAll(
+                "collapses => collapses.map(collapse => collapse.dataset.statusPageAccordion)"
+            ) shouldBe listOf("active-incidents", "active-maintenance", "resolved-incidents")
 
             // The active incidents can be closed too, which also survives the refreshes
             active.toggle.click()
