@@ -17,6 +17,8 @@ class HttpMonitorListPage(private val page: Page) {
 
     val count: Locator get() = page.getByTestId("http-monitor-count")
 
+    val refreshButton: Locator get() = page.getByTestId("http-monitor-refresh-button")
+
     fun navigate() {
         page.navigate("/http-monitors")
     }

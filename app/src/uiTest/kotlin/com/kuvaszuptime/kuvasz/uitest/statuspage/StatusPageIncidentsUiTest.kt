@@ -163,6 +163,65 @@ class StatusPageIncidentsUiTest(
             assertThat(resolved.collapse).isVisible()
         }
 
+        "the public timeline is the latest first, with the RESOLVED neighbours of the resolution shown as its part" {
+            val monitor = createHttpMonitor(httpMonitorRepository, monitorName = "Healed API")
+            val now = OffsetDateTime.now()
+            val startedAt = now.minusHours(INCIDENT_HOURS_AGO)
+            val endedAt = now.minusHours(1)
+            val incident = createHttpUptimeEventRecord(
+                dslContext,
+                monitorId = monitor.id,
+                status = UptimeStatus.DOWN,
+                startedAt = startedAt,
+                endedAt = endedAt,
+            )
+            createHttpUptimeEventRecord(
+                dslContext,
+                monitorId = monitor.id,
+                status = UptimeStatus.UP,
+                startedAt = endedAt,
+                endedAt = null,
+            )
+            fun note(content: String, status: InvestigationStatus, timestamp: OffsetDateTime) = createIncidentNote(
+                dslContext,
+                incidentType = IncidentType.HTTP,
+                eventId = incident.id,
+                status = status,
+                content = content,
+                timestamp = timestamp,
+                public = true,
+            )
+            note("Investigating", InvestigationStatus.INVESTIGATING, startedAt.plusMinutes(NOTE_OFFSET_MINUTES))
+            note("Identified", InvestigationStatus.IDENTIFIED, startedAt.plusMinutes(LATER_NOTE_OFFSET_MINUTES))
+            note("Fixed it", InvestigationStatus.RESOLVED, endedAt.minusMinutes(1))
+            note("Post-mortem", InvestigationStatus.RESOLVED, endedAt.plusMinutes(NOTE_OFFSET_MINUTES))
+            createStatusPage(
+                dslContext,
+                title = "Healed Status",
+                slug = "healed-status",
+                public = true,
+                monitors = listOf(MonitorID(MonitorType.HTTP_SSL, monitor.name)),
+            )
+
+            val page = newPage(authenticated = false)
+            val statusPage = PublicStatusPage(page)
+            statusPage.navigate("healed-status")
+            statusPage.resolvedIncidents.toggle.click()
+            val alert = statusPage.resolvedIncidents.alert(monitor.name)
+            assertThat(alert).isVisible()
+
+            alert.locator(PUBLIC_TIMELINE_NODES).evaluateAll("nodes => nodes.map(node => node.dataset.testid)") shouldBe
+                listOf(
+                    "public-incident-resolved",
+                    "public-incident-note",
+                    "public-incident-note",
+                    "public-incident-started",
+                )
+            // The resolution carries its neighbours in their order, then the standalone notes come
+            alert.getByTestId("public-incident-note-content").allInnerTexts().map { it.trim() } shouldBe
+                listOf("Fixed it", "Post-mortem", "Identified", "Investigating")
+        }
+
         "an incident resolved more than a day ago is only counted on the monitor's badge, not in the accordion" {
             val monitor = createHttpMonitor(httpMonitorRepository, monitorName = "Calm API")
             val now = OffsetDateTime.now()
@@ -360,3 +419,8 @@ private const val INCIDENT_MINUTES = 30L
 private const val OVERNIGHT_INCIDENT_HOUR = 23
 private const val OVERNIGHT_INCIDENT_MINUTES_AFTER_MIDNIGHT = 15L
 private const val SECONDS_IN_MINUTE = 60L
+private const val NOTE_OFFSET_MINUTES = 10L
+private const val LATER_NOTE_OFFSET_MINUTES = 20L
+private const val INCIDENT_HOURS_AGO = 3L
+private const val PUBLIC_TIMELINE_NODES =
+    "[data-testid=public-incident-started], [data-testid=public-incident-note], [data-testid=public-incident-resolved]"

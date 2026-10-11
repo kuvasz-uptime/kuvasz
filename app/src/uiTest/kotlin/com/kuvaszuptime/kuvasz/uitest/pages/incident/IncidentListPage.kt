@@ -7,6 +7,8 @@ import com.microsoft.playwright.Page
 // type picked in its toolbar.
 class IncidentListPage(private val page: Page) {
 
+    val title: Locator = page.locator(".page-title")
+
     val emptyState: Locator = page.getByTestId("empty-state")
 
     val periodFilter: Locator = page.getByTestId("incident-period-filter")

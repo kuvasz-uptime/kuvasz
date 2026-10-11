@@ -221,6 +221,47 @@ class HttpMonitorListUiTest(private val httpMonitorRepository: HttpMonitorReposi
             assertThat(list.rowByName("searches")).hasCount(0)
         }
 
+        "a category that needs escaping in the URL is still filtered by, before and after a refresh" {
+            createHttpMonitor(httpMonitorRepository, monitorName = "bills", category = "Payments & Billing")
+            createHttpMonitor(httpMonitorRepository, monitorName = "searches", category = "Search")
+
+            val page = newPage()
+            val list = HttpMonitorListPage(page)
+            list.navigate()
+            list.filterByCategory("Payments & Billing")
+
+            assertThat(list.rowByName("bills")).isVisible()
+            assertThat(list.rowByName("searches")).hasCount(0)
+
+            createHttpMonitor(httpMonitorRepository, monitorName = "bills-too", category = "Payments & Billing")
+            list.refreshButton.click()
+
+            assertThat(list.rowByName("bills-too")).isVisible()
+            assertThat(list.rowByName("searches")).hasCount(0)
+        }
+
+        "a category without monitors shows the empty state, with a zero count" {
+            createHttpMonitor(httpMonitorRepository, monitorName = "pays", category = "Payments")
+
+            val page = newPage()
+            val list = HttpMonitorListPage(page)
+            list.navigateToCategory("Search")
+
+            assertThat(list.emptyState).isVisible()
+            assertThat(list.count).hasText(Messages.monitorCount(0))
+        }
+
+        "the category filter is there, even if none of the monitors has a category" {
+            createHttpMonitor(httpMonitorRepository, monitorName = "plain", category = null)
+
+            val page = newPage()
+            val list = HttpMonitorListPage(page)
+            list.navigate()
+
+            assertThat(list.rowByName("plain")).isVisible()
+            list.categoryOptions shouldBe listOf(Messages.allCategories(), Messages.uncategorizedMonitors())
+        }
+
         "the HTTP monitor list is sorted by name, regardless of its casing" {
             val names = listOf("Charlie", "bravo", "Delta", "alpha")
             names.forEach { createHttpMonitor(httpMonitorRepository, monitorName = it) }

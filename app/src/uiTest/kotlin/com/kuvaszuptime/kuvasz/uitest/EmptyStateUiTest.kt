@@ -21,6 +21,7 @@ class EmptyStateUiTest : UiTestSpec() {
 
             assertThat(incidents.emptyState).containsText(Messages.noIncidents())
             assertThat(incidents.emptyState).containsText(Messages.noIncidentsInPeriod())
+            assertThat(incidents.count).hasText(Messages.incidentListCount(0))
         }
 
         "the integrations page points at the YAML configuration file" {

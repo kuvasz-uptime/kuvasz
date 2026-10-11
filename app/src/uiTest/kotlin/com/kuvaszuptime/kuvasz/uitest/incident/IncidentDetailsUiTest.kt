@@ -56,10 +56,21 @@ class IncidentDetailsUiTest(
             return event.id
         }
 
-        "the timeline tells the story of a resolved incident" {
+        "the timeline tells the story of a resolved incident, which is never refreshed" {
             val eventId = createIncident(endedAt = true)
+            createIncidentNote(
+                dslContext,
+                IncidentType.HTTP,
+                eventId,
+                status = InvestigationStatus.IDENTIFIED,
+                content = "The <b>database</b> is down",
+                public = true,
+            )
 
             val page = newPage()
+            page.clock().install()
+            val refreshes = mutableListOf<String>()
+            page.onRequest { request -> if ("/fragments/details/" in request.url()) refreshes.add(request.url()) }
             val details = IncidentDetailsPage(page)
             details.navigate("http", eventId)
 
@@ -69,6 +80,97 @@ class IncidentDetailsUiTest(
             assertThat(details.integrationsEvent).containsText("slack:ops")
             assertThat(details.resolvedEvent).isVisible()
             assertThat(details.resolutionIntegrationsEvent).containsText("pagerduty:on-call")
+            assertThat(details.note("database")).containsText(Messages.investigationStatusIdentified())
+            assertThat(details.note("database")).containsText(Messages.notePublic())
+            // The content is plain text, the markup in it is shown as it is
+            details.noteContents shouldBe listOf("The <b>database</b> is down")
+
+            page.clock().runFor(NO_REFRESH_PERIOD_MILLIS)
+            // Nothing could be awaited here, as the absence of a request is checked
+            page.waitForTimeout(NO_REFRESH_GRACE_MILLIS)
+            refreshes shouldBe emptyList()
+        }
+
+        "the timeline is chronological, with the incident's own nodes first at the same time" {
+            val now = getCurrentTimestamp()
+            val startedAt = now.minusHours(2)
+            val monitor = createHttpMonitor(httpMonitorRepository)
+            val event = createHttpUptimeEventRecord(
+                dslContext,
+                monitorId = monitor.id,
+                status = UptimeStatus.DOWN,
+                startedAt = startedAt,
+                endedAt = now.minusHours(1),
+                integrations = arrayOf(IntegrationID(IntegrationType.SLACK, "ops")),
+            )
+            createHttpUptimeEventRecord(
+                dslContext,
+                monitorId = monitor.id,
+                status = UptimeStatus.UP,
+                startedAt = now.minusHours(1),
+                endedAt = null,
+                integrations = arrayOf(IntegrationID(IntegrationType.SLACK, "ops")),
+            )
+            // Created in a different order than their times, to prove that the times decide
+            createIncidentNote(dslContext, IncidentType.HTTP, event.id, content = "After", createdAt = now)
+            createIncidentNote(
+                dslContext,
+                IncidentType.HTTP,
+                event.id,
+                content = "Before",
+                timestamp = startedAt.minusMinutes(NOTE_OFFSET_MINUTES),
+            )
+            createIncidentNote(
+                dslContext,
+                IncidentType.HTTP,
+                event.id,
+                content = "During",
+                timestamp = startedAt.plusMinutes(NOTE_OFFSET_MINUTES),
+            )
+            createIncidentNote(dslContext, IncidentType.HTTP, event.id, content = "AtStart", timestamp = startedAt)
+
+            val page = newPage()
+            val details = IncidentDetailsPage(page)
+            details.navigate("http", event.id)
+
+            assertThat(details.resolvedEvent).isVisible()
+            details.timelineEventIds shouldBe listOf(
+                "incident-note-event",
+                "incident-started-event",
+                "incident-integrations-event",
+                "incident-note-event",
+                "incident-note-event",
+                "incident-resolved-event",
+                "incident-resolution-integrations-event",
+                "incident-note-event",
+            )
+            details.noteContents shouldBe listOf("Before", "AtStart", "During", "After")
+        }
+
+        "the timeline has nothing about the integrations, when none of them were notified" {
+            val now = getCurrentTimestamp()
+            val monitor = createHttpMonitor(httpMonitorRepository)
+            val event = createHttpUptimeEventRecord(
+                dslContext,
+                monitorId = monitor.id,
+                status = UptimeStatus.DOWN,
+                startedAt = now.minusHours(1),
+                endedAt = now,
+            )
+            createHttpUptimeEventRecord(
+                dslContext,
+                monitorId = monitor.id,
+                status = UptimeStatus.UP,
+                startedAt = now,
+                endedAt = null,
+            )
+
+            val page = newPage()
+            val details = IncidentDetailsPage(page)
+            details.navigate("http", event.id)
+
+            assertThat(details.resolvedEvent).isVisible()
+            details.timelineEventIds shouldBe listOf("incident-started-event", "incident-resolved-event")
         }
 
         "an ongoing incident is resolved on the page without reloading it, which stops the refreshing" {
@@ -89,6 +191,7 @@ class IncidentDetailsUiTest(
             assertThat(details.statusIndicator).hasClass(Pattern.compile(".*status-indicator-animated.*"))
             assertThat(details.resolvedEvent).hasCount(0)
 
+            createIncidentNote(dslContext, IncidentType.HTTP, event.id, content = "Restarted the database")
             dslContext.update(HTTP_UPTIME_EVENT)
                 .set(HTTP_UPTIME_EVENT.ENDED_AT, now)
                 .where(HTTP_UPTIME_EVENT.ID.eq(event.id))
@@ -106,6 +209,8 @@ class IncidentDetailsUiTest(
             assertThat(details.statusIndicator).hasClass(Pattern.compile(".*status-green.*"))
             assertThat(details.resolvedEvent).isVisible()
             assertThat(details.resolutionIntegrationsEvent).containsText("pagerduty:on-call")
+            // The timeline is refreshed together with the heading
+            assertThat(details.note("Restarted the database")).isVisible()
 
             val refreshes = mutableListOf<String>()
             page.onRequest { request -> if ("/fragments/details/" in request.url()) refreshes.add(request.url()) }
@@ -231,11 +336,15 @@ class IncidentDetailsUiTest(
                 startedAt = getCurrentTimestamp(),
                 endedAt = null,
             )
+            createIncidentNote(dslContext, IncidentType.SSL, event.id, content = "Renewing the certificate")
 
             val page = newPage()
             val details = IncidentDetailsPage(page)
             details.navigate("ssl", event.id)
 
+            // SSL incidents are never shown on the status pages, so their notes are neither public nor private
+            assertThat(details.note("Renewing the certificate")).isVisible()
+            assertThat(details.note("Renewing the certificate").getByTestId("incident-note-visibility")).hasCount(0)
             val modal = details.openNewNoteModal()
             assertThat(modal.contentInput).isVisible()
             assertThat(modal.publicToggle).hasCount(0)
@@ -258,5 +367,6 @@ class IncidentDetailsUiTest(
         const val NO_REFRESH_GRACE_MILLIS = 500.0
         const val NOTE_SECOND = 42
         const val TYPED_SECOND = 15
+        const val NOTE_OFFSET_MINUTES = 10L
     }
 }

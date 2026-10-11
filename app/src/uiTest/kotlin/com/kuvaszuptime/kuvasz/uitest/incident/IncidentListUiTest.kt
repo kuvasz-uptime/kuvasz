@@ -11,12 +11,14 @@ import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.uitest.PlaywrightSupport
 import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
 import com.kuvaszuptime.kuvasz.uitest.pages.incident.IncidentListPage
+import com.kuvaszuptime.kuvasz.util.UIDefaults
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.microsoft.playwright.Locator
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import io.kotest.matchers.doubles.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
+import java.time.Duration
 import java.util.regex.Pattern
 
 @MicronautTest(environments = [PlaywrightSupport.UI_TEST_ENV])
@@ -42,6 +44,28 @@ class IncidentListUiTest(
                 endedAt = null,
             )
             return httpIncident.id
+        }
+
+        "the list covers the default period, until another one is picked" {
+            createIncidents()
+            createHttpUptimeEventRecord(
+                dslContext,
+                monitorId = createHttpMonitor(httpMonitorRepository, monitorName = "Old Incident Monitor").id,
+                status = UptimeStatus.DOWN,
+                startedAt = getCurrentTimestamp().minusDays(OLD_INCIDENT_AGE_DAYS),
+                endedAt = getCurrentTimestamp().minusDays(OLD_INCIDENT_AGE_DAYS - 1),
+            )
+
+            val page = newPage()
+            val incidents = IncidentListPage(page)
+            incidents.navigate()
+
+            assertThat(incidents.title).hasText(Messages.incidents())
+            assertThat(incidents.periodFilter).hasValue(Duration.ofDays(UIDefaults.INCIDENTS_PERIOD_DAYS).toString())
+            assertThat(incidents.rows).hasCount(2)
+
+            incidents.filterByPeriod("PT720H")
+            assertThat(incidents.rows.filter(Locator.FilterOptions().setHasText("Old Incident Monitor"))).hasCount(1)
         }
 
         "the incidents can be filtered by their type, and the period filter keeps the type" {
@@ -148,5 +172,6 @@ class IncidentListUiTest(
     private companion object {
         const val MOBILE_WIDTH = 375
         const val MOBILE_HEIGHT = 812
+        const val OLD_INCIDENT_AGE_DAYS = 10L
     }
 }
