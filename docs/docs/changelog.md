@@ -6,7 +6,7 @@
 
 [**Docker monitors**](features/docker-monitoring.md) ask the **Docker daemon itself** whether a container is running and healthy, so they catch what a port check misses: crash loops, OOM kills, paused containers, failing healthchecks, and containers without any port at all. The errors tell you **what actually happened**, e.g. _"The container exited (137) after it was OOM killed"_, and the **image** of the container is recorded with every incident. The [**restart count**](features/docker-monitoring.md#restarts) is recorded as well, and you can [**get alerted**](management/docker-monitors.md#restart-alerts-enabled) when it goes up. With [**metrics history**](management/docker-monitors.md#metrics-history-enabled) enabled, the **CPU and memory usage** of the container is charted too.
 
-![Chart with Docker metrics](images/features/docker_resources_chart.webp)
+![Chart with Docker metrics](images/features/docker_resources_chart.webp){ width="550"}
 
 The daemons are configured as named [**Docker hosts**](management/docker-hosts.md) in your configuration file: the **local socket**, a **socket proxy**, or a **remote daemon** over TCP with **(mutual) TLS**, from **Engine 19.03** onwards (see the [**compatibility matrix**](features/docker-monitoring.md#compatibility)).
 
@@ -28,7 +28,13 @@ Docker monitors are fully integrated across _Kuvasz_: they're manageable via the
 
 Every incident has its own [**details page**](features/incidents.md#incident-details) now, with a **timeline** of its story: its start, the **integrations that were notified** about it (and about its resolution), its resolution, and the [**notes**](features/incidents.md#incident-notes) you add to it. A note has a status (_Investigating_, _Identified_ or _Resolved_), a plain text content, an optional custom time, and it can be marked as **public**. Notes are manageable via the **Web UI**, the **REST API** and the [**MCP server**](features/mcp-server.md).
 
+![Admin incident timeline](images/changelog/admin-incident-timeline.webp){ width="550"}
+![Public incident timeline](images/changelog/public-incident-timeline.webp){ width="550"}
+
 The status pages got a lot more talkative too: the **active** and the **recently resolved incidents** are listed right below the overall status, with their **public notes**, every monitor card counts its incidents and lists them on click, and hovering a day tells its **downtime** and the time span of its incidents. Everything else about the incidents (e.g. the errors of the checks, or the private notes) stays private. The pages **refresh themselves in place** instead of reloading the whole page.
+
+![Public incident timeline](images/changelog/status-page-incidents.webp){ width="550"}
+![Public incident timeline](images/changelog/statuspage-tracker-details.webp){ width="350"}
 
 ---
 
