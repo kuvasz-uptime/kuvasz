@@ -114,7 +114,7 @@ internal fun FlowContent.dashboardStatus(stats: DashboardUptimeStats?, swapOob: 
                 div {
                     classes(D_FLEX, FLEX_WRAP, ALIGN_ITEMS_CENTER, GAP_3, TEXT_SECONDARY)
                     testId("dashboard-status-details")
-                    monitorCountFigures(stats.actual, stats.outsideMaintenance, withZeros = true)
+                    countFigures(monitorCountsOf(stats.actual, stats.outsideMaintenance, withZeros = true))
                     val lastIncident = stats.actual.lastIncident?.timeAgo()
                     iconCount(
                         Icon.FLAME,
@@ -338,7 +338,7 @@ private fun FlowContent.monitorCounts(stats: ActualUptimeStats, outsideMaintenan
     span {
         classes(D_INLINE_FLEX, ALIGN_ITEMS_CENTER, GAP_2, TEXT_SECONDARY)
         testId("dashboard-monitor-counts")
-        monitorCountFigures(stats, outsideMaintenance, withZeros = false)
+        countFigures(monitorCountsOf(stats, outsideMaintenance, withZeros = false))
     }
 }
 
@@ -352,32 +352,54 @@ internal fun monitorCountsOf(
     outsideMaintenance: MonitorStateCounts,
     withZeros: Boolean,
 ): List<CountFigure> {
+    val up = outsideMaintenance.up
     val down = outsideMaintenance.down
     val pending = outsideMaintenance.pending
-    fun count(icon: Icon, label: String, count: Int, color: CSSClass? = null) =
-        CountFigure(icon, "$label: $count", count, color).takeIf { withZeros || count > 0 }
     return listOfNotNull(
-        CountFigure(Icon.ARROW_NARROW_UP, "${Messages.up()}: ${outsideMaintenance.up}", outsideMaintenance.up),
-        count(Icon.ARROW_NARROW_DOWN, Messages.down(), down, TEXT_RED.takeIf { down > 0 }),
-        count(Icon.TOOL, Messages.maintenance(), stats.inMaintenance),
-        count(Icon.PAUSE, Messages.paused(), stats.paused),
-        CountFigure(Icon.HOURGLASS, Messages.dashboardPendingCount(pending), pending)
-            .takeIf { withZeros || pending > 0 },
+        countFigure(Icon.ARROW_NARROW_UP, up, labeledCount(Messages.up(), up), alwaysShown = true),
+        countFigure(
+            Icon.ARROW_NARROW_DOWN,
+            down,
+            labeledCount(Messages.down(), down),
+            color = TEXT_RED.takeIf { down > 0 },
+            alwaysShown = withZeros,
+        ),
+        countFigure(
+            Icon.TOOL,
+            stats.inMaintenance,
+            labeledCount(Messages.maintenance(), stats.inMaintenance),
+            alwaysShown = withZeros,
+        ),
+        countFigure(Icon.PAUSE, stats.paused, labeledCount(Messages.paused(), stats.paused), alwaysShown = withZeros),
+        countFigure(Icon.HOURGLASS, pending, Messages.dashboardPendingCount(pending), alwaysShown = withZeros),
+    )
+}
+
+/** The certificate counts, the valid ones always shown, the others only if there are any of them. */
+internal fun certificateCountsOf(sslStats: SslStats): List<CountFigure> = with(sslStats) {
+    listOfNotNull(
+        countFigure(Icon.LOCK_CLOSED, valid, labeledCount(Messages.valid(), valid), alwaysShown = true),
+        countFigure(Icon.TIMER, willExpire, labeledCount(Messages.expiresSoon(), willExpire), color = TEXT_YELLOW),
+        countFigure(Icon.LOCK_OPEN, invalid, labeledCount(Messages.invalid(), invalid), color = TEXT_RED),
+        countFigure(Icon.HOURGLASS, inProgress, Messages.dashboardPendingCount(inProgress)),
     )
 }
 
 internal data class CountFigure(val icon: Icon, val text: String, val value: Int, val color: CSSClass? = null)
 
-private fun FlowContent.monitorCountFigures(
-    stats: ActualUptimeStats,
-    outsideMaintenance: MonitorStateCounts,
-    withZeros: Boolean,
-) = monitorCountsOf(stats, outsideMaintenance, withZeros).forEach { figure ->
+private fun countFigure(
+    icon: Icon,
+    count: Int,
+    text: String,
+    color: CSSClass? = null,
+    alwaysShown: Boolean = false,
+): CountFigure? = CountFigure(icon, text, count, color).takeIf { alwaysShown || count > 0 }
+
+private fun labeledCount(label: String, count: Int) = "$label: $count"
+
+private fun FlowContent.countFigures(figures: List<CountFigure>) = figures.forEach { figure ->
     iconCount(figure.icon, figure.text, figure.value.toString(), figure.color)
 }
-
-private fun FlowContent.monitorCount(icon: Icon, label: String, count: Int, color: CSSClass? = null) =
-    iconCount(icon, text = "$label: $count", value = count.toString(), color)
 
 /** A figure shown as an icon and a short [value], spelled out in full by its tooltip. */
 private fun FlowContent.iconCount(icon: Icon, text: String, value: String, color: CSSClass? = null) {
@@ -541,16 +563,7 @@ private fun FlowContent.certificatesCard(stats: DashboardUptimeStats) {
                 span {
                     classes(D_INLINE_FLEX, ALIGN_ITEMS_CENTER, GAP_2, TEXT_SECONDARY)
                     testId("dashboard-certificate-counts")
-                    monitorCount(Icon.LOCK_CLOSED, Messages.valid(), stats.sslStats.valid)
-                    if (stats.sslStats.willExpire > 0) {
-                        monitorCount(Icon.TIMER, Messages.expiresSoon(), stats.sslStats.willExpire, TEXT_YELLOW)
-                    }
-                    if (stats.sslStats.invalid > 0) {
-                        monitorCount(Icon.LOCK_OPEN, Messages.invalid(), stats.sslStats.invalid, TEXT_RED)
-                    }
-                    stats.sslStats.inProgress.takeIf { it > 0 }?.let { pending ->
-                        iconCount(Icon.HOURGLASS, Messages.dashboardPendingCount(pending), pending.toString())
-                    }
+                    countFigures(certificateCountsOf(stats.sslStats))
                 }
             }
         }

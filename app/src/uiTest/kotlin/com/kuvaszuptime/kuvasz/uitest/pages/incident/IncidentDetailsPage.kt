@@ -26,7 +26,6 @@ class IncidentDetailsPage(private val page: Page) {
 
     val noteContents: List<String> get() = notes.getByTestId("incident-note-content").allInnerTexts()
 
-    // The test ids of the nodes of the timeline, in the order they are shown
     val timelineEventIds: List<String>
         get() = page.locator("[data-testid=incident-timeline] [data-testid^=incident-][data-testid$=-event]")
             .evaluateAll("nodes => nodes.map(node => node.dataset.testid)")

@@ -32,6 +32,9 @@ internal val StatusPageMonitorDetailsDto.incidentsOfHistory: List<StatusPageInci
 private val StatusPageIncidentDto.isOngoing: Boolean
     get() = endedAt == null
 
+private val StatusPageIncidentDto.statusColor: CSSClass
+    get() = if (isOngoing) IncidentsAccordion.ACTIVE.statusColor else IncidentsAccordion.RESOLVED.statusColor
+
 /**
  * The two accordions of the recent incidents: the ongoing ones, open by default, and the ones resolved within the last
  * day, closed by default. The [key] identifies them in `kuvasz.js`, which keeps the visitor's choice about them across
@@ -340,7 +343,7 @@ internal fun FlowContent.monitorIncidentsTemplate(monitor: StatusPageMonitorDeta
             testId("status-page-incidents-modal-body")
             incidents.forEach { incident ->
                 statusCard(
-                    statusColor = if (incident.isOngoing) BG_DANGER else BG_SUCCESS,
+                    statusColor = incident.statusColor,
                     cardTestId = "status-page-incident-card",
                 ) {
                     publicIncident(incident)

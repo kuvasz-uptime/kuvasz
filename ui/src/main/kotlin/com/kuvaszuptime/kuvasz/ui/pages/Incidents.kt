@@ -44,7 +44,7 @@ fun renderIncidentsPage(globals: AppGlobals, period: Duration, selectedType: Inc
                             trigger {
                                 load()
                                 event(REFRESH_INCIDENT_LIST_EVENT)
-                                every(15.seconds)
+                                every(30.seconds)
                             }
                             onSwapReinitTooltips()
                         }
@@ -169,17 +169,8 @@ fun renderIncidentList(incidents: List<IncidentDto>): String =
 private fun incidentListFragmentPath(period: Duration, type: IncidentType?): String =
     "/incidents/fragments/list?period=$period" + type?.let { "&type=${it.name.lowercase()}" }.orEmpty()
 
-private fun FlowContent.incidentCountLabel(count: Int?) {
-    span {
-        id = INCIDENT_COUNT_ID
-        classes(TEXT_SECONDARY)
-        testId(INCIDENT_COUNT_ID)
-        if (count != null) {
-            hx { swapOob() }
-            +Messages.incidentListCount(count)
-        }
-    }
-}
+private fun FlowContent.incidentCountLabel(count: Int?) =
+    listCountLabel(INCIDENT_COUNT_ID, INCIDENT_COUNT_ID, count?.let { Messages.incidentListCount(it) })
 
 internal val IncidentType.label: String
     get() = when (this) {

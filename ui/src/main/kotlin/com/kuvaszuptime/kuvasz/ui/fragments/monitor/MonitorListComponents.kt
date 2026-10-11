@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.ui.fragments.monitor
 
-import com.iodesystems.htmx.Htmx.Companion.hx
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDetailsDto
@@ -32,17 +31,12 @@ internal fun TR.monitorNameCell(
     }
 }
 
-internal fun FlowContent.monitorCountLabel(typeUiConfig: MonitorTypeUiConfig, count: Int?) {
-    span {
-        id = typeUiConfig.listCountElementId
-        classes(TEXT_SECONDARY)
-        testId(typeUiConfig.testId("count"))
-        if (count != null) {
-            hx { swapOob() }
-            +Messages.monitorCount(count)
-        }
-    }
-}
+internal fun FlowContent.monitorCountLabel(typeUiConfig: MonitorTypeUiConfig, count: Int?) =
+    listCountLabel(
+        elementId = typeUiConfig.listCountElementId,
+        labelTestId = typeUiConfig.testId("count"),
+        text = count?.let { Messages.monitorCount(it) },
+    )
 
 /**
  * The table of a monitor list page, refreshed by htmx. Every type has the name and the status columns plus the row

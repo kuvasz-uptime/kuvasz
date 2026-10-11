@@ -198,6 +198,29 @@ class DashboardOverviewFragmentTest : BehaviorSpec({
         }
     }
 
+    given("the certificate counts") {
+
+        `when`("there are certificates in every state") {
+            val sslStats = SslStats(invalid = 1, valid = 3, willExpire = 2, inProgress = 4)
+
+            then("every count is there, the problematic ones in color") {
+                certificateCountsOf(sslStats) shouldBe listOf(
+                    CountFigure(Icon.LOCK_CLOSED, "Valid: 3", 3),
+                    CountFigure(Icon.TIMER, "Expires soon: 2", 2, TEXT_YELLOW),
+                    CountFigure(Icon.LOCK_OPEN, "Invalid: 1", 1, TEXT_RED),
+                    CountFigure(Icon.HOURGLASS, "Pending: 4", 4),
+                )
+            }
+        }
+
+        `when`("there are no certificates at all") {
+
+            then("only the valid ones are counted") {
+                certificateCountsOf(NO_CERTIFICATES) shouldBe listOf(CountFigure(Icon.LOCK_CLOSED, "Valid: 0", 0))
+            }
+        }
+    }
+
     given("a measured interval of the dashboard") {
         listOf(
             null to "-",
