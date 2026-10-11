@@ -225,11 +225,8 @@ fun FlowContent.incidentStatusBadge(incident: IncidentDto) {
     }
 }
 
-internal fun incidentDetailsPath(incidentType: IncidentType, eventId: Long): String =
-    "/incidents/${incidentType.name.lowercase()}/$eventId"
-
 internal val IncidentDto.detailsPath: String
-    get() = incidentDetailsPath(incidentType, eventId)
+    get() = "/incidents/${incidentType.name.lowercase()}/$eventId"
 
 /** The link of an incident list row to the details page of the incident. */
 internal fun FlowContent.incidentDetailsButton(incident: IncidentDto) {

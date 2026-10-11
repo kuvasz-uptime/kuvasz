@@ -537,28 +537,19 @@ class WebUIDashboardTest(
 
         `when`("there are recent incidents of every type") {
 
-            then("every row should link to its monitor, the SSL ones to its certificate checks") {
+            then("every row should link to the details page of its incident") {
                 val now = getCurrentTimestamp()
-                val expectedLinks = listOf(
-                    Triple(IncidentType.HTTP, 1L, "/http-monitors/1"),
-                    Triple(IncidentType.SSL, 2L, "/http-monitors/2#http-monitor-details-ssl-events"),
-                    Triple(IncidentType.PUSH, 3L, "/push-monitors/3"),
-                    Triple(IncidentType.ICMP, 4L, "/icmp-monitors/4"),
-                    Triple(IncidentType.TCP, 5L, "/tcp-monitors/5"),
-                    Triple(IncidentType.DNS, 6L, "/dns-monitors/6"),
-                    Triple(IncidentType.DOCKER, 7L, "/docker-monitors/7"),
-                )
                 every { provider().getOverview(any()) } answers {
                     overview(
                         firstArg(),
                         actualStats(total = 1, up = 1),
-                        recentIncidents = expectedLinks.map { (type, monitorId, _) ->
+                        recentIncidents = IncidentType.entries.mapIndexed { index, type ->
                             IncidentDto(
-                                monitorId = monitorId,
-                                monitorName = "Monitor $monitorId",
+                                monitorId = index.toLong(),
+                                monitorName = "Monitor $index",
                                 isMonitorEnabled = true,
                                 incidentType = type,
-                                eventId = 1L,
+                                eventId = index * 10L,
                                 status = IncidentStatus.ONGOING,
                                 details = null,
                                 startedAt = now.minusHours(1),
@@ -572,9 +563,9 @@ class WebUIDashboardTest(
                     .split("data-testid=\"dashboard-incident\"")
                     .drop(1)
 
-                rows shouldHaveSize expectedLinks.size
-                rows.zip(expectedLinks).forEach { (row, expectedLink) ->
-                    row shouldContain "<a href=\"${expectedLink.third}\""
+                rows shouldHaveSize IncidentType.entries.size
+                rows.zip(IncidentType.entries).forEachIndexed { index, (row, type) ->
+                    row shouldContain "<a href=\"/incidents/${type.name.lowercase()}/${index * 10}\""
                 }
             }
         }

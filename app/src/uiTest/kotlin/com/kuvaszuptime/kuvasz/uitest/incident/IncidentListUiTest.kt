@@ -117,6 +117,19 @@ class IncidentListUiTest(
             assertThat(page).hasURL(Pattern.compile(".*/incidents/http/$eventId$"))
         }
 
+        "an incident on the dashboard leads to its details page" {
+            val eventId = createIncidents()
+
+            val page = newPage()
+            page.navigate("/")
+            page.getByTestId("dashboard-incident")
+                .filter(Locator.FilterOptions().setHasText("HTTP Incident Monitor"))
+                .locator("a")
+                .click()
+
+            assertThat(page).hasURL(Pattern.compile(".*/incidents/http/$eventId$"))
+        }
+
         "the filters are stacked on top of each other on small screens" {
             createIncidents()
 

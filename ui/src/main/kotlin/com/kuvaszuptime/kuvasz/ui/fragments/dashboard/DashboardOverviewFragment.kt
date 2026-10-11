@@ -484,7 +484,7 @@ private fun FlowContent.incidentRow(incident: IncidentDto, inMaintenance: Boolea
         dotClasses = dotClasses,
         dotTooltip = state,
         title = incident.monitorName,
-        href = incident.getMonitorUrl(),
+        href = incident.detailsPath,
         titleTooltip = incident.details,
     ) {
         val type = incident.incidentType
