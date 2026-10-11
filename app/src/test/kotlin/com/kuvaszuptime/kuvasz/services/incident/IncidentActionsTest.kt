@@ -166,6 +166,49 @@ class IncidentActionsTest(
             }
         }
 
+        given("the createNoteAndGetDetails() method") {
+
+            `when`("the incident exists") {
+
+                then("it should create the note, and return the details of the incident with it") {
+                    val event = downEvent()
+                    val existingNote = createIncidentNote(
+                        dslContext,
+                        IncidentType.HTTP,
+                        event.id,
+                        content = "On it",
+                        createdAt = getCurrentTimestamp().minusMinutes(5),
+                    )
+
+                    val details = incidentActions.createNoteAndGetDetails(
+                        IncidentType.HTTP,
+                        event.id,
+                        IncidentNoteCreateDto(status = InvestigationStatus.IDENTIFIED, content = "Found it"),
+                    )
+
+                    details.incident.eventId shouldBe event.id
+                    details.integrations shouldBe listOf(IntegrationID(IntegrationType.SLACK, "ops"))
+                    details.notes.map { it.content } shouldBe listOf("On it", "Found it")
+                    details.notes shouldBe incidentNoteRepository.fetchByEvent(IncidentType.HTTP, event.id)
+                    details.notes.first().id shouldBe existingNote.id
+                }
+            }
+
+            `when`("the incident doesn't exist") {
+
+                then("it should throw an IncidentNotFoundException, and create nothing") {
+                    shouldThrow<IncidentNotFoundException> {
+                        incidentActions.createNoteAndGetDetails(
+                            IncidentType.HTTP,
+                            1234L,
+                            IncidentNoteCreateDto(status = InvestigationStatus.INVESTIGATING, content = "Checking"),
+                        )
+                    }
+                    incidentNoteRepository.fetchByEvent(IncidentType.HTTP, 1234L).shouldBeEmpty()
+                }
+            }
+        }
+
         given("the updateNote() method") {
 
             `when`("only some of the fields are present") {

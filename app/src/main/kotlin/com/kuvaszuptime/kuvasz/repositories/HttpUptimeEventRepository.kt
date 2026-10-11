@@ -17,6 +17,7 @@ import java.time.OffsetDateTime
 class HttpUptimeEventRepository(private val dslContext: DSLContext) : UptimeEventRepository {
 
     private val uptimeEventColumns = UptimeEventColumns(
+        eventId = HTTP_UPTIME_EVENT.ID,
         eventMonitorId = HTTP_UPTIME_EVENT.MONITOR_ID,
         status = HTTP_UPTIME_EVENT.STATUS,
         startedAt = HTTP_UPTIME_EVENT.STARTED_AT,

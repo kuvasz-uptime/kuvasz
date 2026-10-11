@@ -638,6 +638,10 @@ The timezone to use for the application. It's recommended to set it to your **lo
 
 The number of days to keep the finished events in the database. After this time, finished uptime & SSL **events will be cleaned up** to spare space in the database. The **minimum is 1 day**.
 
+!!! note
+
+    The [**incident notes**](../features/incidents.md#incident-notes) are deleted together with their incidents. Also, if the retention is **shorter than 30 days**, the [**status pages**](../features/status-pages.md) show the history of the last that many days only, instead of 30, as there would be no data for the rest of them.
+
 ### Latency data retention
 
 <!-- md:version 2.0.0 -->

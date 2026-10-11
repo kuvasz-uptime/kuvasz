@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.IncidentNote.INCIDENT_NOTE
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IncidentNoteRecord
 import com.kuvaszuptime.kuvasz.models.IncidentType
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentNoteDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIncidentNoteDto
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
@@ -30,6 +31,34 @@ class IncidentNoteRepository(private val dslContext: DSLContext) {
         .orderBy(noteOrder)
         .fetch()
         .map { it.toDto() }
+
+    /**
+     * The public notes of the given incidents (of the very same type), by the ID of their events, ordered the same way
+     * as everywhere else. These are the notes that are shown on the status pages.
+     */
+    fun fetchPublicByEvents(
+        incidentType: IncidentType,
+        eventIds: Collection<Long>,
+    ): Map<Long, List<StatusPageIncidentNoteDto>> {
+        if (eventIds.isEmpty()) return emptyMap()
+        return dslContext
+            .selectFrom(INCIDENT_NOTE)
+            .where(INCIDENT_NOTE.INCIDENT_TYPE.eq(incidentType))
+            .and(INCIDENT_NOTE.EVENT_ID.`in`(eventIds))
+            .and(INCIDENT_NOTE.PUBLIC.isTrue)
+            .orderBy(noteOrder)
+            .fetch()
+            .groupBy(
+                { note -> note.eventId },
+                { note ->
+                    StatusPageIncidentNoteDto(
+                        status = note.status,
+                        content = note.content,
+                        timestamp = note.timestamp ?: note.createdAt,
+                    )
+                },
+            )
+    }
 
     fun returningInsert(note: IncidentNoteRecord): IncidentNoteRecord = dslContext
         .insertInto(INCIDENT_NOTE)

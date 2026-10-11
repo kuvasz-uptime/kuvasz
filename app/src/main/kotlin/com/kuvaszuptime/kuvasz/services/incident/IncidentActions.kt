@@ -6,9 +6,11 @@ import com.kuvaszuptime.kuvasz.models.IncidentNotFoundException
 import com.kuvaszuptime.kuvasz.models.IncidentNoteNotFoundException
 import com.kuvaszuptime.kuvasz.models.IncidentType
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentDto
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentNoteCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentNoteDto
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentNoteUpdateDto
+import com.kuvaszuptime.kuvasz.models.isShownPublicly
 import com.kuvaszuptime.kuvasz.repositories.IncidentNoteRepository
 import com.kuvaszuptime.kuvasz.repositories.IncidentRepository
 import com.kuvaszuptime.kuvasz.repositories.toDto
@@ -31,33 +33,48 @@ class IncidentActions(
     private val validator: Validator,
 ) {
 
-    fun getIncidentDetails(incidentType: IncidentType, eventId: Long): IncidentDetailsDto {
-        val incident = incidentRepository.getIncident(incidentType, eventId)
-            ?: throw IncidentNotFoundException(incidentType, eventId)
+    fun getIncidentDetails(incidentType: IncidentType, eventId: Long): IncidentDetailsDto =
+        getIncidentDetails(getExistingIncident(incidentType, eventId))
+
+    fun createNote(incidentType: IncidentType, eventId: Long, createDto: IncidentNoteCreateDto): IncidentNoteDto =
+        insertNote(getExistingIncident(incidentType, eventId), createDto)
+
+    fun createNoteAndGetDetails(
+        incidentType: IncidentType,
+        eventId: Long,
+        createDto: IncidentNoteCreateDto,
+    ): IncidentDetailsDto {
+        val incident = getExistingIncident(incidentType, eventId)
+        insertNote(incident, createDto)
+
+        return getIncidentDetails(incident)
+    }
+
+    private fun getExistingIncident(incidentType: IncidentType, eventId: Long): IncidentDto =
+        incidentRepository.getIncident(incidentType, eventId) ?: throw IncidentNotFoundException(incidentType, eventId)
+
+    private fun getIncidentDetails(incident: IncidentDto): IncidentDetailsDto {
         val notifiedIntegrations = incidentRepository.getNotifiedIntegrations(incident)
 
         return IncidentDetailsDto(
             incident = incident,
-            notes = incidentNoteRepository.fetchByEvent(incidentType, eventId),
+            notes = incidentNoteRepository.fetchByEvent(incident.incidentType, incident.eventId),
             integrations = notifiedIntegrations.started,
             resolutionIntegrations = notifiedIntegrations.resolved,
         )
     }
 
-    fun createNote(incidentType: IncidentType, eventId: Long, createDto: IncidentNoteCreateDto): IncidentNoteDto {
-        if (incidentRepository.getIncident(incidentType, eventId) == null) {
-            throw IncidentNotFoundException(incidentType, eventId)
-        }
+    private fun insertNote(incident: IncidentDto, createDto: IncidentNoteCreateDto): IncidentNoteDto {
         val note = IncidentNoteRecord()
-            .setIncidentType(incidentType)
-            .setEventId(eventId)
+            .setIncidentType(incident.incidentType)
+            .setEventId(incident.eventId)
             .setStatus(createDto.status)
             .setContent(createDto.content)
             .setTimestamp(createDto.timestamp)
             .setPublic(createDto.public)
 
         return incidentNoteRepository.returningInsert(note).toDto()
-            .also { invalidateStatusPagesIfShown(incidentType, it.public) }
+            .also { invalidateStatusPagesIfShown(incident.incidentType, it.public) }
     }
 
     fun updateNote(incidentNoteId: Long, updates: ObjectNode): IncidentNoteDto {
@@ -90,7 +107,7 @@ class IncidentActions(
     }
 
     private fun invalidateStatusPagesIfShown(incidentType: IncidentType, public: Boolean) {
-        if (public && incidentType != IncidentType.SSL) {
+        if (public && incidentType.isShownPublicly) {
             statusPageCacheInvalidator.invalidateAllCaches()
         }
     }

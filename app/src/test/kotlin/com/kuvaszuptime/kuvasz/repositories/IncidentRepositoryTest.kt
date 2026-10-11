@@ -1905,5 +1905,88 @@ class IncidentRepositoryTest(
                 }
             }
         }
+
+        given("the type filter of the getIncidents() method") {
+
+            fun createIncidents(): Long {
+                val now = getCurrentTimestamp()
+                val httpMonitor = createHttpMonitor(httpMonitorRepository)
+                createHttpUptimeEventRecord(
+                    dslContext,
+                    monitorId = httpMonitor.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = now,
+                    endedAt = null,
+                )
+                createSSLEventRecord(
+                    dslContext,
+                    monitorId = httpMonitor.id,
+                    status = SslStatus.INVALID,
+                    startedAt = now,
+                    endedAt = null,
+                )
+                createDockerUptimeEventRecord(
+                    dslContext,
+                    monitorId = createDockerMonitor(dockerMonitorRepository).id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = now,
+                    endedAt = null,
+                )
+                return httpMonitor.id
+            }
+
+            `when`("only some of the types are requested") {
+
+                then("only the incidents of those types should be returned") {
+                    createIncidents()
+
+                    incidentRepository.getIncidents(includeResolved = true, types = setOf(IncidentType.DOCKER))
+                        .map { it.incidentType } shouldBe listOf(IncidentType.DOCKER)
+                    incidentRepository.getIncidents(includeResolved = true, types = setOf(IncidentType.SSL))
+                        .map { it.incidentType } shouldBe listOf(IncidentType.SSL)
+                    incidentRepository
+                        .getIncidents(includeResolved = true, types = setOf(IncidentType.HTTP, IncidentType.DOCKER))
+                        .map { it.incidentType }
+                        .toSet() shouldBe setOf(IncidentType.HTTP, IncidentType.DOCKER)
+                }
+            }
+
+            `when`("the types are filtered together with a monitor") {
+
+                then("both of the filters should apply") {
+                    val httpMonitorId = createIncidents()
+
+                    incidentRepository
+                        .getIncidents(
+                            monitorId = httpMonitorId,
+                            includeResolved = true,
+                            types = setOf(IncidentType.SSL),
+                        )
+                        .map { it.incidentType to it.monitorId } shouldBe listOf(IncidentType.SSL to httpMonitorId)
+                }
+            }
+
+            `when`("only SSL incidents are requested, but the SSL incidents are left out") {
+
+                then("nothing should be returned") {
+                    createIncidents()
+
+                    incidentRepository.getIncidents(
+                        includeResolved = true,
+                        includeSslIncidents = false,
+                        types = setOf(IncidentType.SSL),
+                    ).shouldBeEmpty()
+                }
+            }
+
+            `when`("no types are requested at all") {
+
+                then("nothing should be returned") {
+                    createIncidents()
+
+                    incidentRepository.getIncidents(includeResolved = true, types = emptySet()).shouldBeEmpty()
+                }
+            }
+        }
     }
 }

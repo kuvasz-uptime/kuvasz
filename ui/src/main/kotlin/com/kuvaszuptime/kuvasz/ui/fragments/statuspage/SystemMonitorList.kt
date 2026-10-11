@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDnsMonitorDetails
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDockerMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageHttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIcmpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIncidentDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPagePushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageTcpMonitorDetailsDto
@@ -19,22 +20,28 @@ import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
+import com.kuvaszuptime.kuvasz.util.formatAsInterval
 import com.kuvaszuptime.kuvasz.util.timeAgo
 import kotlinx.html.*
+import kotlinx.html.stream.*
+import java.time.LocalDate
+import java.time.OffsetDateTime
+import java.time.ZoneId
 
 fun FlowContent.systemStatusMonitorList(pageData: StatusPageDataDto) {
     // The page can opt out of the grouping even when its monitors are categorized: the categories still select them
     // and their aggregated statuses are still calculated, they are just not revealed to the visitors here
     if (pageData.categoryStatus.isEmpty() || !pageData.displayCategories) {
-        monitorCardGrid(pageData.monitors)
+        monitorCardGrid(pageData.monitors, pageData.historyDays)
     } else {
-        categorizedMonitorList(pageData.monitors, pageData.categoryStatus)
+        categorizedMonitorList(pageData.monitors, pageData.categoryStatus, pageData.historyDays)
     }
 }
 
 private fun FlowContent.categorizedMonitorList(
     monitors: List<StatusPageMonitorDetailsDto>,
     categoryStatus: List<CategoryStatusDto>,
+    historyDays: Int,
 ) {
     val monitorsByCategory = categoryStatus.map { category ->
         category to monitors.filter { it.category == category.category }
@@ -59,7 +66,7 @@ private fun FlowContent.categorizedMonitorList(
                 classes(MB_3)
                 +category.label()
             }
-            monitorCardGrid(categoryMonitors)
+            monitorCardGrid(categoryMonitors, historyDays)
         }
     }
 }
@@ -142,7 +149,7 @@ private fun categoryAnchorId(index: Int) = "category-$index"
 
 private fun CategoryStatusDto.label(): String = category ?: Messages.statusPageOtherCategory()
 
-private fun FlowContent.monitorCardGrid(monitors: List<StatusPageMonitorDetailsDto>) {
+private fun FlowContent.monitorCardGrid(monitors: List<StatusPageMonitorDetailsDto>, historyDays: Int) {
     div {
         classes(CSSClass.ROW)
         // DOWN monitors are more important, sort by status (D < U), then by name, ignoring its casing
@@ -150,99 +157,80 @@ private fun FlowContent.monitorCardGrid(monitors: List<StatusPageMonitorDetailsD
             .sortedWith(compareBy({ it.uptimeStatus?.name.toString() }, { it.name.lowercase() }))
             .forEach { monitor ->
                 div {
-                    classes(COL_MD_6, MB_3)
-                    // Monitor card
-                    div {
-                        classes(CARD)
-                        testId("status-monitor-card")
-                        // Card status indicator
-                        div {
-                            classes(CARD_STATUS_START, monitor.uptimeStatus.cardStatusClass(monitor.inMaintenance))
-                        }
-                        div {
-                            classes(CARD_BODY)
-                            div {
-                                classes(D_FLEX, ALIGN_ITEMS_CENTER, MB_3)
-                                // Monitor name on the left
-                                h3 {
-                                    classes(TEXT_SECONDARY)
-                                    +monitor.name
-                                }
-                                // Monitor status on the right side
-                                div {
-                                    classes(MS_AUTO)
-                                    uptimeBadgeOfStatus(monitor.uptimeStatus, monitor.inMaintenance)
-                                }
-                            }
-                            // Uptime percentage and average response time row
-                            div {
-                                classes(D_FLEX, ALIGN_ITEMS_BASELINE)
-                                // Uptime percentage on the left
-                                div {
-                                    classes(H1, MB_3, ME_2)
-                                    +(monitor.uptimeRatio?.formatAsPercentage() ?: Messages.noData())
-                                }
-                                // Average response time on the right if available
-                                val avgLatency: Int? = if (monitor is WithLatency) {
-                                    monitor.averageLatencyInMs
-                                } else null
-                                avgLatency?.let {
-                                    div {
-                                        classes(MS_AUTO)
-                                        span {
-                                            classes(TEXT_SECONDARY, D_INLINE_FLEX, ALIGN_ITEMS_CENTER, LH_1)
-                                            +Messages.avgResponseTime(avgLatency)
-                                        }
-                                    }
-                                }
-                            }
-                            // Tracking blocks
-                            div {
-                                classes(MT_2)
-                                div {
-                                    classes(TRACKING)
-                                    monitor.uptimeStatusHistory.forEach { trackingBlock(it) }
-                                }
-                            }
-                            // Last check time / last heartbeat
-                            div {
-                                classes(MT_4, TEXT_MUTED)
-                                when (monitor) {
-                                    is StatusPageHttpMonitorDetailsDto -> {
-                                        val lastCheckText = monitor.lastCheck?.timeAgo() ?: Messages.noData()
-                                        +"${Messages.lastCheck()}: $lastCheckText"
-                                    }
+                    classes(COL_12, MB_3)
+                    monitorCard(monitor, historyDays)
+                }
+            }
+    }
+}
 
-                                    is StatusPagePushMonitorDetailsDto -> {
-                                        val lastHeartbeatText = monitor.lastHeartbeat?.timeAgo() ?: Messages.noData()
-                                        +"${Messages.lastHeartbeat()}: $lastHeartbeatText"
-                                    }
-
-                                    is StatusPageIcmpMonitorDetailsDto -> {
-                                        val lastCheckText = monitor.lastCheck?.timeAgo() ?: Messages.noData()
-                                        +"${Messages.lastCheck()}: $lastCheckText"
-                                    }
-
-                                    is StatusPageTcpMonitorDetailsDto -> {
-                                        val lastCheckText = monitor.lastCheck?.timeAgo() ?: Messages.noData()
-                                        +"${Messages.lastCheck()}: $lastCheckText"
-                                    }
-
-                                    is StatusPageDockerMonitorDetailsDto -> {
-                                        val lastCheckText = monitor.lastCheck?.timeAgo() ?: Messages.noData()
-                                        +"${Messages.lastCheck()}: $lastCheckText"
-                                    }
-
-                                    is StatusPageDnsMonitorDetailsDto -> {
-                                        val lastCheckText = monitor.lastCheck?.timeAgo() ?: Messages.noData()
-                                        +"${Messages.lastCheck()}: $lastCheckText"
-                                    }
-                                }
-                            }
-                        }
+private fun FlowContent.monitorCard(monitor: StatusPageMonitorDetailsDto, historyDays: Int) {
+    div {
+        classes(CARD)
+        testId("status-monitor-card")
+        // Card status indicator
+        div {
+            classes(CARD_STATUS_START, monitor.uptimeStatus.cardStatusClass(monitor.inMaintenance))
+        }
+        div {
+            classes(CARD_BODY)
+            // The name on the left, the uptime ratio and the status on the right
+            div {
+                classes(D_FLEX, ALIGN_ITEMS_CENTER, GAP_2, MB_2)
+                h3 {
+                    classes(MB_0)
+                    +monitor.name
+                }
+                div {
+                    classes(MS_AUTO, D_FLEX, ALIGN_ITEMS_CENTER, GAP_2)
+                    span {
+                        classes(TEXT_SECONDARY)
+                        testId("monitor-uptime-ratio")
+                        tooltip(Messages.statusPageUptimeOfTheLastDays(historyDays.toString()))
+                        +(monitor.uptimeRatio?.formatAsPercentage() ?: Messages.noData())
+                    }
+                    uptimeIndicatorOfStatus(monitor.uptimeStatus, monitor.inMaintenance)
+                }
+            }
+            // The incidents, the last check and the response time
+            div {
+                classes(D_FLEX, FLEX_WRAP, ALIGN_ITEMS_CENTER, GAP_2, MB_3)
+                testId("monitor-badges")
+                monitorIncidentsBadge(monitor, historyDays)
+                lastCheckBadge(monitor)
+                if (monitor is WithLatency) {
+                    monitor.averageLatencyInMs?.let { avgLatency ->
+                        inlineStatusBadge(
+                            text = Messages.statusPageResponseTimeValue(avgLatency.toString()),
+                            icon = Icon.WAVE_SQUARE,
+                            tooltip = Messages.statusPageAverageResponseTime(),
+                        )
                     }
                 }
             }
+            // Tracking blocks
+            div {
+                classes(TRACKING)
+                monitor.uptimeStatusHistory.forEach { trackingBlock(it) }
+            }
+            monitorIncidentsTemplate(monitor, historyDays)
+        }
+    }
+}
+
+// The time of the last check, or of the last heartbeat of a push monitor
+private fun FlowContent.lastCheckBadge(monitor: StatusPageMonitorDetailsDto) {
+    val (label, time) = when (monitor) {
+        is StatusPagePushMonitorDetailsDto -> Messages.lastHeartbeat() to monitor.lastHeartbeat
+        is StatusPageHttpMonitorDetailsDto,
+        is StatusPageIcmpMonitorDetailsDto,
+        is StatusPageTcpMonitorDetailsDto,
+        is StatusPageDnsMonitorDetailsDto,
+        is StatusPageDockerMonitorDetailsDto -> Messages.lastCheck() to monitor.lastCheck
+    }
+    span {
+        testId("monitor-last-check")
+        inlineStatusBadge(text = time?.timeAgo() ?: Messages.noData(), icon = Icon.CLOCK, tooltip = label)
     }
 }
 
@@ -252,16 +240,55 @@ private fun FlowContent.trackingBlock(statusHistoryDto: StatusHistoryDto) {
         val colorClass = when {
             outageCnt == null -> TEXT_MUTED
             outageCnt == 0 -> BG_SUCCESS
-            outageCnt > 0 -> BG_DANGER
-            else -> TEXT_MUTED
+            else -> BG_DANGER
         }
         classes(TRACKING_BLOCK, colorClass)
-        val tooltipText = statusHistoryDto.outageCnt?.let {
-            Messages.incidentCount(
-                statusHistoryDto.date.toDateTimeString(),
-                statusHistoryDto.outageCnt.toString(),
-            )
-        } ?: Messages.noData()
-        tooltip(tooltipText)
+        testId("tracking-block")
+        tooltip(statusHistoryDto.tooltipHtml(), html = true)
     }
 }
+
+/**
+ * The part of an incident that falls on the given day, with full timestamps, so their time zone (the system's one) is
+ * explicit, e.g. "2026/10/09 10:00:00 +0200 - 2026/10/09 10:30:00 +0200". An incident spanning multiple days is
+ * clipped to the day: it's shown from the start of the day on the days after its start, and until the end of the day
+ * (the start of the next one) on the days before its end. Only today has an "ongoing" end.
+ */
+private fun StatusPageIncidentDto.spanOnDay(day: LocalDate): String {
+    val zone = ZoneId.systemDefault()
+    val startOfDay = day.atStartOfDay(zone).toOffsetDateTime()
+    val endOfDay = day.plusDays(1).atStartOfDay(zone).toOffsetDateTime()
+    val start = if (startedAt.isBefore(startOfDay)) startOfDay else startedAt.toSystemZone()
+    val end = endedAt?.let { resolvedAt -> if (resolvedAt.isAfter(endOfDay)) endOfDay else resolvedAt.toSystemZone() }
+        ?: endOfDay.takeUnless { it.isAfter(OffsetDateTime.now()) }
+    val endText = end?.toDateTimeStringWithZone() ?: Messages.statusPageIncidentOngoing()
+
+    return "${start.toDateTimeStringWithZone()} - $endText"
+}
+
+private fun StatusHistoryDto.tooltipHtml(): String =
+    createHTML(prettyPrint = false, xhtmlCompatible = false).div {
+        classes(TEXT_START)
+        div {
+            classes(FW_BOLD)
+            +date.toDateTimeString()
+        }
+        div {
+            val downtime = downtimeSeconds
+            +when (downtime) {
+                null -> Messages.noData()
+                0L -> Messages.statusPageDayNoDowntime()
+                else -> Messages.statusPageDayDowntime(downtime.formatAsInterval())
+            }
+        }
+        if (incidents.isNotEmpty()) {
+            ul {
+                classes(LIST_UNSTYLED, MB_0, MT_1)
+                incidents.forEach { incident ->
+                    li {
+                        +incident.spanOnDay(date)
+                    }
+                }
+            }
+        }
+    }

@@ -18,6 +18,7 @@ import java.time.OffsetDateTime
 class IcmpUptimeEventRepository(private val dslContext: DSLContext) : UptimeEventRepository {
 
     private val uptimeEventColumns = UptimeEventColumns(
+        eventId = ICMP_UPTIME_EVENT.ID,
         eventMonitorId = ICMP_UPTIME_EVENT.MONITOR_ID,
         status = ICMP_UPTIME_EVENT.STATUS,
         startedAt = ICMP_UPTIME_EVENT.STARTED_AT,

@@ -8,3 +8,5 @@ fun renderPublicStatusPage(
     globals: AppGlobals,
     pageData: StatusPageDataDto,
 ) = withStatusPageLayout(globals, pageData)
+
+fun renderPublicStatusPageContent(pageData: StatusPageDataDto) = renderStatusPageContent(pageData)

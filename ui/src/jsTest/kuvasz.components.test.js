@@ -27,6 +27,14 @@ const {
     renderDockerContainerOption,
     upsertStatusPageForm,
     upsertMaintenanceWindowForm,
+    incidentNoteForm,
+    resolveIncidentsAccordionState,
+    applyIncidentsAccordionsState,
+    rememberIncidentsAccordionChoice,
+    rememberShownIncidentsAccordions,
+    showStatusPageIncidents,
+    refreshStatusPageIncidentsModal,
+    INVESTIGATION_STATUSES,
     httpMetricsBlock,
     icmpMetricsBlock,
     tcpMetricsBlock,
@@ -71,7 +79,7 @@ test('buildRequestBody nulls out non-MANUAL fields for a MANUAL window', () => {
     Object.assign(form, {
         type: MAINTENANCE_WINDOW_TYPES.MANUAL,
         name: 'MW', description: 'desc', enabled: true, global: false, showOnStatusPages: true,
-        cron: '0 0 * * *', startDate: '2024-01-01', startTime: '10:00', duration: 'PT1H',
+        cron: '0 0 * * *', pickedDate: '2024-01-01', pickedTime: '10:00', duration: 'PT1H',
         selectedMonitors: ['http:1'], integrations: ['slack'],
     });
     const body = form.buildRequestBody();
@@ -90,7 +98,7 @@ test('buildRequestBody keeps cron and duration but drops start for a CRON window
     const form = upsertMaintenanceWindowForm(null, {}, 'select', []);
     Object.assign(form, {
         type: MAINTENANCE_WINDOW_TYPES.CRON,
-        name: 'MW', cron: '0 0 * * *', startDate: '2024-01-01', startTime: '10:00', duration: 'PT2H',
+        name: 'MW', cron: '0 0 * * *', pickedDate: '2024-01-01', pickedTime: '10:00', duration: 'PT2H',
         selectedMonitors: [], integrations: [],
     });
     const body = form.buildRequestBody();
@@ -103,7 +111,7 @@ test('buildRequestBody converts start to ISO and drops cron for a SINGLE window'
     const form = upsertMaintenanceWindowForm(null, {}, 'select', []);
     Object.assign(form, {
         type: MAINTENANCE_WINDOW_TYPES.SINGLE,
-        name: 'MW', cron: '0 0 * * *', startDate: '2024-01-01', startTime: '10:00', duration: 'PT30M',
+        name: 'MW', cron: '0 0 * * *', pickedDate: '2024-01-01', pickedTime: '10:00', duration: 'PT30M',
         selectedMonitors: [], integrations: [],
     });
     const body = form.buildRequestBody();
@@ -116,53 +124,53 @@ test('buildRequestBody converts start to ISO and drops cron for a SINGLE window'
 test('buildRequestBody leaves start null for a SINGLE window without a date or a time', () => {
     const form = upsertMaintenanceWindowForm(null, {}, 'select', []);
     Object.assign(form, {
-        type: MAINTENANCE_WINDOW_TYPES.SINGLE, name: 'MW', startDate: '', startTime: '10:00', duration: 'PT30M',
+        type: MAINTENANCE_WINDOW_TYPES.SINGLE, name: 'MW', pickedDate: '', pickedTime: '10:00', duration: 'PT30M',
         selectedMonitors: [], integrations: [],
     });
     assert.equal(form.buildRequestBody().start, null);
 
-    Object.assign(form, {startDate: '2024-01-01', startTime: ''});
+    Object.assign(form, {pickedDate: '2024-01-01', pickedTime: ''});
     assert.equal(form.buildRequestBody().start, null);
 });
 
-test('validateStart requires a valid date and time, only for a SINGLE window', () => {
+test('validateDateTime requires a valid date and time, only for a SINGLE window', () => {
     const form = upsertMaintenanceWindowForm(null, {startRequired: 'REQUIRED', startInvalid: 'INVALID'}, 'select', []);
-    Object.assign(form, {type: MAINTENANCE_WINDOW_TYPES.SINGLE, startDate: '', startTime: '', errors: {}});
+    Object.assign(form, {type: MAINTENANCE_WINDOW_TYPES.SINGLE, pickedDate: '', pickedTime: '', errors: {}});
 
-    form.validateStart();
+    form.validateDateTime();
     assert.equal(form.errors.start, 'REQUIRED');
 
-    form.startDate = '2030-01-01';
-    form.validateStart();
+    form.pickedDate = '2030-01-01';
+    form.validateDateTime();
     assert.equal(form.errors.start, 'REQUIRED');
 
-    form.startTime = '10:00';
-    form.validateStart();
+    form.pickedTime = '10:00';
+    form.validateDateTime();
     assert.equal(form.errors.start, null);
 
-    form.startDate = '2030-02-30';
-    form.validateStart();
+    form.pickedDate = '2030-02-30';
+    form.validateDateTime();
     assert.equal(form.errors.start, 'INVALID');
 
-    form.startDate = '2030-02-28';
-    form.startTime = '24:00';
-    form.validateStart();
+    form.pickedDate = '2030-02-28';
+    form.pickedTime = '24:00';
+    form.validateDateTime();
     assert.equal(form.errors.start, 'INVALID');
 
     form.type = MAINTENANCE_WINDOW_TYPES.CRON;
-    form.validateStart();
+    form.validateDateTime();
     assert.equal(form.errors.start, null);
 });
 
 test('onTypeChange clears the start date and time when leaving a SINGLE window', () => {
     const form = upsertMaintenanceWindowForm(null, {}, 'select', []);
     Object.assign(form, {
-        type: MAINTENANCE_WINDOW_TYPES.CRON, name: 'MW', cron: '0 0 * * *', startDate: '2030-01-01',
-        startTime: '10:00', duration: 'PT1H', errors: {},
+        type: MAINTENANCE_WINDOW_TYPES.CRON, name: 'MW', cron: '0 0 * * *', pickedDate: '2030-01-01',
+        pickedTime: '10:00', duration: 'PT1H', errors: {},
     });
     form.onTypeChange();
-    assert.equal(form.startDate, '');
-    assert.equal(form.startTime, '');
+    assert.equal(form.pickedDate, '');
+    assert.equal(form.pickedTime, '');
 });
 
 test('populateFrom splits the start of a SINGLE window into a local date and time', () => {
@@ -172,12 +180,12 @@ test('populateFrom splits the start of a SINGLE window into a local date and tim
 
     const [expectedDate, expectedTime] = toDateTimeLocalValue(start).split('T');
     assert.equal(form.type, MAINTENANCE_WINDOW_TYPES.SINGLE);
-    assert.equal(form.startDate, expectedDate);
-    assert.equal(form.startTime, expectedTime);
+    assert.equal(form.pickedDate, expectedDate);
+    assert.equal(form.pickedTime, expectedTime);
 
     form.populateFrom(null);
-    assert.equal(form.startDate, '');
-    assert.equal(form.startTime, '');
+    assert.equal(form.pickedDate, '');
+    assert.equal(form.pickedTime, '');
 });
 
 // Stubs the root element (with the given theme attributes) and the local storage for the theme preference helpers
@@ -255,24 +263,24 @@ test('anchorPopupToModal moves the datepicker popup into the modal, translating 
     assert.deepEqual(popup.style, {top: '540px', left: '280px'});
 });
 
-test('onStartTyped splits the typed start into a date and a time, and validates them', () => {
+test('onDateTimeTyped splits the typed start into a date and a time, and validates them', () => {
     const form = upsertMaintenanceWindowForm(null, {startRequired: 'REQUIRED', startInvalid: 'INVALID'}, 'select', []);
-    Object.assign(form, {type: MAINTENANCE_WINDOW_TYPES.SINGLE, startDate: '', startTime: '', errors: {}});
+    Object.assign(form, {type: MAINTENANCE_WINDOW_TYPES.SINGLE, pickedDate: '', pickedTime: '', errors: {}});
 
-    form.onStartTyped(' 2030-01-05 10:30 ');
-    assert.equal(form.startDate, '2030-01-05');
-    assert.equal(form.startTime, '10:30');
+    form.onDateTimeTyped(' 2030-01-05 10:30 ');
+    assert.equal(form.pickedDate, '2030-01-05');
+    assert.equal(form.pickedTime, '10:30');
     assert.equal(form.errors.start, null);
 
-    form.onStartTyped('2030-01-05');
-    assert.equal(form.startTime, '');
+    form.onDateTimeTyped('2030-01-05');
+    assert.equal(form.pickedTime, '');
     assert.equal(form.errors.start, 'REQUIRED');
 
-    form.onStartTyped('2030-01-05 25:00');
+    form.onDateTimeTyped('2030-01-05 25:00');
     assert.equal(form.errors.start, 'INVALID');
 });
 
-test('initStartDatepicker keeps the Tabler datepicker and the start in sync', async (t) => {
+test('initDateTimePicker keeps the Tabler datepicker and the start in sync', async (t) => {
     const datepickers = [];
     const originalTabler = globalThis.tabler;
     globalThis.tabler = {
@@ -316,11 +324,11 @@ test('initStartDatepicker keeps the Tabler datepicker and the start in sync', as
     const watchers = {};
     const form = upsertMaintenanceWindowForm(null, {startRequired: 'REQUIRED'}, 'select', []);
     Object.assign(form, {
-        type: MAINTENANCE_WINDOW_TYPES.SINGLE, startDate: '', startTime: '', errors: {},
+        type: MAINTENANCE_WINDOW_TYPES.SINGLE, pickedDate: '', pickedTime: '', errors: {},
         $watch: (property, callback) => watchers[property] = callback,
     });
 
-    form.initStartDatepicker(element);
+    form.initDateTimePicker(element);
     const [datepicker] = datepickers;
     assert.equal(datepicker.element, element);
     assert.equal(datepicker.config.vcpOptions.selectionTimeMode, 24);
@@ -362,8 +370,8 @@ test('initStartDatepicker keeps the Tabler datepicker and the start in sync', as
 
     // A picked day lands in the model, taking over the time shown by the time picker when there's none yet
     listeners['change.bs.datepicker']({dates: ['2030-01-05']});
-    assert.equal(form.startDate, '2030-01-05');
-    assert.equal(form.startTime, '08:15');
+    assert.equal(form.pickedDate, '2030-01-05');
+    assert.equal(form.pickedTime, '08:15');
     assert.equal(form.errors.start, null);
     // Tabler writes the input with the time included
     assert.equal(datepicker.config.dateFormat(new Date(2030, 0, 5)), '2030-01-05 08:15');
@@ -381,41 +389,57 @@ test('initStartDatepicker keeps the Tabler datepicker and the start in sync', as
     assert.equal(laterHide.defaultPrevented, false);
 
     // An already set time is kept when another day is picked
-    form.startTime = '10:30';
+    form.pickedTime = '10:30';
     listeners['change.bs.datepicker']({dates: ['2030-01-06']});
-    assert.equal(form.startTime, '10:30');
+    assert.equal(form.pickedTime, '10:30');
 
     // A picked time lands in the model
     datepicker.config.vcpOptions.onChangeTime({context: {selectedTime: '11:45'}});
-    assert.equal(form.startTime, '11:45');
+    assert.equal(form.pickedTime, '11:45');
+    // ...keeping the typed seconds, which the time picker can't select
+    form.pickedTime = '11:45:30';
+    datepicker.config.vcpOptions.onChangeTime({context: {selectedTime: '12:10'}});
+    assert.equal(form.pickedTime, '12:10:30');
+    // ...but not the seconds of an invalid time
+    form.pickedTime = '11:4:30';
+    datepicker.config.vcpOptions.onChangeTime({context: {selectedTime: '12:10'}});
+    assert.equal(form.pickedTime, '12:10');
+    form.pickedTime = '11:45';
 
     // A typed (or loaded) valid day is selected in the calendar, an invalid one clears it
-    form.startDate = '2030-02-10';
-    watchers.startDate(form.startDate);
+    form.pickedDate = '2030-02-10';
+    watchers.pickedDate(form.pickedDate);
     assert.equal(element.value, '2030-02-10 11:45');
-    form.startDate = '2030-02-1';
-    watchers.startDate(form.startDate);
+    form.pickedDate = '2030-02-1';
+    watchers.pickedDate(form.pickedDate);
     assert.deepEqual(datepicker.setCalls, [['2030-02-10'], []]);
     // ...but the typed value is kept in the input, instead of what Tabler writes there
     assert.equal(element.value, '2030-02-1 11:45');
     // The calendar isn't reset when it already shows the same day, e.g. right after it was picked there
     datepicker.selectedDates = ['2030-03-01'];
-    watchers.startDate('2030-03-01');
+    watchers.pickedDate('2030-03-01');
     assert.equal(datepicker.setCalls.length, 2);
 
     // A typed (or loaded) valid time is set in the calendar, without touching its dates
-    watchers.startTime('14:00');
+    watchers.pickedTime('14:00');
     assert.equal(datepicker.calendar.selectedTime, '14:00');
     assert.deepEqual(datepicker.calendarUpdates, [{dates: false, month: false, year: false}]);
     // ...unless it shows that time already (e.g. it was just picked there), or the time is invalid
-    watchers.startTime('08:15');
-    watchers.startTime('8:1');
+    watchers.pickedTime('08:15');
+    watchers.pickedTime('8:1');
     assert.equal(datepicker.calendarUpdates.length, 1);
     assert.equal(datepicker.calendar.selectedTime, '08:15');
+    // A time with seconds is set in the calendar without them, which it can't show
+    watchers.pickedTime('08:15:30');
+    assert.equal(datepicker.calendarUpdates.length, 1);
+    assert.equal(datepicker.calendar.selectedTime, '08:15');
+    watchers.pickedTime('16:20:30');
+    assert.equal(datepicker.calendar.selectedTime, '16:20');
+    assert.equal(datepicker.calendarUpdates.length, 2);
 
     // A cleared selection clears the date and lets the popup close
     listeners['change.bs.datepicker']({dates: []});
-    assert.equal(form.startDate, '');
+    assert.equal(form.pickedDate, '');
     const hideAfterClear = {defaultPrevented: false, preventDefault() { this.defaultPrevented = true; }};
     listeners['hide.bs.datepicker'](hideAfterClear);
     assert.equal(hideAfterClear.defaultPrevented, false);
@@ -460,22 +484,22 @@ const stubDatepicker = (t, parsedDates) => {
 };
 
 // A maintenance window form with a loaded start, and the watchers it registered
-const startFormOf = (startDate, startTime) => {
+const startFormOf = (pickedDate, pickedTime) => {
     const watchers = {};
     const form = upsertMaintenanceWindowForm(null, {}, 'select', []);
     Object.assign(form, {
-        type: MAINTENANCE_WINDOW_TYPES.SINGLE, startDate, startTime, errors: {},
+        type: MAINTENANCE_WINDOW_TYPES.SINGLE, pickedDate, pickedTime, errors: {},
         $watch: (property, callback) => watchers[property] = callback,
     });
     return {form, watchers};
 };
 
-test('initStartDatepicker preselects a loaded start in the calendar, even if Tabler could not parse it', (t) => {
+test('initDateTimePicker preselects a loaded start in the calendar, even if Tabler could not parse it', (t) => {
     const datepickers = stubDatepicker(t, []);
     const {form} = startFormOf('2030-01-05', '10:30');
     const element = {value: '2030-01-05 10:30'};
 
-    form.initStartDatepicker(element);
+    form.initDateTimePicker(element);
     const [datepicker] = datepickers;
     assert.equal(datepicker.config.vcpOptions.selectedTime, '10:30');
     assert.deepEqual(datepicker.setCalls, [['2030-01-05']]);
@@ -483,32 +507,46 @@ test('initStartDatepicker preselects a loaded start in the calendar, even if Tab
     assert.equal(element.value, '2030-01-05 10:30');
 });
 
-test('initStartDatepicker leaves the calendar alone when Tabler parsed the loaded start already', (t) => {
+test('initDateTimePicker preselects the time of a loaded start with seconds without them', (t) => {
+    const datepickers = stubDatepicker(t, []);
+    const {form} = startFormOf('2030-01-05', '10:30:45');
+    const element = {value: '2030-01-05 10:30:45'};
+
+    form.initDateTimePicker(element);
+    assert.equal(datepickers[0].config.vcpOptions.selectedTime, '10:30');
+    assert.equal(element.value, '2030-01-05 10:30:45');
+    // A day picked in the calendar keeps the time, seconds included
+    datepickers[0].listeners['change.bs.datepicker']({dates: ['2030-01-06']});
+    assert.equal(form.pickedTime, '10:30:45');
+    assert.equal(form.pickedDateTimeAsIso(), new Date('2030-01-06T10:30:45').toISOString());
+});
+
+test('initDateTimePicker leaves the calendar alone when Tabler parsed the loaded start already', (t) => {
     const datepickers = stubDatepicker(t, ['2030-01-05']);
     const {form} = startFormOf('2030-01-05', '10:30');
 
-    form.initStartDatepicker({value: '2030-01-05 10:30'});
+    form.initDateTimePicker({value: '2030-01-05 10:30'});
     assert.deepEqual(datepickers[0].setCalls, []);
 });
 
-test('initStartDatepicker does not take over the time of a previous session of a reset form', (t) => {
+test('initDateTimePicker does not take over the time of a previous session of a reset form', (t) => {
     const datepickers = stubDatepicker(t, []);
     const {form, watchers} = startFormOf('', '');
-    form.initStartDatepicker({});
+    form.initDateTimePicker({});
     const [datepicker] = datepickers;
 
     // A time is picked, then the form is cancelled and opened again
     datepicker.config.vcpOptions.onChangeTime({context: {selectedTime: '23:30'}});
-    watchers.startTime(form.startTime);
+    watchers.pickedTime(form.pickedTime);
     datepicker.calendar.context.selectedTime = '23:30';
     form.resetState();
-    assert.equal(form.startTime, '');
-    watchers.startTime(form.startTime);
+    assert.equal(form.pickedTime, '');
+    watchers.pickedTime(form.pickedTime);
     assert.equal(datepicker.calendar.selectedTime, undefined);
 
     // A picked day takes over the calendar's default time instead
     datepicker.listeners['change.bs.datepicker']({dates: ['2030-01-05']});
-    assert.equal(form.startTime, '00:00');
+    assert.equal(form.pickedTime, '00:00');
 });
 
 // --------- #3: metrics blocks ---------
@@ -2556,8 +2594,8 @@ const listEditedEntities = {
         assertBlank: (form) => {
             assert.equal(form.name, '');
             assert.equal(form.type, MAINTENANCE_WINDOW_TYPES.MANUAL);
-            assert.equal(form.startDate, '');
-            assert.equal(form.startTime, '');
+            assert.equal(form.pickedDate, '');
+            assert.equal(form.pickedTime, '');
             assert.deepEqual(form.selectedCategories, []);
         },
         assertRendered: (form) => assert.equal(form.name, 'Rendered'),
@@ -2896,3 +2934,408 @@ test('disposeComponents disposes the sparklines and, after their transitions, th
     t.mock.timers.tick(1);
     assert.deepEqual(disposed, [sparkline, tooltip, otherTooltip]);
 });
+
+// --------- Incident notes ---------
+
+const NOTE_ERRORS = {contentRequired: 'CONTENT_REQUIRED', timestampInvalid: 'TIMESTAMP_INVALID'};
+
+test('incidentNoteForm starts as the creation of a new, private note under investigation', () => {
+    const form = incidentNoteForm('HTTP', 42, NOTE_ERRORS);
+    form.init();
+
+    assert.equal(form.isUpdate, false);
+    assert.equal(form.noteId, null);
+    assert.equal(form.status, INVESTIGATION_STATUSES.INVESTIGATING);
+    assert.equal(form.content, '');
+    assert.equal(form.public, false);
+    assert.equal(form.pickedDate, '');
+    assert.equal(form.pickedTime, '');
+});
+
+test('incidentNoteForm.editFrom loads the note, and resetState goes back to a new note', () => {
+    const form = incidentNoteForm('HTTP', 42, NOTE_ERRORS);
+    const timestamp = '2030-01-05T09:30:00Z';
+
+    form.editFrom({id: 7, status: 'IDENTIFIED', content: 'Found it', timestamp, public: true});
+    assert.equal(form.isUpdate, true);
+    assert.equal(form.noteId, 7);
+    assert.equal(form.status, 'IDENTIFIED');
+    assert.equal(form.content, 'Found it');
+    assert.equal(form.public, true);
+    // The timestamp is shown in the local time zone, and sent back as it was while it isn't changed
+    assert.equal(form.pickedDateTimeAsIso(), timestamp);
+
+    form.isDeleteConfirmationShown = true;
+    form.resetState();
+    assert.equal(form.isUpdate, false);
+    assert.equal(form.noteId, null);
+    assert.equal(form.content, '');
+    assert.equal(form.pickedDate, '');
+    assert.equal(form.isDeleteConfirmationShown, false);
+});
+
+test('incidentNoteForm.validate requires a non-blank content', () => {
+    const form = incidentNoteForm('HTTP', 42, NOTE_ERRORS);
+    form.init();
+
+    form.content = '  \n ';
+    form.validate();
+    assert.equal(form.errors.content, 'CONTENT_REQUIRED');
+
+    form.content = 'Looking into it';
+    form.validate();
+    assert.equal(form.errors.content, null);
+});
+
+test('incidentNoteForm.validate accepts an empty or a complete timestamp, but not a partial or invalid one', () => {
+    const form = incidentNoteForm('HTTP', 42, NOTE_ERRORS);
+    form.init();
+    form.content = 'Looking into it';
+
+    const errorOf = (date, time) => {
+        Object.assign(form, {pickedDate: date, pickedTime: time});
+        form.validate();
+        return form.errors.timestamp;
+    };
+    assert.equal(errorOf('', ''), null);
+    assert.equal(errorOf('2030-01-05', '10:30'), null);
+    assert.equal(errorOf('2030-01-05', '10:30:45'), null);
+    assert.equal(errorOf('2030-01-05', '10:30:'), 'TIMESTAMP_INVALID');
+    assert.equal(errorOf('2030-01-05', ''), 'TIMESTAMP_INVALID');
+    assert.equal(errorOf('', '10:30'), 'TIMESTAMP_INVALID');
+    assert.equal(errorOf('2030-02-30', '10:30'), 'TIMESTAMP_INVALID');
+    assert.equal(errorOf('2030-01-05', '24:00'), 'TIMESTAMP_INVALID');
+});
+
+test('incidentNoteForm.buildRequestBody converts the timestamp to ISO, or sends null without one', () => {
+    const form = incidentNoteForm('HTTP', 42, NOTE_ERRORS);
+    form.init();
+    Object.assign(form, {status: 'RESOLVED', content: 'Fixed\nfor good', public: true});
+
+    assert.deepEqual(form.buildRequestBody(), {status: 'RESOLVED', content: 'Fixed\nfor good', timestamp: null, public: true});
+
+    Object.assign(form, {pickedDate: '2030-01-05', pickedTime: '10:30'});
+    assert.equal(form.buildRequestBody().timestamp, new Date('2030-01-05T10:30').toISOString());
+});
+
+test('incidentNoteForm.buildRequestBody keeps the seconds of an edited note\'s timestamp until it is changed', () => {
+    const form = incidentNoteForm('HTTP', 42, NOTE_ERRORS);
+    const timestamp = '2030-01-05T09:30:45.123456Z';
+    form.editFrom({id: 7, status: 'IDENTIFIED', content: 'Found it', timestamp, public: true});
+
+    form.content = 'Found it, fixed a typo';
+    assert.equal(form.buildRequestBody().timestamp, timestamp);
+
+    form.pickedTime = '11:15';
+    assert.equal(form.buildRequestBody().timestamp, new Date(`${form.pickedDate}T11:15`).toISOString());
+    // The seconds are shown, so they can be changed too
+    form.setPickedDateTime(timestamp);
+    assert.equal(form.pickedTime.slice(-3), ':45');
+    form.pickedTime = `${form.pickedTime.slice(0, -3)}:50`;
+    assert.equal(form.buildRequestBody().timestamp, new Date(`${form.pickedDate}T${form.pickedTime}`).toISOString());
+
+    form.setPickedDateTime(timestamp);
+    Object.assign(form, {pickedDate: '', pickedTime: ''});
+    assert.equal(form.buildRequestBody().timestamp, null);
+
+    // A new note doesn't inherit the timestamp of the previously edited one
+    form.resetState();
+    Object.assign(form, {pickedDate: '2030-01-05', pickedTime: '10:30'});
+    assert.equal(form.buildRequestBody().timestamp, new Date('2030-01-05T10:30').toISOString());
+});
+
+const withReloadingWindow = (t) => {
+    const originalWindow = globalThis.window;
+    const reloads = [];
+    globalThis.window = {location: {reload: () => reloads.push(true)}};
+    t.after(() => { globalThis.window = originalWindow; });
+    return reloads;
+};
+
+test('incidentNoteForm.submitForm creates a note of the incident, then reloads the page', async (t) => {
+    const reloads = withReloadingWindow(t);
+    const requests = [];
+    stubFetch(t, async (url, init) => {
+        requests.push({url, init});
+        return {ok: true, status: 201, json: async () => ({})};
+    });
+    const form = incidentNoteForm('DOCKER', 42, NOTE_ERRORS);
+    form.init();
+    form.content = 'Looking into it';
+
+    await form.submitForm();
+
+    assert.equal(requests.length, 1);
+    assert.equal(requests[0].url, '/api/v2/incidents/DOCKER/42/notes');
+    assert.equal(requests[0].init.method, 'POST');
+    assert.deepEqual(JSON.parse(requests[0].init.body), {
+        status: 'INVESTIGATING', content: 'Looking into it', timestamp: null, public: false,
+    });
+    assert.equal(reloads.length, 1);
+    assert.equal(form.isRequestLoading, false);
+});
+
+test('incidentNoteForm.submitForm updates an edited note', async (t) => {
+    withReloadingWindow(t);
+    const requests = [];
+    stubFetch(t, async (url, init) => {
+        requests.push({url, init});
+        return {ok: true, status: 200, json: async () => ({})};
+    });
+    const form = incidentNoteForm('HTTP', 42, NOTE_ERRORS);
+    form.editFrom({id: 7, status: 'IDENTIFIED', content: 'Found it', timestamp: null, public: false});
+
+    await form.submitForm();
+
+    assert.equal(requests[0].url, '/api/v2/incidents/notes/7');
+    assert.equal(requests[0].init.method, 'PATCH');
+});
+
+test('incidentNoteForm.submitForm sends nothing while the form is invalid', async (t) => {
+    const requests = [];
+    stubFetch(t, async (url) => { requests.push(url); });
+    const form = incidentNoteForm('HTTP', 42, NOTE_ERRORS);
+    form.init();
+
+    await form.submitForm();
+
+    assert.equal(requests.length, 0);
+    assert.equal(form.errors.content, 'CONTENT_REQUIRED');
+});
+
+test('incidentNoteForm.submitForm shows the error reported by the server', async (t) => {
+    const reloads = withReloadingWindow(t);
+    stubFetch(t, async () => ({ok: false, status: 405, json: async () => ({message: 'Incident notes are disabled'})}));
+    const form = incidentNoteForm('HTTP', 42, NOTE_ERRORS);
+    form.init();
+    form.content = 'Looking into it';
+
+    await form.submitForm();
+
+    assert.equal(form.formError, 'Incident notes are disabled');
+    assert.equal(reloads.length, 0);
+    assert.equal(form.isRequestLoading, false);
+});
+
+test('incidentNoteForm.deleteNote deletes the edited note, then reloads the page', async (t) => {
+    const reloads = withReloadingWindow(t);
+    const requests = [];
+    stubFetch(t, async (url, init) => {
+        requests.push({url, method: init.method});
+        return {ok: true, status: 204};
+    });
+    const form = incidentNoteForm('HTTP', 42, NOTE_ERRORS);
+    form.editFrom({id: 7, status: 'IDENTIFIED', content: 'Found it', timestamp: null, public: false});
+
+    await form.deleteNote();
+
+    assert.deepEqual(requests, [{url: '/api/v2/incidents/notes/7', method: 'DELETE'}]);
+    assert.equal(reloads.length, 1);
+});
+
+// --------- Incidents on the status pages ---------
+
+test('resolveIncidentsAccordionState keeps the default until the visitor chooses', () => {
+    assert.deepEqual(
+        resolveIncidentsAccordionState({isOpenByDefault: true, wasShown: true, isOpenByUser: null}),
+        {isOpen: true, isOpenByUser: null},
+    );
+    assert.deepEqual(
+        resolveIncidentsAccordionState({isOpenByDefault: false, wasShown: true, isOpenByUser: null}),
+        {isOpen: false, isOpenByUser: null},
+    );
+});
+
+test('resolveIncidentsAccordionState keeps the choice of the visitor across the refreshes', () => {
+    // The active incidents, closed by the visitor
+    assert.deepEqual(
+        resolveIncidentsAccordionState({isOpenByDefault: true, wasShown: true, isOpenByUser: false}),
+        {isOpen: false, isOpenByUser: false},
+    );
+    // The resolved incidents, opened by the visitor
+    assert.deepEqual(
+        resolveIncidentsAccordionState({isOpenByDefault: false, wasShown: true, isOpenByUser: true}),
+        {isOpen: true, isOpenByUser: true},
+    );
+});
+
+test('resolveIncidentsAccordionState starts over with an accordion that appears again, e.g. on a new outage', () => {
+    assert.deepEqual(
+        resolveIncidentsAccordionState({isOpenByDefault: true, wasShown: false, isOpenByUser: false}),
+        {isOpen: true, isOpenByUser: null},
+    );
+});
+
+// A minimal stand-in of the classList of a DOM element
+const fakeClassList = (...initial) => {
+    const classes = new Set(initial);
+    return {
+        contains: (name) => classes.has(name),
+        toggle: (name, force) => (force ? classes.add(name) : classes.delete(name)),
+    };
+};
+
+// The refreshed element of the page with the given accordions, each rendered open or closed by default
+const fakeAccordionsContent = ({accordions, dataset}) => {
+    const rendered = Object.entries(accordions).map(([key, isOpenByDefault]) => {
+        const attributes = {};
+        return {
+            key,
+            attributes,
+            collapse: {
+                id: `status-page-${key}-incidents-collapse`,
+                dataset: {incidentsAccordion: key},
+                classList: isOpenByDefault ? fakeClassList('collapse', 'show') : fakeClassList('collapse'),
+            },
+            toggle: {
+                classList: isOpenByDefault ? fakeClassList() : fakeClassList('collapsed'),
+                setAttribute: (name, value) => attributes[name] = value,
+            },
+        };
+    });
+    const content = {
+        dataset,
+        querySelectorAll: () => rendered.map(({collapse}) => collapse),
+        querySelector: (selector) => rendered.find(({collapse}) => selector.includes(collapse.id))?.toggle ?? null,
+    };
+    const byKey = Object.fromEntries(rendered.map((accordion) => [accordion.key, accordion]));
+    return {content, byKey};
+};
+
+test('applyIncidentsAccordionsState applies the choices of the visitor to the refreshed accordions', () => {
+    const {content, byKey} = fakeAccordionsContent({
+        accordions: {active: true, resolved: false},
+        dataset: {
+            incidentsAccordionsShown: '["active","resolved"]',
+            incidentsAccordionChoices: '{"active":false,"resolved":true}',
+        },
+    });
+
+    applyIncidentsAccordionsState(content);
+
+    assert.equal(byKey.active.collapse.classList.contains('show'), false);
+    assert.equal(byKey.active.toggle.classList.contains('collapsed'), true);
+    assert.equal(byKey.active.attributes['aria-expanded'], 'false');
+    assert.equal(byKey.resolved.collapse.classList.contains('show'), true);
+    assert.equal(byKey.resolved.toggle.classList.contains('collapsed'), false);
+    assert.equal(byKey.resolved.attributes['aria-expanded'], 'true');
+    assert.deepEqual(JSON.parse(content.dataset.incidentsAccordionChoices), {active: false, resolved: true});
+});
+
+test('applyIncidentsAccordionsState opens a new outage, but keeps the choice about the resolved incidents', () => {
+    const {content, byKey} = fakeAccordionsContent({
+        accordions: {active: true, resolved: false},
+        // The active incidents were not there before the refresh, but the visitor had closed them earlier
+        dataset: {
+            incidentsAccordionsShown: '["resolved"]',
+            incidentsAccordionChoices: '{"active":false,"resolved":true}',
+        },
+    });
+
+    applyIncidentsAccordionsState(content);
+
+    assert.equal(byKey.active.collapse.classList.contains('show'), true);
+    assert.equal(byKey.resolved.collapse.classList.contains('show'), true);
+    assert.deepEqual(JSON.parse(content.dataset.incidentsAccordionChoices), {resolved: true});
+});
+
+test('applyIncidentsAccordionsState forgets the choices about the accordions that are gone', () => {
+    const {content} = fakeAccordionsContent({
+        accordions: {},
+        dataset: {incidentsAccordionsShown: '["active"]', incidentsAccordionChoices: '{"active":false}'},
+    });
+
+    applyIncidentsAccordionsState(content);
+
+    assert.deepEqual(JSON.parse(content.dataset.incidentsAccordionChoices), {});
+});
+
+test('applyIncidentsAccordionsState keeps the defaults without any remembered state, even a broken one', () => {
+    const {content, byKey} = fakeAccordionsContent({
+        accordions: {active: true, resolved: false},
+        dataset: {incidentsAccordionChoices: '{broken'},
+    });
+
+    applyIncidentsAccordionsState(content);
+
+    assert.equal(byKey.active.collapse.classList.contains('show'), true);
+    assert.equal(byKey.resolved.collapse.classList.contains('show'), false);
+});
+
+test('rememberShownIncidentsAccordions records the accordions that are on the page before the refresh', () => {
+    const {content} = fakeAccordionsContent({accordions: {active: true, resolved: false}, dataset: {}});
+
+    rememberShownIncidentsAccordions(content);
+
+    assert.deepEqual(JSON.parse(content.dataset.incidentsAccordionsShown), ['active', 'resolved']);
+});
+
+test('rememberIncidentsAccordionChoice records when the visitor opens or closes an accordion', () => {
+    const content = {dataset: {}};
+    const collapse = (key) => ({dataset: {incidentsAccordion: key}, closest: () => content});
+
+    rememberIncidentsAccordionChoice({type: 'hidden.bs.collapse', target: collapse('active')});
+    rememberIncidentsAccordionChoice({type: 'shown.bs.collapse', target: collapse('resolved')});
+    assert.deepEqual(JSON.parse(content.dataset.incidentsAccordionChoices), {active: false, resolved: true});
+
+    // Any other collapsible element is ignored, just like an accordion outside the refreshed part of the page
+    rememberIncidentsAccordionChoice({type: 'shown.bs.collapse', target: {dataset: {}, closest: () => content}});
+    rememberIncidentsAccordionChoice({
+        type: 'shown.bs.collapse',
+        target: {dataset: {incidentsAccordion: 'active'}, closest: () => null},
+    });
+    assert.deepEqual(JSON.parse(content.dataset.incidentsAccordionChoices), {active: false, resolved: true});
+});
+
+const withIncidentsModal = (t, {templates, isShown = false}) => {
+    const filled = [];
+    const modal = {
+        dataset: {},
+        classList: isShown ? fakeClassList('modal', 'show') : fakeClassList('modal'),
+        querySelector: () => ({replaceChildren: (child) => filled.push(child)}),
+    };
+    const originalDocument = globalThis.document;
+    globalThis.document = {
+        addEventListener() {},
+        getElementById: (id) => id === 'status-page-incidents-modal' ? modal : null,
+        querySelectorAll: () => templates.map(({key, content}) => ({
+            dataset: {incidentsOf: key},
+            content: {cloneNode: () => content},
+        })),
+    };
+    t.after(() => { globalThis.document = originalDocument; });
+    return {modal, filled};
+};
+
+test('showStatusPageIncidents fills the modal from the template of the monitor', (t) => {
+    const {modal, filled} = withIncidentsModal(t, {
+        templates: [{key: 'http:API "v2"', content: 'API'}, {key: 'push:Worker', content: 'Worker'}],
+    });
+
+    showStatusPageIncidents('push:Worker');
+
+    assert.equal(modal.dataset.incidentsOf, 'push:Worker');
+    assert.deepEqual(filled, ['Worker']);
+});
+
+test('refreshStatusPageIncidentsModal refills only an open modal, and keeps it when the template is gone', (t) => {
+    const {modal, filled} = withIncidentsModal(t, {templates: [{key: 'http:API', content: 'Refreshed'}], isShown: true});
+    modal.dataset.incidentsOf = 'http:API';
+
+    refreshStatusPageIncidentsModal();
+    assert.deepEqual(filled, ['Refreshed']);
+
+    modal.dataset.incidentsOf = 'http:Gone';
+    refreshStatusPageIncidentsModal();
+    assert.deepEqual(filled, ['Refreshed']);
+});
+
+test('refreshStatusPageIncidentsModal leaves a closed modal alone', (t) => {
+    const {modal, filled} = withIncidentsModal(t, {templates: [{key: 'http:API', content: 'Refreshed'}]});
+    modal.dataset.incidentsOf = 'http:API';
+
+    refreshStatusPageIncidentsModal();
+
+    assert.deepEqual(filled, []);
+});
+

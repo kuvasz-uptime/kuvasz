@@ -18,6 +18,7 @@ import java.time.OffsetDateTime
 class DockerUptimeEventRepository(private val dslContext: DSLContext) : UptimeEventRepository {
 
     private val uptimeEventColumns = UptimeEventColumns(
+        eventId = DOCKER_UPTIME_EVENT.ID,
         eventMonitorId = DOCKER_UPTIME_EVENT.MONITOR_ID,
         status = DOCKER_UPTIME_EVENT.STATUS,
         startedAt = DOCKER_UPTIME_EVENT.STARTED_AT,

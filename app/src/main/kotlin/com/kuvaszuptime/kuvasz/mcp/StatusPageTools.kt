@@ -28,7 +28,9 @@ class StatusPageTools(
     @Tool(
         name = ToolNames.GET_STATUS_PAGE_DETAILS,
         description = "Get the full details of a specific status page by its ID, including per-monitor " +
-            "uptime status, uptime ratio, and 30-day uptime history",
+            "uptime status, uptime ratio, and the daily uptime history of the last 'historyDays' days (30, or less " +
+            "if the event data retention is shorter). Every day of the history carries its downtime, and the " +
+            "incidents that were open on that day, with their public notes only.",
         annotations = Tool.ToolAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = false)
     )
     fun getStatusPageDetails(

@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.uitest
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
-import com.kuvaszuptime.kuvasz.uitest.pages.IncidentListPage
+import com.kuvaszuptime.kuvasz.uitest.pages.incident.IncidentListPage
 import com.kuvaszuptime.kuvasz.uitest.pages.IntegrationListPage
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest

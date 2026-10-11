@@ -2,7 +2,9 @@ package com.kuvaszuptime.kuvasz.models.dto.statuspage
 
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.kuvaszuptime.kuvasz.jooq.enums.InvestigationStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentStatus
 import com.kuvaszuptime.kuvasz.models.statuspage.SystemStatus
 import com.kuvaszuptime.kuvasz.models.theme.ThemeBase
 import io.swagger.v3.oas.annotations.media.Schema
@@ -21,6 +23,7 @@ data class StatusPageDataDto(
     val upcomingMaintenanceWindows: List<StatusPageMaintenanceWindowDto> = emptyList(),
     val displayCategories: Boolean = StatusPageDefaults.DISPLAY_CATEGORIES,
     val themeBase: ThemeBase = ThemeBase.DEFAULT,
+    val historyDays: Int = StatusPageDefaults.HISTORY_DAYS,
 )
 
 /**
@@ -151,8 +154,40 @@ data class StatusPageDnsMonitorDetailsDto(
  * date (e.g. monitor was created after that date).
  */
 data class StatusHistoryDto(
+    @param:Schema(description = StatusPageDocs.HISTORY_DATE, required = true)
     val date: LocalDate,
+    @param:Schema(description = StatusPageDocs.HISTORY_OUTAGE_COUNT, required = true, nullable = true)
     val outageCnt: Int?,
+    @param:Schema(description = StatusPageDocs.HISTORY_DOWNTIME_SECONDS, required = true, nullable = true)
+    val downtimeSeconds: Long? = null,
+    @param:Schema(description = StatusPageDocs.HISTORY_INCIDENTS, required = true)
+    val incidents: List<StatusPageIncidentDto> = emptyList(),
+)
+
+/**
+ * An incident of a monitor as it's shown on a status page: only its span and its public notes, never its error or
+ * any internal identifier of the monitor, as status pages can be public.
+ */
+data class StatusPageIncidentDto(
+    @param:Schema(description = StatusPageDocs.INCIDENT_ID, required = true)
+    val id: Long,
+    @param:Schema(description = StatusPageDocs.INCIDENT_STARTED_AT, required = true)
+    val startedAt: OffsetDateTime,
+    @param:Schema(description = StatusPageDocs.INCIDENT_ENDED_AT, required = true, nullable = true)
+    val endedAt: OffsetDateTime?,
+    @param:Schema(description = StatusPageDocs.INCIDENT_STATUS, required = true)
+    val status: IncidentStatus,
+    @param:Schema(description = StatusPageDocs.INCIDENT_NOTES, required = true)
+    val notes: List<StatusPageIncidentNoteDto> = emptyList(),
+)
+
+data class StatusPageIncidentNoteDto(
+    @param:Schema(description = StatusPageDocs.NOTE_STATUS, required = true)
+    val status: InvestigationStatus,
+    @param:Schema(description = StatusPageDocs.NOTE_CONTENT, required = true)
+    val content: String,
+    @param:Schema(description = StatusPageDocs.NOTE_TIMESTAMP, required = true)
+    val timestamp: OffsetDateTime,
 )
 
 /**

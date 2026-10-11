@@ -12,6 +12,7 @@ import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createTcpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.IncidentType
+import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
@@ -74,6 +75,58 @@ class IncidentNoteRepositoryTest(
 
                 then("it should return an empty list") {
                     incidentNoteRepository.fetchByEvent(IncidentType.HTTP, 1234L).shouldBeEmpty()
+                }
+            }
+        }
+
+        given("the fetchPublicByEvents() method") {
+
+            `when`("the incidents have public and private notes") {
+
+                then("only the public notes of the requested incidents should be returned, by their events") {
+                    val now = getCurrentTimestamp()
+                    val timestamp = now.minusHours(1)
+                    val first = createIncidentNote(
+                        dslContext,
+                        IncidentType.HTTP,
+                        eventId = 1L,
+                        status = InvestigationStatus.RESOLVED,
+                        content = "Second, by its creation date",
+                        public = true,
+                        createdAt = now,
+                    )
+                    createIncidentNote(
+                        dslContext,
+                        IncidentType.HTTP,
+                        eventId = 1L,
+                        content = "First, by its timestamp",
+                        timestamp = timestamp,
+                        public = true,
+                    )
+                    createIncidentNote(dslContext, IncidentType.HTTP, eventId = 1L, content = "Private")
+                    createIncidentNote(dslContext, IncidentType.HTTP, eventId = 2L, content = "Other", public = true)
+                    // Not requested
+                    createIncidentNote(dslContext, IncidentType.HTTP, eventId = 3L, content = "Unasked", public = true)
+                    createIncidentNote(dslContext, IncidentType.PUSH, eventId = 1L, content = "Push", public = true)
+
+                    val result = incidentNoteRepository.fetchPublicByEvents(IncidentType.HTTP, listOf(1L, 2L))
+
+                    result.keys shouldBe setOf(1L, 2L)
+                    result.getValue(1L).map { it.content } shouldBe
+                        listOf("First, by its timestamp", "Second, by its creation date")
+                    result.getValue(1L)[0].timestamp shouldBe timestamp
+                    result.getValue(1L)[1].timestamp shouldBe first.createdAt
+                    result.getValue(1L)[1].status shouldBe InvestigationStatus.RESOLVED
+                    result.getValue(2L).map { it.content } shouldBe listOf("Other")
+                }
+            }
+
+            `when`("no events are requested") {
+
+                then("it should return nothing") {
+                    createIncidentNote(dslContext, IncidentType.HTTP, eventId = 1L, public = true)
+
+                    incidentNoteRepository.fetchPublicByEvents(IncidentType.HTTP, emptyList()) shouldBe emptyMap()
                 }
             }
         }

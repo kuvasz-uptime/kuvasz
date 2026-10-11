@@ -314,6 +314,9 @@ status.your-domain.com {
 
 The configuration snippet above exposes the default status page (that is located under `/status` on _Kuvasz_) on the root of the configured subdomain (i.e. `status.your-domain.com`), and also proxies the other status pages (e.g. `/status/your-custom-status-page`) on requesting `status.your-domain.com/your-custom-status-page`.
 
+!!! note "Refreshing the status pages"
+    The status pages refresh themselves in place every minute, by requesting the very same URL they were opened on, so no extra rule is needed for that. The refresh is told apart from a full page load by its `HX-Request` header, so make sure that your proxy forwards the request headers (_Caddy_ does it by default), and if it caches the responses, that it honors their `Vary: HX-Request` header.
+
 ## Providing a custom root certificate for SSL checks
 
 If you want to use a **custom root certificate** for SSL checks (e.g. if you're using a self-signed certificate, or a private CA), you can provide it by modifying the _Java Keystore_ (JKS) in use, to add your custom root certificate to it.

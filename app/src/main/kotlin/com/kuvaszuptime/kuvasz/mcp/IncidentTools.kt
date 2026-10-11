@@ -83,10 +83,10 @@ class IncidentTools(
     fun createIncidentNote(input: IncidentNoteCreatorSchema): IncidentDetailsSchema {
         val createDto = input.toDto()
         validator.validate(createDto).throwIfNotEmpty()
-        incidentActions.createNote(input.incidentType, input.eventId, createDto)
-        return IncidentDetailsSchema.fromDto(incidentActions.getIncidentDetails(input.incidentType, input.eventId))
+        return IncidentDetailsSchema.fromDto(
+            incidentActions.createNoteAndGetDetails(input.incidentType, input.eventId, createDto)
+        )
     }
-
 
     @Tool(
         name = ToolNames.DELETE_INCIDENT_NOTE,
@@ -103,6 +103,6 @@ class IncidentTools(
     }
 
     private fun String.toIncidentType(): IncidentType =
-        IncidentType.entries.firstOrNull { it.name.equals(this, ignoreCase = true) }
+        IncidentType.fromNameOrNull(this)
             ?: throw ValidationException("Unknown incident type: '$this', it should be one of: $INCIDENT_TYPES")
 }

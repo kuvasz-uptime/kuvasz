@@ -29,6 +29,7 @@ data class AppGlobals(
     val connectivityStatus: () -> ConnectivityStatus?,
     val defaultStatusPageSettings: DefaultStatusPageSettings,
     val configuredMonitors: () -> List<MonitorID>,
+    val incidentNotesEnabled: Boolean,
 ) {
     init {
         // Setting up the locale for i18n messages

@@ -258,7 +258,6 @@ class IncidentToolsTest(
             }
         }
 
-
         given("the delete-incident-note tool") {
 
             `when`("it is called for an existing note") {

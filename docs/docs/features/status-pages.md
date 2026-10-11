@@ -15,10 +15,11 @@ Both types supports the following features:
 - **Public or private access**: You can choose to make your status page public, or make it available only to authenticated users.
 - **Custom logo and favicon**: You can reference your own logo and favicon to match your branding.
 - **Custom title and slug**: You can set a custom title and URL for your status page.
-- **Historical statistics** from the last 30 days:
+- **Historical statistics** from the last 30 days (or less, if the [**event data retention**](../setup/configuration.md#event-data-retention) is shorter than that):
     - uptime percentage
     - average response time (a.k.a. "latency") if recorded
-    - number of incidents per day
+    - the incidents of every day, with their time span and the total downtime of the day
+- **Public incident notes**: the [**notes**](incidents.md#incident-notes) you mark as public are shown with their incidents, so your users can follow what's going on. Everything else about the incidents (e.g. the errors of the checks, the private notes, or the notified integrations) stays private. The incidents of SSL certificates are never shown on status pages.
 - **Server-side caching**: To improve performance, status pages are cached on the server-side. You can configure the cache duration to balance between performance and data freshness.
 - **Monitor categories**: If you assign a [category](../management/http-monitors.md#category) to your monitors (e.g. a product or service name), the status page groups them into one section per category, each with its own aggregated status.
 

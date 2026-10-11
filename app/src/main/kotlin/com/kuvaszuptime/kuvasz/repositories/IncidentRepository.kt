@@ -46,6 +46,7 @@ class IncidentRepository(private val dslContext: DSLContext) {
      * @param period Optional duration to filter incidents that were open during this time frame.
      * @param includeResolved Whether to include resolved incidents.
      * @param includeSslIncidents Whether to include the SSL incidents too, not only the uptime ones.
+     * @param types Optional types of the incidents to return, every type if null.
      *
      * @return List of [IncidentDto] matching the criteria.
      */
@@ -54,11 +55,12 @@ class IncidentRepository(private val dslContext: DSLContext) {
         period: Duration? = null,
         includeResolved: Boolean,
         includeSslIncidents: Boolean = true,
+        types: Set<IncidentType>? = null,
     ): List<IncidentDto> {
         val orderFieldName = DSL.name(IncidentDto::updatedAt.name)
-        val incidents = incidentSelects(monitorId, period, includeResolved.toIncidentStates(), includeSslIncidents)
-            .unionAll()
-            .asTable("incident")
+        val selects = incidentSelects(monitorId, period, includeResolved.toIncidentStates(), includeSslIncidents, types)
+        if (selects.isEmpty()) return emptyList()
+        val incidents = selects.unionAll().asTable("incident")
 
         return dslContext
             .selectFrom(incidents)
@@ -95,7 +97,13 @@ class IncidentRepository(private val dslContext: DSLContext) {
      * the lists. Returns null if there is no such event, or it's not an incident (e.g. an UP event).
      */
     fun getIncident(incidentType: IncidentType, eventId: Long): IncidentDto? =
-        dslContext.incidentSelect(incidentType, eventId).fetchOneInto(IncidentDto::class.java)
+        dslContext.incidentSelect(
+            incidentType = incidentType,
+            monitorId = null,
+            period = null,
+            states = IncidentStates.ALL,
+            eventId = eventId,
+        ).fetchOneInto(IncidentDto::class.java)
 
     /**
      * The integrations that were notified when the [incident] started, and when it was resolved. The latter are
@@ -124,31 +132,33 @@ class IncidentRepository(private val dslContext: DSLContext) {
         )
     }
 
-    private fun DSLContext.incidentSelect(incidentType: IncidentType, eventId: Long) = when (incidentType) {
-        IncidentType.HTTP -> httpUptimeIncidentSelect(states = IncidentStates.ALL, eventId = eventId)
-        IncidentType.SSL -> sslIncidentsSelect(states = IncidentStates.ALL, eventId = eventId)
-        IncidentType.PUSH -> pushUptimeIncidentSelect(states = IncidentStates.ALL, eventId = eventId)
-        IncidentType.ICMP -> icmpUptimeIncidentSelect(states = IncidentStates.ALL, eventId = eventId)
-        IncidentType.TCP -> tcpUptimeIncidentSelect(states = IncidentStates.ALL, eventId = eventId)
-        IncidentType.DNS -> dnsUptimeIncidentSelect(states = IncidentStates.ALL, eventId = eventId)
-        IncidentType.DOCKER -> dockerUptimeIncidentSelect(states = IncidentStates.ALL, eventId = eventId)
+    private fun DSLContext.incidentSelect(
+        incidentType: IncidentType,
+        monitorId: Long?,
+        period: Duration?,
+        states: IncidentStates,
+        eventId: Long? = null,
+    ) = when (incidentType) {
+        IncidentType.HTTP -> httpUptimeIncidentSelect(monitorId, period, states, eventId)
+        IncidentType.SSL -> sslIncidentsSelect(monitorId, period, states, eventId)
+        IncidentType.PUSH -> pushUptimeIncidentSelect(monitorId, period, states, eventId)
+        IncidentType.ICMP -> icmpUptimeIncidentSelect(monitorId, period, states, eventId)
+        IncidentType.TCP -> tcpUptimeIncidentSelect(monitorId, period, states, eventId)
+        IncidentType.DNS -> dnsUptimeIncidentSelect(monitorId, period, states, eventId)
+        IncidentType.DOCKER -> dockerUptimeIncidentSelect(monitorId, period, states, eventId)
     }
 
-    /** The incidents of every type, each of them selected on its own. */
+    /** The incidents of every requested type, each of them selected on its own. */
     private fun incidentSelects(
         monitorId: Long?,
         period: Duration?,
         states: IncidentStates,
         includeSslIncidents: Boolean,
-    ) = listOfNotNull(
-        dslContext.httpUptimeIncidentSelect(monitorId, period, states),
-        dslContext.pushUptimeIncidentSelect(monitorId, period, states),
-        dslContext.icmpUptimeIncidentSelect(monitorId, period, states),
-        dslContext.tcpUptimeIncidentSelect(monitorId, period, states),
-        dslContext.dnsUptimeIncidentSelect(monitorId, period, states),
-        dslContext.dockerUptimeIncidentSelect(monitorId, period, states),
-        if (includeSslIncidents) dslContext.sslIncidentsSelect(monitorId, period, states) else null,
-    )
+        types: Set<IncidentType>? = null,
+    ) = IncidentType.entries
+        .filter { type -> types == null || type in types }
+        .filter { type -> includeSslIncidents || type != IncidentType.SSL }
+        .map { type -> dslContext.incidentSelect(type, monitorId, period, states) }
 
     private fun <R : Record> List<Select<R>>.unionAll(): Select<R> = reduce { union, select -> union.unionAll(select) }
 
@@ -482,53 +492,61 @@ class IncidentRepository(private val dslContext: DSLContext) {
         val startedAt: TableField<*, OffsetDateTime>,
         val integrations: TableField<*, Array<IntegrationID>>,
     ) {
-        val events: Table<*> get() = checkNotNull(id.table)
+        val events: Table<*> = checkNotNull(id.table)
     }
 
-    private val incidentEventTables = mapOf(
-        IncidentType.HTTP to IncidentEventTable(
-            HTTP_UPTIME_EVENT.ID,
-            HTTP_UPTIME_EVENT.MONITOR_ID,
-            HTTP_UPTIME_EVENT.STARTED_AT,
-            HTTP_UPTIME_EVENT.INTEGRATIONS,
-        ),
-        IncidentType.SSL to IncidentEventTable(
-            SSL_EVENT.ID,
-            SSL_EVENT.MONITOR_ID,
-            SSL_EVENT.STARTED_AT,
-            SSL_EVENT.INTEGRATIONS,
-        ),
-        IncidentType.PUSH to IncidentEventTable(
-            PUSH_UPTIME_EVENT.ID,
-            PUSH_UPTIME_EVENT.MONITOR_ID,
-            PUSH_UPTIME_EVENT.STARTED_AT,
-            PUSH_UPTIME_EVENT.INTEGRATIONS,
-        ),
-        IncidentType.ICMP to IncidentEventTable(
-            ICMP_UPTIME_EVENT.ID,
-            ICMP_UPTIME_EVENT.MONITOR_ID,
-            ICMP_UPTIME_EVENT.STARTED_AT,
-            ICMP_UPTIME_EVENT.INTEGRATIONS,
-        ),
-        IncidentType.TCP to IncidentEventTable(
-            TCP_UPTIME_EVENT.ID,
-            TCP_UPTIME_EVENT.MONITOR_ID,
-            TCP_UPTIME_EVENT.STARTED_AT,
-            TCP_UPTIME_EVENT.INTEGRATIONS,
-        ),
-        IncidentType.DNS to IncidentEventTable(
-            DNS_UPTIME_EVENT.ID,
-            DNS_UPTIME_EVENT.MONITOR_ID,
-            DNS_UPTIME_EVENT.STARTED_AT,
-            DNS_UPTIME_EVENT.INTEGRATIONS,
-        ),
-        IncidentType.DOCKER to IncidentEventTable(
-            DOCKER_UPTIME_EVENT.ID,
-            DOCKER_UPTIME_EVENT.MONITOR_ID,
-            DOCKER_UPTIME_EVENT.STARTED_AT,
-            DOCKER_UPTIME_EVENT.INTEGRATIONS,
-        ),
-    )
+    private val incidentEventTables = IncidentType.entries.associateWith { type ->
+        when (type) {
+            IncidentType.HTTP -> IncidentEventTable(
+                HTTP_UPTIME_EVENT.ID,
+                HTTP_UPTIME_EVENT.MONITOR_ID,
+                HTTP_UPTIME_EVENT.STARTED_AT,
+                HTTP_UPTIME_EVENT.INTEGRATIONS,
+            )
+
+            IncidentType.SSL -> IncidentEventTable(
+                SSL_EVENT.ID,
+                SSL_EVENT.MONITOR_ID,
+                SSL_EVENT.STARTED_AT,
+                SSL_EVENT.INTEGRATIONS,
+            )
+
+            IncidentType.PUSH -> IncidentEventTable(
+                PUSH_UPTIME_EVENT.ID,
+                PUSH_UPTIME_EVENT.MONITOR_ID,
+                PUSH_UPTIME_EVENT.STARTED_AT,
+                PUSH_UPTIME_EVENT.INTEGRATIONS,
+            )
+
+            IncidentType.ICMP -> IncidentEventTable(
+                ICMP_UPTIME_EVENT.ID,
+                ICMP_UPTIME_EVENT.MONITOR_ID,
+                ICMP_UPTIME_EVENT.STARTED_AT,
+                ICMP_UPTIME_EVENT.INTEGRATIONS,
+            )
+
+            IncidentType.TCP -> IncidentEventTable(
+                TCP_UPTIME_EVENT.ID,
+                TCP_UPTIME_EVENT.MONITOR_ID,
+                TCP_UPTIME_EVENT.STARTED_AT,
+                TCP_UPTIME_EVENT.INTEGRATIONS,
+            )
+
+            IncidentType.DNS -> IncidentEventTable(
+                DNS_UPTIME_EVENT.ID,
+                DNS_UPTIME_EVENT.MONITOR_ID,
+                DNS_UPTIME_EVENT.STARTED_AT,
+                DNS_UPTIME_EVENT.INTEGRATIONS,
+            )
+
+            IncidentType.DOCKER -> IncidentEventTable(
+                DOCKER_UPTIME_EVENT.ID,
+                DOCKER_UPTIME_EVENT.MONITOR_ID,
+                DOCKER_UPTIME_EVENT.STARTED_AT,
+                DOCKER_UPTIME_EVENT.INTEGRATIONS,
+            )
+        }
+    }
 
     /** Which incidents are fetched: the ongoing ones, the resolved ones or all of them. */
     private enum class IncidentStates { ONGOING, RESOLVED, ALL }

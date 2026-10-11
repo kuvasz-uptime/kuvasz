@@ -18,6 +18,7 @@ import java.time.OffsetDateTime
 class TcpUptimeEventRepository(private val dslContext: DSLContext) : UptimeEventRepository {
 
     private val uptimeEventColumns = UptimeEventColumns(
+        eventId = TCP_UPTIME_EVENT.ID,
         eventMonitorId = TCP_UPTIME_EVENT.MONITOR_ID,
         status = TCP_UPTIME_EVENT.STATUS,
         startedAt = TCP_UPTIME_EVENT.STARTED_AT,

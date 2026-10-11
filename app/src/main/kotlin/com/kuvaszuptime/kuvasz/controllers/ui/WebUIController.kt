@@ -2,7 +2,6 @@ package com.kuvaszuptime.kuvasz.controllers.ui
 
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
-import com.kuvaszuptime.kuvasz.repositories.IncidentRepository
 import com.kuvaszuptime.kuvasz.repositories.SettingsRepository
 import com.kuvaszuptime.kuvasz.security.ui.UnauthenticatedOnly
 import com.kuvaszuptime.kuvasz.security.ui.WebSecured
@@ -31,7 +30,6 @@ class WebUIController(
     private val appGlobals: AppGlobals,
     private val settingsRepository: SettingsRepository,
     private val integrationsRepository: IntegrationRepository,
-    private val incidentRepository: IncidentRepository,
     private val dashboardDataProvider: DashboardDataProvider,
     private val dockerHostRegistry: DockerHostRegistry?,
     private val dockerApiClient: DockerApiClient?,
@@ -91,22 +89,6 @@ class WebUIController(
         settings = settingsRepository.getSettings(),
     )
 
-    @Get("/incidents")
-    @WebSecured
-    @Produces(MediaType.TEXT_HTML)
-    @ExecuteOn(TaskExecutors.BLOCKING)
-    fun incidents(@QueryValue period: Duration?): String {
-        val effectivePeriod = period ?: Duration.ofDays(UIDefaults.INCIDENTS_PERIOD_DAYS)
-        return renderIncidentsPage(
-            globals = appGlobals,
-            period = effectivePeriod,
-            incidents = incidentRepository.getIncidents(
-                monitorId = null,
-                period = effectivePeriod,
-                includeResolved = true,
-            )
-        )
-    }
 }
 
 // Only the periods of the selector are accepted, as the timeline of the dashboard is sliced to fit them

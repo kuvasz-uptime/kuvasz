@@ -148,6 +148,54 @@ internal fun FlowContent.validatedTextArea(
     }
 }
 
+/**
+ * The input of a dateTimePickerField (see kuvasz.js), which has to be spread into the x-data of the form. The picked
+ * value is validated by the form, which reports its errors under [errorProp].
+ */
+internal fun FlowContent.dateTimePickerInput(
+    inputName: String,
+    errorProp: String,
+    label: String,
+    description: String? = null,
+    required: Boolean = false,
+    isReadOnly: Boolean = false,
+) {
+    formLabel(
+        label = label,
+        description = description,
+        inputName = inputName,
+        required = required,
+    )
+    div {
+        classes(INPUT_ICON)
+        span {
+            classes(INPUT_ICON_ADDON)
+            icon(Icon.CALENDAR_EVENT)
+        }
+        input(type = InputType.text) {
+            classes(FORM_CONTROL)
+            id = inputName
+            name = inputName
+            placeholder = "YYYY-MM-DD HH:mm[:ss]"
+            autoComplete = "off"
+            attributes["data-bs-toggle"] = "datepicker"
+            xInit("initDateTimePicker(\$el)")
+            xBindValue("formatDateTimeValue(pickedDate, pickedTime)")
+            xBindErrorClass(errorProp)
+            xOnChange("onDateTimeTyped(\$event.target.value)")
+            if (isReadOnly) disabled = true
+        }
+    }
+    templateTag {
+        xIf("errors.$errorProp")
+        div {
+            // The input isn't a sibling of the feedback, so it has to be displayed explicitly
+            classes(INVALID_FEEDBACK, D_BLOCK)
+            xText("errors.$errorProp")
+        }
+    }
+}
+
 internal fun FlowContent.toggleSwitch(
     propName: String,
     label: String,

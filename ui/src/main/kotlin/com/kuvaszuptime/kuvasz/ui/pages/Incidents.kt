@@ -3,14 +3,14 @@ package com.kuvaszuptime.kuvasz.ui.pages
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.IncidentType
-import com.kuvaszuptime.kuvasz.models.monitorType
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentDto
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentStatus
+import com.kuvaszuptime.kuvasz.models.monitorType
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
-import com.kuvaszuptime.kuvasz.ui.fragments.monitor.http.sslEventsPath
+import com.kuvaszuptime.kuvasz.ui.fragments.monitor.http.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import com.kuvaszuptime.kuvasz.util.formatAsInterval
@@ -19,12 +19,17 @@ import com.kuvaszuptime.kuvasz.util.getDurationOfEvent
 import kotlinx.html.*
 import java.time.Duration
 
-fun renderIncidentsPage(globals: AppGlobals, period: Duration, incidents: List<IncidentDto>): String {
+fun renderIncidentsPage(
+    globals: AppGlobals,
+    period: Duration,
+    selectedType: IncidentType?,
+    incidents: List<IncidentDto>,
+): String {
     val formattedPeriod = period.formatAsSimpleInterval()
     return withLayout(
         globals,
         title = Messages.incidentsInTheLast(formattedPeriod),
-        pageTitle = { incidentsPageHeader(formattedPeriod, selectedPeriod = period) }
+        pageTitle = { incidentsPageHeader(formattedPeriod) }
     ) {
         div {
             classes(ROW, ROW_CARDS)
@@ -32,6 +37,7 @@ fun renderIncidentsPage(globals: AppGlobals, period: Duration, incidents: List<I
                 classes(COL_12)
                 div {
                     classes(CARD)
+                    incidentFilterToolbar(selectedPeriod = period, selectedType = selectedType, count = incidents.size)
                     if (incidents.isNotEmpty()) {
                         div {
                             classes(CARD_TABLE, TABLE_RESPONSIVE)
@@ -66,6 +72,8 @@ fun renderIncidentsPage(globals: AppGlobals, period: Duration, incidents: List<I
                                             classes(D_NONE, D_LG_TABLE_CELL, PX_3)
                                             +Messages.details()
                                         }
+                                        // Actions
+                                        th {}
                                     }
                                 }
                                 tbody {
@@ -110,6 +118,11 @@ fun renderIncidentsPage(globals: AppGlobals, period: Duration, incidents: List<I
                                             td {
                                                 classes(TEXT_WRAP, TEXT_BREAK, D_NONE, D_LG_TABLE_CELL, PX_3)
                                                 +incident.details.orEmpty()
+                                            }
+                                            // Actions
+                                            td {
+                                                classes(TEXT_END)
+                                                incidentDetailsButton(incident)
                                             }
                                         }
                                     }
@@ -173,13 +186,93 @@ fun FlowContent.incidentStatusBadge(incident: IncidentDto) {
     }
 }
 
+internal fun incidentDetailsPath(incidentType: IncidentType, eventId: Long): String =
+    "/incidents/${incidentType.name.lowercase()}/$eventId"
+
+internal val IncidentDto.detailsPath: String
+    get() = incidentDetailsPath(incidentType, eventId)
+
+/** The link of an incident list row to the details page of the incident. */
+internal fun FlowContent.incidentDetailsButton(incident: IncidentDto) {
+    a(href = incident.detailsPath) {
+        classes(BTN, BTN_SM, BTN_ICON)
+        testId("incident-details-button")
+        tooltip(Messages.viewIncidentDetails())
+        ariaLabel(Messages.viewIncidentDetails())
+        icon(Icon.EYE)
+    }
+}
+
 internal fun IncidentDto.getMonitorUrl(): String = if (incidentType == IncidentType.SSL) {
     sslEventsPath(monitorId)
 } else {
     MonitorTypeUiConfig.of(incidentType.monitorType).detailsPath(monitorId)
 }
 
-private fun HtmlBlockTag.incidentsPageHeader(formattedPeriod: String, selectedPeriod: Duration) {
+private fun FlowContent.incidentFilterToolbar(selectedPeriod: Duration, selectedType: IncidentType?, count: Int) {
+    div {
+        classes(CARD_HEADER, PY_2)
+        testId("incident-filters")
+        div {
+            classes(ROW, G_2, ALIGN_ITEMS_CENTER, W_100)
+            div {
+                classes(CSSClass.COL)
+                span {
+                    classes(TEXT_SECONDARY)
+                    testId("incident-count")
+                    +Messages.incidentListCount(count)
+                }
+            }
+            div {
+                classes(COL_12, COL_SM_AUTO, MS_SM_AUTO)
+                div {
+                    classes(INPUT_ICON)
+                    span {
+                        classes(INPUT_ICON_ADDON)
+                        icon(Icon.CLOCK)
+                    }
+                    periodSelector(selected = selectedPeriod) {
+                        classes(FORM_SELECT, FORM_SELECT_SM)
+                        ariaLabel(Messages.filterByPeriod())
+                        testId("incident-period-filter")
+                        onChange = "applyIncidentFilter('period', this.value)"
+                    }
+                }
+            }
+            div {
+                classes(COL_12, COL_SM_AUTO)
+                div {
+                    classes(INPUT_ICON)
+                    span {
+                        classes(INPUT_ICON_ADDON)
+                        icon(Icon.FLAME)
+                    }
+                    select {
+                        classes(FORM_SELECT, FORM_SELECT_SM)
+                        ariaLabel(Messages.filterByIncidentType())
+                        testId("incident-type-filter")
+                        onChange = "applyIncidentFilter('type', this.value)"
+                        // An absent parameter means every type, so the unfiltered page keeps its plain URL
+                        option {
+                            value = ""
+                            selected = selectedType == null
+                            +Messages.allIncidentTypes()
+                        }
+                        IncidentType.entries.forEach { type ->
+                            option {
+                                value = type.name.lowercase()
+                                selected = selectedType == type
+                                +type.label
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun HtmlBlockTag.incidentsPageHeader(formattedPeriod: String) {
     div {
         classes(CONTAINER_XL)
         div {
@@ -202,15 +295,6 @@ private fun HtmlBlockTag.incidentsPageHeader(formattedPeriod: String, selectedPe
                                 +Messages.lastX(formattedPeriod)
                             }
                         }
-                    }
-                }
-            }
-            // Period selector
-            div {
-                classes(COL_SM_AUTO, MS_AUTO)
-                div {
-                    periodSelector(selected = selectedPeriod) {
-                        onChange = "{window.location = '/incidents?period=' + this.value;}"
                     }
                 }
             }

@@ -7708,15 +7708,34 @@ components:
     StatusHistoryDto:
       required:
       - date
+      - downtimeSeconds
+      - incidents
+      - outageCnt
       type: object
       properties:
         date:
           type: string
+          description: The date of the data point
           format: date
         outageCnt:
           type: integer
+          description: "The number of incidents that were open on the given date,\
+            \ null if there is no data for that date (e.g. the monitor didn't exist\
+            \ yet)"
           format: int32
           nullable: true
+        downtimeSeconds:
+          type: integer
+          description: "The total downtime on the given date in seconds, null if there\
+            \ is no data for that date"
+          format: int64
+          nullable: true
+        incidents:
+          type: array
+          description: "The incidents that were open on the given date, an incident\
+            \ spanning multiple days is listed on each of them"
+          items:
+            $ref: "#/components/schemas/StatusPageIncidentDto"
     StatusPageCreateDto:
       required:
       - slug
@@ -7785,6 +7804,7 @@ components:
       - customLogoUrl
       - displayCategories
       - generatedAt
+      - historyDays
       - id
       - monitors
       - public
@@ -7863,6 +7883,12 @@ components:
             going to start within the next 24 hours for at least one of its monitors
           items:
             $ref: "#/components/schemas/StatusPageMaintenanceWindowDto"
+        historyDays:
+          type: integer
+          description: "The number of days the uptime status history of the monitors\
+            \ covers: 30 days, or less, if the event data retention period is shorter\
+            \ than that"
+          format: int32
     StatusPageDockerMonitorDetailsDto:
       required:
       - inMaintenance
@@ -8080,6 +8106,58 @@ components:
             \ they do not exist"
           items:
             type: string
+    StatusPageIncidentDto:
+      required:
+      - endedAt
+      - id
+      - notes
+      - startedAt
+      - status
+      type: object
+      properties:
+        id:
+          type: integer
+          description: "The ID of the incident, the same on every day the incident\
+            \ spans. It's only unique among the incidents of the monitors of the same\
+            \ type, so it identifies an incident together with the `type` of its monitor"
+          format: int64
+        startedAt:
+          type: string
+          description: When the incident started
+          format: date-time
+        endedAt:
+          type: string
+          description: "When the incident was resolved, null if it's ongoing"
+          format: date-time
+          nullable: true
+        status:
+          description: Whether the incident is still ongoing or resolved
+          allOf:
+          - $ref: "#/components/schemas/IncidentStatus"
+        notes:
+          type: array
+          description: "The public notes of the incident, ordered by their timestamp"
+          items:
+            $ref: "#/components/schemas/StatusPageIncidentNoteDto"
+    StatusPageIncidentNoteDto:
+      required:
+      - content
+      - status
+      - timestamp
+      type: object
+      properties:
+        status:
+          description: The state of the investigation the note describes
+          allOf:
+          - $ref: "#/components/schemas/InvestigationStatus"
+        content:
+          type: string
+          description: "The content of the note, as plain text"
+        timestamp:
+          type: string
+          description: "The timestamp of the note, which is either given explicitly,\
+            \ or the creation date of the note"
+          format: date-time
     StatusPageMaintenanceWindowDto:
       required:
       - name

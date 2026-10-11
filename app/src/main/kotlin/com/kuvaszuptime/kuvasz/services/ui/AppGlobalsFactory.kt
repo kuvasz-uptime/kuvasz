@@ -78,5 +78,6 @@ class AppGlobalsFactory {
         configuredMonitors = {
             monitorActions.getConfiguredMonitors().sortedBy { it.name.lowercase() }
         },
+        incidentNotesEnabled = appConfig.incidentNotesEnabled,
     )
 }

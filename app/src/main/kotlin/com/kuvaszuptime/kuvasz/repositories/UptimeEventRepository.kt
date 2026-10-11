@@ -45,6 +45,7 @@ sealed interface UptimeEventRepository {
  * type rely on, so they are only written once.
  */
 internal class UptimeEventColumns(
+    val eventId: TableField<*, Long>,
     val eventMonitorId: TableField<*, Long>,
     val status: TableField<*, UptimeStatus>,
     val startedAt: TableField<*, OffsetDateTime>,
@@ -66,6 +67,7 @@ internal fun DSLContext.fetchUptimeEventsInPeriod(
     onlyEnabledMonitors: Boolean,
 ): List<UptimeEventCalculationContext> = with(columns) {
     select(
+        eventId.`as`(UptimeEventCalculationContext::id.name),
         monitorId.`as`(UptimeEventCalculationContext::monitorId.name),
         monitorEnabled.`as`(UptimeEventCalculationContext::isMonitorEnabled.name),
         status.`as`(UptimeEventCalculationContext::status.name),

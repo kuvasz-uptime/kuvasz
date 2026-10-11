@@ -36,4 +36,6 @@ data class StatusPageDetailsDto(
     val activeMaintenanceWindows: List<StatusPageMaintenanceWindowDto> = emptyList(),
     @param:Schema(description = StatusPageDocs.UPCOMING_MAINTENANCE_WINDOWS, required = true)
     val upcomingMaintenanceWindows: List<StatusPageMaintenanceWindowDto> = emptyList(),
+    @param:Schema(description = StatusPageDocs.HISTORY_DAYS, required = true)
+    val historyDays: Int = StatusPageDefaults.HISTORY_DAYS,
 )

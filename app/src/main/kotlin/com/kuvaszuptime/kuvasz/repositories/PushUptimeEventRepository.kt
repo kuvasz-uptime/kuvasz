@@ -17,6 +17,7 @@ import java.time.OffsetDateTime
 class PushUptimeEventRepository(private val dslContext: DSLContext) : UptimeEventRepository {
 
     private val uptimeEventColumns = UptimeEventColumns(
+        eventId = PUSH_UPTIME_EVENT.ID,
         eventMonitorId = PUSH_UPTIME_EVENT.MONITOR_ID,
         status = PUSH_UPTIME_EVENT.STATUS,
         startedAt = PUSH_UPTIME_EVENT.STARTED_AT,
