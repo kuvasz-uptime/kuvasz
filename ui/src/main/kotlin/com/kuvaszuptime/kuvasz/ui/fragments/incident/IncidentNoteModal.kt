@@ -133,11 +133,9 @@ private fun FlowContent.noteModalFooter() {
                     classes(TEXT_SECONDARY)
                     +Messages.deleteNoteConfirmation()
                 }
-                a(href = "#") {
-                    classes(BTN, BTN_LINK, LINK_SECONDARY, MS_AUTO)
+                modalCancelButton(closesModal = false, extraClasses = setOf(MS_AUTO)) {
                     testId("incident-note-delete-cancel-button")
                     xOnClick("\$event.preventDefault(); isDeleteConfirmationShown = false")
-                    +Messages.cancel()
                 }
                 button(type = ButtonType.button) {
                     classes(BTN, BTN_DANGER)
@@ -153,11 +151,8 @@ private fun FlowContent.noteModalFooter() {
             xIf("!isDeleteConfirmationShown")
             div {
                 classes(D_FLEX, ALIGN_ITEMS_CENTER, MS_AUTO)
-                a(href = "#") {
-                    classes(BTN, BTN_LINK, LINK_SECONDARY)
-                    modalCloser()
+                modalCancelButton {
                     testId("modal-dismiss-button")
-                    +Messages.cancel()
                 }
                 button(type = ButtonType.button) {
                     classes(BTN, BTN_PRIMARY)

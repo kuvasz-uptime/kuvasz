@@ -50,11 +50,7 @@ internal fun FlowContent.deleteModal(
                             classes(ROW)
                             div {
                                 classes(CSSClass.COL)
-                                a("#") {
-                                    classes(BTN, W_100)
-                                    modalCloser()
-                                    +Messages.cancel()
-                                }
+                                modalCancelButton(extraClasses = setOf(W_100))
                             }
                             if (!isDeleteDisabled) {
                                 div {

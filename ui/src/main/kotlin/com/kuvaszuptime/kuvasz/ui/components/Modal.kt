@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.ui.components
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
+import com.kuvaszuptime.kuvasz.ui.CSSClass
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
@@ -24,6 +25,22 @@ internal fun FlowContent.formErrorAlert() {
     }
 }
 
+internal fun FlowContent.modalCancelButton(
+    label: String = Messages.cancel(),
+    closesModal: Boolean = true,
+    extraClasses: Set<CSSClass> = emptySet(),
+    block: A.() -> Unit = {},
+) {
+    a(href = "#") {
+        classes(setOf(BTN, BTN_GHOST_SECONDARY) + extraClasses)
+        if (closesModal) {
+            modalCloser()
+        }
+        block()
+        +label
+    }
+}
+
 internal fun FlowContent.upsertModalFooter(
     isReadOnlyMode: Boolean,
     xSaveDisabledIf: String,
@@ -34,15 +51,8 @@ internal fun FlowContent.upsertModalFooter(
         if (!isReadOnlyMode) {
             formErrorAlert()
         }
-        a(href = "#") {
-            classes(BTN, BTN_LINK, LINK_SECONDARY)
-            modalCloser()
+        modalCancelButton(label = if (isReadOnlyMode) Messages.close() else Messages.cancel()) {
             testId("modal-dismiss-button")
-            if (isReadOnlyMode) {
-                +Messages.close()
-            } else {
-                +Messages.cancel()
-            }
         }
         if (!isReadOnlyMode) {
             button {

@@ -133,11 +133,8 @@ internal fun FlowContent.importModal(
 
                 div {
                     classes(MODAL_FOOTER)
-                    a(href = "#") {
+                    modalCancelButton {
                         xShow("!importCompleted")
-                        classes(BTN, BTN_LINK, LINK_SECONDARY)
-                        modalCloser()
-                        +Messages.cancel()
                     }
                     button {
                         xShow("!importCompleted")

@@ -62,6 +62,7 @@ internal enum class CSSClass(val className: String) {
     BTN_CLOSE("btn-close"),
     BTN_DANGER("btn-danger"),
     BTN_GHOST("btn-ghost"),
+    BTN_GHOST_SECONDARY("btn-ghost-secondary"),
     BTN_GROUP("btn-group"),
     BTN_GROUP_SM("btn-group-sm"),
     BTN_ICON("btn-icon"),
