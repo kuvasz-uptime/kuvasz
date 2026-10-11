@@ -51,6 +51,7 @@ class AppGlobalsFactory {
             areDockerMonitorsReadOnly = { appConfig.isDockerMonitorExternalWriteDisabled() },
             areStatusPagesReadOnly = { appConfig.isStatusPageExternalWriteDisabled() },
             areMaintenanceWindowsReadOnly = { appConfig.isMaintenanceWindowExternalWriteDisabled() },
+            areIncidentNotesReadOnly = !appConfig.incidentNotesEnabled,
         ),
         isAuthenticated = { securityService?.isAuthenticated ?: true },
         isAuthEnabled = securityService != null,
@@ -78,6 +79,5 @@ class AppGlobalsFactory {
         configuredMonitors = {
             monitorActions.getConfiguredMonitors().sortedBy { it.name.lowercase() }
         },
-        incidentNotesEnabled = appConfig.incidentNotesEnabled,
     )
 }

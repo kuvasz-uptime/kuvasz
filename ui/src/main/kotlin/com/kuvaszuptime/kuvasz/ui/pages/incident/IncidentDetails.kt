@@ -14,13 +14,16 @@ import kotlinx.html.stream.*
 
 private const val NOTE_MODAL_ID = "incident-note-modal"
 
+private val AppGlobals.canEditIncidentNotes: Boolean
+    get() = !editabilityState.areIncidentNotesReadOnly
+
 fun renderIncidentDetailsPage(globals: AppGlobals, details: IncidentDetailsDto): String =
     withLayout(
         globals,
         title = Messages.incidentOfMonitor(details.incident.monitorName.abbreviate(MONITOR_NAME_MAX_LENGTH)),
-        pageTitle = { incidentDetailsHeader(details, canEditNotes = globals.incidentNotesEnabled) },
+        pageTitle = { incidentDetailsHeader(details, canEditNotes = globals.canEditIncidentNotes) },
     ) {
-        incidentTimeline(details, canEditNotes = globals.incidentNotesEnabled, noteModalId = NOTE_MODAL_ID)
+        incidentTimeline(details, canEditNotes = globals.canEditIncidentNotes, noteModalId = NOTE_MODAL_ID)
     }
 
 /**
@@ -31,7 +34,7 @@ fun renderIncidentDetailsFragment(globals: AppGlobals, details: IncidentDetailsD
         incidentDetailsHeading(details.incident)
         incidentTimeline(
             details,
-            canEditNotes = globals.incidentNotesEnabled,
+            canEditNotes = globals.canEditIncidentNotes,
             noteModalId = NOTE_MODAL_ID,
             swapOob = true,
         )

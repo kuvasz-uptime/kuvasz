@@ -29,7 +29,6 @@ data class AppGlobals(
     val connectivityStatus: () -> ConnectivityStatus?,
     val defaultStatusPageSettings: DefaultStatusPageSettings,
     val configuredMonitors: () -> List<MonitorID>,
-    val incidentNotesEnabled: Boolean,
 ) {
     init {
         // Setting up the locale for i18n messages
@@ -47,6 +46,7 @@ data class AppGlobals(
         val areDockerMonitorsReadOnly: () -> Boolean,
         val areStatusPagesReadOnly: () -> Boolean,
         val areMaintenanceWindowsReadOnly: () -> Boolean,
+        val areIncidentNotesReadOnly: Boolean,
     ) {
         fun areMonitorsReadOnly(type: MonitorType): Boolean = when (type) {
             MonitorType.HTTP_SSL -> areHttpMonitorsReadOnly()
