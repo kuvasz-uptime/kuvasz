@@ -38,7 +38,7 @@ private val StatusPageIncidentDto.isOngoing: Boolean
  * day, closed by default. The [key] identifies them in `kuvasz.js`, which keeps the visitor's choice about them across
  * the refreshes of the page, see `applyIncidentsAccordionsState()`.
  */
-private enum class IncidentsAccordion(
+internal enum class IncidentsAccordion(
     val key: String,
     val isOpenByDefault: Boolean,
     val iconColor: CSSClass,
@@ -69,10 +69,8 @@ private enum class IncidentsAccordion(
  * resolved within the last day, one alert per monitor in each. An accordion is only there if it has any incident.
  */
 internal fun FlowContent.statusPageIncidentsAccordions(pageData: StatusPageDataDto) {
-    val resolvedSince = pageData.generatedAt.minusHours(RECENTLY_RESOLVED_HOURS)
-    val monitors = pageData.monitors.sortedBy { it.name.lowercase() }
-    val active = monitors.incidentsByMonitor { it.isOngoing }
-    val resolved = monitors.incidentsByMonitor { it.endedAt?.isAfter(resolvedSince) == true }
+    val active = pageData.incidentsByMonitor(IncidentsAccordion.ACTIVE)
+    val resolved = pageData.incidentsByMonitor(IncidentsAccordion.RESOLVED)
     if (active.isEmpty() && resolved.isEmpty()) return
 
     div {
@@ -82,11 +80,19 @@ internal fun FlowContent.statusPageIncidentsAccordions(pageData: StatusPageDataD
     }
 }
 
-private fun List<StatusPageMonitorDetailsDto>.incidentsByMonitor(
-    predicate: (StatusPageIncidentDto) -> Boolean,
-): List<Pair<StatusPageMonitorDetailsDto, List<StatusPageIncidentDto>>> =
-    map { monitor -> monitor to monitor.incidentsOfHistory.filter(predicate) }
+internal fun StatusPageDataDto.incidentsByMonitor(
+    accordion: IncidentsAccordion,
+): List<Pair<StatusPageMonitorDetailsDto, List<StatusPageIncidentDto>>> {
+    val resolvedSince = generatedAt.minusHours(RECENTLY_RESOLVED_HOURS)
+    val belongsToAccordion: (StatusPageIncidentDto) -> Boolean = when (accordion) {
+        IncidentsAccordion.ACTIVE -> { incident -> incident.isOngoing }
+        IncidentsAccordion.RESOLVED -> { incident -> incident.endedAt?.isAfter(resolvedSince) == true }
+    }
+    return monitors
+        .sortedBy { it.name.lowercase() }
+        .map { monitor -> monitor to monitor.incidentsOfHistory.filter(belongsToAccordion) }
         .filter { (_, incidents) -> incidents.isNotEmpty() }
+}
 
 private fun FlowContent.incidentsAccordion(
     accordion: IncidentsAccordion,
@@ -348,7 +354,7 @@ private val StatusPageMonitorDetailsDto.incidentsKey: String
  * The time span of an incident, e.g. "2026/10/09 05:21:07 - 07:30:12 (2 hours 9 minutes)", or with "ongoing" as its
  * end.
  */
-private fun StatusPageIncidentDto.spanText(): String {
+internal fun StatusPageIncidentDto.spanText(): String {
     val start = startedAt.toSystemZone().toDateTimeString()
     val end = endedAt?.let { endedAt ->
         if (endedAt.toSystemZone().toLocalDate() == startedAt.toSystemZone().toLocalDate()) {

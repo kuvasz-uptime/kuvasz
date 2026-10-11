@@ -209,7 +209,6 @@ class IncidentDetailsUiTest(
             assertThat(details.statusIndicator).hasClass(Pattern.compile(".*status-green.*"))
             assertThat(details.resolvedEvent).isVisible()
             assertThat(details.resolutionIntegrationsEvent).containsText("pagerduty:on-call")
-            // The timeline is refreshed together with the heading
             assertThat(details.note("Restarted the database")).isVisible()
 
             val refreshes = mutableListOf<String>()

@@ -20,11 +20,14 @@ dependencies {
 
     testImplementation(mn.kotest.runner.junit5.jvm)
     testImplementation(mn.kotest.assertions.core.jvm)
+    testImplementation(libs.jooq.kotlin)
     detektPlugins(libs.detekt.formatting)
 }
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
+    // The status pages show their times in the system's time zone, so the tests pin one with an offset from UTC
+    systemProperty("user.timezone", "Europe/Vienna")
 }
 
 minification {

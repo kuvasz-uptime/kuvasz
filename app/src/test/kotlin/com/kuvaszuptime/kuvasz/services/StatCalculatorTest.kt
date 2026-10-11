@@ -3261,7 +3261,7 @@ class StatCalculatorTest(
 
         given("the timelineSlotStarts() method") {
 
-            val zone = ZoneId.of("Europe/Budapest")
+            val zone = ZoneId.of("Europe/Vienna")
             listOf(
                 // From 02:00 CET to 03:00 CEST
                 "the clocks are put forward" to OffsetDateTime.parse("2026-03-29T01:00:00Z"),

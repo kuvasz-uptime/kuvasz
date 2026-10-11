@@ -42,6 +42,6 @@
 - Manual clearing/resetting of mocks should be avoided (unless it's really necessary), instead use
   `@MockkBean` and let the framework handle it
 - Controller endpoints that are eventually touching the database have to use the `@ExecuteOn(TaskExecutors.BLOCKING)` annotation
-- Don't add default values to DTO constructor parameters unless they're load-bearing (e.g. a field that can be absent from a deserialized request body). Non-load-bearing defaults are error-prone: when someone forgets to pass a value explicitly, the code still compiles and silently uses the default
+- Don't add default values to the constructor parameters of DTOs that are used on the wire (API request/response bodies) unless they're load-bearing (e.g. a field that can be absent from a deserialized request body). Internal data classes (e.g. view helpers) can have them. Non-load-bearing defaults are error-prone: when someone forgets to pass a value explicitly, the code still compiles and silently uses the default
 - In tests, don't use the blocking HTTP client (`client.toBlocking()`). Await the reactive call instead: `client.exchange(request, String::class.java).awaitFirst()` (`kotlinx.coroutines.reactive.awaitFirst`), and mark local helpers wrapping it as `suspend`
 - Never run two Gradle test invocations at the same time: the specs share hardcoded MockServer ports and a single Testcontainers database, so parallel runs interfere with each other and report misleading failures

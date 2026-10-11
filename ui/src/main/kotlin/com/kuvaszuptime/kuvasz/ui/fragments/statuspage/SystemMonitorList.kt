@@ -254,7 +254,7 @@ private fun FlowContent.trackingBlock(statusHistoryDto: StatusHistoryDto) {
  * clipped to the day: it's shown from the start of the day on the days after its start, and until the end of the day
  * (the start of the next one) on the days before its end. Only today has an "ongoing" end.
  */
-private fun StatusPageIncidentDto.spanOnDay(day: LocalDate): String {
+internal fun StatusPageIncidentDto.spanOnDay(day: LocalDate): String {
     val zone = ZoneId.systemDefault()
     val startOfDay = day.atStartOfDay(zone).toOffsetDateTime()
     val endOfDay = day.plusDays(1).atStartOfDay(zone).toOffsetDateTime()
