@@ -11,6 +11,7 @@ import io.micronaut.http.HttpRequest
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
+import kotlinx.coroutines.reactive.awaitFirst
 
 /**
  * The category filter of the monitor lists distinguishes three states, and two of them differ only in whether the
@@ -26,7 +27,7 @@ class MonitorListCategoryFilterE2ETest(
 ) : DatabaseBehaviorSpec() {
 
     init {
-        fun get(uri: String): String = client.toBlocking().retrieve(HttpRequest.GET<Any>(uri))
+        suspend fun get(uri: String): String = client.retrieve(HttpRequest.GET<Any>(uri)).awaitFirst()
 
         given("the monitor list fragment over HTTP") {
 

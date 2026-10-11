@@ -2901,10 +2901,10 @@ class HttpMonitorControllerTest(
                     ignoreConnectivityCheck = true,
                 )
 
-                val response = client.toBlocking().exchange(
+                val response = client.exchange(
                     HttpRequest.POST("/api/v2/http-monitors/", createDto).header("X-Api-Key", "test"),
                     String::class.java
-                )
+                ).awaitFirst()
 
                 then("it should create the monitor with ignoreConnectivityCheck=true and return 201") {
                     response.status shouldBe HttpStatus.CREATED
@@ -2918,10 +2918,10 @@ class HttpMonitorControllerTest(
                 monitor.ignoreConnectivityCheck shouldBe false
                 val updateNode = mapper.createObjectNode().put("ignoreConnectivityCheck", true)
 
-                val response = client.toBlocking().exchange(
+                val response = client.exchange(
                     HttpRequest.PATCH("/api/v2/http-monitors/${monitor.id}", updateNode).header("X-Api-Key", "test"),
                     String::class.java
-                )
+                ).awaitFirst()
 
                 then("it should persist the new value and return 200") {
                     response.status shouldBe HttpStatus.OK

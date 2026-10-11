@@ -290,10 +290,10 @@ class DnsMonitorControllerTest(
                     driftRecordTypes = listOf(DnsRecordType.NS, DnsRecordType.MX),
                 )
 
-                val response = client.toBlocking().exchange(
+                val response = client.exchange(
                     HttpRequest.POST("/api/v2/dns-monitors/", createDto).header("X-Api-Key", "test"),
                     String::class.java
-                )
+                ).awaitFirst()
 
                 then("every DNS-specific field is persisted") {
                     response.status shouldBe HttpStatus.CREATED
@@ -326,10 +326,10 @@ class DnsMonitorControllerTest(
                     expectedResponseCode = DnsResponseCode.NXDOMAIN,
                 )
 
-                val response = client.toBlocking().exchange(
+                val response = client.exchange(
                     HttpRequest.POST("/api/v2/dns-monitors/", createDto).header("X-Api-Key", "test"),
                     String::class.java
-                )
+                ).awaitFirst()
 
                 then("it is accepted") {
                     response.status shouldBe HttpStatus.CREATED
@@ -351,7 +351,7 @@ class DnsMonitorControllerTest(
                 ).header("X-Api-Key", "test")
 
                 val ex = shouldThrow<HttpClientResponseException> {
-                    client.toBlocking().exchange(request, String::class.java)
+                    client.exchange(request, String::class.java).awaitFirst()
                 }
 
                 then("it is rejected, because the two assertions contradict each other") {
@@ -372,10 +372,10 @@ class DnsMonitorControllerTest(
                     integrations = null,
                 )
 
-                val response = client.toBlocking().exchange(
+                val response = client.exchange(
                     HttpRequest.POST("/api/v2/dns-monitors/", createDto).header("X-Api-Key", "test"),
                     String::class.java
-                )
+                ).awaitFirst()
 
                 then("it should create the monitor and return 201") {
                     response.status shouldBe HttpStatus.CREATED
@@ -406,10 +406,10 @@ class DnsMonitorControllerTest(
                     metricsHistoryEnabled = false,
                 )
 
-                val response = client.toBlocking().exchange(
+                val response = client.exchange(
                     HttpRequest.POST("/api/v2/dns-monitors/", createDto).header("X-Api-Key", "test"),
                     String::class.java
-                )
+                ).awaitFirst()
 
                 then("it should create the monitor with metricsHistoryEnabled=false and return 201") {
                     response.status shouldBe HttpStatus.CREATED
@@ -428,10 +428,10 @@ class DnsMonitorControllerTest(
                     ignoreConnectivityCheck = true,
                 )
 
-                val response = client.toBlocking().exchange(
+                val response = client.exchange(
                     HttpRequest.POST("/api/v2/dns-monitors/", createDto).header("X-Api-Key", "test"),
                     String::class.java
-                )
+                ).awaitFirst()
 
                 then("it should create the monitor with ignoreConnectivityCheck=true and return 201") {
                     response.status shouldBe HttpStatus.CREATED
@@ -446,10 +446,10 @@ class DnsMonitorControllerTest(
                 monitor.ignoreConnectivityCheck shouldBe false
                 val updateNode = mapper.createObjectNode().put("ignoreConnectivityCheck", true)
 
-                val response = client.toBlocking().exchange(
+                val response = client.exchange(
                     HttpRequest.PATCH("/api/v2/dns-monitors/${monitor.id}", updateNode).header("X-Api-Key", "test"),
                     String::class.java
-                )
+                ).awaitFirst()
 
                 then("it should persist the new value and return 200") {
                     response.status shouldBe HttpStatus.OK
@@ -476,7 +476,7 @@ class DnsMonitorControllerTest(
                 ).header("X-Api-Key", "test")
 
                 val ex = shouldThrow<HttpClientResponseException> {
-                    client.toBlocking().exchange(request, String::class.java)
+                    client.exchange(request, String::class.java).awaitFirst()
                 }
 
                 then("it should return 400") {
@@ -498,7 +498,7 @@ class DnsMonitorControllerTest(
                 ).header("X-Api-Key", "test")
 
                 val ex = shouldThrow<HttpClientResponseException> {
-                    client.toBlocking().exchange(request, String::class.java)
+                    client.exchange(request, String::class.java).awaitFirst()
                 }
 
                 then("it should return 400") {
@@ -520,7 +520,7 @@ class DnsMonitorControllerTest(
                 ).header("X-Api-Key", "test")
 
                 val ex = shouldThrow<HttpClientResponseException> {
-                    client.toBlocking().exchange(request, String::class.java)
+                    client.exchange(request, String::class.java).awaitFirst()
                 }
 
                 then("it should return 400") {
@@ -536,10 +536,10 @@ class DnsMonitorControllerTest(
                     uptimeCheckInterval = 60,
                 )
                 val ex = shouldThrow<HttpClientResponseException> {
-                    client.toBlocking().exchange(
+                    client.exchange(
                         HttpRequest.POST("/api/v2/dns-monitors/", createDto).header("X-Api-Key", "test"),
                         String::class.java,
-                    )
+                    ).awaitFirst()
                 }
 
                 then("it should return 409 CONFLICT and not create a duplicate") {

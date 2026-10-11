@@ -304,10 +304,10 @@ class DockerMonitorControllerTest(
                     integrations = null,
                 )
 
-                val response = client.toBlocking().exchange(
+                val response = client.exchange(
                     HttpRequest.POST("/api/v2/docker-monitors/", createDto).header("X-Api-Key", "test"),
                     String::class.java
-                )
+                ).awaitFirst()
 
                 then("it should create the monitor and return 201") {
                     response.status shouldBe HttpStatus.CREATED
@@ -339,10 +339,10 @@ class DockerMonitorControllerTest(
                     metricsHistoryEnabled = false,
                 )
 
-                val response = client.toBlocking().exchange(
+                val response = client.exchange(
                     HttpRequest.POST("/api/v2/docker-monitors/", createDto).header("X-Api-Key", "test"),
                     String::class.java
-                )
+                ).awaitFirst()
 
                 then("it should create the monitor with metricsHistoryEnabled=false and return 201") {
                     response.status shouldBe HttpStatus.CREATED
@@ -362,10 +362,10 @@ class DockerMonitorControllerTest(
                     restartAlertEnabled = true,
                 )
 
-                val response = client.toBlocking().exchange(
+                val response = client.exchange(
                     HttpRequest.POST("/api/v2/docker-monitors/", createDto).header("X-Api-Key", "test"),
                     String::class.java
-                )
+                ).awaitFirst()
 
                 then("it should create the monitor with restartAlertEnabled=true and return 201") {
                     response.status shouldBe HttpStatus.CREATED
@@ -387,10 +387,10 @@ class DockerMonitorControllerTest(
                     ignoreConnectivityCheck = true,
                 )
 
-                val response = client.toBlocking().exchange(
+                val response = client.exchange(
                     HttpRequest.POST("/api/v2/docker-monitors/", createDto).header("X-Api-Key", "test"),
                     String::class.java
-                )
+                ).awaitFirst()
 
                 then("it should create the monitor with ignoreConnectivityCheck=true and return 201") {
                     response.status shouldBe HttpStatus.CREATED
@@ -406,10 +406,10 @@ class DockerMonitorControllerTest(
                 monitor.ignoreConnectivityCheck shouldBe true
                 val updateNode = mapper.createObjectNode().put("ignoreConnectivityCheck", false)
 
-                val response = client.toBlocking().exchange(
+                val response = client.exchange(
                     HttpRequest.PATCH("/api/v2/docker-monitors/${monitor.id}", updateNode).header("X-Api-Key", "test"),
                     String::class.java
-                )
+                ).awaitFirst()
 
                 then("it should persist the new value and return 200") {
                     response.status shouldBe HttpStatus.OK
@@ -437,7 +437,7 @@ class DockerMonitorControllerTest(
                 ).header("X-Api-Key", "test")
 
                 val ex = shouldThrow<HttpClientResponseException> {
-                    client.toBlocking().exchange(request, String::class.java)
+                    client.exchange(request, String::class.java).awaitFirst()
                 }
 
                 then("it should return 400") {
@@ -459,7 +459,7 @@ class DockerMonitorControllerTest(
                 ).header("X-Api-Key", "test")
 
                 val ex = shouldThrow<HttpClientResponseException> {
-                    client.toBlocking().exchange(request, String::class.java)
+                    client.exchange(request, String::class.java).awaitFirst()
                 }
 
                 then("it should return 400") {
@@ -479,7 +479,7 @@ class DockerMonitorControllerTest(
                 ).header("X-Api-Key", "test")
 
                 val ex = shouldThrow<HttpClientResponseException> {
-                    client.toBlocking().exchange(request, String::class.java)
+                    client.exchange(request, String::class.java).awaitFirst()
                 }
 
                 then("it should return 400") {
@@ -490,7 +490,7 @@ class DockerMonitorControllerTest(
             `when`("a monitor names a Docker host that is not configured") {
                 val monitorName = randomClientSecret()
                 val ex = shouldThrow<HttpClientResponseException> {
-                    client.toBlocking().exchange(
+                    client.exchange(
                         HttpRequest.POST(
                             "/api/v2/docker-monitors/",
                             DockerMonitorCreateDto(
@@ -501,7 +501,7 @@ class DockerMonitorControllerTest(
                             ),
                         ).header("X-Api-Key", "test"),
                         String::class.java,
-                    )
+                    ).awaitFirst()
                 }
 
                 then("it should return 400 and not create the monitor") {
@@ -521,10 +521,10 @@ class DockerMonitorControllerTest(
                     uptimeCheckInterval = 60,
                 )
                 val ex = shouldThrow<HttpClientResponseException> {
-                    client.toBlocking().exchange(
+                    client.exchange(
                         HttpRequest.POST("/api/v2/docker-monitors/", createDto).header("X-Api-Key", "test"),
                         String::class.java,
-                    )
+                    ).awaitFirst()
                 }
 
                 then("it should return 409 CONFLICT and not create a duplicate") {

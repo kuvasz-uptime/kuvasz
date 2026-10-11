@@ -126,9 +126,9 @@ class ExternalStatusPageIncidentsTest(
 ) : DatabaseBehaviorSpec() {
     init {
 
-        fun get(uri: String, hxRequest: Boolean = false): HttpResponse<String> {
+        suspend fun get(uri: String, hxRequest: Boolean = false): HttpResponse<String> {
             val request = HttpRequest.GET<Any>(uri).apply { if (hxRequest) header("HX-Request", "true") }
-            return client.toBlocking().exchange(request, String::class.java)
+            return client.exchange(request, String::class.java).awaitFirst()
         }
 
         // A page with a single monitor, which has the given incident

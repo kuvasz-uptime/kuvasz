@@ -30,6 +30,7 @@ import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
+import kotlinx.coroutines.reactive.awaitFirst
 
 /**
  * The incident pages of the web UI, requested over the wire the same way as a browser does, so the binding of the
@@ -44,9 +45,9 @@ class WebUIIncidentControllerTest(
 ) : DatabaseBehaviorSpec() {
 
     init {
-        fun get(uri: String): String = client.toBlocking().retrieve(HttpRequest.GET<Any>(uri))
+        suspend fun get(uri: String): String = client.retrieve(HttpRequest.GET<Any>(uri)).awaitFirst()
 
-        fun statusOf(uri: String): HttpStatus =
+        suspend fun statusOf(uri: String): HttpStatus =
             shouldThrow<HttpClientResponseException> { get(uri) }.status
 
         given("the incident list") {
@@ -306,8 +307,8 @@ class WebUIIncidentControllerTest(
 
         given("the refreshed details of an incident") {
 
-            fun exchange(uri: String): HttpResponse<String> =
-                client.toBlocking().exchange(HttpRequest.GET<Any>(uri), String::class.java)
+            suspend fun exchange(uri: String): HttpResponse<String> =
+                client.exchange(HttpRequest.GET<Any>(uri), String::class.java).awaitFirst()
 
             `when`("the incident is ongoing") {
                 val event = createHttpUptimeEventRecord(
@@ -402,7 +403,7 @@ class WebUIDisabledIncidentNotesTest(
                 )
                 createIncidentNote(dslContext, IncidentType.HTTP, event.id, content = "Still visible")
 
-                val html = client.toBlocking().retrieve(HttpRequest.GET<Any>("/incidents/http/${event.id}"))
+                val html = client.retrieve(HttpRequest.GET<Any>("/incidents/http/${event.id}")).awaitFirst()
 
                 then("the notes are shown, but they can't be added, edited or deleted") {
                     html shouldContain "Still visible"

@@ -580,7 +580,7 @@ class StatusPageControllerTest(
                         window.end shouldBe expected.end
                     }
                     // The incidents of the history are public, so they carry nothing but their span and their notes
-                    client.toBlocking().retrieve("/api/v2/status-pages/${statusPage.id}/details").let { json ->
+                    client.retrieve("/api/v2/status-pages/${statusPage.id}/details").awaitFirst().let { json ->
                         json shouldContain "\"incidents\":[{\"id\":42,"
                         json shouldContain "\"downtimeSeconds\":600"
                         json shouldContain "We know what's wrong"

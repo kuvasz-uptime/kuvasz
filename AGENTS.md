@@ -42,4 +42,5 @@
 - Manual clearing/resetting of mocks should be avoided (unless it's really necessary), instead use
   `@MockkBean` and let the framework handle it
 - Controller endpoints that are eventually touching the database have to use the `@ExecuteOn(TaskExecutors.BLOCKING)` annotation
+- In tests, don't use the blocking HTTP client (`client.toBlocking()`). Await the reactive call instead: `client.exchange(request, String::class.java).awaitFirst()` (`kotlinx.coroutines.reactive.awaitFirst`), and mark local helpers wrapping it as `suspend`
 - Never run two Gradle test invocations at the same time: the specs share hardcoded MockServer ports and a single Testcontainers database, so parallel runs interfere with each other and report misleading failures
