@@ -66,10 +66,11 @@ class PublicStatusPage(private val page: Page) {
 
         val collapse: Locator = page.locator("#status-page-$key-incidents-collapse")
 
-        // The alerts of the monitors inside the accordion, in the order they are rendered
-        val alerts: Locator = root.getByTestId("status-page-incident-alert")
+        // The cards of the monitors inside the accordion, in the order they are rendered
+        val monitorCards: Locator = root.getByTestId("status-page-monitor-incidents")
 
-        fun alert(monitorName: String): Locator = alerts.filter(Locator.FilterOptions().setHasText(monitorName))
+        fun monitorCard(monitorName: String): Locator =
+            monitorCards.filter(Locator.FilterOptions().setHasText(monitorName))
 
         /**
          * The visitor's own choice about the accordion is remembered once its animation is over, and it's kept on the

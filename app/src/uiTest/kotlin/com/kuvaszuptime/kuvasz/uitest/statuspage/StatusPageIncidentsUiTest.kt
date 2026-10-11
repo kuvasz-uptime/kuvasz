@@ -79,11 +79,11 @@ class StatusPageIncidentsUiTest(
             assertThat(statusPage.activeIncidents.toggle).hasAttribute("aria-expanded", "true")
             // Without any recently resolved incident, there is no accordion for them at all
             assertThat(statusPage.resolvedIncidents.root).hasCount(0)
-            val alert = statusPage.activeIncidents.alert(monitor.name)
-            assertThat(alert).hasClass(Pattern.compile(".*alert-danger.*"))
-            assertThat(alert.getByTestId("public-incident-started")).hasCount(1)
-            assertThat(alert.getByTestId("public-incident-resolved")).hasCount(0)
-            assertThat(alert.getByTestId("public-incident-note-content"))
+            val card = statusPage.activeIncidents.monitorCard(monitor.name)
+            assertThat(card.locator(".card-status-start")).hasClass(Pattern.compile(".*bg-danger.*"))
+            assertThat(card.getByTestId("public-incident-started")).hasCount(1)
+            assertThat(card.getByTestId("public-incident-resolved")).hasCount(0)
+            assertThat(card.getByTestId("public-incident-note-content"))
                 .hasText("We are looking into the elevated error rates")
             // Neither the private notes, nor the error of the check are ever sent to the visitors, not even hidden
             page.content() shouldNotContain "Ops only"
@@ -128,7 +128,8 @@ class StatusPageIncidentsUiTest(
             assertThat(active.root).hasCount(0)
             assertThat(resolved.root).isVisible()
             assertThat(resolved.collapse).isHidden()
-            assertThat(resolved.alert(recovered.name)).hasClass(Pattern.compile(".*alert-success.*"))
+            assertThat(resolved.monitorCard(recovered.name).locator(".card-status-start"))
+                .hasClass(Pattern.compile(".*bg-success.*"))
 
             // The visitor's choice survives the refreshes
             resolved.toggle.click()
@@ -148,7 +149,8 @@ class StatusPageIncidentsUiTest(
             statusPage.refreshInPlace()
             assertThat(active.collapse).isVisible()
             assertThat(active.toggle).hasAttribute("aria-expanded", "true")
-            assertThat(active.alert(steady.name)).hasClass(Pattern.compile(".*alert-danger.*"))
+            assertThat(active.monitorCard(steady.name).locator(".card-status-start"))
+                .hasClass(Pattern.compile(".*bg-danger.*"))
             assertThat(resolved.collapse).isVisible()
             page.locator("[data-incidents-accordion]").evaluateAll(
                 "collapses => collapses.map(collapse => collapse.dataset.incidentsAccordion)"
@@ -207,10 +209,10 @@ class StatusPageIncidentsUiTest(
             val statusPage = PublicStatusPage(page)
             statusPage.navigate("healed-status")
             statusPage.resolvedIncidents.toggle.click()
-            val alert = statusPage.resolvedIncidents.alert(monitor.name)
-            assertThat(alert).isVisible()
+            val card = statusPage.resolvedIncidents.monitorCard(monitor.name)
+            assertThat(card).isVisible()
 
-            alert.locator(PUBLIC_TIMELINE_NODES).evaluateAll("nodes => nodes.map(node => node.dataset.testid)") shouldBe
+            card.locator(PUBLIC_TIMELINE_NODES).evaluateAll("nodes => nodes.map(node => node.dataset.testid)") shouldBe
                 listOf(
                     "public-incident-resolved",
                     "public-incident-note",
@@ -218,10 +220,10 @@ class StatusPageIncidentsUiTest(
                     "public-incident-started",
                 )
             // The resolution carries its neighbours in their order, then the standalone notes come
-            alert.getByTestId("public-incident-note-content").allInnerTexts().map { it.trim() } shouldBe
+            card.getByTestId("public-incident-note-content").allInnerTexts().map { it.trim() } shouldBe
                 listOf("Fixed it", "Post-mortem", "Identified", "Investigating")
             // The times are shown in the system's time zone, with their offsets
-            assertThat(alert.getByTestId("public-incident-resolved").getByTestId("timeline-event-time")).hasText(
+            assertThat(card.getByTestId("public-incident-resolved").getByTestId("timeline-event-time")).hasText(
                 endedAt.atZoneSameInstant(ZoneId.systemDefault())
                     .format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss Z"))
             )
@@ -280,6 +282,13 @@ class StatusPageIncidentsUiTest(
                 startedAt = now.minusDays(1).minusHours(2),
                 endedAt = now.minusDays(1).minusHours(1),
             )
+            createHttpUptimeEventRecord(
+                dslContext,
+                monitorId = monitor.id,
+                status = UptimeStatus.DOWN,
+                startedAt = now.minusHours(1),
+                endedAt = null,
+            )
             createStatusPage(
                 dslContext,
                 title = "Flaky Status",
@@ -298,16 +307,19 @@ class StatusPageIncidentsUiTest(
             // Only the monitor with incidents gets a badge, with the length of the history in its tooltip
             assertThat(statusPage.monitorIncidentsBadge(quiet.name)).hasCount(0)
             val badge = statusPage.monitorIncidentsBadge(monitor.name)
-            assertThat(badge).hasText("2")
+            assertThat(badge).hasText("3")
             badge.locator(".status").tooltipText() shouldBe Messages.statusPageIncidentsInTheLastDays("30")
 
             badge.click()
             val modal = statusPage.incidentsModal
             assertThat(modal).isVisible()
             assertThat(modal.locator(".modal-title")).hasText(Messages.statusPageIncidentsOfMonitor(monitor.name, "30"))
-            assertThat(modal.getByTestId("public-incident")).hasCount(2)
-            // The latest incident comes first
-            assertThat(modal.getByTestId("public-incident").last()).containsText("Rolled back the release")
+            val incidentCards = modal.getByTestId("status-page-incident-card")
+            // The ongoing incident comes first in red, then the resolved ones in green, the latest first
+            incidentCards.locator(".card-status-start").evaluateAll(
+                "stripes => stripes.map(stripe => stripe.classList.contains('bg-danger') ? 'red' : 'green')"
+            ) shouldBe listOf("red", "green", "green")
+            assertThat(incidentCards.nth(2)).containsText("Rolled back the release")
 
             createIncidentNote(
                 dslContext,
@@ -322,7 +334,7 @@ class StatusPageIncidentsUiTest(
 
             // The modal stays open and shows the refreshed incidents, without stacking another backdrop
             assertThat(modal).isVisible()
-            assertThat(modal.getByTestId("public-incident").first()).containsText("Post-mortem published")
+            assertThat(incidentCards.nth(1)).containsText("Post-mortem published")
             assertThat(page.locator(".modal-backdrop")).hasCount(1)
 
             modal.locator(".btn-close").click()

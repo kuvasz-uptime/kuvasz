@@ -41,22 +41,25 @@ internal enum class IncidentsAccordion(
     val key: String,
     val isOpenByDefault: Boolean,
     val iconColor: CSSClass,
-    val alertColor: CSSClass,
+    val statusColor: CSSClass,
     val title: String,
+    val icon: Icon,
 ) {
     ACTIVE(
         "active",
         isOpenByDefault = true,
         iconColor = TEXT_RED,
-        alertColor = ALERT_DANGER,
+        statusColor = BG_DANGER,
         title = Messages.statusPageActiveIncidents(),
+        icon = Icon.FLAME,
     ),
     RESOLVED(
         "resolved",
         isOpenByDefault = false,
         iconColor = TEXT_GREEN,
-        alertColor = ALERT_SUCCESS,
+        statusColor = BG_SUCCESS,
         title = Messages.statusPageResolvedIncidents(),
+        icon = Icon.FLAME_OFF,
     );
 
     val elementId: String = "status-page-$key-incidents"
@@ -65,7 +68,7 @@ internal enum class IncidentsAccordion(
 
 /**
  * The recent incidents of the page below its overall status, in two accordions: the ongoing incidents, and the ones
- * resolved within the last day, one alert per monitor in each. An accordion is only there if it has any incident.
+ * resolved within the last day, one card per monitor in each. An accordion is only there if it has any incident.
  */
 internal fun FlowContent.statusPageIncidentsAccordions(pageData: StatusPageDataDto) {
     val active = pageData.incidentsByMonitor(IncidentsAccordion.ACTIVE)
@@ -118,7 +121,7 @@ private fun FlowContent.incidentsAccordion(
                         ariaControls(accordion.collapseId)
                         span {
                             classes(accordion.iconColor, ME_2)
-                            icon(Icon.FLAME)
+                            icon(accordion.icon)
                         }
                         +accordion.title
                         span {
@@ -136,9 +139,9 @@ private fun FlowContent.incidentsAccordion(
                     classes(mutableSetOf(ACCORDION_COLLAPSE, COLLAPSE).addIf(isOpen, SHOW))
                     attributes["data-incidents-accordion"] = accordion.key
                     div {
-                        classes(ACCORDION_BODY, PX_3, PT_0)
+                        classes(ACCORDION_BODY, D_FLEX, FLEX_COLUMN, GAP_3, PX_3, PT_0)
                         incidentsByMonitor.forEach { (monitor, incidents) ->
-                            monitorIncidentsAlert(monitor, incidents, accordion.alertColor)
+                            monitorIncidentsCard(monitor, incidents, accordion.statusColor)
                         }
                     }
                 }
@@ -147,27 +150,43 @@ private fun FlowContent.incidentsAccordion(
     }
 }
 
-private fun FlowContent.monitorIncidentsAlert(
+private fun FlowContent.monitorIncidentsCard(
     monitor: StatusPageMonitorDetailsDto,
     incidents: List<StatusPageIncidentDto>,
-    color: CSSClass,
+    statusColor: CSSClass,
 ) {
-    div {
-        classes(ALERT, color)
-        testId("status-page-incident-alert")
-        attributes["role"] = "alert"
+    statusCard(statusColor, cardTestId = "status-page-monitor-incidents") {
         h4 {
-            classes(ALERT_HEADING)
+            classes(CARD_TITLE, MB_0)
             +monitor.name
         }
-        incidents.forEach { incident -> publicIncident(incident) }
+        incidents.forEach { incident ->
+            div {
+                classes(MT_3)
+                publicIncident(incident)
+            }
+        }
+    }
+}
+
+/** A card with a stripe of the given status color on its left side. */
+private fun FlowContent.statusCard(statusColor: CSSClass, cardTestId: String, block: DIV.() -> Unit) {
+    div {
+        classes(CARD)
+        testId(cardTestId)
+        div {
+            classes(CARD_STATUS_START, statusColor)
+        }
+        div {
+            classes(CARD_BODY)
+            block()
+        }
     }
 }
 
 /** An incident with its span and its public timeline, as the visitors of the status pages see it. */
 private fun FlowContent.publicIncident(incident: StatusPageIncidentDto) {
     div {
-        classes(MT_3)
         testId("public-incident")
         div {
             classes(TEXT_SECONDARY, MB_2)
@@ -288,7 +307,6 @@ internal fun FlowContent.monitorIncidentsBadge(monitor: StatusPageMonitorDetails
         onClick = "showStatusPageIncidents(this.dataset.incidentsOf)"
         inlineStatusBadge(
             text = incidents.size.toString(),
-            color = Color.ORANGE_LT,
             icon = Icon.FLAME,
             tooltip = Messages.statusPageIncidentsInTheLastDays(historyDays.toString()),
         )
@@ -318,9 +336,16 @@ internal fun FlowContent.monitorIncidentsTemplate(monitor: StatusPageMonitorDeta
             }
         }
         div {
-            classes(MODAL_BODY, PT_0)
+            classes(MODAL_BODY, D_FLEX, FLEX_COLUMN, GAP_3)
             testId("status-page-incidents-modal-body")
-            incidents.forEach { incident -> publicIncident(incident) }
+            incidents.forEach { incident ->
+                statusCard(
+                    statusColor = if (incident.isOngoing) BG_DANGER else BG_SUCCESS,
+                    cardTestId = "status-page-incident-card",
+                ) {
+                    publicIncident(incident)
+                }
+            }
         }
     }
 }
