@@ -22,6 +22,8 @@ import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.regex.Pattern
 
@@ -305,7 +307,10 @@ class IncidentDetailsUiTest(
 
             val note = details.note("Found the root cause")
             assertThat(note).containsText(Messages.investigationStatusIdentified())
-            assertThat(note.getByTestId("incident-note-edited")).isVisible()
+            assertThat(note.getByTestId("timeline-event-time")).hasText(
+                timestamp.atZoneSameInstant(ZoneId.systemDefault()).format(TIMESTAMP_FORMATTER)
+            )
+            assertThat(note.getByTestId("incident-note-edited")).hasText(Pattern.compile(".* [+-]\\d{4}"))
             assertThat(details.notes).hasCount(1)
             incidentNoteRepository.fetchByEvent(IncidentType.HTTP, eventId).single().timestamp
                 .shouldNotBeNull()
@@ -367,5 +372,6 @@ class IncidentDetailsUiTest(
         const val NOTE_SECOND = 42
         const val TYPED_SECOND = 15
         const val NOTE_OFFSET_MINUTES = 10L
+        val TIMESTAMP_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss Z")
     }
 }

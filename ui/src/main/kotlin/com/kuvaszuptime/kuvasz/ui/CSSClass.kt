@@ -22,6 +22,7 @@ internal enum class CSSClass(val className: String) {
     ALERT_WARNING("alert-warning"),
     ALIGN_ITEMS_BASELINE("align-items-baseline"),
     ALIGN_ITEMS_CENTER("align-items-center"),
+    ALIGN_ITEMS_START("align-items-start"),
     ALIGN_MIDDLE("align-middle"),
     AVATAR("avatar"),
     BADGE("badge"),

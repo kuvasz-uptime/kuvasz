@@ -220,6 +220,11 @@ class StatusPageIncidentsUiTest(
             // The resolution carries its neighbours in their order, then the standalone notes come
             alert.getByTestId("public-incident-note-content").allInnerTexts().map { it.trim() } shouldBe
                 listOf("Fixed it", "Post-mortem", "Identified", "Investigating")
+            // The times are shown in the system's time zone, with their offsets
+            assertThat(alert.getByTestId("public-incident-resolved").getByTestId("timeline-event-time")).hasText(
+                endedAt.atZoneSameInstant(ZoneId.systemDefault())
+                    .format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss Z"))
+            )
         }
 
         "an incident resolved more than a day ago is only counted on the monitor's badge, not in the accordion" {

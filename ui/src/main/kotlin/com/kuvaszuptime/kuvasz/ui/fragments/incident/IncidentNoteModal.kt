@@ -150,7 +150,7 @@ private fun FlowContent.noteModalFooter() {
         templateTag {
             xIf("!isDeleteConfirmationShown")
             div {
-                classes(D_FLEX, ALIGN_ITEMS_CENTER, MS_AUTO)
+                classes(D_FLEX, ALIGN_ITEMS_CENTER, GAP_2, MS_AUTO)
                 modalCancelButton {
                     testId("modal-dismiss-button")
                 }

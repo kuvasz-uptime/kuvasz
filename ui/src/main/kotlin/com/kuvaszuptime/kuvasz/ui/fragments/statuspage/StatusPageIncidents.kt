@@ -16,7 +16,6 @@ import com.kuvaszuptime.kuvasz.util.formatAsInterval
 import kotlinx.html.*
 import java.time.Duration
 import java.time.OffsetDateTime
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 internal const val STATUS_PAGE_INCIDENTS_MODAL_ID = "status-page-incidents-modal"
@@ -189,13 +188,11 @@ private fun FlowContent.publicIncidentTimeline(incident: StatusPageIncidentDto) 
         classes(TIMELINE, MB_0)
         testId("public-incident-timeline")
         incident.publicTimelineNodes().forEach { node ->
-            // The history of the status pages is counted in the system's time zone, so the times are shown in it too
-            val time = node.time.toSystemZone()
             when (node) {
                 is PublicTimelineNode.Started -> timelineEvent(
                     icon = Icon.FLAME,
                     color = Color.RED_LT,
-                    time = time,
+                    time = node.time,
                     title = Messages.incidentStartedEvent(),
                     eventTestId = "public-incident-started",
                 ) {}
@@ -203,7 +200,7 @@ private fun FlowContent.publicIncidentTimeline(incident: StatusPageIncidentDto) 
                 is PublicTimelineNode.Note -> timelineEvent(
                     icon = node.note.status.icon,
                     color = node.note.status.color,
-                    time = time,
+                    time = node.time,
                     title = node.note.status.label,
                     eventTestId = "public-incident-note",
                 ) {
@@ -213,7 +210,7 @@ private fun FlowContent.publicIncidentTimeline(incident: StatusPageIncidentDto) 
                 is PublicTimelineNode.Resolved -> timelineEvent(
                     icon = Icon.CIRCLE_CHECK_FILLED,
                     color = Color.GREEN_LT,
-                    time = time,
+                    time = node.time,
                     title = Messages.incidentResolvedEvent(),
                     eventTestId = "public-incident-resolved",
                 ) {
@@ -371,7 +368,3 @@ internal fun StatusPageIncidentDto.spanText(): String {
 }
 
 private val TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
-
-// The history of the status pages is counted in the days of the system's time zone, so its times are shown in it too
-internal fun OffsetDateTime.toSystemZone(): OffsetDateTime =
-    atZoneSameInstant(ZoneId.systemDefault()).toOffsetDateTime()

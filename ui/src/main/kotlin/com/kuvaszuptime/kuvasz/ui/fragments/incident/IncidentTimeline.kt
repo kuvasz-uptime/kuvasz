@@ -209,7 +209,7 @@ private fun UL.noteEvent(
             div {
                 classes(TEXT_SECONDARY, MT_2)
                 testId("incident-note-edited")
-                +Messages.noteEdited(note.updatedAt.toDateTimeString())
+                +Messages.noteEdited(note.updatedAt.toSystemZone().toDateTimeStringWithZone())
             }
         }
     }
@@ -241,19 +241,30 @@ internal fun UL.timelineEvent(
             div {
                 classes(CARD_BODY)
                 div {
-                    classes(D_FLEX, ALIGN_ITEMS_CENTER, FLEX_WRAP, MB_2)
-                    h4 {
-                        classes(MB_0)
-                        +title
-                    }
-                    titleBadges?.invoke(this)
+                    classes(D_FLEX, ALIGN_ITEMS_START, MB_2)
                     div {
-                        classes(MS_AUTO, D_FLEX, ALIGN_ITEMS_CENTER, TEXT_SECONDARY)
-                        span {
-                            testId("timeline-event-time")
-                            +time.toDateTimeString()
+                        div {
+                            classes(D_FLEX, ALIGN_ITEMS_CENTER, FLEX_WRAP)
+                            h4 {
+                                classes(MB_0)
+                                +title
+                            }
+                            titleBadges?.invoke(this)
                         }
-                        actions?.invoke(this)
+                        div {
+                            classes(D_FLEX, ALIGN_ITEMS_CENTER, GAP_1, ICON_INLINE, TEXT_SECONDARY, MT_1)
+                            icon(Icon.CLOCK)
+                            span {
+                                testId("timeline-event-time")
+                                +time.toSystemZone().toDateTimeStringWithZone()
+                            }
+                        }
+                    }
+                    actions?.let { renderActions ->
+                        div {
+                            classes(MS_AUTO)
+                            renderActions()
+                        }
                     }
                 }
                 body()
