@@ -27,15 +27,15 @@ data class StatusPageDetailsDto(
     @param:Schema(description = StatusPageDocs.MONITOR_DETAILS, required = true)
     val monitors: List<StatusPageMonitorDetailsDto>,
     @param:Schema(description = StatusPageDocs.CATEGORY_STATUS, required = true)
-    val categoryStatus: List<CategoryStatusDto> = emptyList(),
+    val categoryStatus: List<CategoryStatusDto>,
     @param:Schema(description = StatusPageDocs.DISPLAY_CATEGORIES, required = true)
-    val displayCategories: Boolean = StatusPageDefaults.DISPLAY_CATEGORIES,
+    val displayCategories: Boolean,
     @param:Schema(description = StatusPageDocs.THEME_BASE, required = true)
-    val themeBase: ThemeBase = ThemeBase.DEFAULT,
+    val themeBase: ThemeBase,
     @param:Schema(description = StatusPageDocs.ACTIVE_MAINTENANCE_WINDOWS, required = true)
-    val activeMaintenanceWindows: List<StatusPageMaintenanceWindowDto> = emptyList(),
+    val activeMaintenanceWindows: List<StatusPageMaintenanceWindowDto>,
     @param:Schema(description = StatusPageDocs.UPCOMING_MAINTENANCE_WINDOWS, required = true)
-    val upcomingMaintenanceWindows: List<StatusPageMaintenanceWindowDto> = emptyList(),
+    val upcomingMaintenanceWindows: List<StatusPageMaintenanceWindowDto>,
     @param:Schema(description = StatusPageDocs.HISTORY_DAYS, required = true)
-    val historyDays: Int = StatusPageDefaults.HISTORY_DAYS,
+    val historyDays: Int,
 )
