@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.uitest.maintenance
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
+import com.kuvaszuptime.kuvasz.jooq.tables.MaintenanceWindow.MAINTENANCE_WINDOW
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.models.maintenance.MaintenanceWindowType
@@ -11,6 +12,7 @@ import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
 import com.kuvaszuptime.kuvasz.uitest.pages.maintenance.MaintenanceWindowDetailsPage
 import com.kuvaszuptime.kuvasz.uitest.pages.maintenance.MaintenanceWindowListPage
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldEndWith
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
@@ -247,13 +249,19 @@ class MaintenanceWindowCrudUiTest(private val httpMonitorRepository: HttpMonitor
             list.openCreateModal()
                 .selectType(MaintenanceWindowType.SINGLE)
                 .setName(name)
-                .setStart("2030-01-01 10:00")
+                // The seconds can be typed, even though the picker can't select them
+                .setStart("2030-01-01 10:00:30")
                 .setDuration("PT1H")
                 .save()
 
             page.waitForURL("**/maintenance-windows/*")
             val details = MaintenanceWindowDetailsPage(page)
             assertThat(details.heading(name)).isVisible()
+            dslContext.selectFrom(MAINTENANCE_WINDOW)
+                .where(MAINTENANCE_WINDOW.NAME.eq(name))
+                .fetchSingle()
+                .start.shouldNotBeNull()
+                .second shouldBe START_SECOND
         }
 
         "the datepicker of an edited one-off window opens with its saved start selected" {
@@ -405,5 +413,6 @@ class MaintenanceWindowCrudUiTest(private val httpMonitorRepository: HttpMonitor
     companion object {
         private const val START_MONTHS_AHEAD = 2L
         private const val START_DAY_OF_MONTH = 15
+        private const val START_SECOND = 30
     }
 }

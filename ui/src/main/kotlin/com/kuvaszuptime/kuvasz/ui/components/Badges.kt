@@ -16,7 +16,7 @@ internal fun FlowContent.uptimeBadgeOfMonitor(monitor: MonitorDetailsDto, withTo
     when {
         monitor.enabled && monitor.inMaintenance -> {
             span {
-                classes(STATUS, STATUS_GRAY)
+                classes(STATUS, STATUS_SECONDARY)
                 tooltip(Messages.statusPageSystemStatusMaintenance())
                 icon(Icon.TOOL)
                 span {
@@ -55,31 +55,23 @@ internal fun FlowContent.uptimeBadgeOfMonitor(monitor: MonitorDetailsDto, withTo
         else -> {}
     }
 
-internal fun FlowContent.uptimeBadgeOfStatus(uptimeStatus: UptimeStatus?, inMaintenance: Boolean): Unit =
-    when {
-        // During an active maintenance window the status is frozen, so we keep the UP/DOWN (or in-progress) label
-        inMaintenance -> span {
-            classes(STATUS, STATUS_GRAY)
-            tooltip(Messages.statusPageSystemStatusMaintenance())
-            icon(Icon.TOOL)
-            span {
-                classes(D_NONE, D_MD_INLINE)
-                +(uptimeStatus?.literal ?: Messages.inProgress())
-            }
-        }
-
-        uptimeStatus != null -> span {
-            val classes = mutableSetOf(STATUS)
-                .addIf(uptimeStatus == UptimeStatus.UP, STATUS_GREEN, STATUS_RED)
-            classes(classes)
-            uptimeStatusDot(withBadge = true, uptimeStatus.literal)
-        }
-
-        else -> span {
-            classes(STATUS, STATUS_YELLOW)
-            uptimeStatusDot(withBadge = true, Messages.inProgress())
-        }
+internal fun FlowContent.uptimeIndicatorOfStatus(uptimeStatus: UptimeStatus?, inMaintenance: Boolean) {
+    val statusLabel = uptimeStatus?.literal ?: Messages.inProgress()
+    val (color, label) = when {
+        inMaintenance -> STATUS_SECONDARY to "${Messages.statusPageSystemStatusMaintenance()} ($statusLabel)"
+        uptimeStatus == UptimeStatus.UP -> STATUS_GREEN to statusLabel
+        uptimeStatus == UptimeStatus.DOWN -> STATUS_RED to statusLabel
+        else -> STATUS_YELLOW to statusLabel
     }
+    span {
+        val classes = mutableSetOf(STATUS_INDICATOR, color).addIf(!inMaintenance, STATUS_INDICATOR_ANIMATED)
+        classes(classes)
+        testId("monitor-status-indicator")
+        tooltip(label)
+        ariaLabel(label)
+        uptimeStatusDot(withBadge = false, label = label, animated = !inMaintenance)
+    }
+}
 
 internal fun FlowContent.uptimeStatusOfMonitor(
     monitor: MonitorDetailsDto,
@@ -124,7 +116,7 @@ internal fun FlowContent.uptimeStatusOfMonitor(
     }
 }
 
-private fun FlowContent.uptimeStatusDot(
+internal fun FlowContent.uptimeStatusDot(
     withBadge: Boolean,
     label: String,
     animated: Boolean = true
@@ -192,7 +184,7 @@ internal fun FlowContent.sslStatusOfMonitor(
         }
     } else {
         span {
-            classes(STATUS, STATUS_GRAY)
+            classes(STATUS, STATUS_SECONDARY)
             if (withTooltip) {
                 tooltip(Messages.disabled())
             }

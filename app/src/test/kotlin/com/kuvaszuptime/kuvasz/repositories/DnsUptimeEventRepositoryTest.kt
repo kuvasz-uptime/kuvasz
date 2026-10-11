@@ -4,6 +4,9 @@ import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createDnsMonitor
 import com.kuvaszuptime.kuvasz.mocks.createDnsUptimeEventRecord
+import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.matchers.shouldBe
@@ -180,6 +183,25 @@ class DnsUptimeEventRepositoryTest(
 
                 then("it should only consider the incidents of the enabled monitors") {
                     dnsUptimeEventRepository.fetchLatestIncidentTimestamp() shouldBe now.minusHours(3)
+                }
+            }
+        }
+
+        given("the insertFromMonitorEvent method") {
+
+            `when`("the integrations notified about the event are given") {
+
+                then("they should be stored along with the event") {
+                    val monitor = createDnsMonitor(dnsMonitorRepository)
+                    val integrations = arrayOf(IntegrationID(IntegrationType.SLACK, "ops"))
+
+                    dnsUptimeEventRepository.insertFromMonitorEvent(
+                        DnsMonitorUpEvent(monitor = monitor, previousEvent = null, latencyInMs = 10),
+                        integrations = integrations,
+                    )
+
+                    dnsUptimeEventRepository.fetchByMonitorId(monitor.id).single().integrations.toList() shouldBe
+                        integrations.toList()
                 }
             }
         }

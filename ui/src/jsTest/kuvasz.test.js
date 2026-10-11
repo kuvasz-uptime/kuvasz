@@ -18,13 +18,14 @@ const {
     toDateTimeLocalValue,
     isValidIsoDate,
     isValidTime,
-    formatStartValue,
-    parseStartValue,
+    formatDateTimeValue,
+    parseDateTimeValue,
     toRgbColor,
     hueOf,
     distinctSeriesColor,
     resolveMaintenanceWindowType,
     createRandomSecret,
+    buildIncidentFilterUrl,
 } = require('../main/resources/js/kuvasz.js');
 
 const UUID_V4_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
@@ -124,6 +125,9 @@ test('toDateTimeLocalValue', () => {
     const expected = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
         `T${pad(d.getHours())}:${pad(d.getMinutes())}`;
     assert.equal(toDateTimeLocalValue(iso), expected);
+
+    // The seconds are only included if there are any, the fractions of a second never
+    assert.equal(toDateTimeLocalValue('2024-03-15T10:30:05.123456Z'), `${expected}:05`);
 });
 
 test('isValidIsoDate', () => {
@@ -147,24 +151,30 @@ test('isValidTime', () => {
     assert.equal(isValidTime('24:00'), false);
     assert.equal(isValidTime('10:60'), false);
     assert.equal(isValidTime('9:30'), false);
-    assert.equal(isValidTime('10:30:00'), false);
+    assert.equal(isValidTime('10:30:00'), true);
+    assert.equal(isValidTime('23:59:59'), true);
+    assert.equal(isValidTime('10:30:60'), false);
+    assert.equal(isValidTime('10:30:5'), false);
+    assert.equal(isValidTime('10:30:'), false);
+    assert.equal(isValidTime('10:30:00.5'), false);
 });
 
-test('formatStartValue', () => {
-    assert.equal(formatStartValue('2030-01-05', '10:30'), '2030-01-05 10:30');
-    assert.equal(formatStartValue('2030-01-05', ''), '2030-01-05');
-    assert.equal(formatStartValue('', '10:30'), '10:30');
-    assert.equal(formatStartValue('', ''), '');
+test('formatDateTimeValue', () => {
+    assert.equal(formatDateTimeValue('2030-01-05', '10:30'), '2030-01-05 10:30');
+    assert.equal(formatDateTimeValue('2030-01-05', ''), '2030-01-05');
+    assert.equal(formatDateTimeValue('', '10:30'), '10:30');
+    assert.equal(formatDateTimeValue('', ''), '');
 });
 
-test('parseStartValue', () => {
-    assert.deepEqual(parseStartValue('2030-01-05 10:30'), {date: '2030-01-05', time: '10:30'});
+test('parseDateTimeValue', () => {
+    assert.deepEqual(parseDateTimeValue('2030-01-05 10:30'), {date: '2030-01-05', time: '10:30'});
     // Extra whitespace and the ISO separator are tolerated
-    assert.deepEqual(parseStartValue('  2030-01-05   10:30 '), {date: '2030-01-05', time: '10:30'});
-    assert.deepEqual(parseStartValue('2030-01-05T10:30'), {date: '2030-01-05', time: '10:30'});
-    assert.deepEqual(parseStartValue('2030-01-05'), {date: '2030-01-05', time: ''});
-    assert.deepEqual(parseStartValue(''), {date: '', time: ''});
-    assert.deepEqual(parseStartValue(null), {date: '', time: ''});
+    assert.deepEqual(parseDateTimeValue('  2030-01-05   10:30 '), {date: '2030-01-05', time: '10:30'});
+    assert.deepEqual(parseDateTimeValue('2030-01-05T10:30'), {date: '2030-01-05', time: '10:30'});
+    assert.deepEqual(parseDateTimeValue('2030-01-05 10:30:45'), {date: '2030-01-05', time: '10:30:45'});
+    assert.deepEqual(parseDateTimeValue('2030-01-05'), {date: '2030-01-05', time: ''});
+    assert.deepEqual(parseDateTimeValue(''), {date: '', time: ''});
+    assert.deepEqual(parseDateTimeValue(null), {date: '', time: ''});
 });
 
 test('toRgbColor', () => {
@@ -258,3 +268,13 @@ test('createRandomSecret falls back to getRandomValues in non-secure contexts', 
         crypto.randomUUID = original;
     }
 });
+
+test('buildIncidentFilterUrl sets or removes one filter, keeping the others', () => {
+    assert.equal(buildIncidentFilterUrl('', 'type', 'http'), '/incidents?type=http');
+    assert.equal(buildIncidentFilterUrl('?period=P7D', 'type', 'docker'), '/incidents?period=P7D&type=docker');
+    assert.equal(buildIncidentFilterUrl('?period=P7D&type=http', 'period', 'P1D'), '/incidents?period=P1D&type=http');
+    // An empty value removes the filter, and the unfiltered list keeps its plain URL
+    assert.equal(buildIncidentFilterUrl('?period=P7D&type=http', 'type', ''), '/incidents?period=P7D');
+    assert.equal(buildIncidentFilterUrl('?type=http', 'type', ''), '/incidents');
+});
+

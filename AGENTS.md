@@ -35,11 +35,13 @@
 # Code style guidelines & gotchas
 
 - Use `/** ... **/` ONLY over methods and classes, for inline comments use `// ...`
-- Be sparse with comments in general, only make one when it's really necessary to explain something that is not obvious from the code itself
+- Be sparse with comments in general: no obvious comments that repeat what the code (or its naming) already says. Only comment complex stuff, i.e. something that is not obvious from the code itself (a non-trivial reason, a workaround, a gotcha)
 - `DSLContext` should be reused from
   `Database*Spec` base classes when it's possible, instead of injecting a new one into the class
 - Tests should not depend on each other (except the existing cases and where it is really necessary)
 - Manual clearing/resetting of mocks should be avoided (unless it's really necessary), instead use
   `@MockkBean` and let the framework handle it
 - Controller endpoints that are eventually touching the database have to use the `@ExecuteOn(TaskExecutors.BLOCKING)` annotation
+- Don't add default values to the constructor parameters of DTOs that are used on the wire (API request/response bodies) unless they're load-bearing (e.g. a field that can be absent from a deserialized request body). Internal data classes (e.g. view helpers) can have them. Non-load-bearing defaults are error-prone: when someone forgets to pass a value explicitly, the code still compiles and silently uses the default
+- In tests, don't use the blocking HTTP client (`client.toBlocking()`). Await the reactive call instead: `client.exchange(request, String::class.java).awaitFirst()` (`kotlinx.coroutines.reactive.awaitFirst`), and mark local helpers wrapping it as `suspend`
 - Never run two Gradle test invocations at the same time: the specs share hardcoded MockServer ports and a single Testcontainers database, so parallel runs interfere with each other and report misleading failures

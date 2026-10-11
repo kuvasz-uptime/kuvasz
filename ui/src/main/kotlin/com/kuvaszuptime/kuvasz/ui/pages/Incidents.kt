@@ -1,30 +1,35 @@
 package com.kuvaszuptime.kuvasz.ui.pages
 
+import com.iodesystems.htmx.Htmx.Companion.hx
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.IncidentType
-import com.kuvaszuptime.kuvasz.models.monitorType
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentDto
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentStatus
+import com.kuvaszuptime.kuvasz.models.monitorType
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
-import com.kuvaszuptime.kuvasz.ui.fragments.monitor.http.sslEventsPath
+import com.kuvaszuptime.kuvasz.ui.fragments.monitor.http.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import com.kuvaszuptime.kuvasz.util.formatAsInterval
-import com.kuvaszuptime.kuvasz.util.formatAsSimpleInterval
 import com.kuvaszuptime.kuvasz.util.getDurationOfEvent
 import kotlinx.html.*
+import kotlinx.html.stream.*
 import java.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
-fun renderIncidentsPage(globals: AppGlobals, period: Duration, incidents: List<IncidentDto>): String {
-    val formattedPeriod = period.formatAsSimpleInterval()
-    return withLayout(
+private const val INCIDENT_LIST_ID = "incident-list"
+private const val INCIDENT_COUNT_ID = "incident-count"
+private const val REFRESH_INCIDENT_LIST_EVENT = "refresh-incident-list"
+
+fun renderIncidentsPage(globals: AppGlobals, period: Duration, selectedType: IncidentType?): String =
+    withLayout(
         globals,
-        title = Messages.incidentsInTheLast(formattedPeriod),
-        pageTitle = { incidentsPageHeader(formattedPeriod, selectedPeriod = period) }
+        title = Messages.incidents(),
+        pageTitle = { incidentsPageHeader() }
     ) {
         div {
             classes(ROW, ROW_CARDS)
@@ -32,102 +37,140 @@ fun renderIncidentsPage(globals: AppGlobals, period: Duration, incidents: List<I
                 classes(COL_12)
                 div {
                     classes(CARD)
-                    if (incidents.isNotEmpty()) {
-                        div {
-                            classes(CARD_TABLE, TABLE_RESPONSIVE)
-                            table {
-                                classes(TABLE, TABLE_SM, TABLE_VCENTER, CARD_TABLE)
-                                thead {
-                                    tr {
-                                        // Status
-                                        th {
-                                            classes(TEXT_CENTER)
-                                            +Messages.status()
-                                        }
-                                        // Monitor name
-                                        th { +Messages.monitor() }
-                                        // Type
-                                        th {
-                                            classes(TEXT_CENTER)
-                                            +Messages.type()
-                                        }
-                                        // Started at
-                                        th {
-                                            classes(D_NONE, D_MD_TABLE_CELL, PX_3)
-                                            +Messages.startedAt()
-                                        }
-                                        // Duration
-                                        th {
-                                            classes(PX_3, D_NONE, D_SM_TABLE_CELL)
-                                            +Messages.duration()
-                                        }
-                                        // Details
-                                        th {
-                                            classes(D_NONE, D_LG_TABLE_CELL, PX_3)
-                                            +Messages.details()
-                                        }
-                                    }
-                                }
-                                tbody {
-                                    incidents.forEach { incident ->
-                                        tr {
-                                            // Status
-                                            td {
-                                                classes(TEXT_CENTER)
-                                                incidentStatusBadge(incident)
-                                            }
-                                            // Monitor name
-                                            td {
-                                                classes(TEXT_WRAP, TEXT_BREAK)
-                                                a(href = incident.getMonitorUrl()) {
-                                                    classes(TEXT_RESET)
-                                                    +incident.monitorName.abbreviate(MONITOR_NAME_MAX_LENGTH)
-                                                }
-                                            }
-                                            // Type
-                                            td {
-                                                classes(TEXT_CENTER)
-                                                span {
-                                                    monitorTypeBadge(incident.incidentType)
-                                                }
-                                            }
-                                            // Started at
-                                            td {
-                                                classes(TEXT_NOWRAP, D_NONE, D_MD_TABLE_CELL, PX_3)
-                                                +incident.startedAt.toDateTimeString()
-                                            }
-                                            // Duration
-                                            td {
-                                                classes(TEXT_NOWRAP, PX_3, D_NONE, D_SM_TABLE_CELL)
-                                                +getDurationOfEvent(
-                                                    isMonitorEnabled = incident.isMonitorEnabled,
-                                                    startedAt = incident.startedAt,
-                                                    endedAt = incident.endedAt,
-                                                    updatedAt = incident.updatedAt,
-                                                ).formatAsInterval()
-                                            }
-                                            // Details
-                                            td {
-                                                classes(TEXT_WRAP, TEXT_BREAK, D_NONE, D_LG_TABLE_CELL, PX_3)
-                                                +incident.details.orEmpty()
-                                            }
-                                        }
-                                    }
-                                }
+                    incidentFilterToolbar(selectedPeriod = period, selectedType = selectedType)
+                    div {
+                        hx {
+                            get(incidentListFragmentPath(period, selectedType))
+                            trigger {
+                                load()
+                                event(REFRESH_INCIDENT_LIST_EVENT)
+                                every(30.seconds)
                             }
+                            onSwapReinitTooltips()
                         }
-                    } else {
-                        emptyState(
-                            icon = Icon.FLAME,
-                            title = Messages.noIncidents(),
-                            subtitle = Messages.noIncidentsInPeriod(),
-                        )
+                        id = INCIDENT_LIST_ID
+                        htmxLoadingIndicator()
                     }
                 }
             }
         }
     }
-}
+
+/**
+ * The table of the incidents page, refreshed by htmx, along with the incident count of the filter toolbar swapped out
+ * of band.
+ */
+fun renderIncidentList(incidents: List<IncidentDto>): String =
+    createHTML(prettyPrint = false, xhtmlCompatible = false).run {
+        if (incidents.isEmpty()) {
+            div {
+                incidentCountLabel(count = 0)
+                emptyState(
+                    icon = Icon.FLAME,
+                    title = Messages.noIncidents(),
+                    subtitle = Messages.noIncidentsInPeriod(),
+                )
+            }
+        } else {
+            div {
+                classes(CARD_TABLE, TABLE_RESPONSIVE)
+                incidentCountLabel(incidents.size)
+                table {
+                    classes(TABLE, TABLE_SM, TABLE_VCENTER, CARD_TABLE)
+                    thead {
+                        tr {
+                            // Status
+                            th {
+                                classes(TEXT_CENTER)
+                                +Messages.status()
+                            }
+                            // Monitor name
+                            th { +Messages.monitor() }
+                            // Type
+                            th {
+                                classes(TEXT_CENTER)
+                                +Messages.type()
+                            }
+                            // Started at
+                            th {
+                                classes(D_NONE, D_MD_TABLE_CELL, PX_3)
+                                +Messages.startedAt()
+                            }
+                            // Duration
+                            th {
+                                classes(PX_3, D_NONE, D_SM_TABLE_CELL)
+                                +Messages.duration()
+                            }
+                            // Details
+                            th {
+                                classes(D_NONE, D_LG_TABLE_CELL, PX_3)
+                                +Messages.details()
+                            }
+                            // Actions
+                            th {}
+                        }
+                    }
+                    tbody {
+                        incidents.forEach { incident ->
+                            tr {
+                                // Status
+                                td {
+                                    classes(TEXT_CENTER)
+                                    incidentStatusBadge(incident)
+                                }
+                                // Monitor name
+                                td {
+                                    classes(TEXT_WRAP, TEXT_BREAK)
+                                    a(href = incident.getMonitorUrl()) {
+                                        classes(TEXT_RESET)
+                                        +incident.monitorName.abbreviate(MONITOR_NAME_MAX_LENGTH)
+                                    }
+                                }
+                                // Type
+                                td {
+                                    classes(TEXT_CENTER)
+                                    span {
+                                        monitorTypeBadge(incident.incidentType)
+                                    }
+                                }
+                                // Started at
+                                td {
+                                    classes(TEXT_NOWRAP, D_NONE, D_MD_TABLE_CELL, PX_3)
+                                    +incident.startedAt.toDateTimeString()
+                                }
+                                // Duration
+                                td {
+                                    classes(TEXT_NOWRAP, PX_3, D_NONE, D_SM_TABLE_CELL)
+                                    +getDurationOfEvent(
+                                        isMonitorEnabled = incident.isMonitorEnabled,
+                                        startedAt = incident.startedAt,
+                                        endedAt = incident.endedAt,
+                                        updatedAt = incident.updatedAt,
+                                    ).formatAsInterval()
+                                }
+                                // Details
+                                td {
+                                    classes(TEXT_WRAP, TEXT_BREAK, D_NONE, D_LG_TABLE_CELL, PX_3)
+                                    +incident.details.orEmpty()
+                                }
+                                // Actions
+                                td {
+                                    classes(TEXT_END)
+                                    incidentDetailsButton(incident)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+private fun incidentListFragmentPath(period: Duration, type: IncidentType?): String =
+    "/incidents/fragments/list?period=$period" + type?.let { "&type=${it.name.lowercase()}" }.orEmpty()
+
+private fun FlowContent.incidentCountLabel(count: Int?) =
+    listCountLabel(INCIDENT_COUNT_ID, INCIDENT_COUNT_ID, count?.let { Messages.incidentListCount(it) })
 
 internal val IncidentType.label: String
     get() = when (this) {
@@ -173,13 +216,86 @@ fun FlowContent.incidentStatusBadge(incident: IncidentDto) {
     }
 }
 
+internal val IncidentDto.detailsPath: String
+    get() = "/incidents/${incidentType.name.lowercase()}/$eventId"
+
+/** The link of an incident list row to the details page of the incident. */
+internal fun FlowContent.incidentDetailsButton(incident: IncidentDto) {
+    a(href = incident.detailsPath) {
+        classes(BTN, BTN_SM, BTN_ICON)
+        testId("incident-details-button")
+        tooltip(Messages.viewIncidentDetails())
+        ariaLabel(Messages.viewIncidentDetails())
+        icon(Icon.EYE)
+    }
+}
+
 internal fun IncidentDto.getMonitorUrl(): String = if (incidentType == IncidentType.SSL) {
     sslEventsPath(monitorId)
 } else {
     MonitorTypeUiConfig.of(incidentType.monitorType).detailsPath(monitorId)
 }
 
-private fun HtmlBlockTag.incidentsPageHeader(formattedPeriod: String, selectedPeriod: Duration) {
+private fun FlowContent.incidentFilterToolbar(selectedPeriod: Duration, selectedType: IncidentType?) {
+    div {
+        classes(CARD_HEADER, PY_2)
+        testId("incident-filters")
+        div {
+            classes(ROW, G_2, ALIGN_ITEMS_CENTER, W_100)
+            div {
+                classes(CSSClass.COL)
+                incidentCountLabel(count = null)
+            }
+            div {
+                classes(COL_12, COL_SM_AUTO, MS_SM_AUTO)
+                div {
+                    classes(INPUT_ICON)
+                    span {
+                        classes(INPUT_ICON_ADDON)
+                        icon(Icon.CLOCK)
+                    }
+                    periodSelector(selected = selectedPeriod) {
+                        classes(FORM_SELECT, FORM_SELECT_SM)
+                        ariaLabel(Messages.filterByPeriod())
+                        testId("incident-period-filter")
+                        onChange = "applyIncidentFilter('period', this.value)"
+                    }
+                }
+            }
+            div {
+                classes(COL_12, COL_SM_AUTO)
+                div {
+                    classes(INPUT_ICON)
+                    span {
+                        classes(INPUT_ICON_ADDON)
+                        icon(Icon.FLAME)
+                    }
+                    select {
+                        classes(FORM_SELECT, FORM_SELECT_SM)
+                        ariaLabel(Messages.filterByIncidentType())
+                        testId("incident-type-filter")
+                        onChange = "applyIncidentFilter('type', this.value)"
+                        // An absent parameter means every type, so the unfiltered page keeps its plain URL
+                        option {
+                            value = ""
+                            selected = selectedType == null
+                            +Messages.allIncidentTypes()
+                        }
+                        IncidentType.entries.forEach { type ->
+                            option {
+                                value = type.name.lowercase()
+                                selected = selectedType == type
+                                +type.label
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun HtmlBlockTag.incidentsPageHeader() {
     div {
         classes(CONTAINER_XL)
         div {
@@ -197,20 +313,16 @@ private fun HtmlBlockTag.incidentsPageHeader(formattedPeriod: String, selectedPe
                         h2 {
                             classes(PAGE_TITLE)
                             +Messages.incidents()
-                            span {
-                                classes(BADGE)
-                                +Messages.lastX(formattedPeriod)
-                            }
                         }
                     }
-                }
-            }
-            // Period selector
-            div {
-                classes(COL_SM_AUTO, MS_AUTO)
-                div {
-                    periodSelector(selected = selectedPeriod) {
-                        onChange = "{window.location = '/incidents?period=' + this.value;}"
+                    div {
+                        classes(COL_AUTO, MS_AUTO)
+                        div {
+                            classes(BTN_LIST)
+                            compactIconButton(Icon.REFRESH, onClick = "refreshIncidentList()") {
+                                testId("incident-list-refresh-button")
+                            }
+                        }
                     }
                 }
             }

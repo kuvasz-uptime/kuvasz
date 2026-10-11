@@ -4,6 +4,9 @@ import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpUptimeEventRecord
+import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.matchers.shouldBe
@@ -180,6 +183,30 @@ class IcmpUptimeEventRepositoryTest(
 
                 then("it should only consider the incidents of the enabled monitors") {
                     icmpUptimeEventRepository.fetchLatestIncidentTimestamp() shouldBe now.minusHours(3)
+                }
+            }
+        }
+
+        given("the insertFromMonitorEvent method") {
+
+            `when`("the integrations notified about the event are given") {
+
+                then("they should be stored along with the event") {
+                    val monitor = createIcmpMonitor(icmpMonitorRepository)
+                    val integrations = arrayOf(IntegrationID(IntegrationType.SLACK, "ops"))
+
+                    icmpUptimeEventRepository.insertFromMonitorEvent(
+                        IcmpMonitorUpEvent(
+                            monitor = monitor,
+                            previousEvent = null,
+                            latencyInMs = 10,
+                            packetLossPercentage = 0,
+                        ),
+                        integrations = integrations,
+                    )
+
+                    icmpUptimeEventRepository.fetchByMonitorId(monitor.id).single().integrations.toList() shouldBe
+                        integrations.toList()
                 }
             }
         }

@@ -129,6 +129,10 @@ jooq {
                                     recordImplements = "com.kuvaszuptime.kuvasz.jooq.UptimeEventRecord"
                                 }
                                 table {
+                                    expression = "SSL_EVENT"
+                                    recordImplements = "com.kuvaszuptime.kuvasz.jooq.EventWithIntegrations"
+                                }
+                                table {
                                     expression = "HTTP_MONITOR"
                                     recordImplements =
                                         "com.kuvaszuptime.kuvasz.jooq.SchedulableMonitorRecord, com.kuvaszuptime.kuvasz.jooq.MonitorWithMetricsHistory"
@@ -173,7 +177,10 @@ jooq {
                                 jsonConverterImplementation = JSONConverterImplementation.JACKSON_3
                                 includeExpression =
                                     "HTTP_MONITOR.INTEGRATIONS|PUSH_MONITOR.INTEGRATIONS|ICMP_MONITOR.INTEGRATIONS|TCP_MONITOR.INTEGRATIONS|" +
-                                    "DNS_MONITOR.INTEGRATIONS|DOCKER_MONITOR.INTEGRATIONS|MAINTENANCE_WINDOW.INTEGRATIONS"
+                                    "DNS_MONITOR.INTEGRATIONS|DOCKER_MONITOR.INTEGRATIONS|MAINTENANCE_WINDOW.INTEGRATIONS|" +
+                                    "HTTP_UPTIME_EVENT.INTEGRATIONS|PUSH_UPTIME_EVENT.INTEGRATIONS|ICMP_UPTIME_EVENT.INTEGRATIONS|" +
+                                    "TCP_UPTIME_EVENT.INTEGRATIONS|DNS_UPTIME_EVENT.INTEGRATIONS|DOCKER_UPTIME_EVENT.INTEGRATIONS|" +
+                                    "SSL_EVENT.INTEGRATIONS"
                             }
                             forcedType {
                                 userType = "com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType[]"
@@ -193,6 +200,11 @@ jooq {
                                 userType = "com.kuvaszuptime.kuvasz.models.theme.ThemeBase"
                                 isEnumConverter = true
                                 includeExpression = "STATUS_PAGE.THEME_BASE"
+                            }
+                            forcedType {
+                                userType = "com.kuvaszuptime.kuvasz.models.IncidentType"
+                                isEnumConverter = true
+                                includeExpression = "INCIDENT_NOTE.INCIDENT_TYPE"
                             }
                             forcedType {
                                 userType = "tools.jackson.databind.JsonNode"

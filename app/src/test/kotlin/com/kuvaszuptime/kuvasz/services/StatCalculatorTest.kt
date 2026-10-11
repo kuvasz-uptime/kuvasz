@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
+import com.kuvaszuptime.kuvasz.jooq.enums.InvestigationStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createDnsMonitor
@@ -11,16 +12,19 @@ import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createHttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpUptimeEventRecord
+import com.kuvaszuptime.kuvasz.mocks.createIncidentNote
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createTcpUptimeEventRecord
+import com.kuvaszuptime.kuvasz.models.IncidentType
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dashboard.DashboardIncidentStats
 import com.kuvaszuptime.kuvasz.models.dashboard.DashboardUptimeStats
 import com.kuvaszuptime.kuvasz.models.dashboard.MonitorStateCounts
+import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentStatus
 import com.kuvaszuptime.kuvasz.models.dto.monitor.DnsMonitorSummary
 import com.kuvaszuptime.kuvasz.models.dto.monitor.DockerMonitorSummary
 import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorSummary
@@ -55,6 +59,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import java.time.Duration
+import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.ZoneId
 
@@ -3066,6 +3071,181 @@ class StatCalculatorTest(
                 }
             }
 
+            // The start of a day in the system's time zone, the one the days of the history are counted in
+            fun startOfDaysAgo(days: Long) = LocalDate.now(ZoneId.systemDefault())
+                .minusDays(days)
+                .atStartOfDay(ZoneId.systemDefault())
+                .toOffsetDateTime()
+
+            `when`("an incident spans midnight") {
+
+                val monitor = createPushMonitor(pushMonitorRepository, enabled = true)
+                val yesterday = startOfDaysAgo(1)
+                val incident = createTestEvent(
+                    monitorId = monitor.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = yesterday.minusHours(1),
+                    endedAt = yesterday.plusHours(2),
+                    updatedAt = yesterday.plusHours(2),
+                )
+                createTestEvent(
+                    monitorId = monitor.id,
+                    status = UptimeStatus.UP,
+                    startedAt = yesterday.plusHours(2),
+                    endedAt = null,
+                    updatedAt = getCurrentTimestamp(),
+                )
+
+                then("it should be listed on both days, with the downtime of each day only") {
+
+                    val result = statusHistoryOf(monitor.id, Duration.ofDays(7))
+                    val (dayBefore, dayOf, today) = result.takeLast(3)
+
+                    dayBefore.downtimeSeconds shouldBe Duration.ofHours(1).seconds
+                    dayOf.downtimeSeconds shouldBe Duration.ofHours(2).seconds
+                    listOf(dayBefore, dayOf).forAll { day ->
+                        day.outageCnt shouldBe 1
+                        day.incidents.single().let { listed ->
+                            listed.id shouldBe incident.id
+                            listed.startedAt shouldBe incident.startedAt
+                            listed.endedAt shouldBe incident.endedAt
+                            listed.status shouldBe IncidentStatus.RESOLVED
+                        }
+                    }
+                    // Only the UP event is effective today
+                    today.outageCnt shouldBe 0
+                    today.downtimeSeconds shouldBe 0L
+                    today.incidents.shouldBeEmpty()
+                }
+            }
+
+            `when`("an incident is ongoing") {
+
+                val monitor = createPushMonitor(pushMonitorRepository, enabled = true)
+                val startedAt = getCurrentTimestamp().minusSeconds(30)
+                val incident = createTestEvent(
+                    monitorId = monitor.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = startedAt,
+                    endedAt = null,
+                    updatedAt = getCurrentTimestamp(),
+                )
+
+                then("it should be listed today as ongoing, with its downtime counted until now") {
+
+                    val today = statusHistoryOf(monitor.id, Duration.ofDays(7)).last()
+
+                    today.incidents.single().let { listed ->
+                        listed.id shouldBe incident.id
+                        listed.endedAt shouldBe null
+                        listed.status shouldBe IncidentStatus.ONGOING
+                    }
+                    // It may have started yesterday, if the test runs right after midnight
+                    today.downtimeSeconds.shouldNotBeNull() shouldBeInRange 0L..ONGOING_DOWNTIME_UPPER_BOUND
+                }
+            }
+
+            `when`("an ongoing incident belongs to a paused monitor") {
+
+                val monitor = createPushMonitor(pushMonitorRepository, enabled = false)
+                val twoDaysAgo = startOfDaysAgo(2)
+                createTestEvent(
+                    monitorId = monitor.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = twoDaysAgo.plusHours(2),
+                    endedAt = null,
+                    updatedAt = twoDaysAgo.plusHours(6),
+                )
+
+                then("its downtime should end at its last update") {
+
+                    val result = statusHistoryOf(monitor.id, Duration.ofDays(7))
+                    val (twoDaysAgoEntry, yesterdayEntry, todayEntry) = result.takeLast(3)
+
+                    twoDaysAgoEntry.downtimeSeconds shouldBe Duration.ofHours(4).seconds
+                    twoDaysAgoEntry.incidents.single().status shouldBe IncidentStatus.ONGOING
+                    listOf(yesterdayEntry, todayEntry).forAll { day ->
+                        day.outageCnt shouldBe null
+                        day.downtimeSeconds shouldBe null
+                        day.incidents.shouldBeEmpty()
+                    }
+                }
+            }
+
+            `when`("there are multiple incidents on the same day") {
+
+                val monitor = createPushMonitor(pushMonitorRepository, enabled = true)
+                val yesterday = startOfDaysAgo(1)
+                val later = createTestEvent(
+                    monitorId = monitor.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = yesterday.plusHours(5),
+                    endedAt = yesterday.plusHours(6),
+                    updatedAt = yesterday.plusHours(6),
+                )
+                val earlier = createTestEvent(
+                    monitorId = monitor.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = yesterday.plusHours(1),
+                    endedAt = yesterday.plusHours(1).plusMinutes(30),
+                    updatedAt = yesterday.plusHours(1).plusMinutes(30),
+                )
+
+                then("they should be listed in the order they started, with their downtime summed") {
+
+                    val yesterdayEntry = statusHistoryOf(monitor.id, Duration.ofDays(7)).takeLast(2).first()
+
+                    yesterdayEntry.outageCnt shouldBe 2
+                    yesterdayEntry.incidents.map { it.id } shouldBe listOf(earlier.id, later.id)
+                    yesterdayEntry.downtimeSeconds shouldBe Duration.ofMinutes(90).seconds
+                }
+            }
+
+            `when`("an incident has notes") {
+
+                val monitor = createPushMonitor(pushMonitorRepository, enabled = true)
+                val timestamp = getCurrentTimestamp().minusMinutes(5)
+                val createdAt = getCurrentTimestamp().minusMinutes(1)
+                val incident = createTestEvent(
+                    monitorId = monitor.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = getCurrentTimestamp().minusSeconds(30),
+                    endedAt = null,
+                    updatedAt = getCurrentTimestamp(),
+                )
+                createIncidentNote(
+                    dslContext,
+                    IncidentType.PUSH,
+                    incident.id,
+                    status = InvestigationStatus.IDENTIFIED,
+                    content = "Public with a timestamp",
+                    timestamp = timestamp,
+                    public = true,
+                )
+                createIncidentNote(
+                    dslContext,
+                    IncidentType.PUSH,
+                    incident.id,
+                    content = "Public without a timestamp",
+                    public = true,
+                    createdAt = createdAt,
+                )
+                createIncidentNote(dslContext, IncidentType.PUSH, incident.id, content = "Private", public = false)
+                // A public note of another type of incident, with the very same event ID
+                createIncidentNote(dslContext, IncidentType.HTTP, incident.id, content = "Other type", public = true)
+
+                then("only its public notes should be listed, with their timestamp or creation date") {
+
+                    val notes = statusHistoryOf(monitor.id, Duration.ofDays(7)).last().incidents.single().notes
+
+                    notes.map { it.content } shouldBe listOf("Public with a timestamp", "Public without a timestamp")
+                    notes[0].status shouldBe InvestigationStatus.IDENTIFIED
+                    notes[0].timestamp shouldBe timestamp
+                    notes[1].status shouldBe InvestigationStatus.INVESTIGATING
+                    notes[1].timestamp shouldBe createdAt
+                }
+            }
+
             `when`("no monitor is requested") {
 
                 then("it should not even hit the database") {
@@ -3081,7 +3261,7 @@ class StatCalculatorTest(
 
         given("the timelineSlotStarts() method") {
 
-            val zone = ZoneId.of("Europe/Budapest")
+            val zone = ZoneId.of("Europe/Vienna")
             listOf(
                 // From 02:00 CET to 03:00 CEST
                 "the clocks are put forward" to OffsetDateTime.parse("2026-03-29T01:00:00Z"),
@@ -3942,3 +4122,6 @@ class StatCalculatorTest(
         }
     }
 }
+
+// An ongoing incident started 30 seconds before the assertions, with some slack for a slow machine
+private const val ONGOING_DOWNTIME_UPPER_BOUND = 120L

@@ -7,9 +7,11 @@ package com.kuvaszuptime.kuvasz.jooq.tables;
 import com.kuvaszuptime.kuvasz.jooq.Indexes;
 import com.kuvaszuptime.kuvasz.jooq.Keys;
 import com.kuvaszuptime.kuvasz.jooq.Kuvasz;
+import com.kuvaszuptime.kuvasz.jooq.TextArrayToIntegrationIdArrayConverter;
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HttpMonitorPath;
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord;
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID;
 
 import java.time.OffsetDateTime;
 import java.util.Arrays;
@@ -99,6 +101,11 @@ public class HttpUptimeEvent extends TableImpl<HttpUptimeEventRecord> {
      * The column <code>kuvasz.http_uptime_event.updated_at</code>.
      */
     public final TableField<HttpUptimeEventRecord, OffsetDateTime> UPDATED_AT = createField(DSL.name("updated_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false), this, "");
+
+    /**
+     * The column <code>kuvasz.http_uptime_event.integrations</code>.
+     */
+    public final TableField<HttpUptimeEventRecord, IntegrationID[]> INTEGRATIONS = createField(DSL.name("integrations"), SQLDataType.CLOB.array().nullable(false).defaultValue(DSL.field(DSL.raw("ARRAY[]::text[]"), SQLDataType.CLOB.array())), this, "", new TextArrayToIntegrationIdArrayConverter());
 
     private HttpUptimeEvent(Name alias, Table<HttpUptimeEventRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);

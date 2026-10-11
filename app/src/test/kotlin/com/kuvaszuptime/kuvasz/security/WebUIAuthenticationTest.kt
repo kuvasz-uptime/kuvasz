@@ -2,7 +2,9 @@ package com.kuvaszuptime.kuvasz.security
 
 import com.kuvaszuptime.kuvasz.DatabaseStringSpec
 import com.kuvaszuptime.kuvasz.config.AdminAuthConfig
+import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createHttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
@@ -18,6 +20,7 @@ import com.kuvaszuptime.kuvasz.repositories.DockerMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.util.UIDefaults
 import com.kuvaszuptime.kuvasz.util.getBodyAs
+import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.data.forAll
 import io.kotest.data.headers
 import io.kotest.data.row
@@ -98,6 +101,8 @@ class WebUIAuthenticationTest(
                 row("/settings"),
                 row("/integrations"),
                 row("/incidents"),
+                row("/incidents/http/1"),
+                row("/incidents/fragments/details/http/1"),
                 row("/status-pages"),
                 row("/status-pages/1"),
                 row("/status-pages/fragments/list"),
@@ -156,6 +161,8 @@ class WebUIAuthenticationTest(
                 row("/settings"),
                 row("/integrations"),
                 row("/incidents"),
+                row("/incidents/http/1"),
+                row("/incidents/fragments/details/http/1"),
                 row("/status-pages"),
                 row("/status-pages/1"),
                 row("/status-pages/fragments/list"),
@@ -195,6 +202,13 @@ class WebUIAuthenticationTest(
             val dockerMonitor = createDockerMonitor(dockerMonitorRepository)
             val statusPage = createStatusPage(dslContext, public = false)
             val maintenanceWindow = createMaintenanceWindow(dslContext, cron = "0 2 * * *", duration = "PT1H")
+            val incident = createHttpUptimeEventRecord(
+                dslContext,
+                monitorId = httpMonitor.id,
+                status = UptimeStatus.DOWN,
+                startedAt = getCurrentTimestamp(),
+                endedAt = null,
+            )
 
             table(
                 headers("url"),
@@ -235,6 +249,8 @@ class WebUIAuthenticationTest(
                 row("/settings"),
                 row("/integrations"),
                 row("/incidents"),
+                row("/incidents/http/${incident.id}"),
+                row("/incidents/fragments/details/http/${incident.id}"),
                 row("/status-pages"),
                 row("/status-pages/${statusPage.id}"),
                 row("/status-pages/fragments/list"),

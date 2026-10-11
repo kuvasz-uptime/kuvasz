@@ -290,10 +290,10 @@ class TcpMonitorControllerTest(
                     integrations = null,
                 )
 
-                val response = client.toBlocking().exchange(
+                val response = client.exchange(
                     HttpRequest.POST("/api/v2/tcp-monitors/", createDto).header("X-Api-Key", "test"),
                     String::class.java
-                )
+                ).awaitFirst()
 
                 then("it should create the monitor and return 201") {
                     response.status shouldBe HttpStatus.CREATED
@@ -327,10 +327,10 @@ class TcpMonitorControllerTest(
                     metricsHistoryEnabled = false,
                 )
 
-                val response = client.toBlocking().exchange(
+                val response = client.exchange(
                     HttpRequest.POST("/api/v2/tcp-monitors/", createDto).header("X-Api-Key", "test"),
                     String::class.java
-                )
+                ).awaitFirst()
 
                 then("it should create the monitor with metricsHistoryEnabled=false and return 201") {
                     response.status shouldBe HttpStatus.CREATED
@@ -355,10 +355,10 @@ class TcpMonitorControllerTest(
                     ignoreConnectivityCheck = true,
                 )
 
-                val response = client.toBlocking().exchange(
+                val response = client.exchange(
                     HttpRequest.POST("/api/v2/tcp-monitors/", createDto).header("X-Api-Key", "test"),
                     String::class.java
-                )
+                ).awaitFirst()
 
                 then("it should create the monitor with ignoreConnectivityCheck=true and return 201") {
                     response.status shouldBe HttpStatus.CREATED
@@ -373,10 +373,10 @@ class TcpMonitorControllerTest(
                 monitor.ignoreConnectivityCheck shouldBe false
                 val updateNode = mapper.createObjectNode().put("ignoreConnectivityCheck", true)
 
-                val response = client.toBlocking().exchange(
+                val response = client.exchange(
                     HttpRequest.PATCH("/api/v2/tcp-monitors/${monitor.id}", updateNode).header("X-Api-Key", "test"),
                     String::class.java
-                )
+                ).awaitFirst()
 
                 then("it should persist the new value and return 200") {
                     response.status shouldBe HttpStatus.OK
@@ -459,7 +459,7 @@ class TcpMonitorControllerTest(
                 ).header("X-Api-Key", "test")
 
                 val ex = shouldThrow<HttpClientResponseException> {
-                    client.toBlocking().exchange(request, String::class.java)
+                    client.exchange(request, String::class.java).awaitFirst()
                 }
 
                 then("it should return 400") {
@@ -481,7 +481,7 @@ class TcpMonitorControllerTest(
                 ).header("X-Api-Key", "test")
 
                 val ex = shouldThrow<HttpClientResponseException> {
-                    client.toBlocking().exchange(request, String::class.java)
+                    client.exchange(request, String::class.java).awaitFirst()
                 }
 
                 then("it should return 400") {
@@ -504,7 +504,7 @@ class TcpMonitorControllerTest(
                 ).header("X-Api-Key", "test")
 
                 val ex = shouldThrow<HttpClientResponseException> {
-                    client.toBlocking().exchange(request, String::class.java)
+                    client.exchange(request, String::class.java).awaitFirst()
                 }
 
                 then("it should return 400") {
@@ -521,10 +521,10 @@ class TcpMonitorControllerTest(
                     uptimeCheckInterval = 60,
                 )
                 val ex = shouldThrow<HttpClientResponseException> {
-                    client.toBlocking().exchange(
+                    client.exchange(
                         HttpRequest.POST("/api/v2/tcp-monitors/", createDto).header("X-Api-Key", "test"),
                         String::class.java,
-                    )
+                    ).awaitFirst()
                 }
 
                 then("it should return 409 CONFLICT and not create a duplicate") {

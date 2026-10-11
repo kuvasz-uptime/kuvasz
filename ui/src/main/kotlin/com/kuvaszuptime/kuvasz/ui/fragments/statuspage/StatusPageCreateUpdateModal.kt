@@ -42,9 +42,9 @@ internal fun FlowContent.statusPageCreateUpdateModal(
                 |'${ThemeBase.DEFAULT.name}')
             """.trimMargin()
         )
-        attributes["@$modalClosedEvent.window"] = "resetState()"
-        attributes["@edit-status-page.window"] = "editFrom(\$event.detail.id, \$event.detail.title)"
-        attributes["@clone-status-page.window"] = "cloneFrom(\$event.detail.id, \$event.detail.fields)"
+        xOn("$modalClosedEvent.window", "resetState()")
+        xOn("edit-status-page.window", "editFrom(\$event.detail.id, \$event.detail.title)")
+        xOn("clone-status-page.window", "cloneFrom(\$event.detail.id, \$event.detail.fields)")
         tabIndex = "-1"
         role = "dialog"
 

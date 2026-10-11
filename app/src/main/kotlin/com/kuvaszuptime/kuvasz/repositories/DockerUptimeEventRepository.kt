@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.DockerUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.event.DockerUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerUptimeMonitorEvent
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.services.UptimeEventCalculationContext
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import jakarta.inject.Singleton
@@ -17,6 +18,7 @@ import java.time.OffsetDateTime
 class DockerUptimeEventRepository(private val dslContext: DSLContext) : UptimeEventRepository {
 
     private val uptimeEventColumns = UptimeEventColumns(
+        eventId = DOCKER_UPTIME_EVENT.ID,
         eventMonitorId = DOCKER_UPTIME_EVENT.MONITOR_ID,
         status = DOCKER_UPTIME_EVENT.STATUS,
         startedAt = DOCKER_UPTIME_EVENT.STARTED_AT,
@@ -31,10 +33,12 @@ class DockerUptimeEventRepository(private val dslContext: DSLContext) : UptimeEv
     fun insertFromMonitorEvent(
         event: DockerUptimeMonitorEvent,
         ctx: DSLContext? = dslContext,
+        integrations: Array<IntegrationID> = emptyArray(),
     ): DockerUptimeEventRecord {
         val eventToInsert = DockerUptimeEventRecord()
             .setMonitorId(event.monitor.id)
             .setStatus(event.uptimeStatus)
+            .setIntegrations(integrations)
             .setStartedAt(event.dispatchedAt)
             .setUpdatedAt(event.dispatchedAt)
             .setImage(event.image)

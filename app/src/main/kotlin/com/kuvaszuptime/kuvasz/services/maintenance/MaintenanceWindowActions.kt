@@ -11,6 +11,7 @@ import com.kuvaszuptime.kuvasz.models.maintenance.validateScheduleConsistency
 import com.kuvaszuptime.kuvasz.repositories.MaintenanceWindowRepository
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageDataActions.Companion.DEFAULT_PAGE_CACHE_NAME
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageDataActions.Companion.STATUS_PAGES_CACHE_NAME
+import com.kuvaszuptime.kuvasz.util.entityUpdateMapper
 import com.kuvaszuptime.kuvasz.util.transactionResultWithError
 import com.kuvaszuptime.kuvasz.validation.IntegrationIdValidator
 import com.kuvaszuptime.kuvasz.validation.MonitorIdValidator
@@ -21,11 +22,8 @@ import io.micronaut.validation.validator.Validator
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import org.jooq.SortField
-import tools.jackson.databind.DeserializationFeature
-import tools.jackson.databind.ObjectMapper
 import tools.jackson.databind.node.ObjectNode
 import tools.jackson.module.kotlin.convertValue
-import tools.jackson.module.kotlin.jacksonMapperBuilder
 
 @Singleton
 class MaintenanceWindowActions(
@@ -37,10 +35,6 @@ class MaintenanceWindowActions(
     private val dslContext: DSLContext,
     private val validator: Validator,
 ) {
-
-    private val objectMapper: ObjectMapper = jacksonMapperBuilder()
-        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-        .build()
 
     fun getMaintenanceWindows(sortedBy: SortField<*>? = null): List<MaintenanceWindowDetailsDto> =
         maintenanceWindowRepository.fetchAll(sortedBy).map { it.toDetailsDto(calculator) }
@@ -90,12 +84,12 @@ class MaintenanceWindowActions(
                 .orThrowNotFound(maintenanceWindowId.toString())
             val toUpdate = existing.into(MaintenanceWindow::class.java)
             val filteredUpdates = updates.propertyNames()
-                .fold(objectMapper.createObjectNode()) { acc, fieldName ->
+                .fold(entityUpdateMapper.createObjectNode()) { acc, fieldName ->
                     acc.set(fieldName, updates.get(fieldName))
                 }
-            val updatedWindow = objectMapper.updateValue(toUpdate, filteredUpdates)
+            val updatedWindow = entityUpdateMapper.updateValue(toUpdate, filteredUpdates)
 
-            objectMapper.convertValue<MaintenanceWindowUpdateDto>(updatedWindow).let { toValidate ->
+            entityUpdateMapper.convertValue<MaintenanceWindowUpdateDto>(updatedWindow).let { toValidate ->
                 validator.validate(toValidate).throwIfNotEmpty()
                 toValidate.validateScheduleConsistency()
             }

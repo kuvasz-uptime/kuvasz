@@ -14,6 +14,8 @@ import com.kuvaszuptime.kuvasz.uitest.pages.statuspage.PublicStatusPage
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.string.shouldEndWith
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import java.time.OffsetDateTime
 import java.util.regex.Pattern
@@ -44,6 +46,37 @@ class PublicStatusPageUiTest(private val httpMonitorRepository: HttpMonitorRepos
             assertThat(statusPage.categorySections).hasCount(0)
         }
 
+        "the status page refreshes itself in place, through its own URL" {
+            val monitor = createHttpMonitor(httpMonitorRepository, monitorName = "Refreshed Service")
+            createHttpUptimeEventRecord(
+                dslContext,
+                monitorId = monitor.id,
+                status = UptimeStatus.UP,
+                startedAt = OffsetDateTime.now().minusHours(1),
+                endedAt = null,
+            )
+            createStatusPage(
+                dslContext,
+                title = "Refreshed Status",
+                slug = "refreshed-status",
+                public = true,
+                monitors = listOf(MonitorID(MonitorType.HTTP_SSL, monitor.name)),
+            )
+            val page = newPage(authenticated = false)
+            val statusPage = PublicStatusPage(page)
+            // Any query parameter of the page has to be kept by the refresh too
+            page.navigate("/status/refreshed-status?ref=test")
+            assertThat(statusPage.content).containsText("Refreshed Service")
+
+            val request = statusPage.refreshInPlace()
+
+            request.url() shouldEndWith "/status/refreshed-status?ref=test"
+            assertThat(statusPage.content).containsText("Refreshed Service")
+            // The page is still the same, only its content has been swapped, without nesting the content again
+            assertThat(page.locator("#status-page-content")).hasCount(1)
+            assertThat(page.locator("head title")).hasCount(1)
+        }
+
         "a monitor that is currently down is rendered with a DOWN status" {
             val monitor = createHttpMonitor(httpMonitorRepository, monitorName = "Down Service")
             // An ongoing (endedAt = null) DOWN event makes the monitor's current status DOWN.
@@ -66,10 +99,12 @@ class PublicStatusPageUiTest(private val httpMonitorRepository: HttpMonitorRepos
             val statusPage = PublicStatusPage(page)
             statusPage.navigate("down-status")
 
-            assertThat(statusPage.monitorCardBody("Down Service")).containsText(UptimeStatus.DOWN.literal)
+            assertThat(statusPage.monitorStatusIndicator("Down Service")).hasClass(Pattern.compile(".*status-red.*"))
+            assertThat(statusPage.monitorStatusIndicator("Down Service"))
+                .hasAttribute("aria-label", UptimeStatus.DOWN.literal)
         }
 
-        "a monitor under an active maintenance window is shown with the banner and a grayed-out badge" {
+        "a monitor under an active maintenance window is shown in an accordion, and with a grayed-out badge" {
             val monitor = createHttpMonitor(httpMonitorRepository, monitorName = "Maintained API")
             // An ongoing UP event so the monitor has a concrete status whose label must be kept on the badge.
             createHttpUptimeEventRecord(
@@ -101,15 +136,31 @@ class PublicStatusPageUiTest(private val httpMonitorRepository: HttpMonitorRepos
             val statusPage = PublicStatusPage(page)
             statusPage.navigate(slug)
 
-            // The active maintenance banner lists the window with its name and description
-            assertThat(statusPage.maintenanceBanner()).isVisible()
-            assertThat(statusPage.maintenanceBanner()).containsText("Database upgrade")
-            assertThat(statusPage.maintenanceBanner()).containsText("Rolling out a new database version")
-            // The monitor's badge is grayed out but keeps its UP label
-            assertThat(statusPage.monitorMaintenanceBadge(monitor.name)).isVisible()
-            assertThat(statusPage.monitorMaintenanceBadge(monitor.name)).containsText(UptimeStatus.UP.literal)
+            // The active maintenance accordion lists the window with its name and description
+            assertThat(statusPage.activeMaintenance.root).isVisible()
+            assertThat(statusPage.activeMaintenance.root).containsText("Database upgrade")
+            assertThat(statusPage.activeMaintenance.root).containsText("Rolling out a new database version")
+            // The monitor's status dot is grayed out, but its label keeps the UP status
+            assertThat(statusPage.monitorMaintenanceIndicator(monitor.name)).isVisible()
+            assertThat(statusPage.monitorMaintenanceIndicator(monitor.name))
+                .hasAttribute("aria-label", Pattern.compile("\\(${UptimeStatus.UP.literal}\\)"))
+            // It's actually painted: the circles of the indicator have no color of their own, only the status class's
+            statusPage.monitorMaintenanceIndicator(monitor.name).locator(".status-indicator-circle").first()
+                .evaluate("circle => getComputedStyle(circle).backgroundColor") shouldNotBe "rgba(0, 0, 0, 0)"
             // A manual window has no scheduled timeframe, so no timeframe pill is rendered
             assertThat(statusPage.maintenanceTimeframe()).hasCount(0)
+            // The accordion counts the active windows, and it's open by default
+            val accordion = statusPage.activeMaintenance
+            assertThat(accordion.count).hasText("1")
+            assertThat(accordion.collapse).isVisible()
+            assertThat(accordion.toggle).hasAttribute("aria-expanded", "true")
+            assertThat(accordion.root.locator(".card-status-start")).hasClass(Pattern.compile(".*bg-yellow.*"))
+            // Closing it survives the refreshes of the page
+            accordion.toggle.click()
+            accordion.waitForRememberedChoice(isOpen = false)
+            statusPage.refreshInPlace()
+            assertThat(accordion.collapse).isHidden()
+            assertThat(accordion.toggle).hasAttribute("aria-expanded", "false")
         }
 
         "a status page with the category display turned off renders one ungrouped list" {
@@ -222,10 +273,10 @@ class PublicStatusPageUiTest(private val httpMonitorRepository: HttpMonitorRepos
             val statusPage = PublicStatusPage(page)
             statusPage.navigate(slug)
 
-            assertThat(statusPage.maintenanceBanner()).containsText("Payments upgrade")
+            assertThat(statusPage.activeMaintenance.root).containsText("Payments upgrade")
             // Only the monitor of the covered category is grayed out
-            assertThat(statusPage.monitorMaintenanceBadge(payments.name)).isVisible()
-            assertThat(statusPage.monitorMaintenanceBadge(search.name)).hasCount(0)
+            assertThat(statusPage.monitorMaintenanceIndicator(payments.name)).isVisible()
+            assertThat(statusPage.monitorMaintenanceIndicator(search.name)).hasCount(0)
         }
 
         "an active scheduled maintenance window renders its timeframe as a start-end pill" {
@@ -255,7 +306,7 @@ class PublicStatusPageUiTest(private val httpMonitorRepository: HttpMonitorRepos
             val statusPage = PublicStatusPage(page)
             statusPage.navigate(slug)
 
-            assertThat(statusPage.maintenanceBanner()).containsText("Scheduled DB maintenance")
+            assertThat(statusPage.activeMaintenance.root).containsText("Scheduled DB maintenance")
             // The timeframe pill is rendered with the window's start and end timestamps
             assertThat(statusPage.maintenanceTimeframe()).isVisible()
             assertThat(statusPage.maintenanceTimeframe()).containsText(windowStart.year.toString())
@@ -408,7 +459,7 @@ class PublicStatusPageUiTest(private val httpMonitorRepository: HttpMonitorRepos
             statusPage.categoryDistributionTooltip("Docs") shouldBe "1 operational"
 
             // The segments carry the very colors of the status stripes of the monitor cards below them
-            assertThat(statusPage.monitorMaintenanceBadge(maintained.name)).isVisible()
+            assertThat(statusPage.monitorMaintenanceIndicator(maintained.name)).isVisible()
         }
     }
 }

@@ -26,7 +26,9 @@ import com.kuvaszuptime.kuvasz.models.events.TcpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
+import com.kuvaszuptime.kuvasz.models.handlers.id
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 
 interface IntegrationProvider {
@@ -40,15 +42,23 @@ abstract class AbstractIntegrationProvider(
 ) : IntegrationProvider {
 
     override fun filterTargetConfigs(event: MonitorEvent<*>): Set<IntegrationConfig> =
-        integrationRepository
-            .getEffectiveIntegrations(event.monitor.integrations, integrationType)
-            .filterByEventType(event.toIntegrationEventType())
+        integrationRepository.resolveTargetConfigs(event, integrationType)
 
     fun filterMaintenanceTargets(event: MaintenanceWindowEvent): Set<IntegrationConfig> =
         integrationRepository
             .getExplicitlyAssignedIntegrations(event.window.integrations, integrationType)
             .filterByEventType(event.toIntegrationEventType())
 }
+
+internal fun IntegrationRepository.resolveTargetConfigs(
+    event: MonitorEvent<*>,
+    integrationType: IntegrationType,
+): Set<IntegrationConfig> =
+    getEffectiveIntegrations(event.monitor.integrations, integrationType)
+        .filterByEventType(event.toIntegrationEventType())
+
+internal fun IntegrationRepository.resolveTargetIntegrationIds(event: MonitorEvent<*>): List<IntegrationID> =
+    IntegrationType.entries.flatMap { type -> resolveTargetConfigs(event, type) }.map { it.id }
 
 private fun Set<IntegrationConfig>.filterByEventType(type: IntegrationEventType): Set<IntegrationConfig> =
     filter { config ->

@@ -373,3 +373,8 @@ div.ts-wrapper.disabled .ts-control {
     height: auto;
     font-size: 1em;
 }
+
+/* Keeps the line breaks of free-form, plain text content (e.g. incident notes), while still wrapping long lines */
+.text-pre-line {
+    white-space: pre-line;
+}

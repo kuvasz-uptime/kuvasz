@@ -83,6 +83,17 @@ class MaintenanceWindowNotFoundException(
     override val message: String? = "There is no maintenance window with ID: $maintenanceWindowId",
 ) : ResourceNotFoundException()
 
+class IncidentNotFoundException(
+    val incidentType: IncidentType,
+    val eventId: Long,
+    override val message: String? = "There is no $incidentType incident with event ID: $eventId",
+) : ResourceNotFoundException()
+
+class IncidentNoteNotFoundException(
+    val incidentNoteId: Long,
+    override val message: String? = "There is no incident note with ID: $incidentNoteId",
+) : ResourceNotFoundException()
+
 sealed class ReadOnlyResourceException(override val message: String) : Exception()
 
 class ReadOnlyMonitorException : ReadOnlyResourceException(
@@ -98,6 +109,10 @@ class ReadOnlyStatusPageException : ReadOnlyResourceException(
 class ReadOnlyMaintenanceWindowException : ReadOnlyResourceException(
     "The maintenance windows were configured via a YAML file. " +
         "You cannot modify them via the API. Please change the configuration in the YAML file and restart the server."
+)
+
+class ReadOnlyIncidentNoteException : ReadOnlyResourceException(
+    "Incident notes are disabled on this instance, so they can't be created, updated or deleted."
 )
 
 class ReadOnlyMonitorNameException : RuntimeException(

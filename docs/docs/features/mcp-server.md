@@ -55,7 +55,7 @@ The `/mcp` endpoint is protected by a dedicated [**MCP API key**](../setup/confi
 
 !!! note "Read-only mode"
 
-    If you have configured your monitors via YAML, the corresponding `create-*`, `toggle-*`, and `delete-*` tools will return an error when called. The same applies to the `create-maintenance-window`, `toggle-maintenance-window`, and `delete-maintenance-window` tools when maintenance windows are configured via YAML. Additionally, `delete-*` tools will fail if the monitor is referenced by a read-only status page. The `list-*`, `get-*-details`, `get-*-stats`, `list-incidents`, `list-integrations`, `list-docker-hosts`, and `list-proxies` tools are always available regardless of read-only mode.
+    If you have configured your monitors via YAML, the corresponding `create-*`, `toggle-*`, and `delete-*` tools will return an error when called. The same applies to the `create-maintenance-window`, `toggle-maintenance-window`, and `delete-maintenance-window` tools when maintenance windows are configured via YAML. Additionally, `delete-*` tools will fail if the monitor is referenced by a read-only status page. The `list-*`, `get-*-details`, `get-*-stats`, `list-incidents`, `list-integrations`, `list-docker-hosts`, and `list-proxies` tools are always available regardless of read-only mode. Incident notes are never configured via YAML, so the incident note tools are always available too.
     
     This is the **expected behavior**, and works exactly the same as if you were to perform these operations via the REST API or dashboard.
 
@@ -193,6 +193,11 @@ Both are defined in the YAML configuration only, so they can be listed, but not 
 
 <!-- md:version 4.0.0 -->
 
-| Tool             | Description                                                                                                                               |
-|------------------|-------------------------------------------------------------------------------------------------------------------------------------------|
-| `list-incidents` | List incidents across all monitor types, optionally filtered by monitor ID, with a configurable look-back window and resolved-flag filter |
+| Tool                   | Description                                                                                                                                                                             |
+|------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `list-incidents`       | List incidents across all monitor types, optionally filtered by monitor ID, with a configurable look-back window and resolved-flag filter                                               |
+| `get-incident-details` | Get the details of an incident by its type and event ID: its [**notes**](incidents.md#incident-notes), and the integrations that were notified when it started and when it was resolved |
+| `create-incident-note` | Add a note to an incident, with an investigation status, an optional timestamp, and an optional public flag to show it on the status pages. To change a note, delete and recreate it    |
+| `delete-incident-note` | Permanently delete an incident note                                                                                                                                                     |
+
+The `get-incident-details` tool and the incident note tools are available from version 4.5.0 on.

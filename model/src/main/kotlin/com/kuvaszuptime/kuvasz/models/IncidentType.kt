@@ -10,8 +10,27 @@ enum class IncidentType {
     ICMP,
     TCP,
     DNS,
-    DOCKER,
+    DOCKER;
+
+    companion object {
+
+        fun fromNameOrNull(name: String): IncidentType? =
+            entries.firstOrNull { it.name.equals(name, ignoreCase = true) }
+    }
 }
+
+val IncidentType.isShownPublicly: Boolean
+    get() = this != IncidentType.SSL
+
+val MonitorType.uptimeIncidentType: IncidentType
+    get() = when (this) {
+        MonitorType.HTTP_SSL -> IncidentType.HTTP
+        MonitorType.PUSH -> IncidentType.PUSH
+        MonitorType.ICMP -> IncidentType.ICMP
+        MonitorType.TCP -> IncidentType.TCP
+        MonitorType.DNS -> IncidentType.DNS
+        MonitorType.DOCKER -> IncidentType.DOCKER
+    }
 
 val IncidentType.monitorType: MonitorType
     get() = when (this) {

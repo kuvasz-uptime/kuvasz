@@ -159,7 +159,9 @@ private fun HtmlBlockTag.monitorsHeader(
                                     modalOpener(createModalId)
                                 }
                             }
-                            compactIconButton(Icon.REFRESH, onClick = typeUiConfig.refreshListCall) {}
+                            compactIconButton(Icon.REFRESH, onClick = typeUiConfig.refreshListCall) {
+                                testId(typeUiConfig.testId("refresh-button"))
+                            }
                         }
                     }
                 }

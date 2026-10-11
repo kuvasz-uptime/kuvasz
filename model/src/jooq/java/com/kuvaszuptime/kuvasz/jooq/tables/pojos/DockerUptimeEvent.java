@@ -5,9 +5,11 @@ package com.kuvaszuptime.kuvasz.jooq.tables.pojos;
 
 
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus;
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID;
 
 import java.io.Serializable;
 import java.time.OffsetDateTime;
+import java.util.Arrays;
 
 
 /**
@@ -28,6 +30,7 @@ public class DockerUptimeEvent implements Serializable {
     private String image;
     private Integer restartCount;
     private OffsetDateTime containerCreatedAt;
+    private IntegrationID[] integrations;
 
     public DockerUptimeEvent() {}
 
@@ -42,6 +45,7 @@ public class DockerUptimeEvent implements Serializable {
         this.image = value.image;
         this.restartCount = value.restartCount;
         this.containerCreatedAt = value.containerCreatedAt;
+        this.integrations = value.integrations;
     }
 
     public DockerUptimeEvent(
@@ -54,7 +58,8 @@ public class DockerUptimeEvent implements Serializable {
         OffsetDateTime updatedAt,
         String image,
         Integer restartCount,
-        OffsetDateTime containerCreatedAt
+        OffsetDateTime containerCreatedAt,
+        IntegrationID[] integrations
     ) {
         this.id = id;
         this.monitorId = monitorId;
@@ -66,6 +71,7 @@ public class DockerUptimeEvent implements Serializable {
         this.image = image;
         this.restartCount = restartCount;
         this.containerCreatedAt = containerCreatedAt;
+        this.integrations = integrations;
     }
 
     /**
@@ -218,6 +224,21 @@ public class DockerUptimeEvent implements Serializable {
         return this;
     }
 
+    /**
+     * Getter for <code>kuvasz.docker_uptime_event.integrations</code>.
+     */
+    public IntegrationID[] getIntegrations() {
+        return this.integrations;
+    }
+
+    /**
+     * Setter for <code>kuvasz.docker_uptime_event.integrations</code>.
+     */
+    public DockerUptimeEvent setIntegrations(IntegrationID[] integrations) {
+        this.integrations = integrations;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -287,6 +308,12 @@ public class DockerUptimeEvent implements Serializable {
         }
         else if (!this.containerCreatedAt.equals(other.containerCreatedAt))
             return false;
+        if (this.integrations == null) {
+            if (other.integrations != null)
+                return false;
+        }
+        else if (!Arrays.deepEquals(this.integrations, other.integrations))
+            return false;
         return true;
     }
 
@@ -304,6 +331,7 @@ public class DockerUptimeEvent implements Serializable {
         result = prime * result + ((this.image == null) ? 0 : this.image.hashCode());
         result = prime * result + ((this.restartCount == null) ? 0 : this.restartCount.hashCode());
         result = prime * result + ((this.containerCreatedAt == null) ? 0 : this.containerCreatedAt.hashCode());
+        result = prime * result + ((this.integrations == null) ? 0 : Arrays.deepHashCode(this.integrations));
         return result;
     }
 
@@ -321,6 +349,7 @@ public class DockerUptimeEvent implements Serializable {
         sb.append(", ").append(image);
         sb.append(", ").append(restartCount);
         sb.append(", ").append(containerCreatedAt);
+        sb.append(", ").append(Arrays.deepToString(integrations));
 
         sb.append(")");
         return sb.toString();

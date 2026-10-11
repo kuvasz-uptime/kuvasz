@@ -6,7 +6,7 @@
 
 [**Docker monitors**](features/docker-monitoring.md) ask the **Docker daemon itself** whether a container is running and healthy, so they catch what a port check misses: crash loops, OOM kills, paused containers, failing healthchecks, and containers without any port at all. The errors tell you **what actually happened**, e.g. _"The container exited (137) after it was OOM killed"_, and the **image** of the container is recorded with every incident. The [**restart count**](features/docker-monitoring.md#restarts) is recorded as well, and you can [**get alerted**](management/docker-monitors.md#restart-alerts-enabled) when it goes up. With [**metrics history**](management/docker-monitors.md#metrics-history-enabled) enabled, the **CPU and memory usage** of the container is charted too.
 
-![Chart with Docker metrics](images/features/docker_resources_chart.webp)
+![Chart with Docker metrics](images/features/docker_resources_chart.webp){ width="550"}
 
 The daemons are configured as named [**Docker hosts**](management/docker-hosts.md) in your configuration file: the **local socket**, a **socket proxy**, or a **remote daemon** over TCP with **(mutual) TLS**, from **Engine 19.03** onwards (see the [**compatibility matrix**](features/docker-monitoring.md#compatibility)).
 
@@ -21,6 +21,20 @@ Docker monitors are fully integrated across _Kuvasz_: they're manageable via the
 !!! tip "Using the connectivity check?"
 
     Its probe never goes through a proxy, so make sure to read [**Proxies and the connectivity check**](management/proxies.md#proxies-and-the-connectivity-check) before enabling both.
+
+---
+
+**📝 Incident notes, details with a timeline, and incidents on the status pages**
+
+Every incident has its own [**details page**](features/incidents.md#incident-details) now, with a **timeline** of its story: its start, the **integrations that were notified** about it (and about its resolution), its resolution, and the [**notes**](features/incidents.md#incident-notes) you add to it. A note has a status (_Investigating_, _Identified_ or _Resolved_), a plain text content, an optional custom time, and it can be marked as **public**. Notes are manageable via the **Web UI**, the **REST API** and the [**MCP server**](features/mcp-server.md).
+
+![Admin incident timeline](images/changelog/admin-incident-timeline.webp){ width="550"}
+![Public incident timeline](images/changelog/public-incident-timeline.webp){ width="550"}
+
+The status pages got a lot more talkative too: the **active** and the **recently resolved incidents** are listed right below the overall status, with their **public notes**, every monitor card counts its incidents and lists them on click, and hovering a day tells its **downtime** and the time span of its incidents. Everything else about the incidents (e.g. the errors of the checks, or the private notes) stays private. The pages **refresh themselves in place** instead of reloading the whole page.
+
+![Public incident timeline](images/changelog/status-page-incidents.webp){ width="550"}
+![Public incident timeline](images/changelog/statuspage-tracker-details.webp){ width="350"}
 
 ---
 
@@ -46,7 +60,7 @@ The new [**connectivity check**](features/connectivity-check.md) periodically di
 
 - **Connecting to PostgreSQL through its unix socket**: if [`DATABASE_HOST`](setup/configuration.md#connecting-through-a-unix-socket) points to the **directory of the socket** (e.g. `/var/run/postgresql`), _Kuvasz_ connects through it instead of TCP, just like `psql` does. So when your database runs on the same host, you can mount its socket into the container and don't need to expose _PostgreSQL_ on the network at all.
 - **Virtual thread scheduling** (experimental, disabled by default): the scheduled checks can run on [**virtual threads**](setup/configuration.md#virtual-thread-scheduling) now, so a lot of unreachable TCP, DNS or Docker targets waiting for their timeout can't delay the checks of your other monitors anymore.
-- **UI refresh**: Tabler UI has been bumped to **1.6.x**, which brings sharper focus indicators and a lot of small visual improvements, while keeping the familiar color scheme. If you'd like a different one, you can pick a **gray palette** and an **accent color** on the **Settings** page now: your choice is saved in your browser (just like the dark/light mode). The public status pages aren't affected by it, but each of them can get its own [**gray palette**](management/status-pages.md#gray-palette_1) instead (the default one [included](management/status-pages.md#gray-palette)). The start of a **one-off maintenance window** is picked with a proper **date and time picker** now (it can still be typed in, as `YYYY-MM-DD HH:mm`).
+- **UI refresh**: Tabler UI has been bumped to **1.6.x**, which brings sharper focus indicators and a lot of small visual improvements, while keeping the familiar color scheme. If you'd like a different one, you can pick a **gray palette** and an **accent color** on the **Settings** page now: your choice is saved in your browser (just like the dark/light mode). The public status pages aren't affected by it, but each of them can get its own [**gray palette**](management/status-pages.md#gray-palette_1) instead (the default one [included](management/status-pages.md#gray-palette)). The start of a **one-off maintenance window** is picked with a proper **date and time picker** now (it can still be typed in, as `YYYY-MM-DD HH:mm`, or with seconds, as `YYYY-MM-DD HH:mm:ss`, which the picker itself can't select).
 - **A more locked-down Helm chart**: the chart runs _Kuvasz_ with a **non-root group** too (`1000:1000`, instead of `1000:0`), and with a **read-only root filesystem** by default. Since the only place _Kuvasz_ writes to is `/tmp`, the chart always mounts an `emptyDir` volume there. If you've added your own `/tmp` volume via `extraVolumes` and `extraVolumeMounts`, **remove it before upgrading**, otherwise _Kubernetes_ rejects the deployment because of the duplicate mount. See the [**security context**](setup/helm-deployment.md#security-context) of the chart for the details, including a fix for **ICMP monitors on older container runtimes**.
 - **Lower memory usage on the database side**: _Kuvasz_ keeps only **2 idle database connections** open instead of 10, which saves **a few megabytes of memory** on your _PostgreSQL_ server while there's nothing to do. The pool still grows (up to 10 connections) when it's needed.
 

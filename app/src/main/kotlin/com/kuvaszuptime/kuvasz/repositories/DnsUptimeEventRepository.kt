@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.event.DnsUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsUptimeMonitorEvent
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.services.UptimeEventCalculationContext
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import jakarta.inject.Singleton
@@ -17,6 +18,7 @@ import java.time.OffsetDateTime
 class DnsUptimeEventRepository(private val dslContext: DSLContext) : UptimeEventRepository {
 
     private val uptimeEventColumns = UptimeEventColumns(
+        eventId = DNS_UPTIME_EVENT.ID,
         eventMonitorId = DNS_UPTIME_EVENT.MONITOR_ID,
         status = DNS_UPTIME_EVENT.STATUS,
         startedAt = DNS_UPTIME_EVENT.STARTED_AT,
@@ -28,12 +30,17 @@ class DnsUptimeEventRepository(private val dslContext: DSLContext) : UptimeEvent
 
     private fun DnsMonitorDownEvent.getPersistableError() = toStructuredMessage().error
 
-    fun insertFromMonitorEvent(event: DnsUptimeMonitorEvent, ctx: DSLContext? = dslContext): DnsUptimeEventRecord {
+    fun insertFromMonitorEvent(
+        event: DnsUptimeMonitorEvent,
+        ctx: DSLContext? = dslContext,
+        integrations: Array<IntegrationID> = emptyArray(),
+    ): DnsUptimeEventRecord {
         val eventToInsert = DnsUptimeEventRecord()
             .setMonitorId(event.monitor.id)
             .setStatus(event.uptimeStatus)
             .setStartedAt(event.dispatchedAt)
             .setUpdatedAt(event.dispatchedAt)
+            .setIntegrations(integrations)
 
         if (event is DnsMonitorDownEvent) {
             eventToInsert.error = event.getPersistableError()

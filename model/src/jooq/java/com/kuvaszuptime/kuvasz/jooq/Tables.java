@@ -17,6 +17,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent;
 import com.kuvaszuptime.kuvasz.jooq.tables.IcmpMetricsLog;
 import com.kuvaszuptime.kuvasz.jooq.tables.IcmpMonitor;
 import com.kuvaszuptime.kuvasz.jooq.tables.IcmpUptimeEvent;
+import com.kuvaszuptime.kuvasz.jooq.tables.IncidentNote;
 import com.kuvaszuptime.kuvasz.jooq.tables.MaintenanceWindow;
 import com.kuvaszuptime.kuvasz.jooq.tables.PendingFailure;
 import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor;
@@ -98,6 +99,11 @@ public class Tables {
      * The table <code>kuvasz.icmp_uptime_event</code>.
      */
     public static final IcmpUptimeEvent ICMP_UPTIME_EVENT = IcmpUptimeEvent.ICMP_UPTIME_EVENT;
+
+    /**
+     * The table <code>kuvasz.incident_note</code>.
+     */
+    public static final IncidentNote INCIDENT_NOTE = IncidentNote.INCIDENT_NOTE;
 
     /**
      * The table <code>kuvasz.maintenance_window</code>.

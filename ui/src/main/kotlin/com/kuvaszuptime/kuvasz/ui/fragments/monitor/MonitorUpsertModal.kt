@@ -54,10 +54,9 @@ internal fun FlowContent.monitorUpsertModal(
                 postfix = ")"
             )
         )
-        attributes["@$modalClosedEvent.window"] = "resetState()"
-        attributes["@clone-monitor.window"] = "cloneFrom(\$event.detail.id, \$event.detail.name)"
-        attributes["@edit-monitor.window"] =
-            "editFrom(\$event.detail.id, \$event.detail.title, \$event.detail.nameLocked)"
+        xOn("$modalClosedEvent.window", "resetState()")
+        xOn("clone-monitor.window", "cloneFrom(\$event.detail.id, \$event.detail.name)")
+        xOn("edit-monitor.window", "editFrom(\$event.detail.id, \$event.detail.title, \$event.detail.nameLocked)")
         tabIndex = "-1"
         role = "dialog"
 

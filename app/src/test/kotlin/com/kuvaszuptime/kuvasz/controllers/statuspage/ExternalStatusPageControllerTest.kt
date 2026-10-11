@@ -5,7 +5,11 @@ import com.kuvaszuptime.kuvasz.models.StatusPageNotFoundException
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageActions
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageDataActions
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldStartWith
+import io.micronaut.http.HttpHeaders
+import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
@@ -43,6 +47,25 @@ class ExternalStatusPageControllerTest(
 
                 response.status shouldBe HttpStatus.OK
                 verify(exactly = 1) { mockDataService.getCachedDefaultStatusPageData() }
+            }
+        }
+
+        `when`("it is called by htmx, to refresh the page in place") {
+
+            then("only the refreshed part of the page is returned, and both variants vary by the htmx header") {
+                val mockDataService = getMock(statusPageDataActions)
+                every { mockDataService.getCachedDefaultStatusPageData() } returns mockk(relaxed = true)
+
+                val fullPage = client.exchange("/status", String::class.java).awaitFirst()
+                val fragment = client.exchange(
+                    HttpRequest.GET<Any>("/status").header("HX-Request", "true"),
+                    String::class.java,
+                ).awaitFirst()
+
+                fullPage.body().shouldNotBeNull() shouldStartWith "<!DOCTYPE html>"
+                fragment.body().shouldNotBeNull() shouldStartWith "<div id=\"status-page-content\">"
+                fullPage.header(HttpHeaders.VARY) shouldBe "HX-Request"
+                fragment.header(HttpHeaders.VARY) shouldBe "HX-Request"
             }
         }
     }

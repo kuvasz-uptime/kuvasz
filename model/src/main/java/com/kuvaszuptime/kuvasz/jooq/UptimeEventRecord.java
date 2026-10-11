@@ -5,7 +5,7 @@ import jakarta.annotation.Nullable;
 
 import java.time.OffsetDateTime;
 
-public interface UptimeEventRecord {
+public interface UptimeEventRecord extends EventWithIntegrations {
     Long getId();
 
     Long getMonitorId();

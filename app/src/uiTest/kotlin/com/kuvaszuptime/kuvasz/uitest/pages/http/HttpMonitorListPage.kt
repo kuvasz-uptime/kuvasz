@@ -17,6 +17,8 @@ class HttpMonitorListPage(private val page: Page) {
 
     val count: Locator get() = page.getByTestId("http-monitor-count")
 
+    val refreshButton: Locator get() = page.getByTestId("http-monitor-refresh-button")
+
     fun navigate() {
         page.navigate("/http-monitors")
     }
@@ -50,7 +52,7 @@ class HttpMonitorListPage(private val page: Page) {
 
     // The grayed-out uptime badge (with a tool icon) shown in a row while its monitor is under maintenance.
     fun maintenanceBadge(name: String): Locator =
-        rowByName(name).locator(".status.status-gray:has(.icon-tabler-tool)")
+        rowByName(name).locator(".status.status-secondary:has(.icon-tabler-tool)")
 
     fun openCreateModal(): HttpMonitorFormModal {
         newMonitorButton.click()

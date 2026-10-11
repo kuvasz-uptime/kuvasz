@@ -7,9 +7,11 @@ package com.kuvaszuptime.kuvasz.jooq.tables;
 import com.kuvaszuptime.kuvasz.jooq.Indexes;
 import com.kuvaszuptime.kuvasz.jooq.Keys;
 import com.kuvaszuptime.kuvasz.jooq.Kuvasz;
+import com.kuvaszuptime.kuvasz.jooq.TextArrayToIntegrationIdArrayConverter;
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus;
 import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor.PushMonitorPath;
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushUptimeEventRecord;
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID;
 
 import java.time.OffsetDateTime;
 import java.util.Arrays;
@@ -96,6 +98,11 @@ public class PushUptimeEvent extends TableImpl<PushUptimeEventRecord> {
      * The column <code>kuvasz.push_uptime_event.updated_at</code>.
      */
     public final TableField<PushUptimeEventRecord, OffsetDateTime> UPDATED_AT = createField(DSL.name("updated_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false), this, "");
+
+    /**
+     * The column <code>kuvasz.push_uptime_event.integrations</code>.
+     */
+    public final TableField<PushUptimeEventRecord, IntegrationID[]> INTEGRATIONS = createField(DSL.name("integrations"), SQLDataType.CLOB.array().nullable(false).defaultValue(DSL.field(DSL.raw("ARRAY[]::text[]"), SQLDataType.CLOB.array())), this, "", new TextArrayToIntegrationIdArrayConverter());
 
     private PushUptimeEvent(Name alias, Table<PushUptimeEventRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);

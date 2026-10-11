@@ -41,6 +41,8 @@ The UI relies on modern CSS features (`light-dark()`, `color-mix()`, `@property`
 
 ![Incident list](../images/ui/incident_list.webp)
 
+Every incident has its own **details page** with a timeline of its start, the notified integrations, your notes, and its resolution, see [**Incidents**](incidents.md) for more information.
+
 ## Status pages
 
 ![Status page list](../images/ui/status_page_list.webp)

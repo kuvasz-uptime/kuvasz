@@ -46,6 +46,7 @@ data class AppGlobals(
         val areDockerMonitorsReadOnly: () -> Boolean,
         val areStatusPagesReadOnly: () -> Boolean,
         val areMaintenanceWindowsReadOnly: () -> Boolean,
+        val areIncidentNotesReadOnly: Boolean,
     ) {
         fun areMonitorsReadOnly(type: MonitorType): Boolean = when (type) {
             MonitorType.HTTP_SSL -> areHttpMonitorsReadOnly()

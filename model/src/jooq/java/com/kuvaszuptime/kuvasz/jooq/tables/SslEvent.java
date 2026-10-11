@@ -7,9 +7,11 @@ package com.kuvaszuptime.kuvasz.jooq.tables;
 import com.kuvaszuptime.kuvasz.jooq.Indexes;
 import com.kuvaszuptime.kuvasz.jooq.Keys;
 import com.kuvaszuptime.kuvasz.jooq.Kuvasz;
+import com.kuvaszuptime.kuvasz.jooq.TextArrayToIntegrationIdArrayConverter;
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus;
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HttpMonitorPath;
 import com.kuvaszuptime.kuvasz.jooq.tables.records.SslEventRecord;
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID;
 
 import java.time.OffsetDateTime;
 import java.util.Arrays;
@@ -103,6 +105,11 @@ public class SslEvent extends TableImpl<SslEventRecord> {
      * The column <code>kuvasz.ssl_event.ssl_expiry_date</code>.
      */
     public final TableField<SslEventRecord, OffsetDateTime> SSL_EXPIRY_DATE = createField(DSL.name("ssl_expiry_date"), SQLDataType.TIMESTAMPWITHTIMEZONE(6), this, "");
+
+    /**
+     * The column <code>kuvasz.ssl_event.integrations</code>.
+     */
+    public final TableField<SslEventRecord, IntegrationID[]> INTEGRATIONS = createField(DSL.name("integrations"), SQLDataType.CLOB.array().nullable(false).defaultValue(DSL.field(DSL.raw("ARRAY[]::text[]"), SQLDataType.CLOB.array())), this, "", new TextArrayToIntegrationIdArrayConverter());
 
     private SslEvent(Name alias, Table<SslEventRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);

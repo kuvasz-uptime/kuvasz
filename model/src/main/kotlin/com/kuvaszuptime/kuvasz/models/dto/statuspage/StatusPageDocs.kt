@@ -32,6 +32,26 @@ object StatusPageDocs {
     const val UPCOMING_MAINTENANCE_WINDOWS =
         "The maintenance windows that are shown on the status page and going to start within the next 24 hours for " +
             "at least one of its monitors"
+    const val HISTORY_DAYS = "The number of days the uptime status history of the monitors covers: 30 days, or less, " +
+        "if the event data retention period is shorter than that"
+    const val HISTORY_DATE = "The date of the data point"
+    const val HISTORY_OUTAGE_COUNT = "The number of incidents that were open on the given date, null if there is no " +
+        "data for that date (e.g. the monitor didn't exist yet)"
+    const val HISTORY_DOWNTIME_SECONDS = "The total downtime on the given date in seconds, null if there is no data " +
+        "for that date"
+    const val HISTORY_INCIDENTS = "The incidents that were open on the given date, an incident spanning multiple " +
+        "days is listed on each of them"
+    const val INCIDENT_ID = "The ID of the incident, the same on every day the incident spans. It's only unique " +
+        "among the incidents of the monitors of the same type, so it identifies an incident together with the " +
+        "`type` of its monitor"
+    const val INCIDENT_STARTED_AT = "When the incident started"
+    const val INCIDENT_ENDED_AT = "When the incident was resolved, null if it's ongoing"
+    const val INCIDENT_STATUS = "Whether the incident is still ongoing or resolved"
+    const val INCIDENT_NOTES = "The public notes of the incident, ordered by their timestamp"
+    const val NOTE_STATUS = "The state of the investigation the note describes"
+    const val NOTE_CONTENT = "The content of the note, as plain text"
+    const val NOTE_TIMESTAMP = "The timestamp of the note, which is either given explicitly, or the creation date of " +
+        "the note"
     const val STATUS_PAGES_405_REASON =
         "Status pages are in read-only mode, because they are loaded from a YAML config file"
 }

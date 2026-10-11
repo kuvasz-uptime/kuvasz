@@ -47,9 +47,9 @@ internal fun FlowContent.maintenanceWindowCreateUpdateModal(
                 |'$categoriesSelectId')
             """.trimMargin()
         )
-        attributes["@$modalClosedEvent.window"] = "resetState()"
-        attributes["@edit-maintenance-window.window"] = "editFrom(\$event.detail.id, \$event.detail.title)"
-        attributes["@clone-maintenance-window.window"] = "cloneFrom(\$event.detail.id, \$event.detail.fields)"
+        xOn("$modalClosedEvent.window", "resetState()")
+        xOn("edit-maintenance-window.window", "editFrom(\$event.detail.id, \$event.detail.title)")
+        xOn("clone-maintenance-window.window", "cloneFrom(\$event.detail.id, \$event.detail.fields)")
         tabIndex = "-1"
         role = "dialog"
 
@@ -133,7 +133,14 @@ internal fun FlowContent.maintenanceWindowCreateUpdateModal(
                     div {
                         classes(MB_3)
                         xShow("type === '${MaintenanceWindowType.SINGLE.name}'")
-                        maintenanceWindowStartInput(isReadOnlyMode)
+                        dateTimePickerInput(
+                            inputName = "start-input",
+                            errorProp = "start",
+                            label = Messages.maintenanceWindowStartLabel(),
+                            description = Messages.maintenanceWindowStartDescription(),
+                            required = true,
+                            isReadOnly = isReadOnlyMode,
+                        )
                     }
                     // Duration (cron + single windows)
                     div {
@@ -291,44 +298,6 @@ private fun FlowContent.maintenanceWindowDurationPresets(isReadOnly: Boolean) {
                 if (isReadOnly) disabled = true
                 +label
             }
-        }
-    }
-}
-
-private fun FlowContent.maintenanceWindowStartInput(isReadOnly: Boolean) {
-    val inputName = "start-input"
-    formLabel(
-        label = Messages.maintenanceWindowStartLabel(),
-        description = Messages.maintenanceWindowStartDescription(),
-        inputName = inputName,
-        required = true,
-    )
-    div {
-        classes(INPUT_ICON)
-        span {
-            classes(INPUT_ICON_ADDON)
-            icon(Icon.CALENDAR_EVENT)
-        }
-        input(type = InputType.text) {
-            classes(FORM_CONTROL)
-            id = inputName
-            name = inputName
-            placeholder = "YYYY-MM-DD HH:mm"
-            autoComplete = "off"
-            attributes["data-bs-toggle"] = "datepicker"
-            xInit("initStartDatepicker(\$el)")
-            xBindValue("formatStartValue(startDate, startTime)")
-            xBindErrorClass("start")
-            xOnChange("onStartTyped(\$event.target.value)")
-            if (isReadOnly) disabled = true
-        }
-    }
-    templateTag {
-        xIf("errors.start")
-        div {
-            // The input isn't a sibling of the feedback, so it has to be displayed explicitly
-            classes(INVALID_FEEDBACK, D_BLOCK)
-            xText("errors.start")
         }
     }
 }

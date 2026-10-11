@@ -30,6 +30,7 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import io.micronaut.context.annotation.Property
 import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.kotest5.MicronautKotest5Extension.getMock
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
@@ -787,6 +788,25 @@ class StatusPageDataActionsTest(
         }
     }
 
+    given("the history of the status pages") {
+
+        `when`("the event data retention is longer than 30 days") {
+            // Only answered for the 30 days, so the monitor is only there if the history covers that period
+            every {
+                getMock(httpMonitorActions).getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
+            } returns listOf(historyMonitor())
+            every { getMock(pushMonitorActions).getStatusPageDataOfEnabledMonitors(any(), any(), any()) } returns
+                emptyList()
+
+            val result = statusPageActions.getDefaultStatusPageData()
+
+            then("it should cover the last 30 days") {
+                result.historyDays shouldBe 30
+                result.monitors.map { it.name } shouldBe listOf(historyMonitor().name)
+            }
+        }
+    }
+
     given("the getStatusPageData(statusPageId) method") {
 
         fun statusPageRecord() = StatusPageRecord().apply {
@@ -1511,3 +1531,73 @@ class StatusPageDataActionsTest(
         every { fetchAll(any()) } returns emptyList()
     }
 }
+
+@MicronautTest(environments = ["full-default-status-page-config"])
+@Property(name = "app-config.event-data-retention-days", value = "7")
+class StatusPageDataActionsShortRetentionTest(
+    private val statusPageActions: StatusPageDataActions,
+    private val httpMonitorActions: HttpMonitorActions,
+) : BehaviorSpec({
+
+    given("a status page when the event data retention is shorter than 30 days") {
+
+        `when`("its data is requested") {
+            // Only answered for the 7 days, so the monitor is only there if the history covers that period
+            every {
+                getMock(httpMonitorActions).getStatusPageDataOfEnabledMonitors(Duration.ofDays(7), null, null)
+            } returns listOf(historyMonitor())
+
+            val result = statusPageActions.getDefaultStatusPageData()
+
+            then("its history should only cover the days that can still have events") {
+                result.historyDays shouldBe 7
+                result.monitors.map { it.name } shouldBe listOf(historyMonitor().name)
+            }
+        }
+    }
+}) {
+
+    @MockBean(HttpMonitorActions::class)
+    fun httpMonitorActions(): HttpMonitorActions = mockk()
+
+    @MockBean(PushMonitorActions::class)
+    fun pushMonitorActions(): PushMonitorActions = mockk {
+        every { getStatusPageDataOfEnabledMonitors(any(), any(), any()) } returns emptyList()
+    }
+
+    @MockBean(IcmpMonitorActions::class)
+    fun icmpMonitorActions(): IcmpMonitorActions = mockk {
+        every { getStatusPageDataOfEnabledMonitors(any(), any(), any()) } returns emptyList()
+    }
+
+    @MockBean(TcpMonitorActions::class)
+    fun tcpMonitorActions(): TcpMonitorActions = mockk {
+        every { getStatusPageDataOfEnabledMonitors(any(), any(), any()) } returns emptyList()
+    }
+
+    @MockBean(DnsMonitorActions::class)
+    fun dnsMonitorActions(): DnsMonitorActions = mockk {
+        every { getStatusPageDataOfEnabledMonitors(any(), any(), any()) } returns emptyList()
+    }
+
+    @MockBean(DockerMonitorActions::class)
+    fun dockerMonitorActions(): DockerMonitorActions = mockk {
+        every { getStatusPageDataOfEnabledMonitors(any(), any(), any()) } returns emptyList()
+    }
+
+    @MockBean(MaintenanceWindowRepository::class)
+    fun maintenanceWindowRepository(): MaintenanceWindowRepository = mockk {
+        every { fetchEnabledOnStatusPages() } returns emptyList()
+        every { fetchByEnabled(any()) } returns emptyList()
+        every { fetchAll(any()) } returns emptyList()
+    }
+}
+
+private fun historyMonitor() = StatusPageHttpMonitorDetailsDto(
+    name = "History",
+    lastCheck = null,
+    averageLatencyInMs = null,
+    uptimeRatio = null,
+    uptimeStatus = null,
+    uptimeStatusHistory = emptyList(),
+)

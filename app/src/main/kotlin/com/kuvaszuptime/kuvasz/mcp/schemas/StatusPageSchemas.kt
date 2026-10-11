@@ -1,12 +1,16 @@
 package com.kuvaszuptime.kuvasz.mcp.schemas
 
 import com.fasterxml.jackson.annotation.JsonInclude
+import com.kuvaszuptime.kuvasz.jooq.enums.InvestigationStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentStatus
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.CategoryStatusDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDataDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIcmpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIncidentDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIncidentNoteDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPagePushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.WithLatency
@@ -60,6 +64,7 @@ data class StatusPageDetailsSchema(
     val generatedAt: OffsetDateTime,
     val monitors: List<StatusPageMonitorSchema>,
     val categoryStatus: List<CategoryStatusSchema>,
+    val historyDays: Int,
 ) {
     companion object {
         fun fromDto(dto: StatusPageDataDto) = StatusPageDetailsSchema(
@@ -68,6 +73,7 @@ data class StatusPageDetailsSchema(
             generatedAt = dto.generatedAt,
             monitors = dto.monitors.map { StatusPageMonitorSchema.fromDto(it) },
             categoryStatus = dto.categoryStatus.map { CategoryStatusSchema.fromDto(it) },
+            historyDays = dto.historyDays,
         )
     }
 }
@@ -121,9 +127,50 @@ data class StatusPageMonitorSchema(
 data class StatusHistorySchema(
     val date: LocalDate,
     val outageCnt: Int?,
+    val downtimeSeconds: Long?,
+    val incidents: List<StatusPageIncidentSchema>,
 ) {
     companion object {
-        fun fromDto(dto: StatusHistoryDto) =
-            StatusHistorySchema(date = dto.date, outageCnt = dto.outageCnt)
+        fun fromDto(dto: StatusHistoryDto) = StatusHistorySchema(
+            date = dto.date,
+            outageCnt = dto.outageCnt,
+            downtimeSeconds = dto.downtimeSeconds,
+            incidents = dto.incidents.map { StatusPageIncidentSchema.fromDto(it) },
+        )
+    }
+}
+
+@Introspected
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class StatusPageIncidentSchema(
+    val id: Long,
+    val startedAt: OffsetDateTime,
+    val endedAt: OffsetDateTime?,
+    val status: IncidentStatus,
+    val notes: List<StatusPageIncidentNoteSchema>,
+) {
+    companion object {
+        fun fromDto(dto: StatusPageIncidentDto) = StatusPageIncidentSchema(
+            id = dto.id,
+            startedAt = dto.startedAt,
+            endedAt = dto.endedAt,
+            status = dto.status,
+            notes = dto.notes.map { StatusPageIncidentNoteSchema.fromDto(it) },
+        )
+    }
+}
+
+@Introspected
+data class StatusPageIncidentNoteSchema(
+    val status: InvestigationStatus,
+    val content: String,
+    val timestamp: OffsetDateTime,
+) {
+    companion object {
+        fun fromDto(dto: StatusPageIncidentNoteDto) = StatusPageIncidentNoteSchema(
+            status = dto.status,
+            content = dto.content,
+            timestamp = dto.timestamp,
+        )
     }
 }

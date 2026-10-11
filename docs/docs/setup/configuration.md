@@ -638,6 +638,10 @@ The timezone to use for the application. It's recommended to set it to your **lo
 
 The number of days to keep the finished events in the database. After this time, finished uptime & SSL **events will be cleaned up** to spare space in the database. The **minimum is 1 day**.
 
+!!! note
+
+    The [**incident notes**](../features/incidents.md#incident-notes) are deleted together with their incidents. Also, if the retention is **shorter than 30 days**, the [**status pages**](../features/status-pages.md) show the history of the last that many days only, instead of 30, as there would be no data for the rest of them.
+
 ### Latency data retention
 
 <!-- md:version 2.0.0 -->
@@ -750,6 +754,26 @@ Enables the built-in [**MCP server**](../features/mcp-server.md), which exposes 
     ```
 
 Toggles the automatic check for new versions of _Kuvasz_. If it's enabled, the application will **check for new releases in the background**, and if a new version is available, it will show a notification on the UI and populate the relevant information through the API too.
+
+### Incident notes
+
+<!-- md:version 4.5.0 -->
+<!-- md:default true -->
+<!-- md:type `boolean` -->
+
+=== "YAML"
+
+    ```yaml
+    app-config.incident-notes-enabled: true
+    ```
+
+=== "ENV"
+
+    ```bash
+    ENABLE_INCIDENT_NOTES=true
+    ```
+
+Toggles whether [**incident notes**](../features/incidents.md#incident-notes) can be **created, updated or deleted**. If it's disabled, the corresponding API endpoints return a `405 Method Not Allowed`, and the MCP tools return an error. The existing notes are **still displayed** everywhere (including the public notes on the status pages), so it's useful for publicly accessible instances where you don't want anyone to record anything, e.g. a demo instance.
 
 ### HTTP check timeout
 
@@ -994,6 +1018,7 @@ You can find the full configuration example below, which includes all the option
       http-check-timeout-seconds: 30
       http-check-max-redirects: 10
       use-virtual-thread-scheduling: false
+      incident-notes-enabled: true
       connectivity-check:
         enabled: false
         targets:
@@ -1039,6 +1064,7 @@ You can find the full configuration example below, which includes all the option
     ENABLE_CHECK_UPDATES=true
     HTTP_CHECK_TIMEOUT_SECONDS=30
     HTTP_CHECK_MAX_REDIRECTS=10
+    ENABLE_INCIDENT_NOTES=true
     ENABLE_CONNECTIVITY_CHECK=false
     CONNECTIVITY_CHECK_TARGETS=1.1.1.1:53,8.8.8.8:53
     CONNECTIVITY_CHECK_INTERVAL_SECONDS=60

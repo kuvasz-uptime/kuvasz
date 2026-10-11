@@ -110,6 +110,7 @@ nav:
       - Docker monitoring: features/docker-monitoring.md
       - Status pages: features/status-pages.md
       - Maintenance windows: features/maintenance-windows.md
+      - Incidents: features/incidents.md
       - Connectivity check: features/connectivity-check.md
       - Notifications: features/notifications.md
       - MCP server: features/mcp-server.md

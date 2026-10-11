@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.models.dto.event.SSLEventDto
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.WithCertInfo
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
@@ -14,12 +15,17 @@ import java.time.OffsetDateTime
 @Singleton
 class SSLEventRepository(private val dslContext: DSLContext) {
 
-    fun insertFromMonitorEvent(event: SSLMonitorEvent, ctx: DSLContext = dslContext): SslEventRecord {
+    fun insertFromMonitorEvent(
+        event: SSLMonitorEvent,
+        ctx: DSLContext = dslContext,
+        integrations: Array<IntegrationID> = emptyArray(),
+    ): SslEventRecord {
         val eventToInsert = SslEventRecord()
             .setMonitorId(event.monitor.id)
             .setStatus(event.sslStatus)
             .setStartedAt(event.dispatchedAt)
             .setUpdatedAt(event.dispatchedAt)
+            .setIntegrations(integrations)
 
         if (event is SSLInvalidEvent) {
             eventToInsert.error = event.error.message

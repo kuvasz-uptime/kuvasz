@@ -5,6 +5,7 @@ import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.LocalDate
 import java.time.OffsetDateTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 internal fun OffsetDateTime.toDateTimeString(): String =
@@ -15,6 +16,9 @@ internal fun LocalDate.toDateTimeString(): String =
 
 internal fun OffsetDateTime.toDateTimeStringWithZone(): String =
     this.format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss Z"))
+
+internal fun OffsetDateTime.toSystemZone(): OffsetDateTime =
+    atZoneSameInstant(ZoneId.systemDefault()).toOffsetDateTime()
 
 internal fun String.abbreviate(maxLength: Int): String {
     return if (this.length > maxLength) {

@@ -1,11 +1,13 @@
 package com.kuvaszuptime.kuvasz.services.statuspage
 
+import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.config.DefaultStatusPageConfig
 import com.kuvaszuptime.kuvasz.jooq.tables.records.MaintenanceWindowRecord
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.CategoryStatusDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDataDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageMaintenanceWindowDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDefaults
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.themeBaseOrDefault
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
@@ -27,13 +29,19 @@ class StatusPageDataActions(
     private val defaultStatusPageConfig: DefaultStatusPageConfig,
     private val maintenanceWindowRepository: MaintenanceWindowRepository,
     private val maintenanceWindowCalculator: MaintenanceWindowCalculator,
+    appConfig: AppConfig,
 ) {
     companion object {
         const val STATUS_PAGES_CACHE_NAME = "status-pages"
         const val DEFAULT_PAGE_CACHE_NAME = "default-status-page"
-        private const val DEFAULT_METRICS_PERIOD = "P30D"
         private val UPCOMING_LOOKAHEAD: Duration = Duration.ofHours(24)
     }
+
+    // The period the history of the status pages covers: 30 days, unless the events are deleted sooner than that, in
+    // which case the days without data would only be misleading
+    private val historyDays: Int = minOf(StatusPageDefaults.HISTORY_DAYS, appConfig.eventDataRetentionDays)
+
+    private val historyPeriod: Duration = Duration.ofDays(historyDays.toLong())
 
     @Cacheable(DEFAULT_PAGE_CACHE_NAME)
     fun getCachedDefaultStatusPageData() = getDefaultStatusPageData()
@@ -41,7 +49,7 @@ class StatusPageDataActions(
     fun getDefaultStatusPageData(): StatusPageDataDto {
         val monitors = monitorDataProviders.flatMap { provider ->
             provider.getStatusPageDataOfEnabledMonitors(
-                period = Duration.parse(DEFAULT_METRICS_PERIOD),
+                period = historyPeriod,
                 // No selector at all: the default page always shows every enabled monitor
                 monitorIds = null,
                 categories = null,
@@ -58,6 +66,7 @@ class StatusPageDataActions(
             categoryStatus = calculateCategoryStatus(monitors),
             displayCategories = defaultStatusPageConfig.displayCategories,
             themeBase = defaultStatusPageConfig.themeBase,
+            historyDays = historyDays,
             generatedAt = getCurrentTimestamp(),
             monitors = monitors,
             activeMaintenanceWindows = activeAndUpcomingWindows.active,
@@ -99,7 +108,7 @@ class StatusPageDataActions(
         val statusPage = statusPageRepository.findById(statusPageId).orThrowNotFound(statusPageId.toString())
         val monitors = monitorDataProviders.flatMap { provider ->
             provider.getStatusPageDataOfEnabledMonitors(
-                period = Duration.parse(DEFAULT_METRICS_PERIOD),
+                period = historyPeriod,
                 monitorIds = statusPage.monitors?.toList(),
                 categories = statusPage.categories?.toList(),
             )
@@ -116,6 +125,7 @@ class StatusPageDataActions(
             categoryStatus = calculateCategoryStatus(monitors),
             displayCategories = statusPage.displayCategories,
             themeBase = statusPage.themeBaseOrDefault,
+            historyDays = historyDays,
             monitors = monitors,
             activeMaintenanceWindows = activeAndUpcomingWindows.active,
             upcomingMaintenanceWindows = activeAndUpcomingWindows.upcoming,

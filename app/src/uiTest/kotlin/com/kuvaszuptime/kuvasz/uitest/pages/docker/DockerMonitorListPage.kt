@@ -23,7 +23,7 @@ class DockerMonitorListPage(private val page: Page) {
 
     // The grayed-out uptime badge (with a tool icon) shown in a row while its monitor is under maintenance.
     fun maintenanceBadge(name: String): Locator =
-        rowByName(name).locator(".status.status-gray:has(.icon-tabler-tool)")
+        rowByName(name).locator(".status.status-secondary:has(.icon-tabler-tool)")
 
     // The label-less badge next to the name, flagging a monitor whose Docker host is not in the config anymore.
     fun danglingHostBadge(name: String): Locator = rowByName(name).getByTestId("docker-host-not-configured-badge")

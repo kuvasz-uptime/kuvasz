@@ -114,7 +114,7 @@ internal fun FlowContent.dashboardStatus(stats: DashboardUptimeStats?, swapOob: 
                 div {
                     classes(D_FLEX, FLEX_WRAP, ALIGN_ITEMS_CENTER, GAP_3, TEXT_SECONDARY)
                     testId("dashboard-status-details")
-                    monitorCountFigures(stats.actual, stats.outsideMaintenance, withZeros = true)
+                    countFigures(monitorCountsOf(stats.actual, stats.outsideMaintenance, withZeros = true))
                     val lastIncident = stats.actual.lastIncident?.timeAgo()
                     iconCount(
                         Icon.FLAME,
@@ -128,7 +128,7 @@ internal fun FlowContent.dashboardStatus(stats: DashboardUptimeStats?, swapOob: 
 }
 
 // The monitors under maintenance are only counted by the maintenance, so every monitor is counted once
-private fun DashboardUptimeStats.verdict(): Verdict? = when {
+internal fun DashboardUptimeStats.verdict(): Verdict? = when {
     actual.total == 0 -> null
     // Only the ones outside a maintenance are alarming, and the paused monitors aren't checked at all
     outsideMaintenance.down > 0 ->
@@ -136,14 +136,22 @@ private fun DashboardUptimeStats.verdict(): Verdict? = when {
 
     sslStats.invalid > 0 -> Verdict(Messages.dashboardStatusInvalidCertificates(sslStats.invalid), STATUS_RED)
     sslStats.willExpire > 0 -> Verdict(Messages.dashboardStatusExpiringCertificates(), STATUS_YELLOW)
-    inMaintenance.down > 0 -> Verdict(Messages.dashboardStatusDownInMaintenance(inMaintenance.down), STATUS_GRAY)
+    inMaintenance.down > 0 -> Verdict(Messages.dashboardStatusDownInMaintenance(inMaintenance.down), STATUS_SECONDARY)
     outsideMaintenance.up > 0 -> Verdict(Messages.dashboardStatusOperational(), STATUS_GREEN)
     outsideMaintenance.pending > 0 -> Verdict(Messages.dashboardStatusPending(), STATUS_YELLOW)
-    actual.inMaintenance > 0 -> Verdict(Messages.dashboardMaintenanceCount(actual.inMaintenance), STATUS_GRAY)
+    actual.inMaintenance > 0 -> Verdict(Messages.dashboardMaintenanceCount(actual.inMaintenance), STATUS_SECONDARY)
     else -> Verdict(Messages.dashboardStatusPaused(), STATUS_CYAN)
 }
 
-private data class Verdict(val title: String, val color: CSSClass)
+internal data class Verdict(val title: String, val color: CSSClass)
+
+// Nothing is claimed about the certificates that haven't been checked yet
+internal val SslStats.certificatesMessage: String
+    get() = when {
+        valid == 0 -> Messages.dashboardCertificatesPending()
+        inProgress > 0 -> Messages.dashboardAllCheckedCertificatesValid()
+        else -> Messages.dashboardAllCertificatesValid()
+    }
 
 private val SslStats.checkedMonitors: Int
     get() = valid + invalid + willExpire + inProgress
@@ -209,7 +217,7 @@ private fun FlowContent.keyMetricCards(overview: DashboardOverview) {
 }
 
 /** A dash if there is nothing to measure, otherwise the interval, even if it's shorter than a second. */
-private fun Long?.formatAsIntervalOrDash(): String =
+internal fun Long?.formatAsIntervalOrDash(): String =
     this?.let { seconds -> seconds.takeIf { it > 0 }?.formatAsInterval() ?: Messages.lessThanASecond() } ?: "-"
 
 private fun FlowContent.keyMetricCard(
@@ -330,7 +338,7 @@ private fun FlowContent.monitorCounts(stats: ActualUptimeStats, outsideMaintenan
     span {
         classes(D_INLINE_FLEX, ALIGN_ITEMS_CENTER, GAP_2, TEXT_SECONDARY)
         testId("dashboard-monitor-counts")
-        monitorCountFigures(stats, outsideMaintenance, withZeros = false)
+        countFigures(monitorCountsOf(stats, outsideMaintenance, withZeros = false))
     }
 }
 
@@ -339,22 +347,59 @@ private fun FlowContent.monitorCounts(stats: ActualUptimeStats, outsideMaintenan
  * maintenance are only counted by the maintenance. Without [withZeros], only the monitors that are up are shown even
  * if there is none of them.
  */
-private fun FlowContent.monitorCountFigures(
+internal fun monitorCountsOf(
     stats: ActualUptimeStats,
     outsideMaintenance: MonitorStateCounts,
     withZeros: Boolean,
-) {
+): List<CountFigure> {
+    val up = outsideMaintenance.up
     val down = outsideMaintenance.down
     val pending = outsideMaintenance.pending
-    monitorCount(Icon.ARROW_NARROW_UP, Messages.up(), outsideMaintenance.up)
-    if (withZeros || down > 0) monitorCount(Icon.ARROW_NARROW_DOWN, Messages.down(), down, TEXT_RED.takeIf { down > 0 })
-    if (withZeros || stats.inMaintenance > 0) monitorCount(Icon.TOOL, Messages.maintenance(), stats.inMaintenance)
-    if (withZeros || stats.paused > 0) monitorCount(Icon.PAUSE, Messages.paused(), stats.paused)
-    if (withZeros || pending > 0) iconCount(Icon.HOURGLASS, Messages.dashboardPendingCount(pending), pending.toString())
+    return listOfNotNull(
+        countFigure(Icon.ARROW_NARROW_UP, labeledCount(Messages.up(), up), up, alwaysShown = true),
+        countFigure(
+            Icon.ARROW_NARROW_DOWN,
+            labeledCount(Messages.down(), down),
+            down,
+            color = TEXT_RED.takeIf { down > 0 },
+            alwaysShown = withZeros,
+        ),
+        countFigure(
+            Icon.TOOL,
+            labeledCount(Messages.maintenance(), stats.inMaintenance),
+            stats.inMaintenance,
+            alwaysShown = withZeros,
+        ),
+        countFigure(Icon.PAUSE, labeledCount(Messages.paused(), stats.paused), stats.paused, alwaysShown = withZeros),
+        countFigure(Icon.HOURGLASS, Messages.dashboardPendingCount(pending), pending, alwaysShown = withZeros),
+    )
 }
 
-private fun FlowContent.monitorCount(icon: Icon, label: String, count: Int, color: CSSClass? = null) =
-    iconCount(icon, text = "$label: $count", value = count.toString(), color)
+/** The certificate counts, the valid ones always shown, the others only if there are any of them. */
+internal fun certificateCountsOf(sslStats: SslStats): List<CountFigure> = with(sslStats) {
+    listOfNotNull(
+        countFigure(Icon.LOCK_CLOSED, labeledCount(Messages.valid(), valid), valid, alwaysShown = true),
+        countFigure(Icon.TIMER, labeledCount(Messages.expiresSoon(), willExpire), willExpire, color = TEXT_YELLOW),
+        countFigure(Icon.LOCK_OPEN, labeledCount(Messages.invalid(), invalid), invalid, color = TEXT_RED),
+        countFigure(Icon.HOURGLASS, Messages.dashboardPendingCount(inProgress), inProgress),
+    )
+}
+
+internal data class CountFigure(val icon: Icon, val text: String, val value: Int, val color: CSSClass? = null)
+
+private fun countFigure(
+    icon: Icon,
+    text: String,
+    value: Int,
+    color: CSSClass? = null,
+    alwaysShown: Boolean = false,
+): CountFigure? = CountFigure(icon, text, value, color).takeIf { alwaysShown || value > 0 }
+
+private fun labeledCount(label: String, count: Int) = "$label: $count"
+
+private fun FlowContent.countFigures(figures: List<CountFigure>) = figures.forEach { figure ->
+    iconCount(figure.icon, figure.text, figure.value.toString(), figure.color)
+}
 
 /** A figure shown as an icon and a short [value], spelled out in full by its tooltip. */
 private fun FlowContent.iconCount(icon: Icon, text: String, value: String, color: CSSClass? = null) {
@@ -392,27 +437,32 @@ private fun FlowContent.detailSections(sections: List<FlowContent.() -> Unit>) {
 private fun textSection(text: String): FlowContent.() -> Unit = { span { +text } }
 
 private fun FlowContent.timelineBlock(slot: UptimeTimelineSlot) {
-    // Red even if an incident started too late in the slot to add a whole second of downtime yet
-    val isDown = slot.downtimeSeconds > 0 || slot.incidents > 0
-    val hasData = isDown || slot.uptimeSeconds > 0
     div {
-        classes(
-            TRACKING_BLOCK,
-            when {
-                isDown -> BG_DANGER
-                hasData -> BG_SUCCESS
-                else -> TEXT_MUTED
-            }
-        )
-        tooltip(
-            listOfNotNull(
-                Messages.dashboardTimelineSlot(slot.start.toDateTimeString(), slot.end.toDateTimeString()),
-                Messages.noData().takeUnless { hasData },
-                slot.incidents.takeIf { it > 0 }?.let { "${Messages.incidents()}: $it" },
-            ).joinToString(" · ")
-        )
+        classes(TRACKING_BLOCK, slot.blockColor)
+        tooltip(slot.blockTooltip)
     }
 }
+
+// Red even if an incident started too late in the slot to add a whole second of downtime yet
+private val UptimeTimelineSlot.isDown: Boolean
+    get() = downtimeSeconds > 0 || incidents > 0
+
+private val UptimeTimelineSlot.hasData: Boolean
+    get() = isDown || uptimeSeconds > 0
+
+internal val UptimeTimelineSlot.blockColor: CSSClass
+    get() = when {
+        isDown -> BG_DANGER
+        hasData -> BG_SUCCESS
+        else -> TEXT_MUTED
+    }
+
+internal val UptimeTimelineSlot.blockTooltip: String
+    get() = listOfNotNull(
+        Messages.dashboardTimelineSlot(start.toDateTimeString(), end.toDateTimeString()),
+        Messages.noData().takeUnless { hasData },
+        incidents.takeIf { it > 0 }?.let { "${Messages.incidents()}: $it" },
+    ).joinToString(" · ")
 
 private fun FlowContent.incidentsCard(overview: DashboardOverview) {
     val incidents = overview.recentIncidents
@@ -459,38 +509,44 @@ private fun FlowContent.incidentsCard(overview: DashboardOverview) {
     }
 }
 
-private fun FlowContent.incidentRow(incident: IncidentDto, inMaintenance: Boolean) {
-    val isOngoing = incident.status == IncidentStatus.ONGOING
-    val details = if (isOngoing) {
-        listOf(Messages.dashboardIncidentStarted(incident.startedAt.timeAgo()))
+internal data class RowState(val dotClasses: Set<CSSClass>, val label: String)
+
+internal fun IncidentDto.dashboardRowState(inMaintenance: Boolean): RowState = when {
+    status == IncidentStatus.ONGOING && inMaintenance -> RowState(setOf(STATUS_SECONDARY), Messages.maintenance())
+    status == IncidentStatus.ONGOING ->
+        RowState(setOf(STATUS_RED, STATUS_DOT_ANIMATED), Messages.dashboardIncidentOngoing())
+    else -> RowState(setOf(STATUS_GREEN), Messages.dashboardIncidentResolved())
+}
+
+internal val IncidentDto.dashboardDetails: List<String>
+    get() = if (status == IncidentStatus.ONGOING) {
+        listOf(Messages.dashboardIncidentStarted(startedAt.timeAgo()))
     } else {
         listOfNotNull(
             getDurationOfEvent(
-                isMonitorEnabled = incident.isMonitorEnabled,
-                startedAt = incident.startedAt,
-                endedAt = incident.endedAt,
-                updatedAt = incident.updatedAt,
+                isMonitorEnabled = isMonitorEnabled,
+                startedAt = startedAt,
+                endedAt = endedAt,
+                updatedAt = updatedAt,
             ).formatAsIntervalOrDash(),
-            incident.endedAt?.let { Messages.dashboardIncidentResolvedAgo(it.timeAgo()) },
+            endedAt?.let { Messages.dashboardIncidentResolvedAgo(it.timeAgo()) },
         )
     }
-    val (dotClasses, state) = when {
-        isOngoing && inMaintenance -> setOf(STATUS_GRAY) to Messages.maintenance()
-        isOngoing -> setOf(STATUS_RED, STATUS_DOT_ANIMATED) to Messages.dashboardIncidentOngoing()
-        else -> setOf(STATUS_GREEN) to Messages.dashboardIncidentResolved()
-    }
+
+private fun FlowContent.incidentRow(incident: IncidentDto, inMaintenance: Boolean) {
+    val (dotClasses, state) = incident.dashboardRowState(inMaintenance)
     listGroupRow(
         testId = "dashboard-incident",
         dotClasses = dotClasses,
         dotTooltip = state,
         title = incident.monitorName,
-        href = incident.getMonitorUrl(),
+        href = incident.detailsPath,
         titleTooltip = incident.details,
     ) {
         val type = incident.incidentType
         detailSections(
             listOf<FlowContent.() -> Unit> { typeIcon(type.icon, type.color, type.label) } +
-                details.map(::textSection)
+                incident.dashboardDetails.map(::textSection)
         )
     }
 }
@@ -507,28 +563,14 @@ private fun FlowContent.certificatesCard(stats: DashboardUptimeStats) {
                 span {
                     classes(D_INLINE_FLEX, ALIGN_ITEMS_CENTER, GAP_2, TEXT_SECONDARY)
                     testId("dashboard-certificate-counts")
-                    monitorCount(Icon.LOCK_CLOSED, Messages.valid(), stats.sslStats.valid)
-                    if (stats.sslStats.willExpire > 0) {
-                        monitorCount(Icon.TIMER, Messages.expiresSoon(), stats.sslStats.willExpire, TEXT_YELLOW)
-                    }
-                    if (stats.sslStats.invalid > 0) {
-                        monitorCount(Icon.LOCK_OPEN, Messages.invalid(), stats.sslStats.invalid, TEXT_RED)
-                    }
-                    stats.sslStats.inProgress.takeIf { it > 0 }?.let { pending ->
-                        iconCount(Icon.HOURGLASS, Messages.dashboardPendingCount(pending), pending.toString())
-                    }
+                    countFigures(certificateCountsOf(stats.sslStats))
                 }
             }
         }
         if (stats.certificatesWithIssues.isEmpty()) {
             div {
                 classes(CARD_BODY, TEXT_SECONDARY)
-                // Nothing is claimed about the certificates that haven't been checked yet
-                +when {
-                    stats.sslStats.valid == 0 -> Messages.dashboardCertificatesPending()
-                    stats.sslStats.inProgress > 0 -> Messages.dashboardAllCheckedCertificatesValid()
-                    else -> Messages.dashboardAllCertificatesValid()
-                }
+                +stats.sslStats.certificatesMessage
             }
         } else {
             div {
@@ -666,13 +708,16 @@ private fun FlowContent.leastReliableMonitorsCard(overview: DashboardOverview) {
     }
 }
 
-private fun FlowContent.unreliableMonitorRow(monitor: UnreliableMonitor) {
-    val (dotClasses, state) = when {
-        monitor.inMaintenance -> setOf(STATUS_GRAY) to Messages.maintenance()
-        monitor.uptimeStatus == UptimeStatus.DOWN -> setOf(STATUS_RED, STATUS_DOT_ANIMATED) to Messages.down()
-        monitor.uptimeStatus == UptimeStatus.UP -> setOf(STATUS_GREEN) to Messages.up()
-        else -> setOf(STATUS_YELLOW) to Messages.inProgress()
+internal val UnreliableMonitor.dashboardRowState: RowState
+    get() = when {
+        inMaintenance -> RowState(setOf(STATUS_SECONDARY), Messages.maintenance())
+        uptimeStatus == UptimeStatus.DOWN -> RowState(setOf(STATUS_RED, STATUS_DOT_ANIMATED), Messages.down())
+        uptimeStatus == UptimeStatus.UP -> RowState(setOf(STATUS_GREEN), Messages.up())
+        else -> RowState(setOf(STATUS_YELLOW), Messages.inProgress())
     }
+
+private fun FlowContent.unreliableMonitorRow(monitor: UnreliableMonitor) {
+    val (dotClasses, state) = monitor.dashboardRowState
     val typeUiConfig = MonitorTypeUiConfig.of(monitor.id.type)
     listGroupRow(
         testId = "dashboard-least-reliable-monitor",
@@ -756,7 +801,7 @@ private fun FlowContent.listGroupRow(
 }
 
 /** One message for every period of the selector, as the number of the period decides the grammar of the text. */
-private fun Duration.lastPeriodLabel(): String = when (this) {
+internal fun Duration.lastPeriodLabel(): String = when (this) {
     UIDefaults.LAST_HOUR -> Messages.dashboardLastHour()
     UIDefaults.LAST_6_HOURS -> Messages.dashboardLast6Hours()
     UIDefaults.LAST_12_HOURS -> Messages.dashboardLast12Hours()

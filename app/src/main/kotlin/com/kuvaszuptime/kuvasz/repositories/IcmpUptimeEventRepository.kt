@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.event.IcmpUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpUptimeMonitorEvent
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.services.UptimeEventCalculationContext
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import jakarta.inject.Singleton
@@ -17,6 +18,7 @@ import java.time.OffsetDateTime
 class IcmpUptimeEventRepository(private val dslContext: DSLContext) : UptimeEventRepository {
 
     private val uptimeEventColumns = UptimeEventColumns(
+        eventId = ICMP_UPTIME_EVENT.ID,
         eventMonitorId = ICMP_UPTIME_EVENT.MONITOR_ID,
         status = ICMP_UPTIME_EVENT.STATUS,
         startedAt = ICMP_UPTIME_EVENT.STARTED_AT,
@@ -28,12 +30,17 @@ class IcmpUptimeEventRepository(private val dslContext: DSLContext) : UptimeEven
 
     private fun IcmpMonitorDownEvent.getPersistableError() = toStructuredMessage().error
 
-    fun insertFromMonitorEvent(event: IcmpUptimeMonitorEvent, ctx: DSLContext? = dslContext): IcmpUptimeEventRecord {
+    fun insertFromMonitorEvent(
+        event: IcmpUptimeMonitorEvent,
+        ctx: DSLContext? = dslContext,
+        integrations: Array<IntegrationID> = emptyArray(),
+    ): IcmpUptimeEventRecord {
         val eventToInsert = IcmpUptimeEventRecord()
             .setMonitorId(event.monitor.id)
             .setStatus(event.uptimeStatus)
             .setStartedAt(event.dispatchedAt)
             .setUpdatedAt(event.dispatchedAt)
+            .setIntegrations(integrations)
 
         if (event is IcmpMonitorDownEvent) {
             eventToInsert.error = event.getPersistableError()

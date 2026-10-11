@@ -1,15 +1,20 @@
 package com.kuvaszuptime.kuvasz.mcp
 
+import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_STATUS_PAGE_DETAILS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_STATUS_PAGES
 import com.kuvaszuptime.kuvasz.mcp.schemas.StatusPageDetailsSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.StatusPageListSchema
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createHttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
+import com.kuvaszuptime.kuvasz.mocks.createIncidentNote
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
+import com.kuvaszuptime.kuvasz.models.IncidentType
 import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentStatus
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.theme.ThemeBase
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
@@ -17,6 +22,7 @@ import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.testutils.shouldHaveError
+import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
@@ -24,6 +30,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldNotContain
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
@@ -257,6 +264,41 @@ class StatusPageToolsTest(
 
                     val details = response.structuredContentAs<StatusPageDetailsSchema>().shouldNotBeNull()
                     details.monitors.shouldNotBeEmpty().first().lastHeartbeat.shouldNotBeNull()
+                }
+            }
+
+            `when`("get-status-page-details is called for a page with a monitor that has an ongoing incident") {
+                val monitor = createHttpMonitor(httpMonitorRepository)
+                val page = createStatusPage(
+                    dslContext,
+                    monitors = listOf(MonitorID(MonitorType.HTTP_SSL, monitor.name))
+                )
+                val incident = createHttpUptimeEventRecord(
+                    dslContext,
+                    monitorId = monitor.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = getCurrentTimestamp().minusSeconds(30),
+                    endedAt = null,
+                    error = "Internal error of an internal host",
+                )
+                createIncidentNote(dslContext, IncidentType.HTTP, incident.id, content = "Public note", public = true)
+                createIncidentNote(dslContext, IncidentType.HTTP, incident.id, content = "Private note")
+                val response = callToolWithMcpClient(GET_STATUS_PAGE_DETAILS, mapOf("statusPageId" to page.id))
+
+                then("the history should carry the incident with its public notes only, and nothing internal") {
+                    response.isError shouldBe false
+
+                    val details = response.structuredContentAs<StatusPageDetailsSchema>().shouldNotBeNull()
+                    details.historyDays shouldBe 30
+                    val today = details.monitors.single().uptimeStatusHistory.last()
+                    today.incidents.single().let { listed ->
+                        listed.id shouldBe incident.id
+                        listed.status shouldBe IncidentStatus.ONGOING
+                        listed.notes.map { it.content } shouldBe listOf("Public note")
+                    }
+                    today.downtimeSeconds.shouldNotBeNull()
+                    response.structuredContent.toString() shouldNotContain "Private note"
+                    response.structuredContent.toString() shouldNotContain "Internal error"
                 }
             }
 

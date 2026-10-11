@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.models.theme.ThemeBase
 import org.jooq.impl.DSL
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.config.DefaultStatusPageConfig
+import com.kuvaszuptime.kuvasz.jooq.enums.InvestigationStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
@@ -13,12 +14,16 @@ import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.StatusPageValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.dto.importing.StatusPageImportResultDto
+import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentStatus
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.CategoryStatusDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDataDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDefaults
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageExportDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageHttpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIncidentDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIncidentNoteDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageMaintenanceWindowDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageUpdateDto
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
@@ -43,6 +48,7 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import io.micronaut.context.annotation.Property
 import io.micronaut.core.util.StringUtils
 import io.micronaut.http.HttpHeaders
@@ -65,6 +71,8 @@ import tools.jackson.dataformat.yaml.YAMLMapper
 import tools.jackson.module.kotlin.convertValue
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import kotlin.time.Duration.Companion.milliseconds
+import java.time.ZoneOffset
+import java.time.temporal.ChronoUnit
 
 @MicronautTest
 @Property(name = "default-status-page.public", value = StringUtils.TRUE)
@@ -483,7 +491,29 @@ class StatusPageControllerTest(
                             lastCheck = getCurrentTimestamp().minusMinutes(5),
                             uptimeRatio = 0.97,
                             uptimeStatus = UptimeStatus.UP,
-                            uptimeStatusHistory = emptyList(),
+                            uptimeStatusHistory = listOf(
+                                StatusHistoryDto(
+                                    date = getCurrentTimestamp().toLocalDate(),
+                                    outageCnt = 1,
+                                    downtimeSeconds = 600,
+                                    incidents = listOf(
+                                        StatusPageIncidentDto(
+                                            id = 42,
+                                            // UTC, like the timestamps coming back from the API
+                                            startedAt = utcNow().minusMinutes(10),
+                                            endedAt = null,
+                                            status = IncidentStatus.ONGOING,
+                                            notes = listOf(
+                                                StatusPageIncidentNoteDto(
+                                                    status = InvestigationStatus.IDENTIFIED,
+                                                    content = "We know what's wrong",
+                                                    timestamp = utcNow().minusMinutes(5),
+                                                )
+                                            ),
+                                        )
+                                    ),
+                                )
+                            ),
                             averageLatencyInMs = 123,
                             category = "Mock category",
                         )
@@ -494,6 +524,7 @@ class StatusPageControllerTest(
                     ),
                     displayCategories = false,
                     themeBase = ThemeBase.ZINC,
+                    historyDays = 14,
                     activeMaintenanceWindows = listOf(
                         StatusPageMaintenanceWindowDto(
                             name = "Ongoing maintenance",
@@ -537,6 +568,7 @@ class StatusPageControllerTest(
                     // Display-only: the per-category statuses are returned even when the page does not render them
                     response.displayCategories shouldBe false
                     response.themeBase shouldBe ThemeBase.ZINC
+                    response.historyDays shouldBe 14
 
                     response.systemStatus shouldBe mockDataResponse.systemStatus
                     response.generatedAt shouldBe mockDataResponse.generatedAt
@@ -546,6 +578,14 @@ class StatusPageControllerTest(
                         window.description shouldBe expected.description
                         window.start shouldBe expected.start
                         window.end shouldBe expected.end
+                    }
+                    // The incidents of the history are public, so they carry nothing but their span and their notes
+                    client.retrieve("/api/v2/status-pages/${statusPage.id}/details").awaitFirst().let { json ->
+                        json shouldContain "\"incidents\":[{\"id\":42,"
+                        json shouldContain "\"downtimeSeconds\":600"
+                        json shouldContain "We know what's wrong"
+                        json shouldNotContain "\"details\""
+                        json shouldNotContain "\"error\""
                     }
                     response.upcomingMaintenanceWindows.forOne { window ->
                         val expected = mockDataResponse.upcomingMaintenanceWindows.single()
@@ -582,6 +622,7 @@ class StatusPageControllerTest(
                     ),
                     displayCategories = false,
                     themeBase = ThemeBase.ZINC,
+                    historyDays = 7,
                     activeMaintenanceWindows = listOf(
                         StatusPageMaintenanceWindowDto(
                             name = "Ongoing maintenance",
@@ -624,6 +665,7 @@ class StatusPageControllerTest(
                     response.categoryStatus shouldBe mockDataResponse.categoryStatus
                     response.displayCategories shouldBe false
                     response.themeBase shouldBe ThemeBase.ZINC
+                    response.historyDays shouldBe 7
 
                     response.systemStatus shouldBe mockDataResponse.systemStatus
                     response.generatedAt shouldBe mockDataResponse.generatedAt
@@ -1403,3 +1445,5 @@ class StatusPageControllerTest(
     @MockBean(StatusPageDataActions::class)
     fun mockStatusPageDataActions(): StatusPageDataActions = mockk()
 }
+
+private fun utcNow() = getCurrentTimestamp().withOffsetSameInstant(ZoneOffset.UTC).truncatedTo(ChronoUnit.MICROS)

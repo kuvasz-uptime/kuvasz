@@ -132,6 +132,7 @@ class StatusPageController(
                 themeBase = dataDto.themeBase,
                 activeMaintenanceWindows = dataDto.activeMaintenanceWindows,
                 upcomingMaintenanceWindows = dataDto.upcomingMaintenanceWindows,
+                historyDays = dataDto.historyDays,
             )
         } else {
             val pageDto = statusPageActions.getStatusPageById(statusPageId)
@@ -155,6 +156,7 @@ class StatusPageController(
                 themeBase = dataDto.themeBase,
                 activeMaintenanceWindows = dataDto.activeMaintenanceWindows,
                 upcomingMaintenanceWindows = dataDto.upcomingMaintenanceWindows,
+                historyDays = dataDto.historyDays,
             )
         }
 

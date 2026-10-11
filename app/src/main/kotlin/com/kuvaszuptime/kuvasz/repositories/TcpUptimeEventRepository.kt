@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.event.TcpUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.events.TcpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.TcpUptimeMonitorEvent
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.services.UptimeEventCalculationContext
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import jakarta.inject.Singleton
@@ -17,6 +18,7 @@ import java.time.OffsetDateTime
 class TcpUptimeEventRepository(private val dslContext: DSLContext) : UptimeEventRepository {
 
     private val uptimeEventColumns = UptimeEventColumns(
+        eventId = TCP_UPTIME_EVENT.ID,
         eventMonitorId = TCP_UPTIME_EVENT.MONITOR_ID,
         status = TCP_UPTIME_EVENT.STATUS,
         startedAt = TCP_UPTIME_EVENT.STARTED_AT,
@@ -28,12 +30,17 @@ class TcpUptimeEventRepository(private val dslContext: DSLContext) : UptimeEvent
 
     private fun TcpMonitorDownEvent.getPersistableError() = toStructuredMessage().error
 
-    fun insertFromMonitorEvent(event: TcpUptimeMonitorEvent, ctx: DSLContext? = dslContext): TcpUptimeEventRecord {
+    fun insertFromMonitorEvent(
+        event: TcpUptimeMonitorEvent,
+        ctx: DSLContext? = dslContext,
+        integrations: Array<IntegrationID> = emptyArray(),
+    ): TcpUptimeEventRecord {
         val eventToInsert = TcpUptimeEventRecord()
             .setMonitorId(event.monitor.id)
             .setStatus(event.uptimeStatus)
             .setStartedAt(event.dispatchedAt)
             .setUpdatedAt(event.dispatchedAt)
+            .setIntegrations(integrations)
 
         if (event is TcpMonitorDownEvent) {
             eventToInsert.error = event.getPersistableError()

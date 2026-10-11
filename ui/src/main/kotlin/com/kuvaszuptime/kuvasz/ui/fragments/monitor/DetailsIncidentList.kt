@@ -45,6 +45,8 @@ internal fun FlowContent.detailsIncidentList(incidents: List<IncidentDto>) {
                                     classes(D_NONE, D_LG_TABLE_CELL, PX_3)
                                     +Messages.details()
                                 }
+                                // Actions
+                                th {}
                             }
                         }
                         tbody {
@@ -74,6 +76,11 @@ internal fun FlowContent.detailsIncidentList(incidents: List<IncidentDto>) {
                                     td {
                                         classes(TEXT_WRAP, TEXT_BREAK, D_NONE, D_LG_TABLE_CELL, PX_3)
                                         +incident.details.orEmpty()
+                                    }
+                                    // Actions
+                                    td {
+                                        classes(TEXT_END)
+                                        incidentDetailsButton(incident)
                                     }
                                 }
                             }

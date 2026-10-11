@@ -17,11 +17,11 @@ internal fun FlowContent.statusPageDetailsContent(pageData: StatusPageDataDto) {
             classes(CONTAINER, TEXT_CENTER, MB_4)
             statusSummary(pageData)
         }
-        // Maintenance info block above the monitors
-        maintenanceBanner(pageData)
+        statusPageAccordions(pageData)
         div {
             classes(CONTAINER_XL)
             systemStatusMonitorList(pageData)
         }
+        statusPageIncidentsModal()
     }
 }

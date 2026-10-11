@@ -230,6 +230,7 @@ const dnsMonitorApi = crudRequests('/api/v2/dns-monitors', 'monitor');
 const dockerMonitorApi = crudRequests('/api/v2/docker-monitors', 'monitor');
 const statusPageApi = crudRequests('/api/v2/status-pages', 'status page');
 const maintenanceWindowApi = crudRequests('/api/v2/maintenance-windows', 'maintenance window');
+const incidentNoteApi = crudRequests('/api/v2/incidents/notes', 'incident note');
 
 // --------- HTMX refresh triggers ---------
 // Refreshes a monitor detail page's dynamic status blocks by triggering an HTMX event (OOB swap)
@@ -250,6 +251,8 @@ const refreshDockerMonitorList = () => sendHtmxEvent('#docker-monitors-list', 'r
 
 // Refreshes the status page list by triggering an HTMX event
 const refreshStatusPageList = () => sendHtmxEvent('#status-page-list', 'refresh-status-page-list');
+
+const refreshIncidentList = () => sendHtmxEvent('#incident-list', 'refresh-incident-list');
 
 // Refreshes the dashboard by triggering an HTMX event
 const refreshDashboard = () => sendHtmxEvent('#dashboard-overview', 'refresh-dashboard');
@@ -2523,12 +2526,14 @@ const isValidCronExpression = async (value) => {
 const toIsoDate = (date) =>
     `${date.getFullYear()}-${padToTwoDigits(date.getMonth() + 1)}-${padToTwoDigits(date.getDate())}`;
 
-// Converts an ISO timestamp into a local YYYY-MM-DDTHH:mm value (in the browser's local time)
+// Converts an ISO timestamp into a local YYYY-MM-DDTHH:mm value (in the browser's local time), with the seconds too
+// (YYYY-MM-DDTHH:mm:ss) if it has any
 const toDateTimeLocalValue = (isoString) => {
     if (!isoString) return '';
     const date = new Date(isoString);
     if (isNaN(date.getTime())) return '';
-    return `${toIsoDate(date)}T${padToTwoDigits(date.getHours())}:${padToTwoDigits(date.getMinutes())}`;
+    const seconds = date.getSeconds() ? `:${padToTwoDigits(date.getSeconds())}` : '';
+    return `${toIsoDate(date)}T${padToTwoDigits(date.getHours())}:${padToTwoDigits(date.getMinutes())}${seconds}`;
 };
 
 // Tabler's datepicker attaches its popup to the body, positioned in page coordinates, so in a modal (which scrolls on
@@ -2554,13 +2559,19 @@ const isValidIsoDate = (value) => {
     return toIsoDate(new Date(year, month - 1, day)) === value;
 };
 
-// Checks that the value is a time of the day in the 24-hour HH:mm format
-const isValidTime = (value) => typeof value === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+// Checks that the value is a time of the day in the 24-hour HH:mm format, optionally with seconds (HH:mm:ss)
+const isValidTime = (value) => typeof value === 'string' && /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/.test(value);
 
-// The start of a one-off maintenance window is shown (and can be typed in) as YYYY-MM-DD HH:mm
-const formatStartValue = (date, time) => [date, time].filter(Boolean).join(' ');
+// The time picker of the calendar only knows hours and minutes, so it gets a valid time without its seconds
+const toCalendarTime = (time) => time.slice(0, 'HH:mm'.length);
 
-const parseStartValue = (value) => {
+// The ':ss' part of a valid time, or nothing
+const secondsSuffixOf = (time) => isValidTime(time) ? time.slice('HH:mm'.length) : '';
+
+// The value of a dateTimePickerField is shown (and can be typed in) as YYYY-MM-DD HH:mm, or YYYY-MM-DD HH:mm:ss
+const formatDateTimeValue = (date, time) => [date, time].filter(Boolean).join(' ');
+
+const parseDateTimeValue = (value) => {
     const [date = '', time = ''] = (value || '').trim().split(/[\sT]+/);
     return {date, time};
 };
@@ -2638,134 +2649,54 @@ const maintenanceWindowDetails = (maintenanceWindowId, isMaintenanceWindowEnable
     }
 });
 
-const upsertMaintenanceWindowForm = (
-    maintenanceWindow,
-    errorMessages,
-    monitorSelectId,
-    selectableMonitors,
-    categorySelectId,
-) => ({
-    ...upsertForm({
-        api: maintenanceWindowApi,
-        entity: maintenanceWindow,
-        errorMessages,
-        pagePath: '/maintenance-windows',
-        entityLabel: 'maintenance window',
-    }),
-    selectableMonitors: selectableMonitors || [],
-    // See the same field on upsertStatusPageForm
-    initialCategories: maintenanceWindow?.categories || [],
-    // The integrations accordion expects this; maintenance windows never auto-apply global integrations
-    globalIntegrationCount: 0,
+/**
+ * A date and a time picked with Tabler's datepicker, extended with the time picker of the underlying Vanilla Calendar
+ * Pro, and shown (and typed in) as YYYY-MM-DD HH:mm, optionally with seconds. The time picker can't select seconds,
+ * so they can only be typed (or loaded), and they are kept while the hours and the minutes are picked. Spread into the x-data of a form, which validates the picked value
+ * in its own validateDateTime(), e.g. as a required or an optional field.
+ */
+const dateTimePickerField = () => ({
+    pickedDate: '',
+    pickedTime: '',
+    loadedDateTime: null,
 
-    resetState() {
-        this.discardEntityLoad();
-        this.setEditTarget(maintenanceWindow || null, null);
-        this.populateFrom(maintenanceWindow || null);
+    // Loads an ISO-8601 timestamp (or nothing) into the picker, in the local time zone
+    setPickedDateTime(isoValue) {
+        [this.pickedDate, this.pickedTime = ''] = toDateTimeLocalValue(isoValue).split('T');
+        this.loadedDateTime = {iso: isoValue, date: this.pickedDate, time: this.pickedTime};
     },
 
-    populateFrom(source) {
-        this.name = source?.name || '';
-        this.description = source?.description || null;
-        this.type = resolveMaintenanceWindowType(source);
-        this.cron = source?.cron || '';
-        [this.startDate, this.startTime = ''] = toDateTimeLocalValue(source?.start).split('T');
-        this.duration = source?.duration || '';
-        this.enabled = source?.enabled ?? true;
-        this.global = source?.global ?? false;
-        this.showOnStatusPages = source?.showOnStatusPages ?? false;
-        this.selectedMonitors = source?.monitors || [];
-        this.selectedCategories = source?.categories || [];
-        this.integrations = source?.integrations || [];
-        this.errors = {};
-        this.formError = null;
-
-        resetTomSelectState(monitorSelectId, (ts) => {
-            this.selectedMonitors.forEach(monitor => ts.addItem(monitor, true));
-        });
-        resetCategoryMultiSelect(categorySelectId, this.selectedCategories);
+    // The picked value as an ISO-8601 timestamp, or null if nothing (valid) is picked. The picker doesn't show the
+    // fractions of a second, so a loaded value that hasn't been changed is returned as it was, keeping them
+    pickedDateTimeAsIso() {
+        if (!isValidIsoDate(this.pickedDate) || !isValidTime(this.pickedTime)) return null;
+        const loaded = this.loadedDateTime;
+        if (loaded?.iso && loaded.date === this.pickedDate && loaded.time === this.pickedTime) return loaded.iso;
+        return new Date(`${this.pickedDate}T${this.pickedTime}`).toISOString();
     },
 
-    validate() {
-        this.errors = {};
-        this.formError = null;
-        this.validateName();
-        this.validateCronPresence();
-        this.validateStart();
-        this.validateDuration();
+    // Applies what was typed into the input
+    onDateTimeTyped(value) {
+        const {date, time} = parseDateTimeValue(value);
+        this.pickedDate = date;
+        this.pickedTime = time;
+        this.validateDateTime();
     },
 
-    // Clears the values of fields that don't belong to the freshly selected type, so we never send
-    // non-sense values to the backend and never keep a hidden validation error on an invisible field
-    onTypeChange() {
-        if (this.type !== MAINTENANCE_WINDOW_TYPES.CRON) {
-            this.cron = '';
-        }
-        if (this.type !== MAINTENANCE_WINDOW_TYPES.SINGLE) {
-            this.startDate = '';
-            this.startTime = '';
-        }
-        if (this.type === MAINTENANCE_WINDOW_TYPES.MANUAL) {
-            this.duration = '';
-        }
-        this.validate();
-    },
-
-    validateName() {
-        this.errors.name = this.name ? null : this.errorMessages.nameRequired;
-    },
-
-    // Synchronous part of the cron validation: clears the error for non-cron windows and flags a blank value
-    validateCronPresence() {
-        const isMissing = this.type === MAINTENANCE_WINDOW_TYPES.CRON && !this.cron;
-        this.errors.cron = isMissing ? this.errorMessages.cronRequired : null;
-    },
-
-    // Full cron validation including the server-side format check; runs when the field is left or on submit
-    async validateCron() {
-        this.validateCronPresence();
-        if (this.errors.cron || this.type !== MAINTENANCE_WINDOW_TYPES.CRON) {
-            return;
-        }
-        const valid = await isValidCronExpression(this.cron);
-        this.errors.cron = valid ? null : this.errorMessages.cronInvalid;
-    },
-
-    validateStart() {
-        if (this.type !== MAINTENANCE_WINDOW_TYPES.SINGLE) {
-            this.errors.start = null;
-        } else if (!this.startDate || !this.startTime) {
-            this.errors.start = this.errorMessages.startRequired;
-        } else if (!isValidIsoDate(this.startDate) || !isValidTime(this.startTime)) {
-            this.errors.start = this.errorMessages.startInvalid;
-        } else {
-            this.errors.start = null;
-        }
-    },
-
-    // Applies what was typed into the start input
-    onStartTyped(value) {
-        const {date, time} = parseStartValue(value);
-        this.startDate = date;
-        this.startTime = time;
-        this.validateStart();
-    },
-
-    // The start is picked with Tabler's datepicker, extended with the time picker of the underlying Vanilla Calendar
-    // Pro. The picker and the model are kept in sync in both directions: a picked day or time lands in the model,
-    // and a typed (or loaded) one is selected in the calendar
-    initStartDatepicker(element) {
+    // The picker and the model are kept in sync in both directions: a picked day or time lands in the model, and a
+    // typed (or loaded) one is selected in the calendar
+    initDateTimePicker(element) {
         const datepicker = new tabler.Datepicker(element, {
             // Tabler writes the input when a day is picked, which has to show the time as well
-            dateFormat: (date) => formatStartValue(toIsoDate(date), this.startTime),
+            dateFormat: (date) => formatDateTimeValue(toIsoDate(date), this.pickedTime),
             // Opens above the input when there isn't enough room below it
             placement: 'auto',
             vcpOptions: {
                 selectionTimeMode: 24,
-                ...(isValidTime(this.startTime) ? {selectedTime: this.startTime} : {}),
+                ...(isValidTime(this.pickedTime) ? {selectedTime: toCalendarTime(this.pickedTime)} : {}),
                 onChangeTime: (calendar) => {
-                    this.startTime = calendar.context.selectedTime;
-                    this.validateStart();
+                    this.pickedTime = calendar.context.selectedTime + secondsSuffixOf(this.pickedTime);
+                    this.validateDateTime();
                 },
             },
         });
@@ -2794,33 +2725,141 @@ const upsertMaintenanceWindowForm = (
         }));
         element.addEventListener('change.bs.datepicker', (event) => {
             isDayJustPicked = event.dates.length > 0;
-            this.startDate = event.dates[0] || '';
+            this.pickedDate = event.dates[0] || '';
             // The time picker always shows a time, which is taken over unless one was set already
-            this.startTime = this.startTime || datepicker.calendar.context.selectedTime;
-            this.validateStart();
+            this.pickedTime = this.pickedTime || datepicker.calendar.context.selectedTime;
+            this.validateDateTime();
         });
-        const selectStartDate = (value) => {
+        const selectPickedDate = (value) => {
             const selectedDates = isValidIsoDate(value) ? [value] : [];
             if (selectedDates[0] !== datepicker.getSelectedDates()[0]) {
                 datepicker.setSelectedDates(selectedDates);
-                // Tabler writes the input with the selection too, which would wipe a typed but invalid start
-                element.value = formatStartValue(this.startDate, this.startTime);
+                // Tabler writes the input with the selection too, which would wipe a typed but invalid value
+                element.value = formatDateTimeValue(this.pickedDate, this.pickedTime);
             }
         };
-        // The start is loaded before the watcher is registered, and Tabler's own parsing of the input's
-        // YYYY-MM-DD HH:mm value can't be relied on, as not every browser's Date parses that format
-        selectStartDate(this.startDate);
-        this.$watch('startDate', selectStartDate);
-        this.$watch('startTime', (value) => {
+        // The value is loaded before the watcher is registered, and Tabler's own parsing of the input's
+        // YYYY-MM-DD HH:mm(:ss) value can't be relied on, as not every browser's Date parses that format
+        selectPickedDate(this.pickedDate);
+        this.$watch('pickedDate', selectPickedDate);
+        this.$watch('pickedTime', (value) => {
             if (value !== '' && !isValidTime(value)) return;
             // Kept in the options too, because every later update of the calendar resets the time from there. A
             // cleared time (e.g. of a reset form) resets the time picker to its default, instead of keeping the
             // previous one, which a picked day would take over
-            datepicker.calendar.selectedTime = value || undefined;
-            if (value !== datepicker.calendar.context.selectedTime) {
+            const calendarTime = value ? toCalendarTime(value) : undefined;
+            datepicker.calendar.selectedTime = calendarTime;
+            if (calendarTime !== datepicker.calendar.context.selectedTime) {
                 datepicker.calendar.update({dates: false, month: false, year: false});
             }
         });
+    },
+});
+
+const upsertMaintenanceWindowForm = (
+    maintenanceWindow,
+    errorMessages,
+    monitorSelectId,
+    selectableMonitors,
+    categorySelectId,
+) => ({
+    ...upsertForm({
+        api: maintenanceWindowApi,
+        entity: maintenanceWindow,
+        errorMessages,
+        pagePath: '/maintenance-windows',
+        entityLabel: 'maintenance window',
+    }),
+    ...dateTimePickerField(),
+    selectableMonitors: selectableMonitors || [],
+    // See the same field on upsertStatusPageForm
+    initialCategories: maintenanceWindow?.categories || [],
+    // The integrations accordion expects this; maintenance windows never auto-apply global integrations
+    globalIntegrationCount: 0,
+
+    resetState() {
+        this.discardEntityLoad();
+        this.setEditTarget(maintenanceWindow || null, null);
+        this.populateFrom(maintenanceWindow || null);
+    },
+
+    populateFrom(source) {
+        this.name = source?.name || '';
+        this.description = source?.description || null;
+        this.type = resolveMaintenanceWindowType(source);
+        this.cron = source?.cron || '';
+        this.setPickedDateTime(source?.start);
+        this.duration = source?.duration || '';
+        this.enabled = source?.enabled ?? true;
+        this.global = source?.global ?? false;
+        this.showOnStatusPages = source?.showOnStatusPages ?? false;
+        this.selectedMonitors = source?.monitors || [];
+        this.selectedCategories = source?.categories || [];
+        this.integrations = source?.integrations || [];
+        this.errors = {};
+        this.formError = null;
+
+        resetTomSelectState(monitorSelectId, (ts) => {
+            this.selectedMonitors.forEach(monitor => ts.addItem(monitor, true));
+        });
+        resetCategoryMultiSelect(categorySelectId, this.selectedCategories);
+    },
+
+    validate() {
+        this.errors = {};
+        this.formError = null;
+        this.validateName();
+        this.validateCronPresence();
+        this.validateDateTime();
+        this.validateDuration();
+    },
+
+    // Clears the values of fields that don't belong to the freshly selected type, so we never send
+    // non-sense values to the backend and never keep a hidden validation error on an invisible field
+    onTypeChange() {
+        if (this.type !== MAINTENANCE_WINDOW_TYPES.CRON) {
+            this.cron = '';
+        }
+        if (this.type !== MAINTENANCE_WINDOW_TYPES.SINGLE) {
+            this.setPickedDateTime(null);
+        }
+        if (this.type === MAINTENANCE_WINDOW_TYPES.MANUAL) {
+            this.duration = '';
+        }
+        this.validate();
+    },
+
+    validateName() {
+        this.errors.name = this.name ? null : this.errorMessages.nameRequired;
+    },
+
+    // Synchronous part of the cron validation: clears the error for non-cron windows and flags a blank value
+    validateCronPresence() {
+        const isMissing = this.type === MAINTENANCE_WINDOW_TYPES.CRON && !this.cron;
+        this.errors.cron = isMissing ? this.errorMessages.cronRequired : null;
+    },
+
+    // Full cron validation including the server-side format check; runs when the field is left or on submit
+    async validateCron() {
+        this.validateCronPresence();
+        if (this.errors.cron || this.type !== MAINTENANCE_WINDOW_TYPES.CRON) {
+            return;
+        }
+        const valid = await isValidCronExpression(this.cron);
+        this.errors.cron = valid ? null : this.errorMessages.cronInvalid;
+    },
+
+    // The start of a one-off window, see dateTimePickerField
+    validateDateTime() {
+        if (this.type !== MAINTENANCE_WINDOW_TYPES.SINGLE) {
+            this.errors.start = null;
+        } else if (!this.pickedDate || !this.pickedTime) {
+            this.errors.start = this.errorMessages.startRequired;
+        } else if (!isValidIsoDate(this.pickedDate) || !isValidTime(this.pickedTime)) {
+            this.errors.start = this.errorMessages.startInvalid;
+        } else {
+            this.errors.start = null;
+        }
     },
 
     // Fills the duration input with a predefined ISO-8601 value coming from a quick-select button
@@ -2860,9 +2899,7 @@ const upsertMaintenanceWindowForm = (
             global: this.global,
             showOnStatusPages: this.showOnStatusPages,
             cron: isCron ? this.cron : null,
-            start: isSingle && this.startDate && this.startTime
-                ? new Date(`${this.startDate}T${this.startTime}`).toISOString()
-                : null,
+            start: isSingle ? this.pickedDateTimeAsIso() : null,
             duration: isManual ? null : this.duration,
             monitors: this.selectedMonitors,
             categories: this.selectedCategories,
@@ -2870,6 +2907,236 @@ const upsertMaintenanceWindowForm = (
         };
     },
 });
+
+// --------- Incidents ---------
+
+// The URL of the incident list with one of its filters changed, keeping the others. An empty value removes the filter,
+// so the unfiltered list keeps its plain URL
+const buildIncidentFilterUrl = (search, name, value) => {
+    const params = new URLSearchParams(search);
+    if (value) {
+        params.set(name, value);
+    } else {
+        params.delete(name);
+    }
+    const query = params.toString();
+    return query ? `/incidents?${query}` : '/incidents';
+};
+
+const applyIncidentFilter = (name, value) => {
+    window.location.href = buildIncidentFilterUrl(window.location.search, name, value);
+};
+
+const INVESTIGATION_STATUSES = {
+    INVESTIGATING: 'INVESTIGATING',
+    IDENTIFIED: 'IDENTIFIED',
+    RESOLVED: 'RESOLVED',
+};
+
+// Adds a note to an incident, or edits (and deletes) one of its notes, which is passed by the timeline in editFrom
+const incidentNoteForm = (incidentType, eventId, errorMessages) => ({
+    ...dateTimePickerField(),
+    incidentType,
+    eventId,
+    errorMessages,
+    isUpdate: false,
+    noteId: null,
+    status: INVESTIGATION_STATUSES.INVESTIGATING,
+    content: '',
+    public: false,
+    errors: {},
+    formError: null,
+    isRequestLoading: false,
+    isDeleteConfirmationShown: false,
+
+    init() {
+        this.resetState();
+    },
+
+    resetState() {
+        this.populateFrom(null);
+    },
+
+    editFrom(note) {
+        this.populateFrom(note);
+    },
+
+    populateFrom(note) {
+        this.isUpdate = !!note;
+        this.noteId = note?.id ?? null;
+        this.status = note?.status || INVESTIGATION_STATUSES.INVESTIGATING;
+        this.content = note?.content || '';
+        this.public = note?.public ?? false;
+        this.setPickedDateTime(note?.timestamp);
+        this.errors = {};
+        this.formError = null;
+        this.isDeleteConfirmationShown = false;
+    },
+
+    validateContent() {
+        this.errors.content = this.content.trim() ? null : this.errorMessages.contentRequired;
+    },
+
+    // The timestamp is optional, but a partially or wrongly given one is an error, see dateTimePickerField
+    validateDateTime() {
+        const isEmpty = !this.pickedDate && !this.pickedTime;
+        const isValid = isValidIsoDate(this.pickedDate) && isValidTime(this.pickedTime);
+        this.errors.timestamp = isEmpty || isValid ? null : this.errorMessages.timestampInvalid;
+    },
+
+    validate() {
+        this.errors = {};
+        this.formError = null;
+        this.validateContent();
+        this.validateDateTime();
+    },
+
+    buildRequestBody() {
+        return {
+            status: this.status,
+            content: this.content,
+            timestamp: this.pickedDateTimeAsIso(),
+            public: this.public,
+        };
+    },
+
+    async submitForm() {
+        this.validate();
+        if (hasNonNullValue(this.errors)) return;
+        const url = this.isUpdate
+            ? `/api/v2/incidents/notes/${this.noteId}`
+            : `/api/v2/incidents/${this.incidentType}/${this.eventId}/notes`;
+        try {
+            this.isRequestLoading = true;
+            const response = await fetch(url, {
+                method: this.isUpdate ? 'PATCH' : 'POST',
+                headers: jsonContentHeaders,
+                body: JSON.stringify(this.buildRequestBody()),
+            });
+            if (response.ok) {
+                window.location.reload();
+            } else if (response.status === 400 || response.status === 405) {
+                this.formError = (await response.json()).message;
+            } else {
+                console.error('Error saving the incident note:', response.statusText);
+                alert('An error occurred while saving the incident note, refer to the console for more details');
+            }
+        } catch (error) {
+            console.error('Error saving the incident note:', error);
+            alert('An error occurred while saving the incident note. Please try again.');
+        } finally {
+            this.isRequestLoading = false;
+        }
+    },
+
+    deleteNote() {
+        return incidentNoteApi.remove(
+            this.noteId,
+            () => this.isRequestLoading = true,
+            () => window.location.reload(),
+            () => this.isRequestLoading = false,
+        );
+    },
+});
+
+// --------- Incidents on the status pages ---------
+
+const STATUS_PAGE_INCIDENTS_MODAL_ID = 'status-page-incidents-modal';
+const STATUS_PAGE_CONTENT_ID = 'status-page-content';
+
+// Fills the incidents modal from the template of the given monitor, which lives in the monitor's card. The modal
+// remembers which monitor it shows, so it can be refilled after the page refreshed itself
+const showStatusPageIncidents = (incidentsOf) => {
+    const modal = document.getElementById(STATUS_PAGE_INCIDENTS_MODAL_ID);
+    if (!modal) return;
+    modal.dataset.incidentsOf = incidentsOf;
+    fillStatusPageIncidentsModal(modal);
+};
+
+const fillStatusPageIncidentsModal = (modal) => {
+    // Matched as plain strings, so the name of a monitor never has to be escaped as a selector
+    const template = [...document.querySelectorAll('template[data-incidents-of]')]
+        .find(candidate => candidate.dataset.incidentsOf === modal.dataset.incidentsOf);
+    // An incident that is no longer in the history keeps the modal as it was, until it's closed
+    if (template) {
+        modal.querySelector('.modal-content').replaceChildren(template.content.cloneNode(true));
+    }
+};
+
+// Called after every refresh of the page: an open incidents modal shows the refreshed incidents too
+const refreshStatusPageIncidentsModal = () => {
+    const modal = document.getElementById(STATUS_PAGE_INCIDENTS_MODAL_ID);
+    if (modal?.classList.contains('show')) {
+        fillStatusPageIncidentsModal(modal);
+    }
+};
+
+/**
+ * Whether an accordion of a status page is open after a refresh of the page. The server renders the active incidents and
+ * the active maintenance open, and the resolved incidents closed, but the visitor's own choice wins, as long as the
+ * accordion stays on the page: one that (re)appears starts from its default again, so e.g. a new outage is never hidden
+ * by an earlier choice.
+ */
+const resolveStatusPageAccordionState = ({isOpenByDefault, wasShown, isOpenByUser}) => {
+    if (isOpenByUser === null || !wasShown) {
+        return {isOpen: isOpenByDefault, isOpenByUser: null};
+    }
+    return {isOpen: isOpenByUser, isOpenByUser};
+};
+
+const statusPageAccordionsOf = (content) => [...content.querySelectorAll('[data-status-page-accordion]')];
+
+// The state is kept as JSON on the refreshed element of the page, which itself is never swapped out
+const readStatusPageAccordionsData = (content, name, fallback) => {
+    try {
+        return JSON.parse(content.dataset[name] ?? 'null') ?? fallback;
+    } catch {
+        return fallback;
+    }
+};
+
+// The visitor's choice, by the key of the accordion
+const rememberStatusPageAccordionChoice = (event) => {
+    const key = event.target?.dataset?.statusPageAccordion;
+    const content = event.target?.closest?.(`#${STATUS_PAGE_CONTENT_ID}`);
+    if (!key || !content) return;
+    const choices = readStatusPageAccordionsData(content, 'statusPageAccordionChoices', {});
+    choices[key] = event.type === 'shown.bs.collapse';
+    content.dataset.statusPageAccordionChoices = JSON.stringify(choices);
+};
+
+document.addEventListener('shown.bs.collapse', rememberStatusPageAccordionChoice);
+document.addEventListener('hidden.bs.collapse', rememberStatusPageAccordionChoice);
+
+// Called right before every refresh of the page: the accordions that were there before it
+const rememberShownStatusPageAccordions = (content) => {
+    const keys = statusPageAccordionsOf(content).map(collapse => collapse.dataset.statusPageAccordion);
+    content.dataset.statusPageAccordionsShown = JSON.stringify(keys);
+};
+
+// Called after every refresh of the page, on the refreshed element, see resolveStatusPageAccordionState()
+const applyStatusPageAccordionsState = (content) => {
+    const shownBefore = readStatusPageAccordionsData(content, 'statusPageAccordionsShown', []);
+    const choices = readStatusPageAccordionsData(content, 'statusPageAccordionChoices', {});
+    // The choices about the accordions that are gone are forgotten
+    const keptChoices = {};
+    statusPageAccordionsOf(content).forEach(collapse => {
+        const key = collapse.dataset.statusPageAccordion;
+        const {isOpen, isOpenByUser} = resolveStatusPageAccordionState({
+            isOpenByDefault: collapse.classList.contains('show'),
+            wasShown: shownBefore.includes(key),
+            isOpenByUser: choices[key] ?? null,
+        });
+        collapse.classList.toggle('show', isOpen);
+        const toggle = content.querySelector(`[data-bs-target="#${collapse.id}"]`);
+        toggle?.classList.toggle('collapsed', !isOpen);
+        toggle?.setAttribute('aria-expanded', String(isOpen));
+        if (isOpenByUser !== null) {
+            keptChoices[key] = isOpenByUser;
+        }
+    });
+    content.dataset.statusPageAccordionChoices = JSON.stringify(keptChoices);
+};
 
 // Exposes helpers and Alpine x-data factories for the Node-based unit tests (see ui/src/jsTest and the :ui:jsTest task)
 if (typeof module !== 'undefined' && module.exports) {
@@ -2897,8 +3164,8 @@ if (typeof module !== 'undefined' && module.exports) {
         toDateTimeLocalValue,
         isValidIsoDate,
         isValidTime,
-        formatStartValue,
-        parseStartValue,
+        formatDateTimeValue,
+        parseDateTimeValue,
         resolveMaintenanceWindowType,
         createRandomSecret,
         // Helpers of the category select
@@ -2927,6 +3194,15 @@ if (typeof module !== 'undefined' && module.exports) {
         upsertDockerMonitorForm,
         upsertStatusPageForm,
         upsertMaintenanceWindowForm,
+        incidentNoteForm,
+        resolveStatusPageAccordionState,
+        applyStatusPageAccordionsState,
+        rememberStatusPageAccordionChoice,
+        rememberShownStatusPageAccordions,
+        showStatusPageIncidents,
+        refreshStatusPageIncidentsModal,
+        buildIncidentFilterUrl,
+        INVESTIGATION_STATUSES,
         httpMetricsBlock,
         icmpMetricsBlock,
         tcpMetricsBlock,
