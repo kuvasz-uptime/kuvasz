@@ -356,32 +356,32 @@ internal fun monitorCountsOf(
     val down = outsideMaintenance.down
     val pending = outsideMaintenance.pending
     return listOfNotNull(
-        countFigure(Icon.ARROW_NARROW_UP, up, labeledCount(Messages.up(), up), alwaysShown = true),
+        countFigure(Icon.ARROW_NARROW_UP, labeledCount(Messages.up(), up), up, alwaysShown = true),
         countFigure(
             Icon.ARROW_NARROW_DOWN,
-            down,
             labeledCount(Messages.down(), down),
+            down,
             color = TEXT_RED.takeIf { down > 0 },
             alwaysShown = withZeros,
         ),
         countFigure(
             Icon.TOOL,
-            stats.inMaintenance,
             labeledCount(Messages.maintenance(), stats.inMaintenance),
+            stats.inMaintenance,
             alwaysShown = withZeros,
         ),
-        countFigure(Icon.PAUSE, stats.paused, labeledCount(Messages.paused(), stats.paused), alwaysShown = withZeros),
-        countFigure(Icon.HOURGLASS, pending, Messages.dashboardPendingCount(pending), alwaysShown = withZeros),
+        countFigure(Icon.PAUSE, labeledCount(Messages.paused(), stats.paused), stats.paused, alwaysShown = withZeros),
+        countFigure(Icon.HOURGLASS, Messages.dashboardPendingCount(pending), pending, alwaysShown = withZeros),
     )
 }
 
 /** The certificate counts, the valid ones always shown, the others only if there are any of them. */
 internal fun certificateCountsOf(sslStats: SslStats): List<CountFigure> = with(sslStats) {
     listOfNotNull(
-        countFigure(Icon.LOCK_CLOSED, valid, labeledCount(Messages.valid(), valid), alwaysShown = true),
-        countFigure(Icon.TIMER, willExpire, labeledCount(Messages.expiresSoon(), willExpire), color = TEXT_YELLOW),
-        countFigure(Icon.LOCK_OPEN, invalid, labeledCount(Messages.invalid(), invalid), color = TEXT_RED),
-        countFigure(Icon.HOURGLASS, inProgress, Messages.dashboardPendingCount(inProgress)),
+        countFigure(Icon.LOCK_CLOSED, labeledCount(Messages.valid(), valid), valid, alwaysShown = true),
+        countFigure(Icon.TIMER, labeledCount(Messages.expiresSoon(), willExpire), willExpire, color = TEXT_YELLOW),
+        countFigure(Icon.LOCK_OPEN, labeledCount(Messages.invalid(), invalid), invalid, color = TEXT_RED),
+        countFigure(Icon.HOURGLASS, Messages.dashboardPendingCount(inProgress), inProgress),
     )
 }
 
@@ -389,11 +389,11 @@ internal data class CountFigure(val icon: Icon, val text: String, val value: Int
 
 private fun countFigure(
     icon: Icon,
-    count: Int,
     text: String,
+    value: Int,
     color: CSSClass? = null,
     alwaysShown: Boolean = false,
-): CountFigure? = CountFigure(icon, text, count, color).takeIf { alwaysShown || count > 0 }
+): CountFigure? = CountFigure(icon, text, value, color).takeIf { alwaysShown || value > 0 }
 
 private fun labeledCount(label: String, count: Int) = "$label: $count"
 

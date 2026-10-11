@@ -55,16 +55,17 @@ internal enum class StatusPageAccordion(
  * own accordion, which is only there if it has anything to show.
  */
 internal fun FlowContent.statusPageAccordions(pageData: StatusPageDataDto) {
-    val activeIncidents = pageData.ongoingIncidentsByMonitor()
+    val incidentsByMonitor = pageData.incidentsByMonitor()
+    val activeIncidents = incidentsByMonitor.ongoing()
     val maintenanceWindows = pageData.activeMaintenanceWindows
-    val resolvedIncidents = pageData.recentlyResolvedIncidentsByMonitor()
+    val resolvedIncidents = incidentsByMonitor.recentlyResolved(pageData.generatedAt)
     if (activeIncidents.isEmpty() && maintenanceWindows.isEmpty() && resolvedIncidents.isEmpty()) return
 
     div {
         classes(CONTAINER_XL, MB_4)
         statusPageAccordion(StatusPageAccordion.ACTIVE_INCIDENTS, activeIncidents.sumOf { it.second.size }) {
             activeIncidents.forEach { (monitor, incidents) ->
-                monitorIncidentsCard(monitor, incidents, StatusPageAccordion.ACTIVE_INCIDENTS.statusColor)
+                monitorIncidentsCard(monitor, incidents, isOngoing = true)
             }
         }
         statusPageAccordion(StatusPageAccordion.ACTIVE_MAINTENANCE, maintenanceWindows.size) {
@@ -72,7 +73,7 @@ internal fun FlowContent.statusPageAccordions(pageData: StatusPageDataDto) {
         }
         statusPageAccordion(StatusPageAccordion.RESOLVED_INCIDENTS, resolvedIncidents.sumOf { it.second.size }) {
             resolvedIncidents.forEach { (monitor, incidents) ->
-                monitorIncidentsCard(monitor, incidents, StatusPageAccordion.RESOLVED_INCIDENTS.statusColor)
+                monitorIncidentsCard(monitor, incidents, isOngoing = false)
             }
         }
     }
@@ -124,20 +125,6 @@ private fun FlowContent.statusPageAccordion(accordion: StatusPageAccordion, coun
                     }
                 }
             }
-        }
-    }
-}
-
-internal fun FlowContent.statusCard(statusColor: CSSClass, cardTestId: String, block: DIV.() -> Unit) {
-    div {
-        classes(CARD)
-        testId(cardTestId)
-        div {
-            classes(CARD_STATUS_START, statusColor)
-        }
-        div {
-            classes(CARD_BODY)
-            block()
         }
     }
 }

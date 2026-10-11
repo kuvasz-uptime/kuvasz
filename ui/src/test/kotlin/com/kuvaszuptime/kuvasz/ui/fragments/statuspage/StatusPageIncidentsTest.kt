@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIncidentDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIncidentNoteDto
 import com.kuvaszuptime.kuvasz.models.statuspage.SystemStatus
 import com.kuvaszuptime.kuvasz.models.theme.ThemeBase
+import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import java.time.OffsetDateTime
@@ -197,8 +198,20 @@ class StatusPageIncidentsTest : BehaviorSpec({
         val calm = monitor("calm", listOf(resolvedADayAgo, longResolved))
         val data = pageData(generatedAt, zulu, calm, alpha)
 
+        `when`("the incidents of every monitor are collected") {
+            val all = data.incidentsByMonitor()
+
+            then("every monitor is there with the incidents of its history, ordered by their names") {
+                all shouldBe listOf(
+                    alpha to listOf(recentlyResolved.copy(id = 5)),
+                    calm to listOf(resolvedADayAgo, longResolved),
+                    zulu to listOf(ongoing, recentlyResolved),
+                )
+            }
+        }
+
         `when`("the active incidents are collected") {
-            val active = data.ongoingIncidentsByMonitor()
+            val active = data.incidentsByMonitor().ongoing()
 
             then("only the ongoing ones are there, by their monitors") {
                 active shouldBe listOf(zulu to listOf(ongoing))
@@ -206,13 +219,32 @@ class StatusPageIncidentsTest : BehaviorSpec({
         }
 
         `when`("the resolved incidents are collected") {
-            val resolved = data.recentlyResolvedIncidentsByMonitor()
+            val resolved = data.incidentsByMonitor().recentlyResolved(data.generatedAt)
 
             then("only the ones resolved within the last day are there, the monitors ordered by their names") {
                 resolved shouldBe listOf(
                     alpha to listOf(recentlyResolved.copy(id = 5)),
                     zulu to listOf(recentlyResolved),
                 )
+            }
+        }
+    }
+
+    given("the color of the incidents of a monitor") {
+        val monitor = monitor("API")
+        val monitorUnderMaintenance = monitor.copy(inMaintenance = true)
+
+        `when`("the incidents are ongoing") {
+            then("they are red, or gray like the card of the monitor if it's under maintenance") {
+                monitor.incidentStatusColor(isOngoing = true) shouldBe BG_DANGER
+                monitorUnderMaintenance.incidentStatusColor(isOngoing = true) shouldBe BG_SECONDARY
+            }
+        }
+
+        `when`("the incidents are resolved") {
+            then("they are green, even if the monitor is under maintenance") {
+                monitor.incidentStatusColor(isOngoing = false) shouldBe BG_SUCCESS
+                monitorUnderMaintenance.incidentStatusColor(isOngoing = false) shouldBe BG_SUCCESS
             }
         }
     }

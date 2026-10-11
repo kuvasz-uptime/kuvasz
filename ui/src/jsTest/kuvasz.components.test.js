@@ -3175,7 +3175,8 @@ const fakeClassList = (...initial) => {
     };
 };
 
-// The refreshed element of the page with the given accordions, each rendered open or closed by default
+// The refreshed element of the page with the given accordions, each rendered open or closed by default, with the same
+// ids and toggle targets as the ones rendered by the server
 const fakeAccordionsContent = ({accordions, dataset}) => {
     const rendered = Object.entries(accordions).map(([key, isOpenByDefault]) => {
         const attributes = {};
@@ -3183,7 +3184,7 @@ const fakeAccordionsContent = ({accordions, dataset}) => {
             key,
             attributes,
             collapse: {
-                id: `status-page-${key}-incidents-collapse`,
+                id: `status-page-${key}-collapse`,
                 dataset: {statusPageAccordion: key},
                 classList: isOpenByDefault ? fakeClassList('collapse', 'show') : fakeClassList('collapse'),
             },
@@ -3196,53 +3197,73 @@ const fakeAccordionsContent = ({accordions, dataset}) => {
     const content = {
         dataset,
         querySelectorAll: () => rendered.map(({collapse}) => collapse),
-        querySelector: (selector) => rendered.find(({collapse}) => selector.includes(collapse.id))?.toggle ?? null,
+        querySelector: (selector) =>
+            rendered.find(({collapse}) => selector === `[data-bs-target="#${collapse.id}"]`)?.toggle ?? null,
     };
     const byKey = Object.fromEntries(rendered.map((accordion) => [accordion.key, accordion]));
     return {content, byKey};
 };
 
+const ACTIVE_INCIDENTS = 'active-incidents';
+const ACTIVE_MAINTENANCE = 'active-maintenance';
+const RESOLVED_INCIDENTS = 'resolved-incidents';
+
 test('applyStatusPageAccordionsState applies the choices of the visitor to the refreshed accordions', () => {
     const {content, byKey} = fakeAccordionsContent({
-        accordions: {active: true, resolved: false},
+        accordions: {[ACTIVE_INCIDENTS]: true, [ACTIVE_MAINTENANCE]: true, [RESOLVED_INCIDENTS]: false},
         dataset: {
-            statusPageAccordionsShown: '["active","resolved"]',
-            statusPageAccordionChoices: '{"active":false,"resolved":true}',
+            statusPageAccordionsShown: JSON.stringify([ACTIVE_INCIDENTS, ACTIVE_MAINTENANCE, RESOLVED_INCIDENTS]),
+            statusPageAccordionChoices: JSON.stringify({[ACTIVE_INCIDENTS]: false, [RESOLVED_INCIDENTS]: true}),
         },
     });
 
     applyStatusPageAccordionsState(content);
 
-    assert.equal(byKey.active.collapse.classList.contains('show'), false);
-    assert.equal(byKey.active.toggle.classList.contains('collapsed'), true);
-    assert.equal(byKey.active.attributes['aria-expanded'], 'false');
-    assert.equal(byKey.resolved.collapse.classList.contains('show'), true);
-    assert.equal(byKey.resolved.toggle.classList.contains('collapsed'), false);
-    assert.equal(byKey.resolved.attributes['aria-expanded'], 'true');
-    assert.deepEqual(JSON.parse(content.dataset.statusPageAccordionChoices), {active: false, resolved: true});
+    assert.equal(byKey[ACTIVE_INCIDENTS].collapse.classList.contains('show'), false);
+    assert.equal(byKey[ACTIVE_INCIDENTS].toggle.classList.contains('collapsed'), true);
+    assert.equal(byKey[ACTIVE_INCIDENTS].attributes['aria-expanded'], 'false');
+    // Without a choice of the visitor, an accordion keeps its default
+    assert.equal(byKey[ACTIVE_MAINTENANCE].collapse.classList.contains('show'), true);
+    assert.equal(byKey[ACTIVE_MAINTENANCE].toggle.classList.contains('collapsed'), false);
+    assert.equal(byKey[ACTIVE_MAINTENANCE].attributes['aria-expanded'], 'true');
+    assert.equal(byKey[RESOLVED_INCIDENTS].collapse.classList.contains('show'), true);
+    assert.equal(byKey[RESOLVED_INCIDENTS].toggle.classList.contains('collapsed'), false);
+    assert.equal(byKey[RESOLVED_INCIDENTS].attributes['aria-expanded'], 'true');
+    assert.deepEqual(
+        JSON.parse(content.dataset.statusPageAccordionChoices),
+        {[ACTIVE_INCIDENTS]: false, [RESOLVED_INCIDENTS]: true},
+    );
 });
 
-test('applyStatusPageAccordionsState opens a new outage, but keeps the choice about the resolved incidents', () => {
+test('applyStatusPageAccordionsState opens a new outage or maintenance, but keeps the other choices', () => {
     const {content, byKey} = fakeAccordionsContent({
-        accordions: {active: true, resolved: false},
-        // The active incidents were not there before the refresh, but the visitor had closed them earlier
+        accordions: {[ACTIVE_INCIDENTS]: true, [ACTIVE_MAINTENANCE]: true, [RESOLVED_INCIDENTS]: false},
+        // The active incidents and the maintenance were not there before the refresh, but the visitor had closed them
         dataset: {
-            statusPageAccordionsShown: '["resolved"]',
-            statusPageAccordionChoices: '{"active":false,"resolved":true}',
+            statusPageAccordionsShown: JSON.stringify([RESOLVED_INCIDENTS]),
+            statusPageAccordionChoices: JSON.stringify({
+                [ACTIVE_INCIDENTS]: false,
+                [ACTIVE_MAINTENANCE]: false,
+                [RESOLVED_INCIDENTS]: true,
+            }),
         },
     });
 
     applyStatusPageAccordionsState(content);
 
-    assert.equal(byKey.active.collapse.classList.contains('show'), true);
-    assert.equal(byKey.resolved.collapse.classList.contains('show'), true);
-    assert.deepEqual(JSON.parse(content.dataset.statusPageAccordionChoices), {resolved: true});
+    assert.equal(byKey[ACTIVE_INCIDENTS].collapse.classList.contains('show'), true);
+    assert.equal(byKey[ACTIVE_MAINTENANCE].collapse.classList.contains('show'), true);
+    assert.equal(byKey[RESOLVED_INCIDENTS].collapse.classList.contains('show'), true);
+    assert.deepEqual(JSON.parse(content.dataset.statusPageAccordionChoices), {[RESOLVED_INCIDENTS]: true});
 });
 
 test('applyStatusPageAccordionsState forgets the choices about the accordions that are gone', () => {
     const {content} = fakeAccordionsContent({
         accordions: {},
-        dataset: {statusPageAccordionsShown: '["active"]', statusPageAccordionChoices: '{"active":false}'},
+        dataset: {
+            statusPageAccordionsShown: JSON.stringify([ACTIVE_INCIDENTS]),
+            statusPageAccordionChoices: JSON.stringify({[ACTIVE_INCIDENTS]: false}),
+        },
     });
 
     applyStatusPageAccordionsState(content);
@@ -3252,39 +3273,48 @@ test('applyStatusPageAccordionsState forgets the choices about the accordions th
 
 test('applyStatusPageAccordionsState keeps the defaults without any remembered state, even a broken one', () => {
     const {content, byKey} = fakeAccordionsContent({
-        accordions: {active: true, resolved: false},
+        accordions: {[ACTIVE_INCIDENTS]: true, [ACTIVE_MAINTENANCE]: true, [RESOLVED_INCIDENTS]: false},
         dataset: {statusPageAccordionChoices: '{broken'},
     });
 
     applyStatusPageAccordionsState(content);
 
-    assert.equal(byKey.active.collapse.classList.contains('show'), true);
-    assert.equal(byKey.resolved.collapse.classList.contains('show'), false);
+    assert.equal(byKey[ACTIVE_INCIDENTS].collapse.classList.contains('show'), true);
+    assert.equal(byKey[ACTIVE_MAINTENANCE].collapse.classList.contains('show'), true);
+    assert.equal(byKey[RESOLVED_INCIDENTS].collapse.classList.contains('show'), false);
 });
 
 test('rememberShownStatusPageAccordions records the accordions that are on the page before the refresh', () => {
-    const {content} = fakeAccordionsContent({accordions: {active: true, resolved: false}, dataset: {}});
+    const {content} = fakeAccordionsContent({
+        accordions: {[ACTIVE_INCIDENTS]: true, [ACTIVE_MAINTENANCE]: true, [RESOLVED_INCIDENTS]: false},
+        dataset: {},
+    });
 
     rememberShownStatusPageAccordions(content);
 
-    assert.deepEqual(JSON.parse(content.dataset.statusPageAccordionsShown), ['active', 'resolved']);
+    assert.deepEqual(
+        JSON.parse(content.dataset.statusPageAccordionsShown),
+        [ACTIVE_INCIDENTS, ACTIVE_MAINTENANCE, RESOLVED_INCIDENTS],
+    );
 });
 
 test('rememberStatusPageAccordionChoice records when the visitor opens or closes an accordion', () => {
     const content = {dataset: {}};
     const collapse = (key) => ({dataset: {statusPageAccordion: key}, closest: () => content});
 
-    rememberStatusPageAccordionChoice({type: 'hidden.bs.collapse', target: collapse('active')});
-    rememberStatusPageAccordionChoice({type: 'shown.bs.collapse', target: collapse('resolved')});
-    assert.deepEqual(JSON.parse(content.dataset.statusPageAccordionChoices), {active: false, resolved: true});
+    rememberStatusPageAccordionChoice({type: 'hidden.bs.collapse', target: collapse(ACTIVE_INCIDENTS)});
+    rememberStatusPageAccordionChoice({type: 'hidden.bs.collapse', target: collapse(ACTIVE_MAINTENANCE)});
+    rememberStatusPageAccordionChoice({type: 'shown.bs.collapse', target: collapse(RESOLVED_INCIDENTS)});
+    const expectedChoices = {[ACTIVE_INCIDENTS]: false, [ACTIVE_MAINTENANCE]: false, [RESOLVED_INCIDENTS]: true};
+    assert.deepEqual(JSON.parse(content.dataset.statusPageAccordionChoices), expectedChoices);
 
     // Any other collapsible element is ignored, just like an accordion outside the refreshed part of the page
     rememberStatusPageAccordionChoice({type: 'shown.bs.collapse', target: {dataset: {}, closest: () => content}});
     rememberStatusPageAccordionChoice({
         type: 'shown.bs.collapse',
-        target: {dataset: {statusPageAccordion: 'active'}, closest: () => null},
+        target: {dataset: {statusPageAccordion: ACTIVE_INCIDENTS}, closest: () => null},
     });
-    assert.deepEqual(JSON.parse(content.dataset.statusPageAccordionChoices), {active: false, resolved: true});
+    assert.deepEqual(JSON.parse(content.dataset.statusPageAccordionChoices), expectedChoices);
 });
 
 const withIncidentsModal = (t, {templates, isShown = false}) => {

@@ -34,33 +34,36 @@ internal val StatusPageMonitorDetailsDto.incidentsOfHistory: List<StatusPageInci
 private val StatusPageIncidentDto.isOngoing: Boolean
     get() = endedAt == null
 
-private val StatusPageIncidentDto.statusColor: CSSClass
-    get() = if (isOngoing) {
-        StatusPageAccordion.ACTIVE_INCIDENTS.statusColor
-    } else {
-        StatusPageAccordion.RESOLVED_INCIDENTS.statusColor
-    }
-
-internal fun StatusPageDataDto.ongoingIncidentsByMonitor(): IncidentsByMonitor =
-    incidentsByMonitor { incident -> incident.isOngoing }
-
-internal fun StatusPageDataDto.recentlyResolvedIncidentsByMonitor(): IncidentsByMonitor {
-    val resolvedSince = generatedAt.minusHours(RECENTLY_RESOLVED_HOURS)
-    return incidentsByMonitor { incident -> incident.endedAt?.isAfter(resolvedSince) == true }
+// An ongoing incident of a monitor under maintenance is grayed out, like the card of the monitor itself
+internal fun StatusPageMonitorDetailsDto.incidentStatusColor(isOngoing: Boolean): CSSClass = when {
+    !isOngoing -> StatusPageAccordion.RESOLVED_INCIDENTS.statusColor
+    inMaintenance -> BG_SECONDARY
+    else -> StatusPageAccordion.ACTIVE_INCIDENTS.statusColor
 }
 
-private fun StatusPageDataDto.incidentsByMonitor(predicate: (StatusPageIncidentDto) -> Boolean): IncidentsByMonitor =
+// Every monitor with the incidents of its history, ordered by the names of the monitors
+internal fun StatusPageDataDto.incidentsByMonitor(): IncidentsByMonitor =
     monitors
         .sortedBy { it.name.lowercase() }
-        .map { monitor -> monitor to monitor.incidentsOfHistory.filter(predicate) }
+        .map { monitor -> monitor to monitor.incidentsOfHistory }
+
+internal fun IncidentsByMonitor.ongoing(): IncidentsByMonitor = filterIncidents { incident -> incident.isOngoing }
+
+internal fun IncidentsByMonitor.recentlyResolved(generatedAt: OffsetDateTime): IncidentsByMonitor {
+    val resolvedSince = generatedAt.minusHours(RECENTLY_RESOLVED_HOURS)
+    return filterIncidents { incident -> incident.endedAt?.isAfter(resolvedSince) == true }
+}
+
+private fun IncidentsByMonitor.filterIncidents(predicate: (StatusPageIncidentDto) -> Boolean): IncidentsByMonitor =
+    map { (monitor, incidents) -> monitor to incidents.filter(predicate) }
         .filter { (_, incidents) -> incidents.isNotEmpty() }
 
 internal fun FlowContent.monitorIncidentsCard(
     monitor: StatusPageMonitorDetailsDto,
     incidents: List<StatusPageIncidentDto>,
-    statusColor: CSSClass,
+    isOngoing: Boolean,
 ) {
-    statusCard(statusColor, cardTestId = "status-page-monitor-incidents") {
+    statusCard(monitor.incidentStatusColor(isOngoing), cardTestId = "status-page-monitor-incidents") {
         h4 {
             classes(CARD_TITLE, MB_0)
             +monitor.name
@@ -186,8 +189,11 @@ private fun PublicTimelineNode.isResolvedNote() =
  * The badge of a monitor card counting the incidents of its history, which opens the incidents modal, filled from the
  * template of the monitor, see [monitorIncidentsTemplate]. Nothing is rendered without incidents.
  */
-internal fun FlowContent.monitorIncidentsBadge(monitor: StatusPageMonitorDetailsDto, historyDays: Int) {
-    val incidents = monitor.incidentsOfHistory
+internal fun FlowContent.monitorIncidentsBadge(
+    monitor: StatusPageMonitorDetailsDto,
+    incidents: List<StatusPageIncidentDto>,
+    historyDays: Int,
+) {
     if (incidents.isEmpty()) return
     a(href = "#") {
         classes(TEXT_RESET)
@@ -208,8 +214,11 @@ internal fun FlowContent.monitorIncidentsBadge(monitor: StatusPageMonitorDetails
  * together with the page, and copied into the modal (which is outside the refreshed part of the page, so it stays
  * open) when it's opened, and after every refresh while it's open.
  */
-internal fun FlowContent.monitorIncidentsTemplate(monitor: StatusPageMonitorDetailsDto, historyDays: Int) {
-    val incidents = monitor.incidentsOfHistory
+internal fun FlowContent.monitorIncidentsTemplate(
+    monitor: StatusPageMonitorDetailsDto,
+    incidents: List<StatusPageIncidentDto>,
+    historyDays: Int,
+) {
     if (incidents.isEmpty()) return
     templateTag {
         attributes["data-incidents-of"] = monitor.incidentsKey
@@ -230,7 +239,7 @@ internal fun FlowContent.monitorIncidentsTemplate(monitor: StatusPageMonitorDeta
             testId("status-page-incidents-modal-body")
             incidents.forEach { incident ->
                 statusCard(
-                    statusColor = incident.statusColor,
+                    statusColor = monitor.incidentStatusColor(incident.isOngoing),
                     cardTestId = "status-page-incident-card",
                 ) {
                     publicIncident(incident)

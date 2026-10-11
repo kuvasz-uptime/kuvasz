@@ -165,6 +165,7 @@ private fun FlowContent.monitorCardGrid(monitors: List<StatusPageMonitorDetailsD
 }
 
 private fun FlowContent.monitorCard(monitor: StatusPageMonitorDetailsDto, historyDays: Int) {
+    val incidents = monitor.incidentsOfHistory
     div {
         classes(CARD)
         testId("status-monitor-card")
@@ -196,7 +197,7 @@ private fun FlowContent.monitorCard(monitor: StatusPageMonitorDetailsDto, histor
             div {
                 classes(D_FLEX, FLEX_WRAP, ALIGN_ITEMS_CENTER, GAP_2, MB_3)
                 testId("monitor-badges")
-                monitorIncidentsBadge(monitor, historyDays)
+                monitorIncidentsBadge(monitor, incidents, historyDays)
                 lastCheckBadge(monitor)
                 if (monitor is WithLatency) {
                     monitor.averageLatencyInMs?.let { avgLatency ->
@@ -213,7 +214,7 @@ private fun FlowContent.monitorCard(monitor: StatusPageMonitorDetailsDto, histor
                 classes(TRACKING)
                 monitor.uptimeStatusHistory.forEach { trackingBlock(it) }
             }
-            monitorIncidentsTemplate(monitor, historyDays)
+            monitorIncidentsTemplate(monitor, incidents, historyDays)
         }
     }
 }

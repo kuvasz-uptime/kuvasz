@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.ui.fragments.statuspage
 
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageMaintenanceWindowDto
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
+import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
