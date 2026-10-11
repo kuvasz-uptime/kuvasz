@@ -30,8 +30,8 @@ internal fun FlowContent.incidentNoteModal(modalId: String, incident: IncidentDt
         classes(MODAL, MODAL_BLUR, ROUNDED, BG_SURFACE_BACKDROP)
         testId("incident-note-modal")
         xData("incidentNoteForm('${incident.incidentType.name}', ${incident.eventId}, $serializedErrorMessages)")
-        attributes["@$NOTE_MODAL_CLOSED_EVENT.window"] = "resetState()"
-        attributes["@$EDIT_INCIDENT_NOTE_EVENT.window"] = "editFrom(\$event.detail)"
+        xOn("$NOTE_MODAL_CLOSED_EVENT.window", "resetState()")
+        xOn("$EDIT_INCIDENT_NOTE_EVENT.window", "editFrom(\$event.detail)")
         tabIndex = "-1"
         role = "dialog"
 

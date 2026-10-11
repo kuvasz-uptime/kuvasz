@@ -31,7 +31,7 @@ internal fun FlowContent.importModal(
         id = modalId
         classes(MODAL, MODAL_BLUR, ROUNDED, BG_SURFACE_BACKDROP)
         xData(alpineForm)
-        attributes["@$closedEventName.window"] = "resetState()"
+        xOn("$closedEventName.window", "resetState()")
         tabIndex = "-1"
         role = "dialog"
 
