@@ -622,6 +622,7 @@ class StatusPageControllerTest(
                     ),
                     displayCategories = false,
                     themeBase = ThemeBase.ZINC,
+                    historyDays = 7,
                     activeMaintenanceWindows = listOf(
                         StatusPageMaintenanceWindowDto(
                             name = "Ongoing maintenance",
@@ -664,6 +665,7 @@ class StatusPageControllerTest(
                     response.categoryStatus shouldBe mockDataResponse.categoryStatus
                     response.displayCategories shouldBe false
                     response.themeBase shouldBe ThemeBase.ZINC
+                    response.historyDays shouldBe 7
 
                     response.systemStatus shouldBe mockDataResponse.systemStatus
                     response.generatedAt shouldBe mockDataResponse.generatedAt

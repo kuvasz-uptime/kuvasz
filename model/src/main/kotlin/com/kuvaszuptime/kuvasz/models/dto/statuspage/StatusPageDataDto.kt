@@ -18,12 +18,12 @@ data class StatusPageDataDto(
     val systemStatus: SystemStatus,
     val generatedAt: OffsetDateTime,
     val monitors: List<StatusPageMonitorDetailsDto>,
-    val categoryStatus: List<CategoryStatusDto> = emptyList(),
-    val activeMaintenanceWindows: List<StatusPageMaintenanceWindowDto> = emptyList(),
-    val upcomingMaintenanceWindows: List<StatusPageMaintenanceWindowDto> = emptyList(),
-    val displayCategories: Boolean = StatusPageDefaults.DISPLAY_CATEGORIES,
-    val themeBase: ThemeBase = ThemeBase.DEFAULT,
-    val historyDays: Int = StatusPageDefaults.HISTORY_DAYS,
+    val categoryStatus: List<CategoryStatusDto>,
+    val activeMaintenanceWindows: List<StatusPageMaintenanceWindowDto>,
+    val upcomingMaintenanceWindows: List<StatusPageMaintenanceWindowDto>,
+    val displayCategories: Boolean,
+    val themeBase: ThemeBase,
+    val historyDays: Int,
 )
 
 /**
