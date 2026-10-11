@@ -252,6 +252,9 @@ const refreshDockerMonitorList = () => sendHtmxEvent('#docker-monitors-list', 'r
 // Refreshes the status page list by triggering an HTMX event
 const refreshStatusPageList = () => sendHtmxEvent('#status-page-list', 'refresh-status-page-list');
 
+// Refreshes the incident list by triggering an HTMX event
+const refreshIncidentList = () => sendHtmxEvent('#incident-list', 'refresh-incident-list');
+
 // Refreshes the dashboard by triggering an HTMX event
 const refreshDashboard = () => sendHtmxEvent('#dashboard-overview', 'refresh-dashboard');
 

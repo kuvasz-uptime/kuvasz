@@ -35,7 +35,7 @@
 # Code style guidelines & gotchas
 
 - Use `/** ... **/` ONLY over methods and classes, for inline comments use `// ...`
-- Be sparse with comments in general, only make one when it's really necessary to explain something that is not obvious from the code itself
+- Be sparse with comments in general: no obvious comments that repeat what the code (or its naming) already says. Only comment complex stuff, i.e. something that is not obvious from the code itself (a non-trivial reason, a workaround, a gotcha)
 - `DSLContext` should be reused from
   `Database*Spec` base classes when it's possible, instead of injecting a new one into the class
 - Tests should not depend on each other (except the existing cases and where it is really necessary)

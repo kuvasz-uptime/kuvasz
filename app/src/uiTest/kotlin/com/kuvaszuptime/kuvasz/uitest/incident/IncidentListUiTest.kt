@@ -12,6 +12,7 @@ import com.kuvaszuptime.kuvasz.uitest.PlaywrightSupport
 import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
 import com.kuvaszuptime.kuvasz.uitest.pages.incident.IncidentListPage
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import com.microsoft.playwright.Locator
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import io.kotest.matchers.doubles.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -67,6 +68,31 @@ class IncidentListUiTest(
             incidents.filterByType("")
             assertThat(page).hasURL(Pattern.compile(".*/incidents\\?period=PT720H$"))
             assertThat(incidents.rows).hasCount(2)
+        }
+
+        "the refresh button reloads the list in place, keeping the filters" {
+            createIncidents()
+
+            val page = newPage()
+            val incidents = IncidentListPage(page)
+            incidents.navigate("?type=http")
+            assertThat(incidents.rows).hasCount(1)
+            assertThat(incidents.count).hasText(Messages.incidentListCount(1))
+
+            createHttpUptimeEventRecord(
+                dslContext,
+                monitorId = createHttpMonitor(httpMonitorRepository, monitorName = "New HTTP Incident Monitor").id,
+                status = UptimeStatus.DOWN,
+                startedAt = getCurrentTimestamp(),
+                endedAt = null,
+            )
+            incidents.refreshButton.click()
+
+            assertThat(incidents.rows).hasCount(2)
+            val newRow = incidents.rows.filter(Locator.FilterOptions().setHasText("New HTTP Incident Monitor"))
+            assertThat(newRow).hasCount(1)
+            assertThat(incidents.count).hasText(Messages.incidentListCount(2))
+            assertThat(page).hasURL(Pattern.compile(".*/incidents\\?type=http$"))
         }
 
         "an incident of the list leads to its details page" {

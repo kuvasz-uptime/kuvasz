@@ -16,7 +16,6 @@ import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.PathVariable
 import io.micronaut.http.annotation.Produces
 import io.micronaut.http.annotation.QueryValue
-import io.micronaut.http.server.exceptions.NotFoundException
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.annotation.ExecuteOn
 import io.swagger.v3.oas.annotations.Hidden
@@ -33,33 +32,31 @@ class WebUIIncidentController(
     @Get("/")
     @WebSecured
     @Produces(MediaType.TEXT_HTML)
-    @ExecuteOn(TaskExecutors.BLOCKING)
-    fun incidents(@QueryValue period: Duration?, @QueryValue type: String?): String {
-        val effectivePeriod = period ?: Duration.ofDays(UIDefaults.INCIDENTS_PERIOD_DAYS)
-        // An unknown type is ignored, like an absent one, so a stale link still shows something
-        val selectedType = type?.let { IncidentType.fromNameOrNull(it) }
+    fun incidents(@QueryValue period: Duration?, @QueryValue type: IncidentType?): String =
+        renderIncidentsPage(globals = appGlobals, period = period.orDefaultIncidentsPeriod(), selectedType = type)
 
-        return renderIncidentsPage(
-            globals = appGlobals,
-            period = effectivePeriod,
-            selectedType = selectedType,
-            incidents = incidentRepository.getIncidents(
+    @Get("/fragments/list")
+    @WebSecured
+    @Produces(MediaType.TEXT_HTML)
+    @ExecuteOn(TaskExecutors.BLOCKING)
+    fun incidentList(@QueryValue period: Duration?, @QueryValue type: IncidentType?): String =
+        renderIncidentList(
+            incidentRepository.getIncidents(
                 monitorId = null,
-                period = effectivePeriod,
+                period = period.orDefaultIncidentsPeriod(),
                 includeResolved = true,
-                types = selectedType?.let { setOf(it) },
+                types = type?.let { setOf(it) },
             )
         )
-    }
 
     @Get("/{incidentType}/{eventId}")
     @WebSecured
     @Produces(MediaType.TEXT_HTML)
     @ExecuteOn(TaskExecutors.BLOCKING)
-    fun incidentDetails(@PathVariable incidentType: String, @PathVariable eventId: Long): String =
+    fun incidentDetails(@PathVariable incidentType: IncidentType, @PathVariable eventId: Long): String =
         renderIncidentDetailsPage(
             globals = appGlobals,
-            details = incidentActions.getIncidentDetails(incidentType.toIncidentType(), eventId),
+            details = incidentActions.getIncidentDetails(incidentType, eventId),
         )
 
     @Get("/fragments/details/{incidentType}/{eventId}")
@@ -67,10 +64,10 @@ class WebUIIncidentController(
     @Produces(MediaType.TEXT_HTML)
     @ExecuteOn(TaskExecutors.BLOCKING)
     fun incidentDetailsFragment(
-        @PathVariable incidentType: String,
+        @PathVariable incidentType: IncidentType,
         @PathVariable eventId: Long,
     ): HttpResponse<String> {
-        val details = incidentActions.getIncidentDetails(incidentType.toIncidentType(), eventId)
+        val details = incidentActions.getIncidentDetails(incidentType, eventId)
         val response = HttpResponse.ok(renderIncidentDetailsFragment(appGlobals, details))
 
         // A resolved incident never changes again, so htmx is told to stop polling, after swapping in this response
@@ -81,7 +78,8 @@ class WebUIIncidentController(
         }
     }
 
-    private fun String.toIncidentType(): IncidentType = IncidentType.fromNameOrNull(this) ?: throw NotFoundException()
+    private fun Duration?.orDefaultIncidentsPeriod(): Duration =
+        this ?: Duration.ofDays(UIDefaults.INCIDENTS_PERIOD_DAYS)
 
     companion object {
         private const val HTMX_STOP_POLLING_STATUS = 286

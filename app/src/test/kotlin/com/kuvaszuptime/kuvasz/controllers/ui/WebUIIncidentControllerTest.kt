@@ -16,6 +16,8 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.repositories.DockerMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
+import com.kuvaszuptime.kuvasz.util.UIDefaults
+import com.kuvaszuptime.kuvasz.util.formatAsSimpleInterval
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -31,6 +33,7 @@ import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import kotlinx.coroutines.reactive.awaitFirst
+import java.time.Duration
 
 /**
  * The incident pages of the web UI, requested over the wire the same way as a browser does, so the binding of the
@@ -70,29 +73,55 @@ class WebUIIncidentControllerTest(
                 )
             }
 
-            `when`("it's filtered by a type") {
-                createIncidents()
+            `when`("the page is requested without filters") {
+                val html = get("/incidents")
 
+                then("the list is loaded from the fragment with the default period, and no period is in the title") {
+                    val defaultPeriod = Duration.ofDays(UIDefaults.INCIDENTS_PERIOD_DAYS)
+                    html shouldContain """hx-get="/incidents/fragments/list?period=$defaultPeriod""""
+                    html shouldContain """<option value="" selected="selected">"""
+                    html shouldContain """data-testid="incident-list-refresh-button""""
+                    html shouldNotContain Messages.lastX(defaultPeriod.formatAsSimpleInterval())
+                }
+            }
+
+            `when`("the page is filtered by a type and a period") {
                 val html = get("/incidents?type=docker&period=P1D")
 
-                then("only the incidents of that type are listed, and both filters keep their values") {
-                    html shouldContain ">docker-monitor<"
-                    html shouldNotContain ">http-monitor<"
-                    html shouldContain ">${Messages.incidentListCount(1)}<"
+                then("both filters keep their values, and the list is loaded with them") {
                     html shouldContain """<option value="docker" selected="selected">"""
                     html shouldContain """<option value="PT24H" selected="selected">"""
+                    html shouldContain """hx-get="/incidents/fragments/list?period=PT24H&amp;type=docker""""
+                }
+            }
+
+            `when`("the list is filtered by a type") {
+                createIncidents()
+
+                val html = get("/incidents/fragments/list?type=docker&period=P1D")
+
+                then("only the incidents of that type are listed, and the toolbar's count is swapped out of band") {
+                    html shouldContain ">docker-monitor<"
+                    html shouldNotContain ">http-monitor<"
+                    html shouldContain """data-testid="incident-count" hx-swap-oob="outerHTML""""
+                    html shouldContain ">${Messages.incidentListCount(1)}<"
+                }
+            }
+
+            `when`("the list is empty") {
+                val html = get("/incidents/fragments/list")
+
+                then("the empty state is shown with a zero count") {
+                    html shouldContain """data-testid="empty-state""""
+                    html shouldContain ">${Messages.incidentListCount(0)}<"
                 }
             }
 
             `when`("the type filter is unknown") {
-                createIncidents()
 
-                val html = get("/incidents?type=foo")
-
-                then("nothing is filtered out") {
-                    html shouldContain ">docker-monitor<"
-                    html shouldContain ">http-monitor<"
-                    html shouldContain """<option value="" selected="selected">"""
+                then("a 400 is returned") {
+                    statusOf("/incidents?type=foo") shouldBe HttpStatus.BAD_REQUEST
+                    statusOf("/incidents/fragments/list?type=foo") shouldBe HttpStatus.BAD_REQUEST
                 }
             }
 
@@ -106,7 +135,7 @@ class WebUIIncidentControllerTest(
                     endedAt = null,
                 )
 
-                val html = get("/incidents")
+                val html = get("/incidents/fragments/list")
 
                 then("its row links to its details page") {
                     html shouldContain """href="/incidents/http/${event.id}""""
@@ -297,8 +326,7 @@ class WebUIIncidentControllerTest(
                     endedAt = null,
                 )
 
-                then("a 404 is returned, for an unknown type, a missing event, and an event that is not an incident") {
-                    statusOf("/incidents/foo/${upEvent.id}") shouldBe HttpStatus.NOT_FOUND
+                then("a 404 is returned, for a missing event, and an event that is not an incident") {
                     statusOf("/incidents/http/${upEvent.id + 1}") shouldBe HttpStatus.NOT_FOUND
                     statusOf("/incidents/http/${upEvent.id}") shouldBe HttpStatus.NOT_FOUND
                 }
@@ -375,7 +403,14 @@ class WebUIIncidentControllerTest(
 
                 then("a 404 is returned") {
                     statusOf("/incidents/fragments/details/http/1234") shouldBe HttpStatus.NOT_FOUND
-                    statusOf("/incidents/fragments/details/foo/1234") shouldBe HttpStatus.NOT_FOUND
+                }
+            }
+
+            `when`("the incident type is unknown") {
+
+                then("a 400 is returned") {
+                    statusOf("/incidents/foo/1234") shouldBe HttpStatus.BAD_REQUEST
+                    statusOf("/incidents/fragments/details/foo/1234") shouldBe HttpStatus.BAD_REQUEST
                 }
             }
         }
