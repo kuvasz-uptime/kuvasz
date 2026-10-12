@@ -10,6 +10,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.MsTeamsNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
 import com.kuvaszuptime.kuvasz.models.handlers.PushoverNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.SlackBotNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookHttpMethod
@@ -20,6 +21,7 @@ import com.kuvaszuptime.kuvasz.services.integrations.GenericWebhookService
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.integrations.MsTeamsWebhookService
 import com.kuvaszuptime.kuvasz.services.integrations.PushoverService
+import com.kuvaszuptime.kuvasz.services.integrations.SlackBotService
 import com.kuvaszuptime.kuvasz.services.integrations.TestableNotificationService
 import com.kuvaszuptime.kuvasz.testAppContext
 import com.kuvaszuptime.kuvasz.testutils.SMTPTest
@@ -50,10 +52,10 @@ class IntegrationBootstrappingTest : StringSpec({
         val ctx = testAppContext("full-integrations-setup")
 
         with(ctx.getBean<IntegrationRepository>()) {
-            configuredIntegrations shouldHaveSize 30
-            enabledIntegrations shouldHaveSize 21
-            enabledIntegrationsByType shouldHaveSize 9
-            globallyEnabledIntegrationsByType shouldHaveSize 9
+            configuredIntegrations shouldHaveSize 34
+            enabledIntegrations shouldHaveSize 24
+            enabledIntegrationsByType shouldHaveSize 10
+            globallyEnabledIntegrationsByType shouldHaveSize 10
 
             // Check that all integrations are loaded correctly
             with(configuredIntegrations) {
@@ -255,6 +257,50 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.name shouldBe "disabled"
                     config.type shouldBe IntegrationType.PAGERDUTY
                     config.integrationKey shouldBe "fedcba0987654321fedcba0987654321"
+                    config.enabled shouldBe false
+                    config.global shouldBe false
+                }
+                // Slack Bot
+                forOne { implicitlyEnabledSlackBot ->
+                    implicitlyEnabledSlackBot.key shouldBe
+                        IntegrationID(IntegrationType.SLACK_BOT, "test_implicitly_enabled")
+                    val config = implicitlyEnabledSlackBot.value as SlackBotNotificationConfig
+                    config.name shouldBe "test_implicitly_enabled"
+                    config.type shouldBe IntegrationType.SLACK_BOT
+                    config.botToken shouldBe "xoxb-implicitly-enabled"
+                    config.channelId shouldBe "C0IMPLICIT"
+                    config.downReaction.shouldBeNull()
+                    config.upReaction.shouldBeNull()
+                    config.enabled shouldBe true
+                    config.global shouldBe false
+                }
+                forOne { globallyEnabledSlackBot ->
+                    globallyEnabledSlackBot.key shouldBe IntegrationID(IntegrationType.SLACK_BOT, "global")
+                    val config = globallyEnabledSlackBot.value as SlackBotNotificationConfig
+                    config.name shouldBe "global"
+                    config.type shouldBe IntegrationType.SLACK_BOT
+                    config.botToken shouldBe "xoxb-global"
+                    config.channelId shouldBe "C0GLOBAL"
+                    config.downReaction shouldBe "rotating_light"
+                    config.upReaction shouldBe ":white_check_mark:"
+                    config.enabled shouldBe true
+                    config.global shouldBe true
+                }
+                forOne { excludingSlackBot ->
+                    excludingSlackBot.key shouldBe IntegrationID(IntegrationType.SLACK_BOT, "excluding_http_down")
+                    val config = excludingSlackBot.value as SlackBotNotificationConfig
+                    config.channelId shouldBe "C0EXCLUDING"
+                    config.excludedEvents shouldBe listOf(IntegrationEventType.HTTP_DOWN)
+                    config.enabled shouldBe true
+                    config.global shouldBe false
+                }
+                forOne { disabledSlackBot ->
+                    disabledSlackBot.key shouldBe IntegrationID(IntegrationType.SLACK_BOT, "disabled")
+                    val config = disabledSlackBot.value as SlackBotNotificationConfig
+                    config.name shouldBe "disabled"
+                    config.type shouldBe IntegrationType.SLACK_BOT
+                    config.botToken shouldBe "xoxb-disabled"
+                    config.channelId shouldBe "C0DISABLED"
                     config.enabled shouldBe false
                     config.global shouldBe false
                 }
@@ -516,6 +562,32 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.enabled shouldBe true
                     config.global shouldBe true
                 }
+                // Slack Bot
+                forOne { implicitlyEnabledSlackBot ->
+                    implicitlyEnabledSlackBot.key shouldBe
+                        IntegrationID(IntegrationType.SLACK_BOT, "test_implicitly_enabled")
+                    val config = implicitlyEnabledSlackBot.value as SlackBotNotificationConfig
+                    config.name shouldBe "test_implicitly_enabled"
+                    config.type shouldBe IntegrationType.SLACK_BOT
+                    config.botToken shouldBe "xoxb-implicitly-enabled"
+                    config.channelId shouldBe "C0IMPLICIT"
+                    config.downReaction.shouldBeNull()
+                    config.upReaction.shouldBeNull()
+                    config.enabled shouldBe true
+                    config.global shouldBe false
+                }
+                forOne { globallyEnabledSlackBot ->
+                    globallyEnabledSlackBot.key shouldBe IntegrationID(IntegrationType.SLACK_BOT, "global")
+                    val config = globallyEnabledSlackBot.value as SlackBotNotificationConfig
+                    config.name shouldBe "global"
+                    config.type shouldBe IntegrationType.SLACK_BOT
+                    config.botToken shouldBe "xoxb-global"
+                    config.channelId shouldBe "C0GLOBAL"
+                    config.downReaction shouldBe "rotating_light"
+                    config.upReaction shouldBe ":white_check_mark:"
+                    config.enabled shouldBe true
+                    config.global shouldBe true
+                }
                 // Telegram
                 forOne { implicitlyEnabledTelegram ->
                     implicitlyEnabledTelegram.key shouldBe IntegrationID(
@@ -579,6 +651,7 @@ class IntegrationBootstrappingTest : StringSpec({
 
             // Enabled integrations by type
             enabledIntegrationsByType[IntegrationType.SLACK].shouldNotBeNull().shouldHaveSize(2)
+            enabledIntegrationsByType[IntegrationType.SLACK_BOT].shouldNotBeNull().shouldHaveSize(3)
             enabledIntegrationsByType[IntegrationType.MS_TEAMS].shouldNotBeNull().shouldHaveSize(2)
             enabledIntegrationsByType[IntegrationType.APPRISE].shouldNotBeNull().shouldHaveSize(2)
             enabledIntegrationsByType[IntegrationType.PUSHOVER].shouldNotBeNull().shouldHaveSize(2)
@@ -592,6 +665,15 @@ class IntegrationBootstrappingTest : StringSpec({
                 name shouldBe "Global2"
                 enabled shouldBe true
                 webhookUrl shouldBe "https://hooks.slack.com/services/T00000000/B00000000/YYYYYYYYYY"
+            }
+
+            with(
+                globallyEnabledIntegrationsByType[IntegrationType.SLACK_BOT]?.single() as SlackBotNotificationConfig
+            ) {
+                name shouldBe "global"
+                enabled shouldBe true
+                botToken shouldBe "xoxb-global"
+                channelId shouldBe "C0GLOBAL"
             }
 
             with(
@@ -673,6 +755,7 @@ class IntegrationBootstrappingTest : StringSpec({
         testServices.forNone { it should beInstanceOf<MsTeamsWebhookService>() }
         testServices.forNone { it should beInstanceOf<AppriseService>() }
         testServices.forNone { it should beInstanceOf<PushoverService>() }
+        testServices.forNone { it should beInstanceOf<SlackBotService>() }
         testServices.forNone { it should beInstanceOf<GenericWebhookService>() }
     }
 
@@ -739,6 +822,24 @@ class IntegrationBootstrappingTest : StringSpec({
             IntegrationValidationMessages.SLACK_WEBHOOK_URL_NOT_BLANK
     }
 
+    "app should not start if a Slack Bot config has a blank bot token" {
+        val ex = shouldThrow<BeanInstantiationException> {
+            testAppContext("invalid-slack-bot-token")
+        }
+
+        ex.message shouldContain "SlackBotNotificationConfig.getBotToken - " +
+            IntegrationValidationMessages.SLACK_BOT_TOKEN_NOT_BLANK
+    }
+
+    "app should not start if a Slack Bot config has a blank channel ID" {
+        val ex = shouldThrow<BeanInstantiationException> {
+            testAppContext("invalid-slack-bot-channel")
+        }
+
+        ex.message shouldContain "SlackBotNotificationConfig.getChannelId - " +
+            IntegrationValidationMessages.SLACK_BOT_CHANNEL_ID_NOT_BLANK
+    }
+
     "app should not start if a Pushover config has a too short emergency retry" {
         val ex = shouldThrow<BeanInstantiationException> {
             testAppContext("invalid-pushover-retry")
@@ -796,10 +897,10 @@ class IntegrationBootstrappingWithoutSMTPTest : StringSpec({
         val ctx = testAppContext("full-integrations-setup")
 
         with(ctx.getBean<IntegrationRepository>()) {
-            configuredIntegrations shouldHaveSize 30
-            enabledIntegrations shouldHaveSize 19 // Email configs should not be enabled without SMTP config
-            enabledIntegrationsByType shouldHaveSize 8 // Email type should not be present
-            globallyEnabledIntegrationsByType shouldHaveSize 8 // Email type should not be present
+            configuredIntegrations shouldHaveSize 34
+            enabledIntegrations shouldHaveSize 22 // Email configs should not be enabled without SMTP config
+            enabledIntegrationsByType shouldHaveSize 9 // Email type should not be present
+            globallyEnabledIntegrationsByType shouldHaveSize 9 // Email type should not be present
 
             // Check that Email configs are not loaded as enabled
             val implicitlyEnabledId = IntegrationID(IntegrationType.EMAIL, "test_implicitly_enabled")

@@ -2,7 +2,7 @@ package com.kuvaszuptime.kuvasz.services.integrations
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.handlers.DiscordNotificationConfig
-import com.kuvaszuptime.kuvasz.models.handlers.DiscordWebhookMessage
+import com.kuvaszuptime.kuvasz.models.handlers.discord.DiscordWebhookMessage
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe

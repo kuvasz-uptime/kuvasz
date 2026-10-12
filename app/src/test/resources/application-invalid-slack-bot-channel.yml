@@ -1,0 +1,5 @@
+integrations:
+  slack-bot:
+    - name: slack_bot_test
+      bot-token: xoxb-test
+      channel-id: ''

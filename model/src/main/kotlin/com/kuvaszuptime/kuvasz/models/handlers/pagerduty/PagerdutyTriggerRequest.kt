@@ -1,4 +1,4 @@
-package com.kuvaszuptime.kuvasz.models.handlers
+package com.kuvaszuptime.kuvasz.models.handlers.pagerduty
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonValue

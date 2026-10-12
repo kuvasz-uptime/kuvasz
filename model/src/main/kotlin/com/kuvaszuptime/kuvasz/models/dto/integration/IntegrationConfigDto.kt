@@ -11,6 +11,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.MsTeamsNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
 import com.kuvaszuptime.kuvasz.models.handlers.PushoverNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.SlackBotNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookHttpMethod
@@ -21,6 +22,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 @Schema(
     oneOf = [
         SlackNotificationConfigDto::class,
+        SlackBotNotificationConfigDto::class,
         DiscordNotificationConfigDto::class,
         MsTeamsNotificationConfigDto::class,
         AppriseNotificationConfigDto::class,
@@ -40,6 +42,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 )
 @JsonSubTypes(
     JsonSubTypes.Type(value = SlackNotificationConfigDto::class, name = "SLACK"),
+    JsonSubTypes.Type(value = SlackBotNotificationConfigDto::class, name = "SLACK_BOT"),
     JsonSubTypes.Type(value = DiscordNotificationConfigDto::class, name = "DISCORD"),
     JsonSubTypes.Type(value = MsTeamsNotificationConfigDto::class, name = "MS_TEAMS"),
     JsonSubTypes.Type(value = AppriseNotificationConfigDto::class, name = "APPRISE"),
@@ -79,6 +82,39 @@ data class SlackNotificationConfigDto(
         enabled = config.enabled,
         global = config.global,
         excludedEvents = config.excludedEvents.orEmpty(),
+    )
+}
+
+@Introspected
+data class SlackBotNotificationConfigDto(
+    override val id: IntegrationID,
+    @param:Schema(description = IntegrationDocs.TYPE, required = true)
+    override val type: IntegrationType,
+    @param:Schema(description = IntegrationDocs.NAME, required = true)
+    override val name: String,
+    @param:Schema(description = IntegrationDocs.ENABLED, required = true)
+    override val enabled: Boolean,
+    @param:Schema(description = IntegrationDocs.GLOBAL, required = true)
+    override val global: Boolean,
+    @param:Schema(description = IntegrationDocs.EXCLUDED_EVENTS, required = true)
+    override val excludedEvents: List<IntegrationEventType>,
+    @param:Schema(description = "The ID of the Slack channel the notifications are posted to", required = true)
+    val channelId: String,
+    @param:Schema(description = "The emoji reaction added to the message of an incident while it is ongoing")
+    val downReaction: String?,
+    @param:Schema(description = "The emoji reaction added to the message of an incident once it is resolved")
+    val upReaction: String?,
+) : IntegrationConfigDto {
+    constructor(integrationID: IntegrationID, config: SlackBotNotificationConfig) : this(
+        id = integrationID,
+        type = integrationID.type,
+        name = config.name,
+        enabled = config.enabled,
+        global = config.global,
+        excludedEvents = config.excludedEvents.orEmpty(),
+        channelId = config.channelId,
+        downReaction = config.downReaction,
+        upReaction = config.upReaction,
     )
 }
 

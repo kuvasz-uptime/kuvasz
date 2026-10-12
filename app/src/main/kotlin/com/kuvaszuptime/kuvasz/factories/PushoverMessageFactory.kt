@@ -7,10 +7,10 @@ import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.StructuredDnsMonitorDownMessage
 import com.kuvaszuptime.kuvasz.models.events.StructuredDnsMonitorUpMessage
-import com.kuvaszuptime.kuvasz.models.events.StructuredDockerMonitorDownMessage
-import com.kuvaszuptime.kuvasz.models.events.StructuredDockerMonitorUpMessage
 import com.kuvaszuptime.kuvasz.models.events.StructuredDnsRecordsChangedMessage
 import com.kuvaszuptime.kuvasz.models.events.StructuredDockerContainerRestartedMessage
+import com.kuvaszuptime.kuvasz.models.events.StructuredDockerMonitorDownMessage
+import com.kuvaszuptime.kuvasz.models.events.StructuredDockerMonitorUpMessage
 import com.kuvaszuptime.kuvasz.models.events.StructuredHttpMonitorUpMessage
 import com.kuvaszuptime.kuvasz.models.events.StructuredIcmpMonitorDownMessage
 import com.kuvaszuptime.kuvasz.models.events.StructuredIcmpMonitorUpMessage
@@ -31,9 +31,9 @@ import com.kuvaszuptime.kuvasz.models.events.formatters.Emoji
 import com.kuvaszuptime.kuvasz.models.events.formatters.MessageSeverity
 import com.kuvaszuptime.kuvasz.models.events.formatters.getEmoji
 import com.kuvaszuptime.kuvasz.models.events.formatters.toSeverity
-import com.kuvaszuptime.kuvasz.models.handlers.PushoverMessage
 import com.kuvaszuptime.kuvasz.models.handlers.PushoverNotificationConfig
-import com.kuvaszuptime.kuvasz.models.handlers.PushoverPriority
+import com.kuvaszuptime.kuvasz.models.handlers.pushover.PushoverMessage
+import com.kuvaszuptime.kuvasz.models.handlers.pushover.PushoverPriority
 import com.kuvaszuptime.kuvasz.util.AppInfo
 import io.micronaut.context.annotation.Requires
 import jakarta.inject.Singleton

@@ -14,6 +14,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
 import com.kuvaszuptime.kuvasz.models.handlers.PushoverNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.SlackBotNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
@@ -26,6 +27,7 @@ import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.integrations.NotificationTestResult
 import com.kuvaszuptime.kuvasz.services.integrations.PagerdutyTestService
 import com.kuvaszuptime.kuvasz.services.integrations.PushoverService
+import com.kuvaszuptime.kuvasz.services.integrations.SlackBotService
 import com.kuvaszuptime.kuvasz.services.integrations.SlackWebhookService
 import com.kuvaszuptime.kuvasz.services.integrations.TelegramAPIService
 import com.kuvaszuptime.kuvasz.services.integrations.TestableNotificationService
@@ -87,6 +89,7 @@ class IntegrationController(
             is EmailNotificationConfig -> sendTestMessage<EmailNotificationConfig, EmailTestService>(config)
             is PagerdutyConfig -> sendTestMessage<PagerdutyConfig, PagerdutyTestService>(config)
             is SlackNotificationConfig -> sendTestMessage<SlackNotificationConfig, SlackWebhookService>(config)
+            is SlackBotNotificationConfig -> sendTestMessage<SlackBotNotificationConfig, SlackBotService>(config)
             is TelegramNotificationConfig -> sendTestMessage<TelegramNotificationConfig, TelegramAPIService>(config)
             is WebhookNotificationConfig -> sendTestMessage<WebhookNotificationConfig, GenericWebhookService>(config)
         }

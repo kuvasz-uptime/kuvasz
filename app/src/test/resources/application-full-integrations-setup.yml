@@ -8,6 +8,25 @@ integrations:
     - name: disabled
       webhook-url: https://hooks.slack.com/services/T00000000/B00000000/ZZZZZZZZZZ
       enabled: false
+  slack-bot:
+    - name: test_implicitly_enabled
+      bot-token: xoxb-implicitly-enabled
+      channel-id: C0IMPLICIT
+    - name: global
+      bot-token: xoxb-global
+      channel-id: C0GLOBAL
+      global: true
+      down-reaction: rotating_light
+      up-reaction: ':white_check_mark:'
+    - name: disabled
+      bot-token: xoxb-disabled
+      channel-id: C0DISABLED
+      enabled: false
+    - name: excluding_http_down
+      bot-token: xoxb-excluding
+      channel-id: C0EXCLUDING
+      excluded-events:
+        - HTTP_DOWN
   discord:
     - name: test_implicitly_enabled
       webhook-url: https://discord.com/api/webhooks/123456789/abcdef1234567890abcdef1234567890

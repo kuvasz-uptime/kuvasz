@@ -108,6 +108,7 @@ internal val IntegrationType.icon: Icon
     get() = when (this) {
         IntegrationType.EMAIL -> Icon.ENVELOPE
         IntegrationType.SLACK -> Icon.BRAND_SLACK
+        IntegrationType.SLACK_BOT -> Icon.BRAND_SLACK
         IntegrationType.DISCORD -> Icon.BRAND_DISCORD
         IntegrationType.MS_TEAMS -> Icon.BRAND_MS_TEAMS
         IntegrationType.APPRISE -> Icon.SPEAKERPHONE

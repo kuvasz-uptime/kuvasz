@@ -1,4 +1,5 @@
 integrations:
+  slack-bot:
   ms-teams:
   apprise:
   pushover:

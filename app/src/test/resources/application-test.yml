@@ -26,3 +26,6 @@ logger:
 ---
 # Disable the scheduled checks for updates in tests to avoid unnecessary noise and network calls during testing
 app-config.check-updates: false
+---
+# The Slack Bot client retries with a long backoff, the tests don't need to wait for it
+internal.slack-bot-retry-delay: 10ms

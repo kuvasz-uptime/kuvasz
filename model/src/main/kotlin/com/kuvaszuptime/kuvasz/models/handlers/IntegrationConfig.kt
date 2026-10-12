@@ -68,6 +68,26 @@ interface SlackNotificationConfig : IntegrationConfig {
     }
 }
 
+@EachProperty(SlackBotNotificationConfig.CONFIG_PREFIX, list = true)
+@Introspected
+interface SlackBotNotificationConfig : IntegrationConfig {
+
+    @get:NotBlank(message = IntegrationValidationMessages.SLACK_BOT_TOKEN_NOT_BLANK)
+    val botToken: String
+
+    @get:NotBlank(message = IntegrationValidationMessages.SLACK_BOT_CHANNEL_ID_NOT_BLANK)
+    val channelId: String
+
+    val downReaction: String?
+
+    val upReaction: String?
+
+    companion object {
+        const val IDENTIFIER = "slack-bot"
+        const val CONFIG_PREFIX = "${IntegrationConfig.CONFIG_PREFIX}.$IDENTIFIER"
+    }
+}
+
 @EachProperty(DiscordNotificationConfig.CONFIG_PREFIX, list = true)
 @Introspected
 interface DiscordNotificationConfig : IntegrationConfig {
@@ -200,6 +220,7 @@ val IntegrationConfig.type: IntegrationType
         is EmailNotificationConfig -> IntegrationType.EMAIL
         is PagerdutyConfig -> IntegrationType.PAGERDUTY
         is SlackNotificationConfig -> IntegrationType.SLACK
+        is SlackBotNotificationConfig -> IntegrationType.SLACK_BOT
         is TelegramNotificationConfig -> IntegrationType.TELEGRAM
         is DiscordNotificationConfig -> IntegrationType.DISCORD
         is MsTeamsNotificationConfig -> IntegrationType.MS_TEAMS

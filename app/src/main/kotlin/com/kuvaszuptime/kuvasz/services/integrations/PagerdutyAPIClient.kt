@@ -1,7 +1,7 @@
 package com.kuvaszuptime.kuvasz.services.integrations
 
-import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyResolveRequest
-import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyTriggerRequest
+import com.kuvaszuptime.kuvasz.models.handlers.pagerduty.PagerdutyResolveRequest
+import com.kuvaszuptime.kuvasz.models.handlers.pagerduty.PagerdutyTriggerRequest
 import io.micronaut.http.annotation.Body
 import io.micronaut.http.annotation.Post
 import io.micronaut.http.client.annotation.Client

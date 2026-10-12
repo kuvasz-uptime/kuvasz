@@ -7,8 +7,8 @@ import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig
-import com.kuvaszuptime.kuvasz.models.handlers.MsTeamsMessage
 import com.kuvaszuptime.kuvasz.models.handlers.MsTeamsNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.msteams.MsTeamsMessage
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.micronaut.context.annotation.Requires
 import io.micronaut.http.HttpRequest

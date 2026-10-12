@@ -2,10 +2,10 @@ package com.kuvaszuptime.kuvasz.services.integrations
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
-import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyResolveRequest
-import com.kuvaszuptime.kuvasz.models.handlers.PagerdutySeverity
-import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyTriggerPayload
-import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyTriggerRequest
+import com.kuvaszuptime.kuvasz.models.handlers.pagerduty.PagerdutyResolveRequest
+import com.kuvaszuptime.kuvasz.models.handlers.pagerduty.PagerdutySeverity
+import com.kuvaszuptime.kuvasz.models.handlers.pagerduty.PagerdutyTriggerPayload
+import com.kuvaszuptime.kuvasz.models.handlers.pagerduty.PagerdutyTriggerRequest
 import com.kuvaszuptime.kuvasz.testutils.SMTPTest
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe

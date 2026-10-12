@@ -1,5 +1,6 @@
-package com.kuvaszuptime.kuvasz.models.handlers
+package com.kuvaszuptime.kuvasz.models.handlers.webhook
 
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
 import io.micronaut.core.annotation.Introspected
 
 @Introspected

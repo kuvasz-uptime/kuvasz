@@ -221,7 +221,7 @@ private fun HtmlBlockTag.integrationsPageHeader() {
 }
 
 private fun IntegrationType.toCssColor(): CSSClass? = when (this) {
-    IntegrationType.SLACK -> TEXT_PURPLE
+    IntegrationType.SLACK, IntegrationType.SLACK_BOT -> TEXT_PURPLE
     IntegrationType.TELEGRAM -> TEXT_AZURE
     IntegrationType.PAGERDUTY -> TEXT_GREEN
     IntegrationType.EMAIL -> null

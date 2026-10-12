@@ -2,7 +2,7 @@ package com.kuvaszuptime.kuvasz.services.integrations
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
-import com.kuvaszuptime.kuvasz.models.handlers.SlackWebhookMessage
+import com.kuvaszuptime.kuvasz.models.handlers.slack.SlackWebhookMessage
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe

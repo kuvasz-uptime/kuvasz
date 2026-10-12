@@ -2,7 +2,7 @@
 
 package com.kuvaszuptime.kuvasz
 
-import com.kuvaszuptime.kuvasz.models.handlers.GenericWebhookMessage
+import com.kuvaszuptime.kuvasz.models.handlers.webhook.GenericWebhookMessage
 import com.kuvaszuptime.kuvasz.security.api.HeaderApiKeyReader
 import com.kuvaszuptime.kuvasz.util.AppInfo
 import io.micronaut.openapi.annotation.OpenAPIExtraSchema

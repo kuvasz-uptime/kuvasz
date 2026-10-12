@@ -7,10 +7,10 @@ import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.StructuredDnsMonitorDownMessage
 import com.kuvaszuptime.kuvasz.models.events.StructuredDnsMonitorUpMessage
-import com.kuvaszuptime.kuvasz.models.events.StructuredDockerMonitorDownMessage
-import com.kuvaszuptime.kuvasz.models.events.StructuredDockerMonitorUpMessage
 import com.kuvaszuptime.kuvasz.models.events.StructuredDnsRecordsChangedMessage
 import com.kuvaszuptime.kuvasz.models.events.StructuredDockerContainerRestartedMessage
+import com.kuvaszuptime.kuvasz.models.events.StructuredDockerMonitorDownMessage
+import com.kuvaszuptime.kuvasz.models.events.StructuredDockerMonitorUpMessage
 import com.kuvaszuptime.kuvasz.models.events.StructuredHttpMonitorUpMessage
 import com.kuvaszuptime.kuvasz.models.events.StructuredIcmpMonitorDownMessage
 import com.kuvaszuptime.kuvasz.models.events.StructuredIcmpMonitorUpMessage
@@ -30,12 +30,12 @@ import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.formatters.MessageSeverity
 import com.kuvaszuptime.kuvasz.models.events.formatters.getEmoji
 import com.kuvaszuptime.kuvasz.models.events.formatters.toSeverity
-import com.kuvaszuptime.kuvasz.models.handlers.AdaptiveCard
-import com.kuvaszuptime.kuvasz.models.handlers.CardContainer
-import com.kuvaszuptime.kuvasz.models.handlers.CardTextBlock
-import com.kuvaszuptime.kuvasz.models.handlers.MsTeamsMessage
 import com.kuvaszuptime.kuvasz.models.handlers.MsTeamsNotificationConfig
-import com.kuvaszuptime.kuvasz.models.handlers.containerStyle
+import com.kuvaszuptime.kuvasz.models.handlers.msteams.AdaptiveCard
+import com.kuvaszuptime.kuvasz.models.handlers.msteams.CardContainer
+import com.kuvaszuptime.kuvasz.models.handlers.msteams.CardTextBlock
+import com.kuvaszuptime.kuvasz.models.handlers.msteams.MsTeamsMessage
+import com.kuvaszuptime.kuvasz.models.handlers.msteams.containerStyle
 import io.micronaut.context.annotation.Requires
 import jakarta.inject.Singleton
 
