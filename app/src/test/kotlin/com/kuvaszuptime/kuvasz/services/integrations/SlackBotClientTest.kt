@@ -19,6 +19,7 @@ import io.micronaut.http.HttpStatus
 import io.micronaut.http.MediaType
 import org.mockserver.integration.ClientAndServer
 import org.mockserver.matchers.MatchType
+import org.mockserver.matchers.Times
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.JsonBody
@@ -136,8 +137,9 @@ class SlackBotClientTest : ShouldSpec({
                 { fail("Should not succeed") },
                 { error ->
                     error.shouldBeInstanceOf<SlackApiException>()
-                    error.error shouldBe "not_in_channel"
-                    error.message shouldBe Messages.slackApiError("chat.postMessage", "not_in_channel") + ". " +
+                    error.error shouldBe SlackError.NOT_IN_CHANNEL
+                    error.message shouldBe
+                        Messages.slackApiError("chat.postMessage", SlackError.NOT_IN_CHANNEL) + ". " +
                         Messages.slackApiErrorHintNotInChannel()
                 }
             )
@@ -188,6 +190,28 @@ class SlackBotClientTest : ShouldSpec({
             )
 
             mockServer.verify(request, VerificationTimes.exactly(6))
+        }
+
+        should("succeed if the rate limit is over before the retries run out") {
+            val request = slackRequest("chat.postMessage")
+            mockServer.`when`(request, Times.exactly(2)).respond(
+                response().withStatusCode(HttpStatus.TOO_MANY_REQUESTS.code).withHeader("Retry-After", "1")
+            )
+            mockServer.`when`(request).respond(okResponse("""{"ok":true,"ts":"1700000000.000100"}"""))
+
+            val response = client.postMessage(
+                botToken,
+                SlackPostMessageRequest(
+                    channel = "C0123",
+                    attachments = listOf(attachment),
+                    threadTs = null,
+                    unfurlLinks = false,
+                    unfurlMedia = false,
+                ),
+            ).blockingGet()
+
+            response.ts shouldBe "1700000000.000100"
+            mockServer.verify(request, VerificationTimes.exactly(3))
         }
     }
 
@@ -241,7 +265,7 @@ class SlackBotClientTest : ShouldSpec({
                 { fail("Should not succeed") },
                 { error ->
                     error.shouldBeInstanceOf<SlackApiException>()
-                    error.message shouldBe Messages.slackApiError("chat.update", "message_not_found")
+                    error.message shouldBe Messages.slackApiError("chat.update", SlackError.MESSAGE_NOT_FOUND)
                 }
             )
 
@@ -293,7 +317,7 @@ class SlackBotClientTest : ShouldSpec({
             ).blockingSubscribe(
                 { fail("Should not succeed") },
                 { error ->
-                    error.message shouldBe Messages.slackApiError("reactions.add", "missing_scope") + ". " +
+                    error.message shouldBe Messages.slackApiError("reactions.add", SlackError.MISSING_SCOPE) + ". " +
                         Messages.slackApiErrorHintMissingScope("reactions:write")
                 }
             )
@@ -305,10 +329,16 @@ class SlackBotClientTest : ShouldSpec({
     context("SlackApiException") {
 
         should("give a hint about the usual fix of the known errors") {
-            SlackApiException(SlackApiMethod.CHAT_POST_MESSAGE, "channel_not_found", null).message shouldBe
-                Messages.slackApiError("chat.postMessage", "channel_not_found") + ". " +
+            SlackApiException(SlackApiMethod.CHAT_POST_MESSAGE, SlackError.CHANNEL_NOT_FOUND, null).message shouldBe
+                Messages.slackApiError("chat.postMessage", SlackError.CHANNEL_NOT_FOUND) + ". " +
                 Messages.slackApiErrorHintChannelNotFound()
-            val tokenErrors = listOf("invalid_auth", "not_authed", "token_revoked", "token_expired", "account_inactive")
+            val tokenErrors = listOf(
+                SlackError.INVALID_AUTH,
+                SlackError.NOT_AUTHED,
+                SlackError.TOKEN_REVOKED,
+                SlackError.TOKEN_EXPIRED,
+                SlackError.ACCOUNT_INACTIVE,
+            )
             tokenErrors.forEach { error ->
                 SlackApiException(SlackApiMethod.CHAT_POST_MESSAGE, error, null).message shouldBe
                     Messages.slackApiError("chat.postMessage", error) + ". " + Messages.slackApiErrorHintInvalidToken()
@@ -319,7 +349,7 @@ class SlackBotClientTest : ShouldSpec({
             SlackApiException(SlackApiMethod.CHAT_UPDATE, "cant_update_message", null).message shouldBe
                 Messages.slackApiError("chat.update", "cant_update_message")
             SlackApiException(SlackApiMethod.CHAT_UPDATE, null, null).message shouldBe
-                Messages.slackApiError("chat.update", "unknown_error")
+                Messages.slackApiError("chat.update", SlackError.UNKNOWN_ERROR)
         }
     }
 })

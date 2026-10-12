@@ -16,8 +16,8 @@ integrations:
       bot-token: xoxb-global
       channel-id: C0GLOBAL
       global: true
-      down-reaction: rotating_light
-      up-reaction: ':white_check_mark:'
+      trigger-reaction: rotating_light
+      resolution-reaction: ':white_check_mark:'
     - name: disabled
       bot-token: xoxb-disabled
       channel-id: C0DISABLED
@@ -25,6 +25,8 @@ integrations:
     - name: excluding_http_down
       bot-token: xoxb-excluding
       channel-id: C0EXCLUDING
+      trigger-reaction: ''
+      resolution-reaction: ' '
       excluded-events:
         - HTTP_DOWN
   discord:

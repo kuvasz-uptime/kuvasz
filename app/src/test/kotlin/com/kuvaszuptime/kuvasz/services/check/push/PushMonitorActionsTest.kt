@@ -241,7 +241,7 @@ class PushMonitorActionsTest(
                 every {
                     eventRepoMock.getPreviousEventByMonitorId(testMonitor.id, any())
                 } returns uptimeEventRecord
-                every { eventRepoMock.updateEvent(any(), any()) } returns 1
+                every { eventRepoMock.updateEvent(any(), any(), any()) } returns 1
                 every { pendingFailureRepoMock.deleteByMonitorId(testMonitor.id, any()) } returns 1
 
                 pushMonitorActions.updateLastHeartbeat(testSecret, testTimestamp)
@@ -375,7 +375,7 @@ class PushMonitorActionsTest(
                 every {
                     eventRepoMock.getPreviousEventByMonitorId(testMonitor.id, any())
                 } returns uptimeEventRecord
-                every { eventRepoMock.updateEvent(any(), any()) } returns 1
+                every { eventRepoMock.updateEvent(any(), any(), any()) } returns 1
 
                 pushMonitorActions.signalFailure(testMonitor.clientSecret, "oh my gosh")
 
@@ -410,7 +410,7 @@ class PushMonitorActionsTest(
                 every {
                     eventRepoMock.getPreviousEventByMonitorId(testMonitor.id, any())
                 } returns uptimeEventRecord
-                every { eventRepoMock.updateEvent(any(), any()) } returns 1
+                every { eventRepoMock.updateEvent(any(), any(), any()) } returns 1
                 every { pendingFailureRepoMock.createOrIncrement(testMonitor.id, any()) } returns
                     PendingFailureRecord().apply {
                         monitorId = testMonitor.id
@@ -445,7 +445,7 @@ class PushMonitorActionsTest(
                 every {
                     eventRepoMock.getPreviousEventByMonitorId(testMonitor.id, any())
                 } returns uptimeEventRecord
-                every { eventRepoMock.updateEvent(any(), any()) } returns 1
+                every { eventRepoMock.updateEvent(any(), any(), any()) } returns 1
                 every { eventRepoMock.endEventById(any(), any(), any()) } returns 1
                 every { eventRepoMock.insertFromMonitorEvent(any(), any()) } returns mockk()
                 every { pendingFailureRepoMock.createOrIncrement(testMonitor.id, any()) } returns

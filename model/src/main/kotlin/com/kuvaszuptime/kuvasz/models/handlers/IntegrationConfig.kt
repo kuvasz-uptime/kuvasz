@@ -78,9 +78,9 @@ interface SlackBotNotificationConfig : IntegrationConfig {
     @get:NotBlank(message = IntegrationValidationMessages.SLACK_BOT_CHANNEL_ID_NOT_BLANK)
     val channelId: String
 
-    val downReaction: String?
+    val triggerReaction: String?
 
-    val upReaction: String?
+    val resolutionReaction: String?
 
     companion object {
         const val IDENTIFIER = "slack-bot"

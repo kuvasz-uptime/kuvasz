@@ -100,10 +100,15 @@ data class SlackBotNotificationConfigDto(
     override val excludedEvents: List<IntegrationEventType>,
     @param:Schema(description = "The ID of the Slack channel the notifications are posted to", required = true)
     val channelId: String,
-    @param:Schema(description = "The emoji reaction added to the message of an incident while it is ongoing")
-    val downReaction: String?,
-    @param:Schema(description = "The emoji reaction added to the message of an incident once it is resolved")
-    val upReaction: String?,
+    @param:Schema(
+        description = "The emoji reaction added to the first message of an incident or a maintenance, while it " +
+            "is ongoing"
+    )
+    val triggerReaction: String?,
+    @param:Schema(
+        description = "The emoji reaction added to the first message of an incident or a maintenance once it is over"
+    )
+    val resolutionReaction: String?,
 ) : IntegrationConfigDto {
     constructor(integrationID: IntegrationID, config: SlackBotNotificationConfig) : this(
         id = integrationID,
@@ -113,8 +118,8 @@ data class SlackBotNotificationConfigDto(
         global = config.global,
         excludedEvents = config.excludedEvents.orEmpty(),
         channelId = config.channelId,
-        downReaction = config.downReaction,
-        upReaction = config.upReaction,
+        triggerReaction = config.triggerReaction,
+        resolutionReaction = config.resolutionReaction,
     )
 }
 

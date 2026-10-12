@@ -113,8 +113,8 @@ class IntegrationControllerTest(
                 implicitlyEnabledSlackBot.enabled shouldBe true
                 implicitlyEnabledSlackBot.global shouldBe false
                 implicitlyEnabledSlackBot.channelId shouldBe "C0IMPLICIT"
-                implicitlyEnabledSlackBot.downReaction shouldBe null
-                implicitlyEnabledSlackBot.upReaction shouldBe null
+                implicitlyEnabledSlackBot.triggerReaction shouldBe null
+                implicitlyEnabledSlackBot.resolutionReaction shouldBe null
             }
             response.forOne { globalSlackBot ->
                 globalSlackBot.shouldBeInstanceOf<SlackBotNotificationConfigDto>()
@@ -123,8 +123,8 @@ class IntegrationControllerTest(
                 globalSlackBot.enabled shouldBe true
                 globalSlackBot.global shouldBe true
                 globalSlackBot.channelId shouldBe "C0GLOBAL"
-                globalSlackBot.downReaction shouldBe "rotating_light"
-                globalSlackBot.upReaction shouldBe ":white_check_mark:"
+                globalSlackBot.triggerReaction shouldBe "rotating_light"
+                globalSlackBot.resolutionReaction shouldBe ":white_check_mark:"
             }
             response.forOne { excludingSlackBot ->
                 excludingSlackBot.shouldBeInstanceOf<SlackBotNotificationConfigDto>()

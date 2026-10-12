@@ -652,5 +652,24 @@ class SlackTextFormatterTest : BehaviorSpec(
                 }
             }
         }
+
+        given("strikethroughHeadline(message: String)") {
+
+            `when`("the message has several lines") {
+                then("it should strike through only the first one") {
+                    val message = "🚨 *Your monitor is DOWN*\n_Reason: Boom_\nWas UP for 1h"
+
+                    formatter.strikethroughHeadline(message) shouldBe
+                        "~🚨 *Your monitor is DOWN*~\n_Reason: Boom_\nWas UP for 1h"
+                }
+            }
+
+            `when`("the message has a single line") {
+                then("it should strike through the whole message") {
+                    formatter.strikethroughHeadline("🔧 *Maintenance has started*") shouldBe
+                        "~🔧 *Maintenance has started*~"
+                }
+            }
+        }
     }
 )

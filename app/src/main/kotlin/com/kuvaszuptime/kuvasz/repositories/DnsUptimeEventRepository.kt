@@ -92,7 +92,7 @@ class DnsUptimeEventRepository(private val dslContext: DSLContext) : UptimeEvent
         .execute()
 
     @Suppress("IgnoredReturnValue")
-    fun updateEvent(eventId: Long, newEvent: DnsUptimeMonitorEvent) = dslContext
+    fun updateEvent(eventId: Long, newEvent: DnsUptimeMonitorEvent, ctx: DSLContext = dslContext) = ctx
         .update(DNS_UPTIME_EVENT)
         .set(DNS_UPTIME_EVENT.UPDATED_AT, newEvent.dispatchedAt)
         .apply {

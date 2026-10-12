@@ -92,7 +92,7 @@ class TcpUptimeEventRepository(private val dslContext: DSLContext) : UptimeEvent
         .execute()
 
     @Suppress("IgnoredReturnValue")
-    fun updateEvent(eventId: Long, newEvent: TcpUptimeMonitorEvent) = dslContext
+    fun updateEvent(eventId: Long, newEvent: TcpUptimeMonitorEvent, ctx: DSLContext = dslContext) = ctx
         .update(TCP_UPTIME_EVENT)
         .set(TCP_UPTIME_EVENT.UPDATED_AT, newEvent.dispatchedAt)
         .apply {

@@ -31,6 +31,8 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import java.time.Duration
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 
 @MicronautTest(startApplication = false)
 class IncidentRepositoryTest(
@@ -1985,6 +1987,62 @@ class IncidentRepositoryTest(
                     createIncidents()
 
                     incidentRepository.getIncidents(includeResolved = true, types = emptySet()).shouldBeEmpty()
+                }
+            }
+        }
+        given("the findEventIdStartedAt() method") {
+
+            // More precise than the microseconds Postgres stores, like the timestamps of the dispatched events
+            val startedAt = OffsetDateTime.of(2026, 10, 12, 10, 0, 0, 123_456_789, ZoneOffset.UTC)
+
+            `when`("an uptime event of the monitor started at the given time") {
+                val monitor = createHttpMonitor(httpMonitorRepository)
+                val otherMonitor = createHttpMonitor(httpMonitorRepository)
+                val event = createHttpUptimeEventRecord(
+                    dslContext,
+                    monitorId = monitor.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = startedAt,
+                    endedAt = startedAt.plusMinutes(1),
+                )
+                createHttpUptimeEventRecord(
+                    dslContext,
+                    monitorId = monitor.id,
+                    startedAt = startedAt.plusMinutes(1),
+                    endedAt = null,
+                )
+                createHttpUptimeEventRecord(
+                    dslContext,
+                    monitorId = otherMonitor.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = startedAt,
+                    endedAt = null,
+                )
+
+                then("it should return the ID of that event, even if the timestamp has a nanosecond precision") {
+                    incidentRepository.findEventIdStartedAt(IncidentType.HTTP, monitor.id, startedAt) shouldBe
+                        event.id
+                }
+
+                then("it should not return anything for another time, or for another type") {
+                    incidentRepository.findEventIdStartedAt(IncidentType.HTTP, monitor.id, startedAt.plusSeconds(1))
+                        .shouldBeNull()
+                    incidentRepository.findEventIdStartedAt(IncidentType.PUSH, monitor.id, startedAt).shouldBeNull()
+                }
+            }
+
+            `when`("an SSL event of the monitor started at the given time, which is not an incident") {
+                val monitor = createHttpMonitor(httpMonitorRepository)
+                val event = createSSLEventRecord(
+                    dslContext,
+                    monitorId = monitor.id,
+                    status = SslStatus.WILL_EXPIRE,
+                    startedAt = startedAt,
+                    endedAt = null,
+                )
+
+                then("it should return the ID of that event") {
+                    incidentRepository.findEventIdStartedAt(IncidentType.SSL, monitor.id, startedAt) shouldBe event.id
                 }
             }
         }

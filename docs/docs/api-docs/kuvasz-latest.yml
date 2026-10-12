@@ -7705,15 +7705,15 @@ components:
         channelId:
           type: string
           description: The ID of the Slack channel the notifications are posted to
-        downReaction:
+        triggerReaction:
           type: string
-          description: The emoji reaction added to the message of an incident while
-            it is ongoing
+          description: "The emoji reaction added to the first message of an incident\
+            \ or a maintenance, while it is ongoing"
           nullable: true
-        upReaction:
+        resolutionReaction:
           type: string
-          description: The emoji reaction added to the message of an incident once
-            it is resolved
+          description: The emoji reaction added to the first message of an incident
+            or a maintenance once it is over
           nullable: true
     SlackNotificationConfigDto:
       required:

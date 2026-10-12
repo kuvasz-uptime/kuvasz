@@ -269,8 +269,8 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.type shouldBe IntegrationType.SLACK_BOT
                     config.botToken shouldBe "xoxb-implicitly-enabled"
                     config.channelId shouldBe "C0IMPLICIT"
-                    config.downReaction.shouldBeNull()
-                    config.upReaction.shouldBeNull()
+                    config.triggerReaction.shouldBeNull()
+                    config.resolutionReaction.shouldBeNull()
                     config.enabled shouldBe true
                     config.global shouldBe false
                 }
@@ -281,8 +281,8 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.type shouldBe IntegrationType.SLACK_BOT
                     config.botToken shouldBe "xoxb-global"
                     config.channelId shouldBe "C0GLOBAL"
-                    config.downReaction shouldBe "rotating_light"
-                    config.upReaction shouldBe ":white_check_mark:"
+                    config.triggerReaction shouldBe "rotating_light"
+                    config.resolutionReaction shouldBe ":white_check_mark:"
                     config.enabled shouldBe true
                     config.global shouldBe true
                 }
@@ -571,8 +571,8 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.type shouldBe IntegrationType.SLACK_BOT
                     config.botToken shouldBe "xoxb-implicitly-enabled"
                     config.channelId shouldBe "C0IMPLICIT"
-                    config.downReaction.shouldBeNull()
-                    config.upReaction.shouldBeNull()
+                    config.triggerReaction.shouldBeNull()
+                    config.resolutionReaction.shouldBeNull()
                     config.enabled shouldBe true
                     config.global shouldBe false
                 }
@@ -583,8 +583,8 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.type shouldBe IntegrationType.SLACK_BOT
                     config.botToken shouldBe "xoxb-global"
                     config.channelId shouldBe "C0GLOBAL"
-                    config.downReaction shouldBe "rotating_light"
-                    config.upReaction shouldBe ":white_check_mark:"
+                    config.triggerReaction shouldBe "rotating_light"
+                    config.resolutionReaction shouldBe ":white_check_mark:"
                     config.enabled shouldBe true
                     config.global shouldBe true
                 }

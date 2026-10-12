@@ -1,5 +1,8 @@
 package com.kuvaszuptime.kuvasz.handlers
 
+import com.kuvaszuptime.kuvasz.jooq.enums.IntegrationThreadSubject
+import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
+import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.mocks.createDnsMonitor
 import com.kuvaszuptime.kuvasz.mocks.createDockerMonitor
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
@@ -13,20 +16,26 @@ import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEndEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowStartEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
+import com.kuvaszuptime.kuvasz.models.events.formatters.SlackTextFormatter
 import com.kuvaszuptime.kuvasz.models.handlers.SlackBotNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.id
 import com.kuvaszuptime.kuvasz.models.handlers.slack.SlackApiResponse
 import com.kuvaszuptime.kuvasz.models.handlers.slack.SlackPostMessageRequest
+import com.kuvaszuptime.kuvasz.models.handlers.slack.SlackReactionRequest
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
 import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.DockerMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.IncidentRepository
+import com.kuvaszuptime.kuvasz.repositories.IntegrationThreadRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
@@ -34,11 +43,15 @@ import com.kuvaszuptime.kuvasz.services.integrations.SlackApiException
 import com.kuvaszuptime.kuvasz.services.integrations.SlackApiMethod
 import com.kuvaszuptime.kuvasz.services.integrations.SlackBotClient
 import com.kuvaszuptime.kuvasz.services.integrations.SlackBotService
+import com.kuvaszuptime.kuvasz.services.integrations.SlackColor
+import com.kuvaszuptime.kuvasz.services.integrations.SlackError
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.test.TestCase
 import io.kotest.engine.test.TestResult
 import io.kotest.inspectors.forAll
-import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.micronaut.http.HttpStatus
@@ -48,6 +61,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
+import io.mockk.verifyOrder
 import io.reactivex.rxjava3.core.Single
 
 @MicronautTest(startApplication = false, environments = ["full-integrations-setup"])
@@ -57,222 +71,446 @@ class SlackBotEventHandlerTest(
     private val dnsMonitorRepository: DnsMonitorRepository,
     private val dockerMonitorRepository: DockerMonitorRepository,
     private val httpUptimeEventRepository: HttpUptimeEventRepository,
+    private val pushUptimeEventRepository: PushUptimeEventRepository,
     private val sslEventRepository: SSLEventRepository,
+    private val threadRepository: IntegrationThreadRepository,
+    private val databaseEventHandler: DatabaseEventHandler,
+    incidentRepository: IncidentRepository,
     integrationRepository: IntegrationRepository,
     slackBotConfigs: List<SlackBotNotificationConfig>,
-    databaseEventHandler: DatabaseEventHandler,
 ) : EventHandlerTest(databaseEventHandler) {
     private val mockClient = mockk<SlackBotClient>()
 
+    // Global, with reactions
     private val globalConfig = slackBotConfigs.first { it.enabled && it.global }
+
+    // Not global, without reactions
     private val otherConfig = slackBotConfigs.first { it.name == "test_implicitly_enabled" }
     private val excludingConfig = slackBotConfigs.first { it.name == "excluding_http_down" }
     private val disabledConfig = slackBotConfigs.first { !it.enabled }
 
+    private val formatter = SlackTextFormatter
+
     init {
         val eventDispatcher = EventDispatcher()
-        val slackBotServiceSpy = spyk(SlackBotService(mockClient))
+        val service = spyk(SlackBotService(mockClient))
 
-        SlackBotEventHandler(eventDispatcher, slackBotServiceSpy, integrationRepository)
+        SlackBotEventHandler(eventDispatcher, service, threadRepository, incidentRepository, integrationRepository)
 
-        given("the SlackBotEventHandler - uptime events") {
-            `when`("it receives a MonitorUpEvent and there is no previous event for the monitor") {
-                val monitor = createHttpMonitor(httpMonitorRepository)
-                val event = HttpMonitorUpEvent(monitor, HttpStatus.OK, 1000, null)
+        // The Slack calls run synchronously in the tests (see ProjectConfig), so the threads are stored by the time the
+        // dispatch returns
+        fun storedThread(config: SlackBotNotificationConfig, subject: IntegrationThreadSubject, subjectId: Long) =
+            threadRepository.find(config.id, subject, subjectId).shouldNotBeNull()
 
-                eventDispatcher.testDispatch(event)
+        given("the SlackBotEventHandler - uptime incidents") {
 
-                then("it should not post anything") {
-                    verify(inverse = true) { slackBotServiceSpy.postMessage(any(), any(), any()) }
-                }
-            }
-
-            `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
+            `when`("a monitor goes DOWN") {
                 val monitor = createHttpMonitor(
                     httpMonitorRepository,
-                    integrations = listOf(globalConfig.id, otherConfig.id, disabledConfig.id),
+                    integrations = listOf(otherConfig.id, disabledConfig.id),
                     sensitiveUrl = true,
                 )
                 val event = HttpMonitorDownEvent(monitor, HttpStatus.INTERNAL_SERVER_ERROR, Exception(), null)
-                mockSuccessfulPost()
+                mockSuccessfulSlack()
 
                 eventDispatcher.testDispatch(event)
+                val downEvent = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
 
-                then("it should post a red message to the channel of every enabled integration") {
-                    val messages = mutableListOf<String>()
+                then("it should open a red thread in every enabled integration, reacting where it's configured") {
+                    val text = formatter.toFormattedMessage(event)
+                    text shouldContain "Your monitor \"${monitor.name}\" (MASKED URL) is DOWN"
 
-                    verify(exactly = 1) { slackBotServiceSpy.postMessage(globalConfig, capture(messages), RED) }
-                    verify(exactly = 1) { slackBotServiceSpy.postMessage(otherConfig, capture(messages), RED) }
-                    verify(inverse = true) { slackBotServiceSpy.postMessage(disabledConfig, any(), any()) }
+                    verify(exactly = 1) { service.postMessage(globalConfig, text, RED, null) }
+                    verify(exactly = 1) { service.postMessage(otherConfig, text, RED, null) }
+                    verify(inverse = true) { service.postMessage(disabledConfig, any(), any(), any()) }
 
-                    messages.forAll { message ->
-                        message shouldContain "🚨 *Your monitor \"${monitor.name}\" (MASKED URL) is DOWN"
+                    listOf(globalConfig, otherConfig).forAll { config ->
+                        val thread = storedThread(config, IntegrationThreadSubject.HTTP, downEvent.id)
+                        thread.ts shouldBe ROOT_TS
+                        thread.rootText shouldBe text
                     }
 
-                    // As a colored attachment, to the channel of the integration
-                    val request = mutableListOf<SlackPostMessageRequest>()
-
-                    verify(exactly = 2) { mockClient.postMessage(any(), capture(request)) }
-                    request.map { it.channel } shouldContainExactlyInAnyOrder
-                        listOf(globalConfig.channelId, otherConfig.channelId)
-                    request.forAll { it.attachments.single().color shouldBe RED }
+                    verify { service.addReaction(globalConfig, ROOT_TS, "rotating_light") }
+                    verify(inverse = true) { service.addReaction(otherConfig, any(), any()) }
                 }
             }
 
-            `when`("it receives a MonitorUpEvent after a MonitorDownEvent") {
+            `when`("a monitor recovers after it went DOWN") {
+                val monitor = createHttpMonitor(httpMonitorRepository, integrations = listOf(otherConfig.id))
+                val downEvent = HttpMonitorDownEvent(monitor, HttpStatus.INTERNAL_SERVER_ERROR, Exception(), null)
+                mockSuccessfulSlack()
+                eventDispatcher.testDispatch(downEvent)
+                val downRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                storedThread(globalConfig, IntegrationThreadSubject.HTTP, downRecord.id)
+                storedThread(otherConfig, IntegrationThreadSubject.HTTP, downRecord.id)
+
+                val upEvent = HttpMonitorUpEvent(monitor, HttpStatus.OK, 1000, downRecord)
+                eventDispatcher.testDispatch(upEvent)
+
+                then("it should reply in the thread, turn the root green and swap the reactions, keeping the thread") {
+                    val downText = formatter.toFormattedMessage(downEvent)
+                    val upText = formatter.toFormattedMessage(upEvent)
+                    upText shouldContain "is UP (200)"
+
+                    listOf(globalConfig, otherConfig).forAll { config ->
+                        verify(exactly = 1) { service.reply(config, ROOT_TS, upText, GREEN) }
+                        verify(exactly = 1) {
+                            service.recolorRoot(config, ROOT_TS, formatter.strikethroughHeadline(downText), GREEN)
+                        }
+                        threadRepository.find(config.id, IntegrationThreadSubject.HTTP, downRecord.id)
+                            .shouldNotBeNull()
+                    }
+                    verify(exactly = 1) { service.removeReaction(globalConfig, ROOT_TS, "rotating_light") }
+                    verify(exactly = 1) { service.addReaction(globalConfig, ROOT_TS, ":white_check_mark:") }
+                    verify(inverse = true) { service.removeReaction(otherConfig, any(), any()) }
+
+                    // The colons around the name of the emoji are trimmed
+                    verify(exactly = 1) {
+                        mockClient.addReaction(
+                            globalConfig.botToken,
+                            SlackReactionRequest(globalConfig.channelId, ROOT_TS, "white_check_mark"),
+                        )
+                    }
+                }
+            }
+
+            `when`("a monitor recovers, but its incident has no thread (e.g. the integration didn't exist back then)") {
                 val monitor = createHttpMonitor(httpMonitorRepository)
-                mockSuccessfulPost()
+                // Only persisted, never dispatched
+                databaseEventHandler.handleUptimeMonitorEvent(
+                    HttpMonitorDownEvent(monitor, HttpStatus.INTERNAL_SERVER_ERROR, Exception(), null)
+                )
+                val downRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                mockSuccessfulSlack()
+
+                val upEvent = HttpMonitorUpEvent(monitor, HttpStatus.OK, 1000, downRecord)
+                eventDispatcher.testDispatch(upEvent)
+
+                then("it should post a green message to the channel instead") {
+                    val upText = formatter.toFormattedMessage(upEvent)
+                    verify(exactly = 1) { service.postMessage(globalConfig, upText, GREEN, null) }
+                    verify(inverse = true) { service.reply(any(), any(), any(), any()) }
+                    verify(inverse = true) { service.recolorRoot(any(), any(), any(), any()) }
+                    verify(inverse = true) { service.removeReaction(any(), any(), any()) }
+                }
+            }
+
+            `when`("an integration excludes the DOWN events, but not the UP ones") {
+                val monitor = createHttpMonitor(httpMonitorRepository, integrations = listOf(excludingConfig.id))
+                mockSuccessfulSlack()
                 eventDispatcher.testDispatch(
                     HttpMonitorDownEvent(monitor, HttpStatus.INTERNAL_SERVER_ERROR, Exception(), null)
                 )
                 val downRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                storedThread(globalConfig, IntegrationThreadSubject.HTTP, downRecord.id)
 
-                eventDispatcher.testDispatch(HttpMonitorUpEvent(monitor, HttpStatus.OK, 1000, downRecord))
+                val upEvent = HttpMonitorUpEvent(monitor, HttpStatus.OK, 1000, downRecord)
+                eventDispatcher.testDispatch(upEvent)
 
-                then("it should post a red, and then a green message") {
-                    val messages = mutableListOf<String>()
-
-                    verify(exactly = 1) { slackBotServiceSpy.postMessage(globalConfig, capture(messages), RED) }
-                    verify(exactly = 1) { slackBotServiceSpy.postMessage(globalConfig, capture(messages), GREEN) }
-                    messages[0] shouldContain "is DOWN (500)"
-                    messages[1] shouldContain "is UP (200)"
+                then("it should post the recovery to the channel of the excluding integration, without a thread") {
+                    val upText = formatter.toFormattedMessage(upEvent)
+                    verify(inverse = true) { service.postMessage(excludingConfig, any(), RED, any()) }
+                    verify(exactly = 1) { service.postMessage(excludingConfig, upText, GREEN, null) }
+                    verify(exactly = 1) { service.reply(globalConfig, ROOT_TS, upText, GREEN) }
+                    threadRepository.find(excludingConfig.id, IntegrationThreadSubject.HTTP, downRecord.id)
+                        .shouldBeNull()
                 }
             }
 
-            `when`("it receives a MonitorDownEvent of a type that an integration excludes") {
-                val monitor = createHttpMonitor(httpMonitorRepository, integrations = listOf(excludingConfig.id))
-                mockSuccessfulPost()
+            `when`("an integration's reactions are blank") {
+                val monitor = createPushMonitor(pushMonitorRepository, integrations = listOf(excludingConfig.id))
+                mockSuccessfulSlack()
+                eventDispatcher.testDispatch(PushMonitorDownEvent(monitor, "Missed heartbeat", null))
+                val downRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                storedThread(excludingConfig, IntegrationThreadSubject.PUSH, downRecord.id)
 
-                eventDispatcher.testDispatch(
+                eventDispatcher.testDispatch(PushMonitorUpEvent(monitor, downRecord))
+
+                then("it should not react at all, as if there were no reactions configured") {
+                    verify(exactly = 1) { service.reply(excludingConfig, ROOT_TS, any(), GREEN) }
+                    verify(inverse = true) { service.addReaction(excludingConfig, any(), any()) }
+                    verify(inverse = true) { service.removeReaction(excludingConfig, any(), any()) }
+                }
+            }
+
+            `when`("the event that opens an incident thread cannot be found") {
+                val monitor = createHttpMonitor(httpMonitorRepository)
+                mockSuccessfulSlack()
+
+                // Dispatched without being persisted
+                eventDispatcher.dispatch(
                     HttpMonitorDownEvent(monitor, HttpStatus.INTERNAL_SERVER_ERROR, Exception(), null)
                 )
 
-                then("it should not post to the excluding integration") {
-                    verify(exactly = 1) { slackBotServiceSpy.postMessage(globalConfig, any(), RED) }
-                    verify(inverse = true) { slackBotServiceSpy.postMessage(excludingConfig, any(), any()) }
+                then("it should still post the root and react to it, but it can't store the thread") {
+                    verify(exactly = 1) { service.postMessage(globalConfig, any(), RED, null) }
+                    verify { service.addReaction(globalConfig, ROOT_TS, "rotating_light") }
+                    httpUptimeEventRepository.fetchByMonitorId(monitor.id).shouldBeEmpty()
                 }
             }
 
-            `when`("it receives a MonitorDownEvent of another monitor type that is not excluded") {
-                val monitor = createPushMonitor(pushMonitorRepository, integrations = listOf(excludingConfig.id))
-                mockSuccessfulPost()
-
-                eventDispatcher.testDispatch(PushMonitorDownEvent(monitor, "Missed heartbeat", null))
-
-                then("it should post to the excluding integration as well") {
-                    verify(exactly = 1) { slackBotServiceSpy.postMessage(excludingConfig, any(), RED) }
-                }
-            }
-        }
-
-        given("the SlackBotEventHandler - SSL events") {
-            `when`("it receives an SSLInvalidEvent") {
+            `when`("the root message of a thread is gone by the time the monitor recovers") {
                 val monitor = createHttpMonitor(httpMonitorRepository)
-                mockSuccessfulPost()
+                mockSuccessfulSlack()
+                eventDispatcher.testDispatch(
+                    HttpMonitorDownEvent(monitor, HttpStatus.INTERNAL_SERVER_ERROR, Exception(), null)
+                )
+                val downRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                storedThread(globalConfig, IntegrationThreadSubject.HTTP, downRecord.id)
+                every {
+                    mockClient.postMessage(any(), match { request -> request.threadTs != null })
+                } returns
+                    Single.error(SlackApiException(SlackApiMethod.CHAT_POST_MESSAGE, SlackError.THREAD_NOT_FOUND, null))
+                every { mockClient.updateMessage(any(), any()) } returns
+                    Single.error(SlackApiException(SlackApiMethod.CHAT_UPDATE, SlackError.MESSAGE_NOT_FOUND, null))
 
-                eventDispatcher.testDispatch(SSLInvalidEvent(monitor, SSLValidationError("ssl error"), null))
+                val upEvent = HttpMonitorUpEvent(monitor, HttpStatus.OK, 1000, downRecord)
 
-                then("it should post a red message") {
-                    val message = mutableListOf<String>()
+                then("it should post the recovery to the channel instead, without failing") {
+                    shouldNotThrowAny { eventDispatcher.testDispatch(upEvent) }
 
-                    verify(exactly = 1) { slackBotServiceSpy.postMessage(globalConfig, capture(message), RED) }
-                    message.single() shouldContain "has an INVALID certificate"
+                    val upText = formatter.toFormattedMessage(upEvent)
+                    verify(exactly = 1) {
+                        mockClient.postMessage(
+                            globalConfig.botToken,
+                            match { request ->
+                                request.threadTs == null && request.attachments.single().fallback == upText
+                            },
+                        )
+                    }
                 }
             }
 
-            `when`("it receives an SSLWillExpireEvent, and then an SSLValidEvent") {
+            `when`("a push monitor goes DOWN as a part of a transaction, like its heartbeat checker or /fail does") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                // With a previous UP event, the DOWN one is persisted in a nested transaction (a savepoint)
+                databaseEventHandler.handleUptimeMonitorEvent(PushMonitorUpEvent(monitor, null))
+                val upRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                val event = PushMonitorDownEvent(monitor, "Missed heartbeat", upRecord)
+                mockSuccessfulSlack()
+
+                dslContext.transaction { config -> databaseEventHandler.handleUptimeMonitorEvent(event, config.dsl()) }
+                // Dispatched only after the commit, like the push monitors do
+                eventDispatcher.dispatch(event)
+
+                then("the thread should be stored, because the event can already be found") {
+                    val eventId = pushUptimeEventRepository.fetchByMonitorId(monitor.id)
+                        .single { record -> record.status == UptimeStatus.DOWN }
+                        .id
+                    storedThread(globalConfig, IntegrationThreadSubject.PUSH, eventId)
+                }
+            }
+
+            `when`("a certificate will expire, then becomes invalid, then gets renewed") {
                 val monitor = createHttpMonitor(httpMonitorRepository)
-                mockSuccessfulPost()
+                mockSuccessfulSlack()
+
+                val willExpireEvent = SSLWillExpireEvent(monitor, generateCertificateInfo(), null)
+                eventDispatcher.testDispatch(willExpireEvent)
+                val willExpireRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
+                storedThread(globalConfig, IntegrationThreadSubject.SSL, willExpireRecord.id)
+
+                val invalidEvent = SSLInvalidEvent(monitor, SSLValidationError("expired"), willExpireRecord)
+                eventDispatcher.testDispatch(invalidEvent)
+                val invalidRecord = sslEventRepository.fetchByMonitorId(monitor.id)
+                    .single { record -> record.status == SslStatus.INVALID }
+                val chainedThread = storedThread(globalConfig, IntegrationThreadSubject.SSL, invalidRecord.id)
+
+                val validEvent = SSLValidEvent(monitor, generateCertificateInfo(), invalidRecord)
+                eventDispatcher.testDispatch(validEvent)
+
+                then("it should all happen in one thread, whose root turns yellow, red, and then green") {
+                    val rootText = formatter.toFormattedMessage(willExpireEvent)
+                    val invalidText = formatter.toFormattedMessage(invalidEvent)
+                    val validText = formatter.toFormattedMessage(validEvent)
+
+                    verify(exactly = 1) { service.postMessage(globalConfig, rootText, YELLOW, null) }
+                    verify { service.addReaction(globalConfig, ROOT_TS, "rotating_light") }
+
+                    verify(exactly = 1) { service.reply(globalConfig, ROOT_TS, invalidText, RED) }
+                    verify(exactly = 1) { service.recolorRoot(globalConfig, ROOT_TS, rootText, RED) }
+                    chainedThread.ts shouldBe ROOT_TS
+                    chainedThread.rootText shouldBe rootText
+
+                    verify(exactly = 1) { service.reply(globalConfig, ROOT_TS, validText, GREEN) }
+                    verify(exactly = 1) {
+                        service.recolorRoot(globalConfig, ROOT_TS, formatter.strikethroughHeadline(rootText), GREEN)
+                    }
+                    verify(exactly = 1) { service.removeReaction(globalConfig, ROOT_TS, "rotating_light") }
+                    verify(exactly = 1) { service.addReaction(globalConfig, ROOT_TS, ":white_check_mark:") }
+
+                    // Only the very first message was posted to the channel
+                    verify(exactly = 1) { service.postMessage(globalConfig, any(), any(), null) }
+                }
+            }
+
+            `when`("the event that continues an SSL thread cannot be found") {
+                val monitor = createHttpMonitor(httpMonitorRepository)
+                mockSuccessfulSlack()
                 eventDispatcher.testDispatch(SSLWillExpireEvent(monitor, generateCertificateInfo(), null))
                 val willExpireRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
+                storedThread(globalConfig, IntegrationThreadSubject.SSL, willExpireRecord.id)
 
+                // Dispatched without being persisted
+                val invalidEvent = SSLInvalidEvent(monitor, SSLValidationError("expired"), willExpireRecord)
+                eventDispatcher.dispatch(invalidEvent)
+
+                then("it should still continue the thread in Slack, without storing the new event in it") {
+                    verify(exactly = 1) {
+                        service.reply(globalConfig, ROOT_TS, formatter.toFormattedMessage(invalidEvent), RED)
+                    }
+                    verify(exactly = 1) { service.recolorRoot(globalConfig, ROOT_TS, any(), RED) }
+                    sslEventRepository.fetchByMonitorId(monitor.id).single().id shouldBe willExpireRecord.id
+                }
+            }
+
+            `when`("a certificate becomes invalid after it was valid") {
+                val monitor = createHttpMonitor(httpMonitorRepository)
+                mockSuccessfulSlack()
+                eventDispatcher.testDispatch(SSLWillExpireEvent(monitor, generateCertificateInfo(), null))
+                val willExpireRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
+                storedThread(globalConfig, IntegrationThreadSubject.SSL, willExpireRecord.id)
                 eventDispatcher.testDispatch(SSLValidEvent(monitor, generateCertificateInfo(), willExpireRecord))
+                val validRecord = sslEventRepository.fetchByMonitorId(monitor.id)
+                    .single { record -> record.status == SslStatus.VALID }
 
-                then("it should post a yellow, and then a green message") {
-                    val messages = mutableListOf<String>()
+                val invalidEvent = SSLInvalidEvent(monitor, SSLValidationError("expired"), validRecord)
+                eventDispatcher.testDispatch(invalidEvent)
 
-                    verify(exactly = 1) { slackBotServiceSpy.postMessage(globalConfig, capture(messages), YELLOW) }
-                    verify(exactly = 1) { slackBotServiceSpy.postMessage(globalConfig, capture(messages), GREEN) }
-                    messages[0] shouldContain "will expire soon"
-                    messages[1] shouldContain "has a VALID certificate"
+                then("it should open a new red thread") {
+                    verify(exactly = 1) {
+                        service.postMessage(globalConfig, formatter.toFormattedMessage(invalidEvent), RED, null)
+                    }
+                    val invalidRecord = sslEventRepository.fetchByMonitorId(monitor.id)
+                        .single { record -> record.status == SslStatus.INVALID }
+                    storedThread(globalConfig, IntegrationThreadSubject.SSL, invalidRecord.id)
                 }
             }
         }
 
-        given("the SlackBotEventHandler - maintenance window events") {
-            `when`("it receives a MaintenanceWindowStartEvent and a MaintenanceWindowEndEvent") {
+        given("the SlackBotEventHandler - maintenance windows") {
+
+            `when`("a maintenance starts and ends") {
                 val window = createMaintenanceWindow(
                     dslContext,
                     integrations = listOf(otherConfig.id, disabledConfig.id),
                 )
-                mockSuccessfulPost()
+                mockSuccessfulSlack()
+                val startEvent = MaintenanceWindowStartEvent(window)
+                eventDispatcher.dispatch(startEvent)
+                storedThread(otherConfig, IntegrationThreadSubject.MAINTENANCE, window.id)
+
+                val endEvent = MaintenanceWindowEndEvent(window)
+                eventDispatcher.dispatch(endEvent)
+
+                then("it should open a yellow thread, and resolve it in green, only in the assigned integrations") {
+                    val startText = formatter.toFormattedMessage(startEvent)
+                    val endText = formatter.toFormattedMessage(endEvent)
+                    startText shouldContain "Maintenance \"${window.name}\" has started"
+
+                    verify(exactly = 1) { service.postMessage(otherConfig, startText, YELLOW, null) }
+                    verify(exactly = 1) { service.reply(otherConfig, ROOT_TS, endText, GREEN) }
+                    verify(exactly = 1) {
+                        service.recolorRoot(otherConfig, ROOT_TS, formatter.strikethroughHeadline(startText), GREEN)
+                    }
+                    verify(inverse = true) { service.postMessage(globalConfig, any(), any(), any()) }
+                    verify(inverse = true) { service.postMessage(disabledConfig, any(), any(), any()) }
+                    verify(inverse = true) { service.addReaction(any(), any(), any()) }
+
+                    // A maintenance thread is over with the end of the maintenance
+                    threadRepository.find(otherConfig.id, IntegrationThreadSubject.MAINTENANCE, window.id)
+                        .shouldBeNull()
+                }
+            }
+
+            `when`("a maintenance starts and ends for an integration with reactions") {
+                val window = createMaintenanceWindow(dslContext, integrations = listOf(globalConfig.id))
+                mockSuccessfulSlack()
 
                 eventDispatcher.dispatch(MaintenanceWindowStartEvent(window))
+                storedThread(globalConfig, IntegrationThreadSubject.MAINTENANCE, window.id)
                 eventDispatcher.dispatch(MaintenanceWindowEndEvent(window))
 
-                then("it should post a yellow, and then a green message only to the assigned & enabled integrations") {
-                    val messages = mutableListOf<String>()
+                then("it should react to its root with the trigger reaction, and then swap it for the resolution one") {
+                    verifyOrder {
+                        service.addReaction(globalConfig, ROOT_TS, "rotating_light")
+                        service.removeReaction(globalConfig, ROOT_TS, "rotating_light")
+                        service.addReaction(globalConfig, ROOT_TS, ":white_check_mark:")
+                    }
+                }
+            }
 
-                    verify(exactly = 1) { slackBotServiceSpy.postMessage(otherConfig, capture(messages), YELLOW) }
-                    verify(exactly = 1) { slackBotServiceSpy.postMessage(otherConfig, capture(messages), GREEN) }
-                    verify(inverse = true) { slackBotServiceSpy.postMessage(globalConfig, any(), any()) }
-                    verify(inverse = true) { slackBotServiceSpy.postMessage(disabledConfig, any(), any()) }
-                    messages[0] shouldContain "Maintenance \"${window.name}\" has started"
-                    messages[1] shouldContain "Maintenance \"${window.name}\" has ended"
+            `when`("a maintenance ends without a thread") {
+                val window = createMaintenanceWindow(dslContext, integrations = listOf(otherConfig.id))
+                mockSuccessfulSlack()
+                val endEvent = MaintenanceWindowEndEvent(window)
+
+                eventDispatcher.dispatch(endEvent)
+
+                then("it should post a green message to the channel") {
+                    verify(exactly = 1) {
+                        service.postMessage(otherConfig, formatter.toFormattedMessage(endEvent), GREEN, null)
+                    }
+                    verify(inverse = true) { service.reply(any(), any(), any(), any()) }
                 }
             }
         }
 
         given("the SlackBotEventHandler - DNS drift and Docker restart events") {
+
             `when`("it receives a DnsRecordsChangedEvent") {
                 val monitor = createDnsMonitor(dnsMonitorRepository)
-                mockSuccessfulPost()
-
-                eventDispatcher.testDispatch(
-                    DnsRecordsChangedEvent(
-                        monitor = monitor,
-                        previousRecords = mapOf(DnsRecordType.A to listOf("1.1.1.1")),
-                        currentRecords = mapOf(DnsRecordType.A to listOf("2.2.2.2")),
-                    )
+                mockSuccessfulSlack()
+                val event = DnsRecordsChangedEvent(
+                    monitor = monitor,
+                    previousRecords = mapOf(DnsRecordType.A to listOf("1.1.1.1")),
+                    currentRecords = mapOf(DnsRecordType.A to listOf("2.2.2.2")),
                 )
 
-                then("it should post a blue message") {
-                    val message = mutableListOf<String>()
+                eventDispatcher.testDispatch(event)
 
-                    verify(exactly = 1) { slackBotServiceSpy.postMessage(globalConfig, capture(message), BLUE) }
-                    message.single() shouldContain "DNS records changed for monitor \"${monitor.name}\""
+                then("it should post a blue message to the channel") {
+                    val text = formatter.toFormattedMessage(event)
+                    text shouldContain "DNS records changed for monitor \"${monitor.name}\""
+                    verify(exactly = 1) { service.postMessage(globalConfig, text, BLUE, null) }
                 }
             }
 
             `when`("it receives a DockerContainerRestartedEvent") {
                 val monitor = createDockerMonitor(dockerMonitorRepository)
-                mockSuccessfulPost()
-
-                eventDispatcher.testDispatch(
+                mockSuccessfulSlack()
+                val event =
                     DockerContainerRestartedEvent(monitor = monitor, previousRestartCount = 2, currentRestartCount = 3)
-                )
 
-                then("it should post a yellow message") {
-                    val message = mutableListOf<String>()
+                eventDispatcher.testDispatch(event)
 
-                    verify(exactly = 1) { slackBotServiceSpy.postMessage(globalConfig, capture(message), YELLOW) }
-                    message.single() shouldContain "The container of monitor \"${monitor.name}\" has been restarted"
+                then("it should post a yellow message to the channel") {
+                    val text = formatter.toFormattedMessage(event)
+                    text shouldContain "The container of monitor \"${monitor.name}\" has been restarted"
+                    verify(exactly = 1) { service.postMessage(globalConfig, text, YELLOW, null) }
                 }
             }
         }
 
         given("the SlackBotEventHandler - error handling logic") {
-            `when`("Slack reports an error") {
+
+            `when`("Slack refuses to post the root message") {
                 val monitor = createHttpMonitor(httpMonitorRepository)
                 every { mockClient.postMessage(any(), any()) } returns
-                    Single.error(SlackApiException(SlackApiMethod.CHAT_POST_MESSAGE, "not_in_channel", null))
+                    Single.error(SlackApiException(SlackApiMethod.CHAT_POST_MESSAGE, SlackError.NOT_IN_CHANNEL, null))
 
-                then("it should not throw an exception") {
+                then("it should not throw an exception, and it should not store a thread") {
                     shouldNotThrowAny {
                         eventDispatcher.testDispatch(
                             HttpMonitorDownEvent(monitor, HttpStatus.INTERNAL_SERVER_ERROR, Exception(), null)
                         )
                     }
+                    val downRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id)
+                        .single { record -> record.status == UptimeStatus.DOWN }
+                    verify { mockClient.postMessage(any(), any()) }
+                    threadRepository.find(globalConfig.id, IntegrationThreadSubject.HTTP, downRecord.id)
+                        .shouldBeNull()
+                    verify(inverse = true) { mockClient.addReaction(any(), any()) }
                 }
             }
         }
@@ -283,15 +521,25 @@ class SlackBotEventHandlerTest(
         super.afterTest(testCase, result)
     }
 
-    private fun mockSuccessfulPost() {
-        every { mockClient.postMessage(any(), any()) } returns
-            Single.just(SlackApiResponse(ok = true, error = null, needed = null, ts = "1700000000.000100"))
+    private fun mockSuccessfulSlack() {
+        every { mockClient.postMessage(any(), any<SlackPostMessageRequest>()) } answers {
+            val request = secondArg<SlackPostMessageRequest>()
+            Single.just(okResponse(if (request.threadTs == null) ROOT_TS else REPLY_TS))
+        }
+        every { mockClient.updateMessage(any(), any()) } returns Single.just(okResponse(ROOT_TS))
+        every { mockClient.addReaction(any(), any()) } returns Single.just(okResponse(null))
+        every { mockClient.removeReaction(any(), any()) } returns Single.just(okResponse(null))
     }
 
+    private fun okResponse(ts: String?) = SlackApiResponse(ok = true, error = null, needed = null, ts = ts)
+
     companion object {
-        private const val RED = "#d63939"
-        private const val YELLOW = "#f59f00"
-        private const val GREEN = "#2fb344"
-        private const val BLUE = "#066fd1"
+        private const val ROOT_TS = "1700000000.000100"
+        private const val REPLY_TS = "1700000001.000200"
+
+        private val RED = SlackColor.RED
+        private val YELLOW = SlackColor.YELLOW
+        private val GREEN = SlackColor.GREEN
+        private val BLUE = SlackColor.BLUE
     }
 }

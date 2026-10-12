@@ -11,6 +11,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.id
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
@@ -117,7 +118,7 @@ class DatabaseEventHandlerTest(
                 then("it should insert a new UptimeEvent record with status UP") {
                     val expectedUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(event.monitor.id).single()
 
-                    verify(exactly = 1) { httpUptimeEventRepositorySpy.insertFromMonitorEvent(event, null) }
+                    verify(exactly = 1) { httpUptimeEventRepositorySpy.insertFromMonitorEvent(event, dslContext) }
                     verify(exactly = 0) { httpUptimeEventRepositorySpy.endEventById(any(), any(), any()) }
 
                     expectedUptimeRecord.status shouldBe UptimeStatus.UP
@@ -140,7 +141,7 @@ class DatabaseEventHandlerTest(
                 then("it should insert a new UptimeEvent record with status DOWN") {
                     val expectedUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(event.monitor.id).single()
 
-                    verify(exactly = 1) { httpUptimeEventRepositorySpy.insertFromMonitorEvent(event, null) }
+                    verify(exactly = 1) { httpUptimeEventRepositorySpy.insertFromMonitorEvent(event, dslContext) }
                     verify(exactly = 0) { httpUptimeEventRepositorySpy.endEventById(any(), any(), any()) }
 
                     expectedUptimeRecord.status shouldBe UptimeStatus.DOWN
@@ -332,7 +333,7 @@ class DatabaseEventHandlerTest(
                 then("it should insert a new UptimeEvent record with status UP") {
                     val expectedUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(event.monitor.id).single()
 
-                    verify(exactly = 1) { pushUptimeEventRepositorySpy.insertFromMonitorEvent(event, null) }
+                    verify(exactly = 1) { pushUptimeEventRepositorySpy.insertFromMonitorEvent(event, dslContext) }
                     verify(exactly = 0) { pushUptimeEventRepositorySpy.endEventById(any(), any(), any()) }
 
                     expectedUptimeRecord.status shouldBe UptimeStatus.UP
@@ -354,7 +355,7 @@ class DatabaseEventHandlerTest(
                 then("it should insert a new UptimeEvent record with status DOWN") {
                     val expectedUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(event.monitor.id).single()
 
-                    verify(exactly = 1) { pushUptimeEventRepositorySpy.insertFromMonitorEvent(event, null) }
+                    verify(exactly = 1) { pushUptimeEventRepositorySpy.insertFromMonitorEvent(event, dslContext) }
                     verify(exactly = 0) { pushUptimeEventRepositorySpy.endEventById(any(), any(), any()) }
 
                     expectedUptimeRecord.status shouldBe UptimeStatus.DOWN
@@ -555,7 +556,7 @@ class DatabaseEventHandlerTest(
                 then("it should insert a new UptimeEvent record with status UP") {
                     val expectedUptimeRecord = icmpUptimeEventRepository.fetchByMonitorId(event.monitor.id).single()
 
-                    verify(exactly = 1) { icmpUptimeEventRepositorySpy.insertFromMonitorEvent(event, null) }
+                    verify(exactly = 1) { icmpUptimeEventRepositorySpy.insertFromMonitorEvent(event, dslContext) }
                     verify(exactly = 0) { icmpUptimeEventRepositorySpy.endEventById(any(), any(), any()) }
 
                     expectedUptimeRecord.status shouldBe UptimeStatus.UP
@@ -578,7 +579,7 @@ class DatabaseEventHandlerTest(
                 then("it should insert a new UptimeEvent record with status DOWN") {
                     val expectedUptimeRecord = icmpUptimeEventRepository.fetchByMonitorId(event.monitor.id).single()
 
-                    verify(exactly = 1) { icmpUptimeEventRepositorySpy.insertFromMonitorEvent(event, null) }
+                    verify(exactly = 1) { icmpUptimeEventRepositorySpy.insertFromMonitorEvent(event, dslContext) }
                     verify(exactly = 0) { icmpUptimeEventRepositorySpy.endEventById(any(), any(), any()) }
 
                     expectedUptimeRecord.status shouldBe UptimeStatus.DOWN
@@ -753,7 +754,7 @@ class DatabaseEventHandlerTest(
                 then("it should insert a new UptimeEvent record with status UP") {
                     val expectedUptimeRecord = tcpUptimeEventRepository.fetchByMonitorId(event.monitor.id).single()
 
-                    verify(exactly = 1) { tcpUptimeEventRepositorySpy.insertFromMonitorEvent(event, null) }
+                    verify(exactly = 1) { tcpUptimeEventRepositorySpy.insertFromMonitorEvent(event, dslContext) }
                     verify(exactly = 0) { tcpUptimeEventRepositorySpy.endEventById(any(), any(), any()) }
 
                     expectedUptimeRecord.status shouldBe UptimeStatus.UP
@@ -775,7 +776,7 @@ class DatabaseEventHandlerTest(
                 then("it should insert a new UptimeEvent record with status DOWN") {
                     val expectedUptimeRecord = tcpUptimeEventRepository.fetchByMonitorId(event.monitor.id).single()
 
-                    verify(exactly = 1) { tcpUptimeEventRepositorySpy.insertFromMonitorEvent(event, null) }
+                    verify(exactly = 1) { tcpUptimeEventRepositorySpy.insertFromMonitorEvent(event, dslContext) }
                     verify(exactly = 0) { tcpUptimeEventRepositorySpy.endEventById(any(), any(), any()) }
 
                     expectedUptimeRecord.status shouldBe UptimeStatus.DOWN
@@ -942,7 +943,7 @@ class DatabaseEventHandlerTest(
                 then("it should insert a new UptimeEvent record with status UP") {
                     val expectedUptimeRecord = dockerUptimeEventRepository.fetchByMonitorId(event.monitor.id).single()
 
-                    verify(exactly = 1) { dockerUptimeEventRepositorySpy.insertFromMonitorEvent(event, null) }
+                    verify(exactly = 1) { dockerUptimeEventRepositorySpy.insertFromMonitorEvent(event, dslContext) }
                     verify(exactly = 0) { dockerUptimeEventRepositorySpy.endEventById(any(), any(), any()) }
 
                     expectedUptimeRecord.status shouldBe UptimeStatus.UP
@@ -964,7 +965,7 @@ class DatabaseEventHandlerTest(
                 then("it should insert a new UptimeEvent record with status DOWN") {
                     val expectedUptimeRecord = dockerUptimeEventRepository.fetchByMonitorId(event.monitor.id).single()
 
-                    verify(exactly = 1) { dockerUptimeEventRepositorySpy.insertFromMonitorEvent(event, null) }
+                    verify(exactly = 1) { dockerUptimeEventRepositorySpy.insertFromMonitorEvent(event, dslContext) }
                     verify(exactly = 0) { dockerUptimeEventRepositorySpy.endEventById(any(), any(), any()) }
 
                     expectedUptimeRecord.status shouldBe UptimeStatus.DOWN
@@ -1509,6 +1510,79 @@ class DatabaseEventHandlerTest(
 
                 then("it should record no integrations, as nothing is notified about it") {
                     sslEventRepository.fetchByMonitorId(monitor.id).single().integrations.shouldBeEmpty()
+                }
+            }
+        }
+
+        given("the DatabaseEventHandler - events persisted as a part of a transaction") {
+
+            `when`("the very first event of a monitor is persisted in a transaction that is rolled back") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                val event = PushMonitorDownEvent(monitor, "Boom", null)
+
+                shouldThrow<IllegalStateException> {
+                    dslContext.transaction { config ->
+                        dbEventHandler.handleUptimeMonitorEvent(event, config.dsl())
+                        error("Rollback")
+                    }
+                }
+
+                then("the event should be rolled back with it, because it was written in the same transaction") {
+                    pushUptimeEventRepository.fetchByMonitorId(monitor.id).shouldBeEmpty()
+                }
+            }
+
+            `when`("a status change is persisted in a transaction that is rolled back") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                dbEventHandler.handleUptimeMonitorEvent(PushMonitorUpEvent(monitor, null))
+                val upRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                val event = PushMonitorDownEvent(monitor, "Boom", upRecord)
+
+                shouldThrow<IllegalStateException> {
+                    dslContext.transaction { config ->
+                        dbEventHandler.handleUptimeMonitorEvent(event, config.dsl())
+                        error("Rollback")
+                    }
+                }
+
+                then("neither the end of the previous event, nor the new one should be persisted") {
+                    val events = pushUptimeEventRepository.fetchByMonitorId(monitor.id)
+                    events.single().id shouldBe upRecord.id
+                    events.single().endedAt shouldBe null
+                }
+            }
+
+            `when`("an event with the same status is persisted in a transaction that is rolled back") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                dbEventHandler.handleUptimeMonitorEvent(PushMonitorDownEvent(monitor, "Boom", null))
+                val downRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                val event = PushMonitorDownEvent(monitor, "Boom again", downRecord)
+
+                shouldThrow<IllegalStateException> {
+                    dslContext.transaction { config ->
+                        dbEventHandler.handleUptimeMonitorEvent(event, config.dsl())
+                        error("Rollback")
+                    }
+                }
+
+                then("the update of the previous event should be rolled back too") {
+                    pushUptimeEventRepository.fetchByMonitorId(monitor.id).single().updatedAt shouldBe
+                        downRecord.updatedAt
+                }
+            }
+
+            `when`("a status change is persisted in a transaction that is committed") {
+                val monitor = createPushMonitor(pushMonitorRepository)
+                dbEventHandler.handleUptimeMonitorEvent(PushMonitorUpEvent(monitor, null))
+                val upRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
+                val event = PushMonitorDownEvent(monitor, "Boom", upRecord)
+
+                dslContext.transaction { config -> dbEventHandler.handleUptimeMonitorEvent(event, config.dsl()) }
+
+                then("both the end of the previous event, and the new one should be persisted") {
+                    val events = pushUptimeEventRepository.fetchByMonitorId(monitor.id)
+                    events.single { record -> record.id == upRecord.id }.endedAt shouldBe event.dispatchedAt
+                    events.single { record -> record.id != upRecord.id }.status shouldBe UptimeStatus.DOWN
                 }
             }
         }
