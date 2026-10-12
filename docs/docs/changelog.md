@@ -14,6 +14,12 @@ Docker monitors are fully integrated across _Kuvasz_: they're manageable via the
 
 ---
 
+**🤖 Slack Bot integration**
+
+The new [**Slack Bot**](management/integrations.md#slack-bot) integration posts the notifications to a Slack channel **as a Slack app**, instead of an incoming webhook. It keeps **every incident and maintenance in a [thread](management/integrations.md#slack-bot-threads) of its own**, so a flapping monitor doesn't flood the channel anymore: the first message of the thread always shows the **current state with its color** (e.g. it turns green once the incident is resolved), and the bot can also [**react**](management/integrations.md#trigger-reaction) to it. The [**notes**](features/incidents.md#incident-notes) of the incidents are posted into their threads too ([**public ones only**](management/integrations.md#incident-notes) by default). The messages are **color-coded** by the severity of the event, and if Slack refuses one (e.g. because of a missing scope, or the bot not being in the channel), the error tells you how to fix it. It supports the usual [**global**](management/integrations.md#global) and [**excluded events**](management/integrations.md#excluded-events) settings, and it can be [**tested**](management/integrations.md#testing-integrations) right from the UI.
+
+---
+
 **🔀 Checking monitors through proxies**
 
 [**HTTP**](management/http-monitors.md#proxy) and [**TCP monitors**](management/tcp-monitors.md#proxy) can be checked through an outbound **HTTP** or **SOCKS5** [**proxy**](management/proxies.md) now (with or without authentication), e.g. a **corporate egress proxy**, or a SOCKS5 proxy into a **private network** (like `ssh -D` through a bastion host).

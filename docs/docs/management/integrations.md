@@ -144,6 +144,165 @@ integrations:
     # ... other Slack integrations
 ```
 
+## Slack Bot
+
+**Configuration alias**: `slack-bot`
+
+The _Slack Bot_ integration sends the notifications to a Slack channel **as a Slack app (bot)**, through the
+[**Slack Web API**](https://docs.slack.dev/apis/web-api/){target="blank"}, instead of an incoming webhook. Instead of
+flooding the channel with separate messages, it keeps **every incident in a thread of its own**
+([see below](#slack-bot-threads)), and every message gets a **colored side bar** that tells its severity at a glance:
+
+| Color     | Events                                                                         |
+|-----------|--------------------------------------------------------------------------------|
+| 🔴 Red    | A monitor went down, a certificate became invalid                              |
+| 🟡 Yellow | A certificate will expire soon, a maintenance has started, a container restart |
+| 🟢 Green  | A monitor recovered, a certificate became valid, a maintenance has ended       |
+| 🔵 Blue   | The DNS records of a monitor changed                                           |
+
+!!! info "Creating the Slack app"
+
+    1. Create a new app on [**api.slack.com/apps**](https://api.slack.com/apps){target="blank"} (_From scratch_),
+       and pick the workspace of the channel.
+    2. Under **OAuth & Permissions** → **Bot Token Scopes**, add the `chat:write` scope, and also `reactions:write`
+       if you want to use [reactions](#trigger-reaction).
+    3. Install the app to your workspace, and copy the **Bot User OAuth Token** (it starts with `xoxb-`). This is
+       your `bot-token`.
+    4. Invite the bot into the channel, e.g. by typing `/invite @YourAppName` in the channel. Without that, Slack
+       refuses the messages with a `not_in_channel` error.
+    5. Open the details of the channel (click on its name): its **Channel ID** (e.g. `C0123456789`) is at the very
+       bottom. This is your `channel-id`.
+
+!!! tip "Slack or Slack Bot?"
+
+    The [**Slack**](#slack) integration is the easiest to set up: a single webhook URL. The _Slack Bot_ needs a
+    Slack app, but in return, it keeps the incidents in threads, its messages are colored, and if Slack refuses
+    one, the error tells you why (e.g. a missing scope, or the bot not being in the channel), both in the logs and
+    when you [**test the integration**](#testing-integrations).
+
+### Bot token
+
+<!-- md:version 4.5.0 -->
+<!-- md:flag required -->
+<!-- md:type `string` -->
+<!-- md:yaml_prop `bot-token` -->
+
+The **Bot User OAuth Token** of your Slack app (`xoxb-...`), with the `chat:write` scope. Keep it secret, e.g. by
+passing it in an environment variable, like in the example below.
+
+### Channel ID
+
+<!-- md:version 4.5.0 -->
+<!-- md:flag required -->
+<!-- md:type `string` -->
+<!-- md:yaml_prop `channel-id` -->
+
+The **ID of the channel** the notifications are posted to (e.g. `C0123456789`), not its name. You find it at the
+bottom of the details of the channel. Public and private channels work the same way, as long as the bot has been
+invited into them.
+
+### Trigger reaction
+
+<!-- md:version 4.5.0 -->
+<!-- md:default empty -->
+<!-- md:type `string` -->
+<!-- md:yaml_prop `trigger-reaction` -->
+
+The **emoji the bot reacts with** to the first message of an incident or a maintenance, as long as it is ongoing,
+e.g. `rotating_light`. Use the name of the emoji, with or without the colons around it (`:rotating_light:`). Leave it
+empty, if you don't want any reactions.
+
+Reactions need the `reactions:write` scope too.
+
+### Resolution reaction
+
+<!-- md:version 4.5.0 -->
+<!-- md:default empty -->
+<!-- md:type `string` -->
+<!-- md:yaml_prop `resolution-reaction` -->
+
+The **emoji the bot reacts with** to the first message of an incident once it is resolved, or of a maintenance once
+it is over, e.g. `white_check_mark`, replacing the [trigger reaction](#trigger-reaction) (if there is any).
+
+### Incident notes
+
+<!-- md:version 4.5.0 -->
+<!-- md:default `PUBLIC` -->
+<!-- md:type `enum` -->
+<!-- md:yaml_prop `incident-notes` -->
+
+Which [**notes**](../features/incidents.md#incident-notes) of the incidents are posted into their
+[threads](#slack-bot-threads):
+
+| Value    | Notes posted                                                                             |
+|----------|------------------------------------------------------------------------------------------|
+| `PUBLIC` | Only the public ones, the same ones your users see on the status pages (**the default**) |
+| `ALL`    | Every note, including the private ones, e.g. for an internal channel of your team        |
+| `NONE`   | None of them                                                                             |
+
+### Threads { #slack-bot-threads }
+
+Every **incident**, and every **maintenance**, gets a **thread of its own**:
+
+- **Its start** (a monitor going down, a certificate that will expire soon, or becomes invalid, a maintenance that
+  has started) is posted to the channel. This is the **root** of the thread.
+- **Everything after it** is posted into the thread: its resolution, an expiring certificate becoming invalid, the
+  end of a maintenance.
+- The **root keeps its text, but its color always tells the current state**: e.g. it turns from red to green once
+  the incident is resolved, and its first line gets ~~struck through~~. That's how you can tell at a glance which
+  incidents are still ongoing, without opening any thread. The [reactions](#trigger-reaction) (if any) follow the
+  state of the root too.
+
+The [**notes**](../features/incidents.md#incident-notes) of an incident are posted into its thread too (only the
+public ones by default, see [incident notes](#incident-notes)), even after the incident has been resolved. Editing a
+note posts it again, as a new reply, while deleting one, or making it private doesn't remove its earlier reply. The
+notes of an incident without a thread aren't posted anywhere.
+
+Every new incident opens a new thread, so a flapping monitor gets a new thread every time it goes down. Use a
+[failure count threshold](http-monitors.md#failure-count-threshold) on the monitor if that's too noisy. The DNS record changes and the restarts of
+Docker containers are not part of an incident, so they're always posted directly to the channel.
+
+A message is posted to the channel instead of a thread, whenever there is no thread to post into, for example:
+
+- The integration didn't receive the start of the incident (e.g. it was
+  [excluded](#excluded-events), it was assigned to the monitor only during the incident, or the incident started
+  before the integration existed).
+- The root of the thread is gone (e.g. it was deleted in Slack, or the [channel ID](#channel-id) has been changed
+  since then).
+
+!!! warning "Mass outages"
+
+    Slack limits how fast an app can post into a channel (roughly one message per second, with short bursts).
+    _Kuvasz_ retries the rate limited calls for about a minute, but if a lot of monitors go down (or recover) at
+    once, Slack may still decide to hide some of the messages ("_Due to a high volume of activity, we are not
+    displaying some messages sent by this application_"), even though it accepted them.
+
+    The most common reason for a mass outage is _Kuvasz_ itself losing its network connection, which the
+    [connectivity check](../features/connectivity-check.md) is there for: while it's enabled, such an outage doesn't mark
+    every monitor as down in the first place.
+
+!!! note
+
+    _Kuvasz_ remembers the threads of the incidents as long as it keeps the incidents themselves (see
+    `event-data-retention-days`), and the threads of the maintenance windows until their end. If an incident never
+    gets resolved for an integration (e.g. its monitor was deleted, or the integration was unassigned from it
+    in the meantime), its root stays red.
+
+---
+
+```yaml title="Slack Bot integration example"
+integrations:
+  slack-bot:
+    - name: slack-ops
+      bot-token: ${SLACK_BOT_TOKEN}
+      channel-id: 'C0123456789'
+      global: true
+      trigger-reaction: rotating_light
+      resolution-reaction: white_check_mark
+      incident-notes: ALL
+    # ... other Slack Bot integrations
+```
+
 ## Discord
 
 **Configuration alias**: `discord`
