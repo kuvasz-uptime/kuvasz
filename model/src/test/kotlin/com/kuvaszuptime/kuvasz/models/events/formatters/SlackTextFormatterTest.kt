@@ -82,6 +82,21 @@ class SlackTextFormatterTest : BehaviorSpec(
                 }
             }
 
+            `when`("the name or the URL of the monitor has characters that Slack would interpret as markup") {
+                val markupMonitor = monitor.copy().apply {
+                    setName("API <!channel>")
+                    setUrl("https://test.url/health?a=1&b=<2>")
+                }
+                val event = HttpMonitorUpEvent(markupMonitor, HttpStatus.OK, 300, null)
+
+                then("it should escape them") {
+                    val expectedMessage =
+                        "✅ *Your monitor \"API &lt;!channel&gt;\" (https://test.url/health?a=1&amp;b=&lt;2&gt;) " +
+                            "is UP (200)*\n_Latency: 300ms_"
+                    formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+
             `when`("it gets a MonitorUpEvent with a previousEvent with the same status") {
                 val previousEvent = HttpUptimeEventRecord().setStatus(UptimeStatus.UP)
                 val event = HttpMonitorUpEvent(monitor, HttpStatus.OK, 300, previousEvent)
@@ -511,6 +526,20 @@ class SlackTextFormatterTest : BehaviorSpec(
                         "ℹ️ *DNS records changed for monitor \"drift_monitor\"*\nA: [1.1.1.1] → [2.2.2.2]"
                 }
             }
+
+            `when`("the records have characters that Slack would interpret as markup") {
+                val event = DnsRecordsChangedEvent(
+                    monitor = monitor,
+                    previousRecords = mapOf(DnsRecordType.TXT to listOf("v=spf1 -all")),
+                    currentRecords = mapOf(DnsRecordType.TXT to listOf("<https://evil.example|Reset your password>")),
+                )
+
+                then("it should escape them, so that a record can't turn into a link or a mention") {
+                    formatter.toFormattedMessage(event) shouldBe
+                        "ℹ️ *DNS records changed for monitor \"drift_monitor\"*\n" +
+                        "TXT: [v=spf1 -all] → [&lt;https://evil.example|Reset your password&gt;]"
+                }
+            }
         }
 
         given("toFormattedMessage(event: DockerContainerRestartedEvent)") {
@@ -578,6 +607,17 @@ class SlackTextFormatterTest : BehaviorSpec(
                 }
             }
 
+            `when`("it gets an SSLInvalidEvent with an error that has characters Slack would interpret as markup") {
+                val event = SSLInvalidEvent(monitor, SSLValidationError("No name matching <a&b.example>"), null)
+
+                then("it should escape them") {
+                    val expectedMessage =
+                        "🚨 *Your site \"test_monitor\" (https://test.url) has an INVALID " +
+                            "certificate*\n_Reason: No name matching &lt;a&amp;b.example&gt;_"
+                    formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+
             `when`("it gets an SSLInvalidEvent with a previousEvent with the same status") {
                 val previousEvent = SslEventRecord().setStatus(SslStatus.INVALID)
                 val event = SSLInvalidEvent(monitor, SSLValidationError("ssl error"), previousEvent)
@@ -638,6 +678,20 @@ class SlackTextFormatterTest : BehaviorSpec(
                 then("it should omit the description line") {
                     formatter.toFormattedMessage(event) shouldBe
                         "🔧 *Maintenance \"test_window\" has started*"
+                }
+            }
+
+            `when`("its name or description has characters that Slack would interpret as markup") {
+                val event = MaintenanceWindowStartEvent(
+                    window.copy().apply {
+                        setName("DB <primary>")
+                        setDescription("<!here> upgrade & restart")
+                    }
+                )
+
+                then("it should escape them") {
+                    formatter.toFormattedMessage(event) shouldBe
+                        "🔧 *Maintenance \"DB &lt;primary&gt;\" has started*\n_&lt;!here&gt; upgrade &amp; restart_"
                 }
             }
 

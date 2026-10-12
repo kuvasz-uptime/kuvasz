@@ -73,6 +73,7 @@ The new [**connectivity check**](features/connectivity-check.md) periodically di
 ### Fixes
 
 - **Shutting down could hang while monitors were failing**: on shutdown, _Kuvasz_ waited for **every** running check to finish, while the checks of the other monitor types kept starting new ones, and the finished ones even re-scheduled themselves. With enough slow or unreachable targets, it never stopped on its own, and _Docker_ (or whatever runs it) had to kill it. Now no new check starts once the shutdown begins, and the running ones get **at most 5 seconds** to finish.
+- **Markup in the Slack and Telegram notifications**: the names of the monitors and maintenance windows, their URLs and descriptions, the reasons of the invalid certificates, and the changed DNS records are **escaped** now, so they're shown **as they are**. Before, a `<`, `>` or `&` in them could garble the message, make _Telegram_ reject it altogether (e.g. a monitor called `API <prod>`), or even turn a DNS record into a **link** or a **mention** (e.g. `<!channel>`) in _Slack_.
 
 ### Docs
 

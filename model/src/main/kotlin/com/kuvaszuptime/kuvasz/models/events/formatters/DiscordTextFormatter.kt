@@ -5,6 +5,6 @@ object DiscordTextFormatter : RichTextMessageFormatter() {
 
     override fun italic(input: String): String = "*$input*"
 
-    // Not needed yet, because no free text written by the users (e.g. incident notes) is sent to Discord
+    // Discord doesn't interpret &, < and > as a markup (like Slack or Telegram), it has no entities to escape with
     override fun escape(input: String): String = input
 }

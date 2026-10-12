@@ -35,7 +35,8 @@ abstract class RichTextMessageFormatter : TextMessageFormatter {
     abstract fun italic(input: String): String
 
     /**
-     * Escapes a free text written by a user, so that it's shown as it is, instead of being interpreted as markup
+     * Escapes a text that comes from the users (e.g. the name of a monitor), or from an external source (e.g. the
+     * records of a DNS name), so that it's shown as it is, instead of being interpreted as markup
      */
     abstract fun escape(input: String): String
 
@@ -55,24 +56,28 @@ abstract class RichTextMessageFormatter : TextMessageFormatter {
     }.assemble()
 
     private fun HttpMonitorUpEvent.toParts() = toStructuredMessage().let { details ->
-        listOfNotNull(getEmoji() + " " + bold(details.summary), italic(details.latency), details.previousDownTime)
+        listOfNotNull(
+            getEmoji() + " " + bold(escape(details.summary)),
+            italic(details.latency),
+            details.previousDownTime,
+        )
     }
 
     private fun HttpMonitorDownEvent.toParts() = toStructuredMessage().let { details ->
-        listOfNotNull(getEmoji() + " " + bold(details.summary), details.previousUpTime)
+        listOfNotNull(getEmoji() + " " + bold(escape(details.summary)), details.previousUpTime)
     }
 
     private fun PushMonitorDownEvent.toParts() = toStructuredMessage().let { details ->
-        listOfNotNull(getEmoji() + " " + bold(details.summary), details.previousUpTime)
+        listOfNotNull(getEmoji() + " " + bold(escape(details.summary)), details.previousUpTime)
     }
 
     private fun PushMonitorUpEvent.toParts() = toStructuredMessage().let { details ->
-        listOfNotNull(getEmoji() + " " + bold(details.summary), details.previousDownTime)
+        listOfNotNull(getEmoji() + " " + bold(escape(details.summary)), details.previousDownTime)
     }
 
     private fun IcmpMonitorUpEvent.toParts() = toStructuredMessage().let { details ->
         listOfNotNull(
-            getEmoji() + " " + bold(details.summary),
+            getEmoji() + " " + bold(escape(details.summary)),
             details.latency?.let { italic(it) },
             details.packetLoss,
             details.previousDownTime,
@@ -80,50 +85,50 @@ abstract class RichTextMessageFormatter : TextMessageFormatter {
     }
 
     private fun IcmpMonitorDownEvent.toParts() = toStructuredMessage().let { details ->
-        listOfNotNull(getEmoji() + " " + bold(details.summary), details.packetLoss, details.previousUpTime)
+        listOfNotNull(getEmoji() + " " + bold(escape(details.summary)), details.packetLoss, details.previousUpTime)
     }
 
     private fun TcpMonitorUpEvent.toParts() = toStructuredMessage().let { details ->
         listOfNotNull(
-            getEmoji() + " " + bold(details.summary),
+            getEmoji() + " " + bold(escape(details.summary)),
             details.latency?.let { italic(it) },
             details.previousDownTime,
         )
     }
 
     private fun TcpMonitorDownEvent.toParts() = toStructuredMessage().let { details ->
-        listOfNotNull(getEmoji() + " " + bold(details.summary), details.previousUpTime)
+        listOfNotNull(getEmoji() + " " + bold(escape(details.summary)), details.previousUpTime)
     }
 
     private fun DockerMonitorUpEvent.toParts() = toStructuredMessage().let { details ->
-        listOfNotNull(getEmoji() + " " + bold(details.summary), details.previousDownTime)
+        listOfNotNull(getEmoji() + " " + bold(escape(details.summary)), details.previousDownTime)
     }
 
     private fun DockerMonitorDownEvent.toParts() = toStructuredMessage().let { details ->
-        listOfNotNull(getEmoji() + " " + bold(details.summary), details.previousUpTime)
+        listOfNotNull(getEmoji() + " " + bold(escape(details.summary)), details.previousUpTime)
     }
 
     private fun DnsMonitorUpEvent.toParts() = toStructuredMessage().let { details ->
         listOfNotNull(
-            getEmoji() + " " + bold(details.summary),
+            getEmoji() + " " + bold(escape(details.summary)),
             details.latency?.let { italic(it) },
             details.previousDownTime,
         )
     }
 
     private fun DnsMonitorDownEvent.toParts() = toStructuredMessage().let { details ->
-        listOfNotNull(getEmoji() + " " + bold(details.summary), details.previousUpTime)
+        listOfNotNull(getEmoji() + " " + bold(escape(details.summary)), details.previousUpTime)
     }
 
     fun toFormattedMessage(event: DnsRecordsChangedEvent): String = event.toStructuredMessage().let { details ->
         listOfNotNull(
-            event.getEmoji() + " " + bold(details.summary),
-            details.details.takeIf { it.isNotBlank() },
+            event.getEmoji() + " " + bold(escape(details.summary)),
+            details.details.takeIf { it.isNotBlank() }?.let { escape(it) },
         )
     }.assemble()
 
     fun toFormattedMessage(event: DockerContainerRestartedEvent): String = event.toStructuredMessage().let { details ->
-        listOf(event.getEmoji() + " " + bold(details.summary), details.details)
+        listOf(event.getEmoji() + " " + bold(escape(details.summary)), details.details)
     }.assemble()
 
     fun toFormattedMessage(event: IncidentNoteEvent): String = with(event.note) {
@@ -141,22 +146,22 @@ abstract class RichTextMessageFormatter : TextMessageFormatter {
     override fun toFormattedMessage(event: SSLMonitorEvent): String = when (event) {
         is SSLValidEvent -> event.toStructuredMessage().let { details ->
             listOfNotNull(
-                event.getEmoji() + " " + bold(details.summary),
+                event.getEmoji() + " " + bold(escape(details.summary)),
                 details.previousInvalidEvent
             )
         }
 
         is SSLWillExpireEvent -> event.toStructuredMessage().let { details ->
             listOf(
-                event.getEmoji() + " " + bold(details.summary),
+                event.getEmoji() + " " + bold(escape(details.summary)),
                 italic(details.validUntil)
             )
         }
 
         is SSLInvalidEvent -> event.toStructuredMessage().let { details ->
             listOfNotNull(
-                event.getEmoji() + " " + bold(details.summary),
-                italic(details.error),
+                event.getEmoji() + " " + bold(escape(details.summary)),
+                italic(escape(details.error)),
                 details.previousValidEvent
             )
         }
@@ -164,10 +169,10 @@ abstract class RichTextMessageFormatter : TextMessageFormatter {
 
     override fun toFormattedMessage(event: MaintenanceWindowEvent): String =
         event.toStructuredMessage().let { details ->
-            val headline = event.getEmoji() + " " + bold(details.summary)
+            val headline = event.getEmoji() + " " + bold(escape(details.summary))
             when (details) {
                 is StructuredMaintenanceStartMessage ->
-                    listOfNotNull(headline, details.description?.let { italic(it) })
+                    listOfNotNull(headline, details.description?.let { italic(escape(it)) })
 
                 is StructuredMaintenanceEndMessage -> listOf(headline)
             }
