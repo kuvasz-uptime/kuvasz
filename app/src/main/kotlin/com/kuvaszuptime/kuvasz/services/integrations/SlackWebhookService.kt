@@ -3,7 +3,7 @@ package com.kuvaszuptime.kuvasz.services.integrations
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
-import com.kuvaszuptime.kuvasz.models.handlers.SlackWebhookMessage
+import com.kuvaszuptime.kuvasz.models.handlers.slack.SlackWebhookMessage
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.micronaut.context.annotation.Requires
 import io.micronaut.http.HttpRequest

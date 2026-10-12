@@ -39,8 +39,14 @@ class DatabaseEventHandler(
         private val logger = loggerFor<DatabaseEventHandler>()
     }
 
-    fun handleUptimeMonitorEvent(currentEvent: UptimeMonitorEvent) {
+    /**
+     * Persists the uptime event. If [txCtx] is given, it's written as a part of that transaction (which saves the
+     * caller a second connection), so the event must not be dispatched before that transaction is committed: the
+     * handlers wouldn't see it from their own connections otherwise.
+     */
+    fun handleUptimeMonitorEvent(currentEvent: UptimeMonitorEvent, txCtx: DSLContext? = null) {
         val monitor = currentEvent.monitor
+        val ctx = txCtx ?: dslContext
 
         currentEvent.previousEvent?.let { previousEvent ->
             logger.debug(
@@ -52,10 +58,11 @@ class DatabaseEventHandler(
                     "[${monitor.name}] The status of the previous event is different from the " +
                         "current event. Ending the previous event and inserting a new one."
                 )
-                dslContext.transactionResult { config ->
-                    val txCtx = config.dsl()
-                    endUptimeEvent(previousEvent, currentEvent, txCtx)
-                    insertUptimeEvent(currentEvent, txCtx)
+                // A savepoint, if it's a part of the caller's transaction
+                ctx.transactionResult { config ->
+                    val nestedCtx = config.dsl()
+                    endUptimeEvent(previousEvent, currentEvent, nestedCtx)
+                    insertUptimeEvent(currentEvent, nestedCtx)
                 }
                 logger.debug(
                     "[${monitor.name}] The previous event has been ended and a new one " +
@@ -66,11 +73,11 @@ class DatabaseEventHandler(
                     "[${monitor.name}] The status of the previous event is the same as the current " +
                         "event. Updating the updatedAt timestamp of the previous event."
                 )
-                updateEvent(currentEvent, previousEvent)
+                updateEvent(currentEvent, previousEvent, ctx)
             }
         } ?: run {
             logger.debug("A previous event was not found for [${monitor.name}], creating a new one")
-            insertUptimeEvent(currentEvent)
+            insertUptimeEvent(currentEvent, ctx)
         }
     }
 
@@ -153,14 +160,14 @@ class DatabaseEventHandler(
             integrationRepository.resolveTargetIntegrationIds(this).toTypedArray()
         }
 
-    private fun updateEvent(currentEvent: UptimeMonitorEvent, previousEvent: UptimeEventRecord) =
+    private fun updateEvent(currentEvent: UptimeMonitorEvent, previousEvent: UptimeEventRecord, ctx: DSLContext) =
         when (currentEvent) {
-            is HttpUptimeMonitorEvent -> httpUptimeEventRepository.updateEvent(previousEvent.id, currentEvent)
-            is PushUptimeMonitorEvent -> pushUptimeEventRepository.updateEvent(previousEvent.id, currentEvent)
-            is IcmpUptimeMonitorEvent -> icmpUptimeEventRepository.updateEvent(previousEvent.id, currentEvent)
-            is TcpUptimeMonitorEvent -> tcpUptimeEventRepository.updateEvent(previousEvent.id, currentEvent)
-            is DnsUptimeMonitorEvent -> dnsUptimeEventRepository.updateEvent(previousEvent.id, currentEvent)
-            is DockerUptimeMonitorEvent -> dockerUptimeEventRepository.updateEvent(previousEvent.id, currentEvent)
+            is HttpUptimeMonitorEvent -> httpUptimeEventRepository.updateEvent(previousEvent.id, currentEvent, ctx)
+            is PushUptimeMonitorEvent -> pushUptimeEventRepository.updateEvent(previousEvent.id, currentEvent, ctx)
+            is IcmpUptimeMonitorEvent -> icmpUptimeEventRepository.updateEvent(previousEvent.id, currentEvent, ctx)
+            is TcpUptimeMonitorEvent -> tcpUptimeEventRepository.updateEvent(previousEvent.id, currentEvent, ctx)
+            is DnsUptimeMonitorEvent -> dnsUptimeEventRepository.updateEvent(previousEvent.id, currentEvent, ctx)
+            is DockerUptimeMonitorEvent -> dockerUptimeEventRepository.updateEvent(previousEvent.id, currentEvent, ctx)
         }
 
     fun handleSSLMonitorEvent(currentEvent: SSLMonitorEvent) {

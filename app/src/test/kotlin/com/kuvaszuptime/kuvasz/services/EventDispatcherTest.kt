@@ -3,6 +3,7 @@
 package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
+import com.kuvaszuptime.kuvasz.jooq.enums.InvestigationStatus
 import com.kuvaszuptime.kuvasz.mocks.createDnsMonitor
 import com.kuvaszuptime.kuvasz.mocks.createDockerMonitor
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
@@ -10,6 +11,8 @@ import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
+import com.kuvaszuptime.kuvasz.models.IncidentType
+import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentNoteDto
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
@@ -20,6 +23,9 @@ import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.IncidentNoteCreatedEvent
+import com.kuvaszuptime.kuvasz.models.events.IncidentNoteEvent
+import com.kuvaszuptime.kuvasz.models.events.IncidentNoteUpdatedEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEndEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowStartEvent
@@ -41,6 +47,7 @@ import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.DockerMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
+import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
@@ -68,6 +75,7 @@ class EventDispatcherTest(
     private val receivedMaintenanceEvents = mutableListOf<MaintenanceWindowEvent>()
     private val receivedDriftEvents = mutableListOf<DnsRecordsChangedEvent>()
     private val receivedRestartEvents = mutableListOf<DockerContainerRestartedEvent>()
+    private val receivedNoteEvents = mutableListOf<IncidentNoteEvent>()
 
     init {
         afterContainer {
@@ -76,6 +84,7 @@ class EventDispatcherTest(
             receivedMaintenanceEvents.clear()
             receivedDriftEvents.clear()
             receivedRestartEvents.clear()
+            receivedNoteEvents.clear()
         }
 
         dispatcher.subscribeToHttpMonitorUpEvents { event ->
@@ -93,6 +102,7 @@ class EventDispatcherTest(
         dispatcher.subscribeToMaintenanceWindowEvents { event -> receivedMaintenanceEvents.add(event) }
         dispatcher.subscribeToDnsRecordsChangedEvents { event -> receivedDriftEvents.add(event) }
         dispatcher.subscribeToDockerContainerRestartedEvents { event -> receivedRestartEvents.add(event) }
+        dispatcher.subscribeToIncidentNoteEvents { event -> receivedNoteEvents.add(event) }
 
         given("an event dispatcher") {
 
@@ -240,6 +250,33 @@ class EventDispatcherTest(
                 then("it should be received by the restart subscriber") {
                     eventually(2.seconds) {
                         receivedRestartEvents shouldContainExactlyInAnyOrder listOf(event)
+                    }
+                }
+            }
+        }
+        given("the subscription to incident note events") {
+
+            `when`("incident note events are dispatched") {
+                val note = IncidentNoteDto(
+                    id = 1,
+                    incidentType = IncidentType.HTTP,
+                    eventId = 2,
+                    status = InvestigationStatus.INVESTIGATING,
+                    content = "Looking into it",
+                    timestamp = null,
+                    public = false,
+                    createdAt = getCurrentTimestamp(),
+                    updatedAt = getCurrentTimestamp(),
+                )
+                val created = IncidentNoteCreatedEvent(note)
+                val updated = IncidentNoteUpdatedEvent(note.copy(content = "Found it"))
+
+                dispatcher.dispatch(created)
+                dispatcher.dispatch(updated)
+
+                then("they should be received by the note subscriber") {
+                    eventually(2.seconds) {
+                        receivedNoteEvents shouldContainExactlyInAnyOrder listOf(created, updated)
                     }
                 }
             }

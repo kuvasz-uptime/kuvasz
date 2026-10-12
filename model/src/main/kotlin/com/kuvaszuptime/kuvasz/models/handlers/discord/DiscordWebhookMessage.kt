@@ -1,4 +1,4 @@
-package com.kuvaszuptime.kuvasz.models.handlers
+package com.kuvaszuptime.kuvasz.models.handlers.discord
 
 import io.micronaut.core.annotation.Introspected
 

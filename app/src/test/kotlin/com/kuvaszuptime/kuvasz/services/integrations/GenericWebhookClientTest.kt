@@ -1,9 +1,9 @@
 package com.kuvaszuptime.kuvasz.services.integrations
 
 import com.kuvaszuptime.kuvasz.models.MonitorType
-import com.kuvaszuptime.kuvasz.models.handlers.GenericWebhookMessage
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookHttpMethod
+import com.kuvaszuptime.kuvasz.models.handlers.webhook.GenericWebhookMessage
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.assertions.fail

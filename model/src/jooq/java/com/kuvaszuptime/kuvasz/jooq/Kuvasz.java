@@ -18,6 +18,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.IcmpMetricsLog;
 import com.kuvaszuptime.kuvasz.jooq.tables.IcmpMonitor;
 import com.kuvaszuptime.kuvasz.jooq.tables.IcmpUptimeEvent;
 import com.kuvaszuptime.kuvasz.jooq.tables.IncidentNote;
+import com.kuvaszuptime.kuvasz.jooq.tables.IntegrationThread;
 import com.kuvaszuptime.kuvasz.jooq.tables.MaintenanceWindow;
 import com.kuvaszuptime.kuvasz.jooq.tables.PendingFailure;
 import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor;
@@ -122,6 +123,11 @@ public class Kuvasz extends SchemaImpl {
     public final IncidentNote INCIDENT_NOTE = IncidentNote.INCIDENT_NOTE;
 
     /**
+     * The table <code>kuvasz.integration_thread</code>.
+     */
+    public final IntegrationThread INTEGRATION_THREAD = IntegrationThread.INTEGRATION_THREAD;
+
+    /**
      * The table <code>kuvasz.maintenance_window</code>.
      */
     public final MaintenanceWindow MAINTENANCE_WINDOW = MaintenanceWindow.MAINTENANCE_WINDOW;
@@ -205,6 +211,7 @@ public class Kuvasz extends SchemaImpl {
             IcmpMonitor.ICMP_MONITOR,
             IcmpUptimeEvent.ICMP_UPTIME_EVENT,
             IncidentNote.INCIDENT_NOTE,
+            IntegrationThread.INTEGRATION_THREAD,
             MaintenanceWindow.MAINTENANCE_WINDOW,
             PendingFailure.PENDING_FAILURE,
             PushMonitor.PUSH_MONITOR,

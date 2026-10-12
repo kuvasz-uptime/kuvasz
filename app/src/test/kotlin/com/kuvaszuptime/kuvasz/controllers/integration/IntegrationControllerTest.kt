@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.controllers.integration
 import com.kuvaszuptime.kuvasz.models.dto.integration.EmailNotificationConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.AppriseNotificationConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.PushoverNotificationConfigDto
+import com.kuvaszuptime.kuvasz.models.dto.integration.SlackBotNotificationConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.MsTeamsNotificationConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.PagerdutyConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.SlackNotificationConfigDto
@@ -10,11 +11,13 @@ import com.kuvaszuptime.kuvasz.models.dto.integration.TelegramNotificationConfig
 import com.kuvaszuptime.kuvasz.models.dto.integration.WebhookNotificationConfigDto
 import com.kuvaszuptime.kuvasz.models.handlers.DiscordNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.IncidentNoteMirroring
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.AppriseNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.PushoverNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.SlackBotNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.MsTeamsNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
 import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
@@ -27,6 +30,7 @@ import com.kuvaszuptime.kuvasz.services.integrations.GenericWebhookService
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.integrations.AppriseService
 import com.kuvaszuptime.kuvasz.services.integrations.PushoverService
+import com.kuvaszuptime.kuvasz.services.integrations.SlackBotService
 import com.kuvaszuptime.kuvasz.services.integrations.MsTeamsWebhookService
 import com.kuvaszuptime.kuvasz.services.integrations.NotificationTestResult
 import com.kuvaszuptime.kuvasz.services.integrations.PagerdutyTestService
@@ -56,6 +60,7 @@ import io.reactivex.rxjava3.core.Single
 class IntegrationControllerTest(
     private val integrationClient: IntegrationClient,
     private val slackWebhookService: SlackWebhookService,
+    private val slackBotService: SlackBotService,
     private val emailTestService: EmailTestService,
     private val pagerdutyTestService: PagerdutyTestService,
     private val telegramAPIService: TelegramAPIService,
@@ -71,7 +76,7 @@ class IntegrationControllerTest(
         should("return all the configured integrations, ordered by their names") {
             val response = integrationClient.getIntegrations()
 
-            response shouldHaveSize 30
+            response shouldHaveSize 34
             response.shouldBeSortedBy { it.name }
 
             response.forOne { implicitlyEnabledSlack ->
@@ -97,6 +102,47 @@ class IntegrationControllerTest(
                 disabledSlack.name shouldBe "disabled"
                 disabledSlack.enabled shouldBe false
                 disabledSlack.global shouldBe false
+            }
+
+            response.forOne { implicitlyEnabledSlackBot ->
+                implicitlyEnabledSlackBot.shouldBeInstanceOf<SlackBotNotificationConfigDto>()
+                implicitlyEnabledSlackBot.id shouldBe IntegrationID(
+                    IntegrationType.SLACK_BOT,
+                    "test_implicitly_enabled"
+                )
+                implicitlyEnabledSlackBot.name shouldBe "test_implicitly_enabled"
+                implicitlyEnabledSlackBot.enabled shouldBe true
+                implicitlyEnabledSlackBot.global shouldBe false
+                implicitlyEnabledSlackBot.channelId shouldBe "C0IMPLICIT"
+                implicitlyEnabledSlackBot.triggerReaction shouldBe null
+                implicitlyEnabledSlackBot.resolutionReaction shouldBe null
+                implicitlyEnabledSlackBot.incidentNotes shouldBe IncidentNoteMirroring.ALL
+            }
+            response.forOne { globalSlackBot ->
+                globalSlackBot.shouldBeInstanceOf<SlackBotNotificationConfigDto>()
+                globalSlackBot.id shouldBe IntegrationID(IntegrationType.SLACK_BOT, "global")
+                globalSlackBot.name shouldBe "global"
+                globalSlackBot.enabled shouldBe true
+                globalSlackBot.global shouldBe true
+                globalSlackBot.channelId shouldBe "C0GLOBAL"
+                globalSlackBot.triggerReaction shouldBe "rotating_light"
+                globalSlackBot.resolutionReaction shouldBe ":white_check_mark:"
+                // The default
+                globalSlackBot.incidentNotes shouldBe IncidentNoteMirroring.PUBLIC
+            }
+            response.forOne { excludingSlackBot ->
+                excludingSlackBot.shouldBeInstanceOf<SlackBotNotificationConfigDto>()
+                excludingSlackBot.id shouldBe IntegrationID(IntegrationType.SLACK_BOT, "excluding_http_down")
+                excludingSlackBot.excludedEvents shouldBe listOf(IntegrationEventType.HTTP_DOWN)
+                excludingSlackBot.incidentNotes shouldBe IncidentNoteMirroring.NONE
+            }
+            response.forOne { disabledSlackBot ->
+                disabledSlackBot.shouldBeInstanceOf<SlackBotNotificationConfigDto>()
+                disabledSlackBot.id shouldBe IntegrationID(IntegrationType.SLACK_BOT, "disabled")
+                disabledSlackBot.name shouldBe "disabled"
+                disabledSlackBot.enabled shouldBe false
+                disabledSlackBot.global shouldBe false
+                disabledSlackBot.channelId shouldBe "C0DISABLED"
             }
 
             response.forOne { implicitlyEnabledMsTeams ->
@@ -373,6 +419,19 @@ class IntegrationControllerTest(
             }
         }
 
+        should("return success when the integration ID is found (even if it's disabled) - Slack Bot") {
+            val integrationId = IntegrationID(IntegrationType.SLACK_BOT, "disabled")
+            val mockedService = getMock(slackBotService)
+            every { mockedService.sendTestMessage(any()) } returns successResponse(integrationId)
+            val response = integrationClient.sendTestNotification(integrationId).blockingGet()
+
+            response.success shouldBe true
+            response.message shouldBe "OK: $integrationId"
+            verify(exactly = 1) {
+                mockedService.sendTestMessage(integrationConfig(integrationId) as SlackBotNotificationConfig)
+            }
+        }
+
         should("return success when the integration ID is found (even if it's disabled) - Email") {
             val integrationId = IntegrationID(IntegrationType.EMAIL, "disabled")
             val mockedService = getMock(emailTestService)
@@ -480,6 +539,9 @@ class IntegrationControllerTest(
 }) {
     @MockBean(SlackWebhookService::class)
     fun mockSlackWebhookService(): SlackWebhookService = mockk()
+
+    @MockBean(SlackBotService::class)
+    fun mockSlackBotService(): SlackBotService = mockk()
 
     @MockBean(EmailTestService::class)
     fun mockEmailTestService(): EmailTestService = mockk()

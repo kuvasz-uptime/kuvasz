@@ -1,8 +1,8 @@
 package com.kuvaszuptime.kuvasz.services.integrations
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
-import com.kuvaszuptime.kuvasz.models.handlers.TelegramAPIMessage
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.telegram.TelegramAPIMessage
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.micronaut.test.annotation.MockBean

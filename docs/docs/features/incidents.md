@@ -31,6 +31,12 @@ A note has the following properties:
 - **Timestamp** (optional): overrides the creation date of the note wherever it's displayed, and orders the notes of the incident. Useful when you add a note after the fact, e.g. to record when the root cause was actually identified. Without a timestamp, the notes are ordered by their creation date, and editing a note never changes its position.
 - **Public**: whether the note is shown on the [**status pages**](status-pages.md) that contain the monitor, so your users can follow what's going on. Notes are **private by default**. The incidents of SSL certificates are never displayed on status pages, so their notes are always private, effectively.
 
+!!! tip "Notes in Slack"
+
+    The [**Slack Bot**](../management/integrations.md#slack-bot-threads) integration posts the notes into the Slack
+    thread of their incident, so the investigation can be followed right where the alert arrived. By default, only
+    the public notes, but it can [post every note](../management/integrations.md#incident-notes), or none of them.
+
 !!! warning "Retention"
 
     The notes are part of their incidents, so they're deleted together with them, i.e. when the [**event data retention**](../setup/configuration.md#event-data-retention) period is over, or when the monitor is deleted.

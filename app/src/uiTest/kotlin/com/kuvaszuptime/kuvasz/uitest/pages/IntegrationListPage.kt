@@ -15,4 +15,20 @@ class IntegrationListPage(private val page: Page) {
     fun navigate() {
         page.navigate("/integrations")
     }
+
+    /**
+     * The content of the details tooltip next to the ID of an integration (if any), which Bootstrap moves out of
+     * `title` once it's set up
+     */
+    fun detailsTooltipOf(integrationId: String): String? {
+        val toggler = rows
+            .filter(Locator.FilterOptions().setHasText(integrationId))
+            .locator("td:has(code) [data-bs-toggle='tooltip']")
+
+        return if (toggler.count() == 0) {
+            null
+        } else {
+            toggler.getAttribute("data-bs-original-title") ?: toggler.getAttribute("title")
+        }
+    }
 }

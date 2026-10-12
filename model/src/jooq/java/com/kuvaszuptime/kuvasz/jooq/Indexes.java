@@ -17,6 +17,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.IcmpMetricsLog;
 import com.kuvaszuptime.kuvasz.jooq.tables.IcmpMonitor;
 import com.kuvaszuptime.kuvasz.jooq.tables.IcmpUptimeEvent;
 import com.kuvaszuptime.kuvasz.jooq.tables.IncidentNote;
+import com.kuvaszuptime.kuvasz.jooq.tables.IntegrationThread;
 import com.kuvaszuptime.kuvasz.jooq.tables.MaintenanceWindow;
 import com.kuvaszuptime.kuvasz.jooq.tables.PushMonitor;
 import com.kuvaszuptime.kuvasz.jooq.tables.PushUptimeEvent;
@@ -68,6 +69,7 @@ public class Indexes {
     public static final Index ICMP_UPTIME_EVENT_MONITOR_IDX = Internal.createIndex(DSL.name("icmp_uptime_event_monitor_idx"), IcmpUptimeEvent.ICMP_UPTIME_EVENT, new OrderField[] { IcmpUptimeEvent.ICMP_UPTIME_EVENT.MONITOR_ID }, false);
     public static final Index ICMP_UPTIME_EVENT_OPEN_IDX = Internal.createIndex(DSL.name("icmp_uptime_event_open_idx"), IcmpUptimeEvent.ICMP_UPTIME_EVENT, new OrderField[] { IcmpUptimeEvent.ICMP_UPTIME_EVENT.MONITOR_ID }, false);
     public static final Index INCIDENT_NOTE_EVENT_IDX = Internal.createIndex(DSL.name("incident_note_event_idx"), IncidentNote.INCIDENT_NOTE, new OrderField[] { IncidentNote.INCIDENT_NOTE.INCIDENT_TYPE, IncidentNote.INCIDENT_NOTE.EVENT_ID }, false);
+    public static final Index INTEGRATION_THREAD_SUBJECT_IDX = Internal.createIndex(DSL.name("integration_thread_subject_idx"), IntegrationThread.INTEGRATION_THREAD, new OrderField[] { IntegrationThread.INTEGRATION_THREAD.SUBJECT_TYPE, IntegrationThread.INTEGRATION_THREAD.SUBJECT_ID }, false);
     public static final Index LATENCY_LOG_LATENCY_IDX = Internal.createIndex(DSL.name("latency_log_latency_idx"), HttpLatencyLog.HTTP_LATENCY_LOG, new OrderField[] { HttpLatencyLog.HTTP_LATENCY_LOG.LATENCY }, false);
     public static final Index LATENCY_LOG_MONITOR_IDX = Internal.createIndex(DSL.name("latency_log_monitor_idx"), HttpLatencyLog.HTTP_LATENCY_LOG, new OrderField[] { HttpLatencyLog.HTTP_LATENCY_LOG.MONITOR_ID }, false);
     public static final Index MAINTENANCE_CATEGORIES_IDX = Internal.createIndex(DSL.name("maintenance_categories_idx"), MaintenanceWindow.MAINTENANCE_WINDOW, new OrderField[] { MaintenanceWindow.MAINTENANCE_WINDOW.CATEGORIES }, false);

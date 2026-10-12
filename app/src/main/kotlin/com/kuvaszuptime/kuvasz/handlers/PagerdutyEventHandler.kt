@@ -2,10 +2,10 @@ package com.kuvaszuptime.kuvasz.handlers
 
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
-import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
-import com.kuvaszuptime.kuvasz.models.events.DockerMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
@@ -26,10 +26,10 @@ import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.formatters.PlainTextMessageFormatter
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyConfig
-import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyResolveRequest
-import com.kuvaszuptime.kuvasz.models.handlers.PagerdutySeverity
-import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyTriggerPayload
-import com.kuvaszuptime.kuvasz.models.handlers.PagerdutyTriggerRequest
+import com.kuvaszuptime.kuvasz.models.handlers.pagerduty.PagerdutyResolveRequest
+import com.kuvaszuptime.kuvasz.models.handlers.pagerduty.PagerdutySeverity
+import com.kuvaszuptime.kuvasz.models.handlers.pagerduty.PagerdutyTriggerPayload
+import com.kuvaszuptime.kuvasz.models.handlers.pagerduty.PagerdutyTriggerRequest
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.integrations.PagerdutyAPIClient

@@ -112,7 +112,7 @@ class DockerUptimeEventRepository(private val dslContext: DSLContext) : UptimeEv
         .execute()
 
     @Suppress("IgnoredReturnValue")
-    fun updateEvent(eventId: Long, newEvent: DockerUptimeMonitorEvent) = dslContext
+    fun updateEvent(eventId: Long, newEvent: DockerUptimeMonitorEvent, ctx: DSLContext = dslContext) = ctx
         .update(DOCKER_UPTIME_EVENT)
         .set(DOCKER_UPTIME_EVENT.UPDATED_AT, newEvent.dispatchedAt)
         .apply {

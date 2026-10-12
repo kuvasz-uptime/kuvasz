@@ -6,9 +6,9 @@ import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
-import com.kuvaszuptime.kuvasz.models.handlers.AppriseMessage
 import com.kuvaszuptime.kuvasz.models.handlers.AppriseNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.apprise.AppriseMessage
 import com.kuvaszuptime.kuvasz.util.getBodyAs
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.micronaut.context.annotation.Requires

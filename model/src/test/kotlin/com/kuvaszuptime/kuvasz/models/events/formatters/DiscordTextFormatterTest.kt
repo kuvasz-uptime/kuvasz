@@ -605,5 +605,14 @@ class DiscordTextFormatterTest : BehaviorSpec(
                 }
             }
         }
+
+        given("escape(input: String)") {
+
+            `when`("it gets any text") {
+                then("it should keep it as it is") {
+                    formatter.escape("**latency** < 200ms & > 100ms") shouldBe "**latency** < 200ms & > 100ms"
+                }
+            }
+        }
     }
 )

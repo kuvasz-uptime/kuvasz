@@ -92,7 +92,7 @@ class IcmpUptimeEventRepository(private val dslContext: DSLContext) : UptimeEven
         .execute()
 
     @Suppress("IgnoredReturnValue")
-    fun updateEvent(eventId: Long, newEvent: IcmpUptimeMonitorEvent) = dslContext
+    fun updateEvent(eventId: Long, newEvent: IcmpUptimeMonitorEvent, ctx: DSLContext = dslContext) = ctx
         .update(ICMP_UPTIME_EVENT)
         .set(ICMP_UPTIME_EVENT.UPDATED_AT, newEvent.dispatchedAt)
         .apply {

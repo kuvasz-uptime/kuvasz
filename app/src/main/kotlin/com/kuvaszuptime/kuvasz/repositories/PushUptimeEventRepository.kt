@@ -89,7 +89,7 @@ class PushUptimeEventRepository(private val dslContext: DSLContext) : UptimeEven
         .execute()
 
     @Suppress("IgnoredReturnValue")
-    fun updateEvent(eventId: Long, newEvent: PushUptimeMonitorEvent) = dslContext
+    fun updateEvent(eventId: Long, newEvent: PushUptimeMonitorEvent, ctx: DSLContext = dslContext) = ctx
         .update(PUSH_UPTIME_EVENT)
         .set(PUSH_UPTIME_EVENT.UPDATED_AT, newEvent.dispatchedAt)
         .apply {

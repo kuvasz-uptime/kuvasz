@@ -4,8 +4,8 @@ import com.kuvaszuptime.kuvasz.factories.AppriseMessageFactory
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
-import com.kuvaszuptime.kuvasz.models.handlers.AppriseMessage
 import com.kuvaszuptime.kuvasz.models.handlers.AppriseNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.apprise.AppriseMessage
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe

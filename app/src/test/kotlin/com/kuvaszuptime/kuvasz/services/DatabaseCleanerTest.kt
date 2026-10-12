@@ -2,7 +2,9 @@ package com.kuvaszuptime.kuvasz.services
 
 import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.Tables.HTTP_LATENCY_LOG
+import com.kuvaszuptime.kuvasz.jooq.enums.IntegrationThreadSubject
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpLatencyLogRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.IntegrationThreadRecord
 import com.kuvaszuptime.kuvasz.mocks.createDnsMetricsLogRecord
 import com.kuvaszuptime.kuvasz.mocks.createDnsMonitor
 import com.kuvaszuptime.kuvasz.mocks.createDnsUptimeEventRecord
@@ -11,12 +13,15 @@ import com.kuvaszuptime.kuvasz.mocks.createHttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMetricsLogRecord
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpUptimeEventRecord
+import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createSSLEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createTcpMetricsLogRecord
 import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createTcpUptimeEventRecord
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.repositories.DnsMetricsLogRepository
 import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.DnsUptimeEventRepository
@@ -26,6 +31,7 @@ import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMetricsLogRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpUptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.IntegrationThreadRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
@@ -35,6 +41,8 @@ import com.kuvaszuptime.kuvasz.repositories.TcpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.micronaut.context.annotation.Property
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import java.time.OffsetDateTime
@@ -59,6 +67,7 @@ class DatabaseCleanerTest(
     private val dnsMonitorRepository: DnsMonitorRepository,
     private val sslEventRepository: SSLEventRepository,
     private val databaseCleaner: DatabaseCleaner,
+    private val integrationThreadRepository: IntegrationThreadRepository,
 ) : DatabaseBehaviorSpec() {
     init {
 
@@ -431,6 +440,43 @@ class DatabaseCleanerTest(
 
                 then("it should delete it") {
                     dnsMetricsLogRepository.fetchLatestByMonitorId(monitor.id).shouldBeEmpty()
+                }
+            }
+        }
+
+        given("a DatabaseCleaner service - the threads of the maintenance windows") {
+            `when`("there are threads of active, inactive and deleted maintenance windows") {
+                val integrationId = IntegrationID(IntegrationType.SLACK_BOT, "ops")
+                fun thread(subjectType: IntegrationThreadSubject, subjectId: Long) = IntegrationThreadRecord()
+                    .setIntegrationId(integrationId)
+                    .setSubjectType(subjectType)
+                    .setSubjectId(subjectId)
+                    .setTs("1700000000.000100")
+                    .setRootText("*Root*")
+
+                // A manual window is active as long as it is enabled
+                val activeWindow = createMaintenanceWindow(dslContext, enabled = true)
+                val inactiveWindow = createMaintenanceWindow(dslContext, enabled = false)
+                val deletedWindowId = activeWindow.id + inactiveWindow.id
+                listOf(activeWindow.id, inactiveWindow.id, deletedWindowId).forEach { windowId ->
+                    integrationThreadRepository.upsert(thread(IntegrationThreadSubject.MAINTENANCE, windowId))
+                }
+                integrationThreadRepository.upsert(thread(IntegrationThreadSubject.HTTP, inactiveWindow.id))
+
+                databaseCleaner.cleanObsoleteData()
+
+                then("it should delete only the threads of the windows that are not active right now") {
+                    integrationThreadRepository
+                        .find(integrationId, IntegrationThreadSubject.MAINTENANCE, activeWindow.id)
+                        .shouldNotBeNull()
+                    integrationThreadRepository
+                        .find(integrationId, IntegrationThreadSubject.MAINTENANCE, inactiveWindow.id)
+                        .shouldBeNull()
+                    integrationThreadRepository
+                        .find(integrationId, IntegrationThreadSubject.MAINTENANCE, deletedWindowId)
+                        .shouldBeNull()
+                    integrationThreadRepository.find(integrationId, IntegrationThreadSubject.HTTP, inactiveWindow.id)
+                        .shouldNotBeNull()
                 }
             }
         }

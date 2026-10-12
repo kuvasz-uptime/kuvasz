@@ -26,8 +26,8 @@ import com.kuvaszuptime.kuvasz.models.events.SSLValidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import com.kuvaszuptime.kuvasz.models.events.TcpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.TcpMonitorUpEvent
-import com.kuvaszuptime.kuvasz.models.handlers.AppriseMessage
 import com.kuvaszuptime.kuvasz.models.handlers.AppriseNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.apprise.AppriseMessage
 import com.kuvaszuptime.kuvasz.models.handlers.id
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError

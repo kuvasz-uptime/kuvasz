@@ -177,9 +177,9 @@ Both are defined in the YAML configuration only, so they can be listed, but not 
 
 <!-- md:version 4.0.0 -->
 
-| Tool                | Description                                                                                                                                             |
-|---------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `list-integrations` | List all configured integrations (Slack, Discord, Microsoft Teams, Apprise, Pushover, Email, PagerDuty, Telegram, Webhook) with their type and settings |
+| Tool                | Description                                                   |
+|---------------------|---------------------------------------------------------------|
+| `list-integrations` | List all configured integrations with their type and settings |
 
 ### Application settings
 

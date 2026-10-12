@@ -7,6 +7,7 @@ enum class IntegrationType(
     EMAIL(EmailNotificationConfig.IDENTIFIER),
     PAGERDUTY(PagerdutyConfig.IDENTIFIER, displayName = "PagerDuty"),
     SLACK(SlackNotificationConfig.IDENTIFIER),
+    SLACK_BOT(SlackBotNotificationConfig.IDENTIFIER, displayName = "Slack Bot"),
     TELEGRAM(TelegramNotificationConfig.IDENTIFIER),
     DISCORD(DiscordNotificationConfig.IDENTIFIER),
     MS_TEAMS(MsTeamsNotificationConfig.IDENTIFIER, displayName = "Microsoft Teams"),

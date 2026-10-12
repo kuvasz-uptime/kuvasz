@@ -12,10 +12,14 @@ import com.kuvaszuptime.kuvasz.models.IncidentNotFoundException
 import com.kuvaszuptime.kuvasz.models.IncidentNoteNotFoundException
 import com.kuvaszuptime.kuvasz.models.IncidentType
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentNoteCreateDto
+import com.kuvaszuptime.kuvasz.models.events.IncidentNoteCreatedEvent
+import com.kuvaszuptime.kuvasz.models.events.IncidentNoteEvent
+import com.kuvaszuptime.kuvasz.models.events.IncidentNoteUpdatedEvent
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IncidentNoteRepository
+import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageDataActions.Companion.DEFAULT_PAGE_CACHE_NAME
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageDataActions.Companion.STATUS_PAGES_CACHE_NAME
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
@@ -39,9 +43,15 @@ class IncidentActionsTest(
     private val incidentNoteRepository: IncidentNoteRepository,
     private val httpMonitorRepository: HttpMonitorRepository,
     private val cacheManager: CacheManager<*>,
+    eventDispatcher: EventDispatcher,
 ) : DatabaseBehaviorSpec() {
     init {
         val mapper = jacksonObjectMapper()
+
+        // Subscribed upfront, the events of a note are picked by its ID
+        val noteEvents = mutableListOf<IncidentNoteEvent>()
+        eventDispatcher.subscribeToIncidentNoteEvents { event -> noteEvents.add(event) }
+        fun noteEventsOf(noteId: Long) = noteEvents.filter { event -> event.note.id == noteId }
 
         fun downEvent(endedAt: OffsetDateTime? = null) = createHttpUptimeEventRecord(
             dslContext,
@@ -403,6 +413,73 @@ class IncidentActionsTest(
                             statusPageCachesAreEvicted() shouldBe shouldEvict
                         }
                     }
+                }
+            }
+        }
+        given("the incident note events") {
+
+            `when`("a note is created") {
+
+                then("it should be dispatched as a created note") {
+                    val note = incidentActions.createNote(
+                        IncidentType.HTTP,
+                        downEvent().id,
+                        IncidentNoteCreateDto(status = InvestigationStatus.INVESTIGATING, content = "Looking into it"),
+                    )
+
+                    noteEventsOf(note.id) shouldBe listOf(IncidentNoteCreatedEvent(note))
+                }
+            }
+
+            `when`("a note is created with the details of its incident") {
+
+                then("it should be dispatched as a created note too") {
+                    val event = downEvent()
+                    incidentActions.createNoteAndGetDetails(
+                        IncidentType.HTTP,
+                        event.id,
+                        IncidentNoteCreateDto(status = InvestigationStatus.INVESTIGATING, content = "Looking into it"),
+                    )
+                    val note = incidentNoteRepository.fetchByEvent(IncidentType.HTTP, event.id).single()
+
+                    noteEventsOf(note.id) shouldBe listOf(IncidentNoteCreatedEvent(note))
+                }
+            }
+
+            `when`("a note is updated") {
+
+                then("it should be dispatched as an updated note, with its new content") {
+                    val note = createIncidentNote(dslContext, IncidentType.HTTP, downEvent().id, content = "Original")
+
+                    val updated =
+                        incidentActions.updateNote(note.id, mapper.createObjectNode().put("content", "Found it"))
+
+                    noteEventsOf(note.id) shouldBe listOf(IncidentNoteUpdatedEvent(updated))
+                    updated.content shouldBe "Found it"
+                }
+            }
+
+            `when`("a note can't be updated") {
+
+                then("nothing should be dispatched") {
+                    val note = createIncidentNote(dslContext, IncidentType.HTTP, downEvent().id)
+
+                    shouldThrow<ValidationException> {
+                        incidentActions.updateNote(note.id, mapper.createObjectNode().put("content", " "))
+                    }
+
+                    noteEventsOf(note.id).shouldBeEmpty()
+                }
+            }
+
+            `when`("a note is deleted") {
+
+                then("nothing should be dispatched") {
+                    val note = createIncidentNote(dslContext, IncidentType.HTTP, downEvent().id)
+
+                    incidentActions.deleteNote(note.id)
+
+                    noteEventsOf(note.id).shouldBeEmpty()
                 }
             }
         }

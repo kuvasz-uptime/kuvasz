@@ -17,15 +17,15 @@ import com.kuvaszuptime.kuvasz.models.events.NotifiableEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.formatters.PlainTextMessageFormatter
-import com.kuvaszuptime.kuvasz.models.handlers.GenericWebhookMessage
+import com.kuvaszuptime.kuvasz.models.handlers.webhook.GenericWebhookMessage
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.dns.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.docker.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.http.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.icmp.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.push.monitorId
-import com.kuvaszuptime.kuvasz.models.monitor.tcp.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.relativeDetailsUrl
+import com.kuvaszuptime.kuvasz.models.monitor.tcp.monitorId
 import io.pebbletemplates.pebble.PebbleEngine
 import jakarta.inject.Singleton
 import java.io.StringWriter

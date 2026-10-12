@@ -7,10 +7,10 @@ import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig
-import com.kuvaszuptime.kuvasz.models.handlers.PushoverCancelRequest
-import com.kuvaszuptime.kuvasz.models.handlers.PushoverMessage
 import com.kuvaszuptime.kuvasz.models.handlers.PushoverNotificationConfig
-import com.kuvaszuptime.kuvasz.models.handlers.PushoverPriority
+import com.kuvaszuptime.kuvasz.models.handlers.pushover.PushoverCancelRequest
+import com.kuvaszuptime.kuvasz.models.handlers.pushover.PushoverMessage
+import com.kuvaszuptime.kuvasz.models.handlers.pushover.PushoverPriority
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.micronaut.context.annotation.Requires
 import io.micronaut.http.HttpRequest

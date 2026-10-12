@@ -34,6 +34,7 @@ import org.jooq.kotlin.and
 import java.time.Duration
 import java.time.OffsetDateTime
 
+@Suppress("TooManyFunctions")
 @Singleton
 class IncidentRepository(private val dslContext: DSLContext) {
 
@@ -130,6 +131,22 @@ class IncidentRepository(private val dslContext: DSLContext) {
                     .toList()
             },
         )
+    }
+
+    /**
+     * Finds the ID of the event of the monitor that started at the given time, i.e. the event that was persisted from
+     * a just dispatched monitor event. For SSL, it's any SSL event, not only the invalid ones (the incidents).
+     */
+    fun findEventIdStartedAt(incidentType: IncidentType, monitorId: Long, startedAt: OffsetDateTime): Long? {
+        val table = incidentEventTables.getValue(incidentType)
+
+        return dslContext
+            .select(table.id)
+            .from(table.events)
+            .where(table.monitorId.eq(monitorId))
+            .and(table.startedAt.eq(startedAt))
+            .limit(1)
+            .fetchOne(table.id)
     }
 
     private fun DSLContext.incidentSelect(

@@ -6026,6 +6026,12 @@ components:
           type: string
           description: When the note was last updated
           format: date-time
+    IncidentNoteMirroring:
+      type: string
+      enum:
+      - ALL
+      - PUBLIC
+      - NONE
     IncidentNoteUpdateDto:
       type: object
       properties:
@@ -6093,6 +6099,7 @@ components:
             $ref: "#/components/schemas/IntegrationEventType"
       oneOf:
       - $ref: "#/components/schemas/SlackNotificationConfigDto"
+      - $ref: "#/components/schemas/SlackBotNotificationConfigDto"
       - $ref: "#/components/schemas/DiscordNotificationConfigDto"
       - $ref: "#/components/schemas/MsTeamsNotificationConfigDto"
       - $ref: "#/components/schemas/AppriseNotificationConfigDto"
@@ -6163,6 +6170,7 @@ components:
       - EMAIL
       - PAGERDUTY
       - SLACK
+      - SLACK_BOT
       - TELEGRAM
       - DISCORD
       - MS_TEAMS
@@ -7665,6 +7673,60 @@ components:
         transportStrategy:
           type: string
           description: The SMTP transport strategy
+    SlackBotNotificationConfigDto:
+      required:
+      - channelId
+      - enabled
+      - excludedEvents
+      - global
+      - id
+      - incidentNotes
+      - name
+      - type
+      type: object
+      properties:
+        id:
+          type: string
+          description: "A unique identifier for an integration, formatted as 'type:name'."
+          example: email:my-email-integration
+        type:
+          description: Type of the integration
+          allOf:
+          - $ref: "#/components/schemas/IntegrationType"
+        name:
+          type: string
+          description: Name of the integration. Must be unique in the context of type.
+        enabled:
+          type: boolean
+          description: Whether the integration is enabled
+        global:
+          type: boolean
+          description: Whether the integration is global (applies to all monitors
+            by default)
+        excludedEvents:
+          type: array
+          description: "The list of the events that should be excluded from notifications\
+            \ for this integration. If empty or null, no event types are excluded."
+          items:
+            $ref: "#/components/schemas/IntegrationEventType"
+        channelId:
+          type: string
+          description: The ID of the Slack channel the notifications are posted to
+        triggerReaction:
+          type: string
+          description: "The emoji reaction added to the first message of an incident\
+            \ or a maintenance, while it is ongoing"
+          nullable: true
+        resolutionReaction:
+          type: string
+          description: The emoji reaction added to the first message of an incident
+            or a maintenance once it is over
+          nullable: true
+        incidentNotes:
+          description: Which notes of the incidents are posted into the threads of
+            the incidents
+          allOf:
+          - $ref: "#/components/schemas/IncidentNoteMirroring"
     SlackNotificationConfigDto:
       required:
       - enabled

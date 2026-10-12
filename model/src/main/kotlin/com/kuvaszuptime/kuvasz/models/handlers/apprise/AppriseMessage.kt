@@ -1,4 +1,4 @@
-package com.kuvaszuptime.kuvasz.models.handlers
+package com.kuvaszuptime.kuvasz.models.handlers.apprise
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonValue

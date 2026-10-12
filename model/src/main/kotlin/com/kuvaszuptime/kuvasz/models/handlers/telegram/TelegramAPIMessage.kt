@@ -1,4 +1,4 @@
-package com.kuvaszuptime.kuvasz.models.handlers
+package com.kuvaszuptime.kuvasz.models.handlers.telegram
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.micronaut.core.annotation.Introspected

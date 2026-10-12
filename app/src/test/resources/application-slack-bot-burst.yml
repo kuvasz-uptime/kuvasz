@@ -1,0 +1,8 @@
+integrations:
+  slack-bot:
+    - name: burst
+      bot-token: xoxb-burst
+      channel-id: C0BURST
+      global: true
+      trigger-reaction: rotating_light
+      resolution-reaction: white_check_mark

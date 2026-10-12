@@ -8,6 +8,7 @@ import com.kuvaszuptime.kuvasz.uitest.pages.IntegrationListPage
 import com.kuvaszuptime.kuvasz.uitest.pages.http.HttpMonitorListPage
 import com.kuvaszuptime.kuvasz.uitest.pages.maintenance.MaintenanceWindowDetailsPage
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 
@@ -19,8 +20,8 @@ class IntegrationsUiTest : UiTestSpec() {
             val list = IntegrationListPage(page)
             list.navigate()
 
-            assertThat(list.rows).hasCount(CONFIGURED_INTEGRATIONS.size)
-            list.ids shouldBe listOf("slack:alpha", "slack:bravo", "slack:Charlie", "slack:Delta")
+            assertThat(list.rows).hasCount(CONFIGURED_SLACK_INTEGRATIONS.size + 1)
+            list.ids shouldBe listOf("slack:alpha", "slack:bravo", "slack:Charlie", "slack:Delta", SLACK_BOT_ID)
         }
 
         "the integration checkboxes of a monitor form are sorted by name, regardless of their casing" {
@@ -29,15 +30,29 @@ class IntegrationsUiTest : UiTestSpec() {
             list.navigate()
             val modal = list.openCreateModal()
 
-            assertThat(modal.integrationCheckboxes).hasCount(CONFIGURED_INTEGRATIONS.size)
-            modal.integrationCheckboxNames shouldBe listOf("alpha", "bravo", "Charlie", "Delta")
+            assertThat(modal.integrationCheckboxes).hasCount(CONFIGURED_SLACK_INTEGRATIONS.size + 1)
+            modal.integrationCheckboxNames shouldBe listOf("alpha", "bravo", "Charlie", "Delta", "echo")
+        }
+
+        "the details of a Slack Bot integration are shown in a tooltip, without its token" {
+            val page = newPage()
+            val list = IntegrationListPage(page)
+            list.navigate()
+
+            list.detailsTooltipOf(SLACK_BOT_ID) shouldBe listOf(
+                Messages.slackBotChannelIdDescription("C0UITEST"),
+                Messages.slackBotReactionsDescription("rotating_light", "-"),
+                Messages.slackBotIncidentNotesDescription(Messages.incidentNoteMirroringAll()),
+            ).joinToString("<br>")
+            // A Slack webhook has nothing to show, its URL is a secret
+            list.detailsTooltipOf("slack:alpha").shouldBeNull()
         }
 
         "the integration badges of a maintenance window are sorted by name, regardless of their casing" {
             val window = createMaintenanceWindow(
                 dslContext,
                 name = "Integration Badge Window",
-                integrations = CONFIGURED_INTEGRATIONS.map { IntegrationID(IntegrationType.SLACK, it) },
+                integrations = CONFIGURED_SLACK_INTEGRATIONS.map { IntegrationID(IntegrationType.SLACK, it) },
             )
 
             val page = newPage()
@@ -50,7 +65,10 @@ class IntegrationsUiTest : UiTestSpec() {
     }
 
     companion object {
-        // The integrations declared by `application-ui-test-integrations.yml`
-        private val CONFIGURED_INTEGRATIONS = listOf("Charlie", "bravo", "Delta", "alpha")
+        // The Slack integrations declared by `application-ui-test-integrations.yml`
+        private val CONFIGURED_SLACK_INTEGRATIONS = listOf("Charlie", "bravo", "Delta", "alpha")
+
+        // ...and the Slack Bot integration declared there
+        private const val SLACK_BOT_ID = "slack-bot:echo"
     }
 }

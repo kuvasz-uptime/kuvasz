@@ -183,6 +183,12 @@ jooq {
                                     "SSL_EVENT.INTEGRATIONS"
                             }
                             forcedType {
+                                userType = "com.kuvaszuptime.kuvasz.models.handlers.IntegrationID"
+                                converter = "com.kuvaszuptime.kuvasz.jooq.TextToIntegrationIdConverter"
+                                isGenericConverter = false
+                                includeExpression = "INTEGRATION_THREAD.INTEGRATION_ID"
+                            }
+                            forcedType {
                                 userType = "com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType[]"
                                 converter = "com.kuvaszuptime.kuvasz.jooq.TextArrayToDnsRecordTypeArrayConverter"
                                 isGenericConverter = false

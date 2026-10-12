@@ -175,7 +175,10 @@ class HeartbeatCheckerTest(
                         thirdEvent.previousEvent shouldBe mockUptimeEventRecord
                     }
 
-                    verify(exactly = 3) { mockDbEventHandler.handleUptimeMonitorEvent(any<PushMonitorDownEvent>()) }
+                    verify(exactly = 3) {
+                        // As a part of the transaction of the check
+                        mockDbEventHandler.handleUptimeMonitorEvent(any<PushMonitorDownEvent>(), isNull(inverse = true))
+                    }
                 }
             }
 
@@ -277,7 +280,8 @@ class HeartbeatCheckerTest(
                     events.single().monitor shouldBe normalMonitor
                     verify(exactly = 0) {
                         mockDbEventHandler.handleUptimeMonitorEvent(
-                            match<PushMonitorDownEvent> { it.monitor == maintainedMonitor }
+                            match<PushMonitorDownEvent> { it.monitor == maintainedMonitor },
+                            any(),
                         )
                     }
                 }
@@ -315,7 +319,8 @@ class HeartbeatCheckerTest(
                     events.single().monitor shouldBe optedOutMonitor
                     verify(exactly = 0) {
                         mockDbEventHandler.handleUptimeMonitorEvent(
-                            match<PushMonitorDownEvent> { it.monitor == suppressedMonitor }
+                            match<PushMonitorDownEvent> { it.monitor == suppressedMonitor },
+                            any(),
                         )
                     }
                 }

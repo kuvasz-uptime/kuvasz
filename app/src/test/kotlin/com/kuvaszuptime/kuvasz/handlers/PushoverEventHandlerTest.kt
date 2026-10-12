@@ -27,9 +27,9 @@ import com.kuvaszuptime.kuvasz.models.events.SSLWillExpireEvent
 import com.kuvaszuptime.kuvasz.models.events.TcpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.TcpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig
-import com.kuvaszuptime.kuvasz.models.handlers.PushoverMessage
 import com.kuvaszuptime.kuvasz.models.handlers.PushoverNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.id
+import com.kuvaszuptime.kuvasz.models.handlers.pushover.PushoverMessage
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
 import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
@@ -45,9 +45,9 @@ import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
+import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.integrations.PushoverClient
 import com.kuvaszuptime.kuvasz.services.integrations.PushoverService
-import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.test.TestCase

@@ -61,6 +61,21 @@ class TelegramTextFormatterTest : BehaviorSpec(
                 }
             }
 
+            `when`("the name or the URL of the monitor has characters that Telegram would interpret as HTML") {
+                val markupMonitor = monitor.copy().apply {
+                    setName("API <prod>")
+                    setUrl("https://test.url/health?a=1&b=2")
+                }
+                val event = HttpMonitorUpEvent(markupMonitor, HttpStatus.OK, 300, null)
+
+                then("it should escape them, so that Telegram doesn't reject the message") {
+                    val expectedMessage =
+                        "✅ <b>Your monitor \"API &lt;prod&gt;\" (https://test.url/health?a=1&amp;b=2) " +
+                            "is UP (200)</b>\n<i>Latency: 300ms</i>"
+                    formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+
             `when`("the URL is sensitive") {
                 val sensitiveMonitor = monitor.copy().apply { setSensitiveUrl(true) }
                 val event = HttpMonitorUpEvent(sensitiveMonitor, HttpStatus.OK, 300, null)
@@ -501,6 +516,20 @@ class TelegramTextFormatterTest : BehaviorSpec(
                         "ℹ️ <b>DNS records changed for monitor \"drift_monitor\"</b>\nA: [1.1.1.1] → [2.2.2.2]"
                 }
             }
+
+            `when`("the records have characters that Telegram would interpret as HTML") {
+                val event = DnsRecordsChangedEvent(
+                    monitor = monitor,
+                    previousRecords = mapOf(DnsRecordType.TXT to listOf("v=spf1 -all")),
+                    currentRecords = mapOf(DnsRecordType.TXT to listOf("<a href=\"https://evil.example\">Reset</a>")),
+                )
+
+                then("it should escape them, so that a record can't turn into a link") {
+                    formatter.toFormattedMessage(event) shouldBe
+                        "ℹ️ <b>DNS records changed for monitor \"drift_monitor\"</b>\n" +
+                        "TXT: [v=spf1 -all] → [&lt;a href=\"https://evil.example\"&gt;Reset&lt;/a&gt;]"
+                }
+            }
         }
 
         given("toFormattedMessage(event: DockerContainerRestartedEvent)") {
@@ -602,6 +631,16 @@ class TelegramTextFormatterTest : BehaviorSpec(
                         "⚠️ <b>Your SSL certificate for \"test_monitor\" will expire soon</b>\n" +
                             "<i>Expiry date: ${event.certInfo.validTo}</i>"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+        }
+
+        given("escape(input: String)") {
+
+            `when`("it gets a text with HTML control characters") {
+                then("it should escape them, so that Telegram shows them as they are") {
+                    formatter.escape("<b>latency</b> < 200ms & > 100ms") shouldBe
+                        "&lt;b&gt;latency&lt;/b&gt; &lt; 200ms &amp; &gt; 100ms"
                 }
             }
         }

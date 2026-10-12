@@ -34,25 +34,25 @@ class HeartbeatChecker(
      * and emits an UptimeEvent based on the evaluation's result.
      */
     fun checkHeartbeats() {
-        dslCtx.transactionResult { config ->
+        val downEvents = dslCtx.transactionResult { config ->
             val txCtx = config.dsl()
-            pushMonitorRepository.fetchWithMissedHeartbeats(txCtx).forEach { monitor ->
+            pushMonitorRepository.fetchWithMissedHeartbeats(txCtx).mapNotNull { monitor ->
                 // Skip monitors whose checks are suspended, because Kuvasz itself has no outbound connectivity
-                if (connectivityChecker?.isCheckSuppressedFor(monitor) == true) return@forEach
+                if (connectivityChecker?.isCheckSuppressedFor(monitor) == true) return@mapNotNull null
                 // Skip monitors that are under maintenance
-                if (maintenanceWindowService.isUnderMaintenance(monitor.monitorId(), monitor.category)) return@forEach
+                if (maintenanceWindowService.isUnderMaintenance(monitor.monitorId(), monitor.category)) {
+                    return@mapNotNull null
+                }
                 PushMonitorDownEvent(
                     monitor,
                     error = Messages.missedHeartbeat(),
                     previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(monitor.id, txCtx),
-                ).also { event ->
-                    if (event.isDownNow(pendingFailureRepository, txCtx)) {
-                        databaseEventHandler.handleUptimeMonitorEvent(event)
-                        eventDispatcher.dispatch(event)
-                    }
-                }
+                ).takeIf { event -> event.isDownNow(pendingFailureRepository, txCtx) }
+                    ?.also { event -> databaseEventHandler.handleUptimeMonitorEvent(event, txCtx) }
             }
         }
+        // Only after the commit, so that the handlers can see the persisted events from their own connections
+        downEvents.forEach { event -> eventDispatcher.dispatch(event) }
     }
 }
 

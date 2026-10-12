@@ -90,7 +90,7 @@ class HttpUptimeEventRepository(private val dslContext: DSLContext) : UptimeEven
         .execute()
 
     @Suppress("IgnoredReturnValue")
-    fun updateEvent(eventId: Long, newEvent: HttpUptimeMonitorEvent) = dslContext
+    fun updateEvent(eventId: Long, newEvent: HttpUptimeMonitorEvent, ctx: DSLContext = dslContext) = ctx
         .update(HTTP_UPTIME_EVENT)
         .set(HTTP_UPTIME_EVENT.UPDATED_AT, newEvent.dispatchedAt)
         .apply {

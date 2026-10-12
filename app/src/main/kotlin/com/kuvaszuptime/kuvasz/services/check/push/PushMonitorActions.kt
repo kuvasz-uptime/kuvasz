@@ -89,22 +89,26 @@ class PushMonitorActions(
      * Updates the last heartbeat on the push monitor that matches the given client secret and dispatches an UP event
      * conditionally in case the monitor is enabled
      */
-    fun updateLastHeartbeat(clientSecret: String, timestamp: OffsetDateTime): PushMonitorRecord? = dslContext
-        .transactionResultWithError { config ->
+    fun updateLastHeartbeat(clientSecret: String, timestamp: OffsetDateTime): PushMonitorRecord? {
+        val event = dslContext.transactionResultWithError { config ->
             val txCtx = config.dsl()
             monitorRepository.updateLastHeartbeat(clientSecret, timestamp, txCtx)
                 ?.takeIf { it.enabled }
-                ?.also { updatedMonitor ->
+                ?.let { updatedMonitor ->
                     PushMonitorUpEvent(
                         monitor = updatedMonitor,
                         previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(updatedMonitor.id, txCtx),
                     ).also { event ->
                         pendingFailureRepository.deleteByMonitorId(event.monitor.id, txCtx)
-                        databaseEventHandler.handleUptimeMonitorEvent(event)
-                        eventDispatcher.dispatch(event)
+                        databaseEventHandler.handleUptimeMonitorEvent(event, txCtx)
                     }
                 }
         }
+        // Only after the commit, so that the handlers can see the persisted event from their own connections
+        event?.let { upEvent -> eventDispatcher.dispatch(upEvent) }
+
+        return event?.monitor
+    }
 
     fun getMonitorsWithDetails(
         enabled: Boolean? = null,
@@ -199,21 +203,23 @@ class PushMonitorActions(
      * The event will be flagged as a manual one to be able to differentiate later and update the error message of a
      * potentially existing event conditionally.
      */
-    fun signalFailure(clientSecret: String, error: String): PushMonitorRecord? = dslContext
-        .transactionResultWithError { config ->
+    fun signalFailure(clientSecret: String, error: String): PushMonitorRecord? {
+        val monitorWithEvent = dslContext.transactionResultWithError { config ->
             val txCtx = config.dsl()
-            monitorRepository.findEnabledByClientSecret(clientSecret, txCtx)?.also { monitor ->
-                PushMonitorDownEvent(
+            monitorRepository.findEnabledByClientSecret(clientSecret, txCtx)?.let { monitor ->
+                val event = PushMonitorDownEvent(
                     monitor,
                     error,
                     previousEvent = uptimeEventRepository.getPreviousEventByMonitorId(monitor.id, txCtx),
                     isManual = true,
-                ).also { event ->
-                    if (event.isDownNow(pendingFailureRepository, txCtx)) {
-                        databaseEventHandler.handleUptimeMonitorEvent(event)
-                        eventDispatcher.dispatch(event)
-                    }
-                }
+                ).takeIf { event -> event.isDownNow(pendingFailureRepository, txCtx) }
+                    ?.also { event -> databaseEventHandler.handleUptimeMonitorEvent(event, txCtx) }
+                monitor to event
             }
         }
+        // Only after the commit, so that the handlers can see the persisted event from their own connections
+        monitorWithEvent?.second?.let { event -> eventDispatcher.dispatch(event) }
+
+        return monitorWithEvent?.first
+    }
 }

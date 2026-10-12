@@ -76,6 +76,12 @@ _Slack_ as a notification channel for your monitors. This allows you to receive 
 
 ![Slack notifications](../images/integrations/slack.webp)
 
+## Slack Bot <!-- md:config ../management/integrations.md#slack-bot -->
+
+The _Slack Bot_ integration posts the notifications to a Slack channel **as a Slack app**, through the Slack Web
+API. It keeps **every incident in a thread of its own**, whose first message always shows the current state of the
+incident with its matching **color**.
+
 ## Discord <!-- md:config ../management/integrations.md#discord -->
 
 The _Discord_ integration allows you to send notifications **to Discord channels

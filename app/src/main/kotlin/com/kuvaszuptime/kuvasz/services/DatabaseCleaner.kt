@@ -7,12 +7,15 @@ import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMetricsLogRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpUptimeEventRepository
+import com.kuvaszuptime.kuvasz.repositories.IntegrationThreadRepository
+import com.kuvaszuptime.kuvasz.repositories.MaintenanceWindowRepository
 import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.repositories.DockerMetricsLogRepository
 import com.kuvaszuptime.kuvasz.repositories.DockerUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMetricsLogRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpUptimeEventRepository
+import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowCalculator
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.kuvaszuptime.kuvasz.util.loggerFor
 import io.micronaut.context.annotation.Requires
@@ -34,7 +37,10 @@ class DatabaseCleaner(
     private val tcpMetricsLogRepository: TcpMetricsLogRepository,
     private val dnsMetricsLogRepository: DnsMetricsLogRepository,
     private val dockerMetricsLogRepository: DockerMetricsLogRepository,
-    private val sslEventRepository: SSLEventRepository
+    private val sslEventRepository: SSLEventRepository,
+    private val maintenanceWindowRepository: MaintenanceWindowRepository,
+    private val maintenanceWindowCalculator: MaintenanceWindowCalculator,
+    private val integrationThreadRepository: IntegrationThreadRepository,
 ) {
 
     companion object {
@@ -59,6 +65,10 @@ class DatabaseCleaner(
         val deletedTcpMetricsLogs = tcpMetricsLogRepository.deleteLogsBeforeDate(latencyLimit)
         val deletedDnsMetricsLogs = dnsMetricsLogRepository.deleteLogsBeforeDate(latencyLimit)
         val deletedDockerMetricsLogs = dockerMetricsLogRepository.deleteLogsBeforeDate(latencyLimit)
+        val activeWindowIds = maintenanceWindowRepository.fetchByEnabled(enabled = true)
+            .filter { window -> maintenanceWindowCalculator.isActive(window) }
+            .map { window -> window.id }
+        val deletedMaintenanceThreads = integrationThreadRepository.deleteMaintenanceThreadsExcept(activeWindowIds)
 
         logger.info("$deletedHttpUptimeEvents HTTP_UPTIME_EVENT record has been deleted")
         logger.info("$deletedPushUptimeEvents PUSH_UPTIME_EVENT record has been deleted")
@@ -72,5 +82,6 @@ class DatabaseCleaner(
         logger.info("$deletedDnsMetricsLogs DNS_METRICS_LOG record has been deleted")
         logger.info("$deletedDockerMetricsLogs DOCKER_METRICS_LOG record has been deleted")
         logger.info("$deletedSSLEvents SSL_EVENT record has been deleted")
+        logger.info("$deletedMaintenanceThreads orphaned maintenance INTEGRATION_THREAD record has been deleted")
     }
 }
