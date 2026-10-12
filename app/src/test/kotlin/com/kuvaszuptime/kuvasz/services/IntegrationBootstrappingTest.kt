@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.models.dto.IntegrationValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.ValidationMessages
 import com.kuvaszuptime.kuvasz.models.handlers.AppriseNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.IncidentNoteMirroring
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
@@ -271,6 +272,7 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.channelId shouldBe "C0IMPLICIT"
                     config.triggerReaction.shouldBeNull()
                     config.resolutionReaction.shouldBeNull()
+                    config.incidentNotes shouldBe IncidentNoteMirroring.ALL
                     config.enabled shouldBe true
                     config.global shouldBe false
                 }
@@ -283,6 +285,8 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.channelId shouldBe "C0GLOBAL"
                     config.triggerReaction shouldBe "rotating_light"
                     config.resolutionReaction shouldBe ":white_check_mark:"
+                    // The default
+                    config.incidentNotes shouldBe IncidentNoteMirroring.PUBLIC
                     config.enabled shouldBe true
                     config.global shouldBe true
                 }
@@ -291,6 +295,7 @@ class IntegrationBootstrappingTest : StringSpec({
                     val config = excludingSlackBot.value as SlackBotNotificationConfig
                     config.channelId shouldBe "C0EXCLUDING"
                     config.excludedEvents shouldBe listOf(IntegrationEventType.HTTP_DOWN)
+                    config.incidentNotes shouldBe IncidentNoteMirroring.NONE
                     config.enabled shouldBe true
                     config.global shouldBe false
                 }
@@ -573,6 +578,7 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.channelId shouldBe "C0IMPLICIT"
                     config.triggerReaction.shouldBeNull()
                     config.resolutionReaction.shouldBeNull()
+                    config.incidentNotes shouldBe IncidentNoteMirroring.ALL
                     config.enabled shouldBe true
                     config.global shouldBe false
                 }
@@ -585,6 +591,8 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.channelId shouldBe "C0GLOBAL"
                     config.triggerReaction shouldBe "rotating_light"
                     config.resolutionReaction shouldBe ":white_check_mark:"
+                    // The default
+                    config.incidentNotes shouldBe IncidentNoteMirroring.PUBLIC
                     config.enabled shouldBe true
                     config.global shouldBe true
                 }

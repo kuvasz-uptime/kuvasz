@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentNoteDto
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.isShownPublicly
+import com.kuvaszuptime.kuvasz.models.label
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
@@ -272,13 +273,6 @@ internal fun UL.timelineEvent(
         }
     }
 }
-
-internal val InvestigationStatus.label: String
-    get() = when (this) {
-        InvestigationStatus.INVESTIGATING -> Messages.investigationStatusInvestigating()
-        InvestigationStatus.IDENTIFIED -> Messages.investigationStatusIdentified()
-        InvestigationStatus.RESOLVED -> Messages.investigationStatusResolved()
-    }
 
 internal val InvestigationStatus.icon: Icon
     get() = when (this) {

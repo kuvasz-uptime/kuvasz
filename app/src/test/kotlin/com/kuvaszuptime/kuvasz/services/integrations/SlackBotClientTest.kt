@@ -89,8 +89,6 @@ class SlackBotClientTest : ShouldSpec({
                     channel = "C0123",
                     attachments = listOf(attachment),
                     threadTs = null,
-                    unfurlLinks = false,
-                    unfurlMedia = false,
                 ),
             ).blockingGet()
 
@@ -111,8 +109,6 @@ class SlackBotClientTest : ShouldSpec({
                     channel = "C0123",
                     attachments = listOf(attachment),
                     threadTs = "1700000000.000100",
-                    unfurlLinks = false,
-                    unfurlMedia = false,
                 ),
             ).blockingGet()
 
@@ -130,8 +126,6 @@ class SlackBotClientTest : ShouldSpec({
                     channel = "C0123",
                     attachments = listOf(attachment),
                     threadTs = null,
-                    unfurlLinks = false,
-                    unfurlMedia = false,
                 ),
             ).blockingSubscribe(
                 { fail("Should not succeed") },
@@ -157,8 +151,6 @@ class SlackBotClientTest : ShouldSpec({
                     channel = "C0123",
                     attachments = listOf(attachment),
                     threadTs = null,
-                    unfurlLinks = false,
-                    unfurlMedia = false,
                 ),
             ).blockingSubscribe(
                 { fail("Should not succeed") },
@@ -181,8 +173,6 @@ class SlackBotClientTest : ShouldSpec({
                     channel = "C0123",
                     attachments = listOf(attachment),
                     threadTs = null,
-                    unfurlLinks = false,
-                    unfurlMedia = false,
                 ),
             ).blockingSubscribe(
                 { fail("Should not succeed") },
@@ -205,8 +195,6 @@ class SlackBotClientTest : ShouldSpec({
                     channel = "C0123",
                     attachments = listOf(attachment),
                     threadTs = null,
-                    unfurlLinks = false,
-                    unfurlMedia = false,
                 ),
             ).blockingGet()
 

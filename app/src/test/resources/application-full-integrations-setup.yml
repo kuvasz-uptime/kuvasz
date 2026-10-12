@@ -12,6 +12,7 @@ integrations:
     - name: test_implicitly_enabled
       bot-token: xoxb-implicitly-enabled
       channel-id: C0IMPLICIT
+      incident-notes: ALL
     - name: global
       bot-token: xoxb-global
       channel-id: C0GLOBAL
@@ -25,6 +26,7 @@ integrations:
     - name: excluding_http_down
       bot-token: xoxb-excluding
       channel-id: C0EXCLUDING
+      incident-notes: NONE
       trigger-reaction: ''
       resolution-reaction: ' '
       excluded-events:

@@ -3,8 +3,10 @@ package com.kuvaszuptime.kuvasz.handlers
 import com.kuvaszuptime.kuvasz.jooq.enums.IntegrationThreadSubject
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IntegrationThreadRecord
 import com.kuvaszuptime.kuvasz.models.IncidentType
+import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentNoteDto
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
+import com.kuvaszuptime.kuvasz.models.events.IncidentNoteEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEndEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowStartEvent
@@ -17,6 +19,7 @@ import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.formatters.MessageSeverity
 import com.kuvaszuptime.kuvasz.models.events.formatters.SlackTextFormatter
 import com.kuvaszuptime.kuvasz.models.events.formatters.toSeverity
+import com.kuvaszuptime.kuvasz.models.handlers.IncidentNoteMirroring
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.SlackBotNotificationConfig
@@ -45,7 +48,7 @@ class SlackBotEventHandler(
     private val slackBotService: SlackBotService,
     private val integrationThreadRepository: IntegrationThreadRepository,
     private val incidentRepository: IncidentRepository,
-    integrationRepository: IntegrationRepository,
+    private val integrationRepository: IntegrationRepository,
 ) : NotificationEventHandler(eventDispatcher, integrationRepository) {
 
     override val logger = loggerFor<SlackBotEventHandler>()
@@ -53,6 +56,28 @@ class SlackBotEventHandler(
     override val integrationType: IntegrationType = IntegrationType.SLACK_BOT
 
     private val formatter = SlackTextFormatter
+
+    init {
+        eventDispatcher.subscribeToIncidentNoteEvents { event -> handleIncidentNoteEvent(event) }
+    }
+
+    /**
+     * Mirrors the notes of an incident into its threads (as far as the integration is configured to do so), even after
+     * its resolution. The notes of an incident without a thread are not posted anywhere, because they wouldn't make
+     * sense without the incident they belong to.
+     */
+    private fun handleIncidentNoteEvent(event: IncidentNoteEvent) {
+        val text = formatter.toFormattedMessage(event)
+        integrationThreadRepository.findBySubject(event.note.incidentType.threadSubject, event.note.eventId)
+            .forEach { thread ->
+                // Only to the integrations that are still configured and enabled
+                (integrationRepository.enabledIntegrations[thread.integrationId] as? SlackBotNotificationConfig)
+                    ?.takeIf { target -> target.mirrors(event.note) }
+                    ?.let { target ->
+                        slackBotService.postMessage(target, text, color = null, threadTs = thread.ts).handleResponse()
+                    }
+            }
+    }
 
     override fun handleUptimeEvent(event: UptimeMonitorEvent) {
         val incidentType = event.monitor.monitorId().type.uptimeIncidentType
@@ -211,19 +236,7 @@ class SlackBotEventHandler(
             )
         }
 
-        slackBotService.reply(
-            integrationConfig = target,
-            threadTs = thread.ts,
-            text = text,
-            color = color,
-        ).handleResponse()
-
-        slackBotService.recolorRoot(
-            integrationConfig = target,
-            ts = thread.ts,
-            text = thread.rootText,
-            color = color,
-        ).handleResponse()
+        replyThenUpdateRoot(target, thread, text, color, rootText = thread.rootText)
     }
 
     private fun resolveIncidentThread(
@@ -250,26 +263,48 @@ class SlackBotEventHandler(
         text: String,
         color: SlackColor,
     ) {
-        slackBotService.reply(
-            integrationConfig = target,
-            threadTs = thread.ts,
-            text = text,
-            color = color,
-        ).handleResponse()
         // The root tells that its story is over not only with its color, but by striking through its headline too
-        slackBotService.recolorRoot(
-            integrationConfig = target,
-            ts = thread.ts,
-            text = formatter.strikethroughHeadline(thread.rootText),
-            color = color,
-        ).handleResponse()
-        target.triggerEmoji?.let { emoji ->
-            slackBotService.removeReaction(integrationConfig = target, ts = thread.ts, emoji = emoji).handleResponse()
-        }
-        target.resolutionEmoji?.let { emoji ->
-            slackBotService.addReaction(integrationConfig = target, ts = thread.ts, emoji = emoji).handleResponse()
+        replyThenUpdateRoot(target, thread, text, color, rootText = formatter.strikethroughHeadline(thread.rootText)) {
+            target.triggerEmoji?.let { emoji ->
+                slackBotService.removeReaction(integrationConfig = target, ts = thread.ts, emoji = emoji)
+                    .handleResponse()
+            }
+            target.resolutionEmoji?.let { emoji ->
+                slackBotService.addReaction(integrationConfig = target, ts = thread.ts, emoji = emoji).handleResponse()
+            }
         }
     }
+
+    /**
+     * Replies in the thread, and updates its root only once the reply is done (successfully or not), then runs
+     * [afterwards]. Slack updates the root itself on every reply (e.g. its reply count), which can overwrite an update
+     * of the root sent at the same time. If the reply has been posted to the channel instead, because the root is gone,
+     * there's nothing to update.
+     */
+    private fun replyThenUpdateRoot(
+        target: SlackBotNotificationConfig,
+        thread: IntegrationThreadRecord,
+        text: String,
+        color: SlackColor,
+        rootText: String,
+        afterwards: () -> Unit = {},
+    ) {
+        slackBotService.reply(integrationConfig = target, threadTs = thread.ts, text = text, color = color)
+            .doOnEvent { reply, _ ->
+                if (reply?.inThread != false) {
+                    slackBotService.recolorRoot(target, ts = thread.ts, text = rootText, color = color)
+                        .doFinally(afterwards)
+                        .handleResponse()
+                }
+            }
+            .handleResponse()
+    }
+}
+
+private fun SlackBotNotificationConfig.mirrors(note: IncidentNoteDto): Boolean = when (incidentNotes) {
+    IncidentNoteMirroring.ALL -> true
+    IncidentNoteMirroring.PUBLIC -> note.public
+    IncidentNoteMirroring.NONE -> false
 }
 
 private val SlackBotNotificationConfig.triggerEmoji: String?

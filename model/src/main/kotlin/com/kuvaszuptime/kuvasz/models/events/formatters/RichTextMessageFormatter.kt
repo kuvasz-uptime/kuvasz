@@ -1,15 +1,19 @@
 package com.kuvaszuptime.kuvasz.models.events.formatters
 
+import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
-import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
-import com.kuvaszuptime.kuvasz.models.events.DockerMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.events.DockerMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.IncidentNoteCreatedEvent
+import com.kuvaszuptime.kuvasz.models.events.IncidentNoteEvent
+import com.kuvaszuptime.kuvasz.models.events.IncidentNoteUpdatedEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
@@ -22,11 +26,18 @@ import com.kuvaszuptime.kuvasz.models.events.StructuredMaintenanceStartMessage
 import com.kuvaszuptime.kuvasz.models.events.TcpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.TcpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
+import com.kuvaszuptime.kuvasz.models.events.sanitizeAsDetails
+import com.kuvaszuptime.kuvasz.models.label
 
 abstract class RichTextMessageFormatter : TextMessageFormatter {
     abstract fun bold(input: String): String
 
     abstract fun italic(input: String): String
+
+    /**
+     * Escapes a free text written by a user, so that it's shown as it is, instead of being interpreted as markup
+     */
+    abstract fun escape(input: String): String
 
     override fun toFormattedMessage(event: UptimeMonitorEvent): String = when (event) {
         is HttpMonitorUpEvent -> event.toParts()
@@ -113,6 +124,18 @@ abstract class RichTextMessageFormatter : TextMessageFormatter {
 
     fun toFormattedMessage(event: DockerContainerRestartedEvent): String = event.toStructuredMessage().let { details ->
         listOf(event.getEmoji() + " " + bold(details.summary), details.details)
+    }.assemble()
+
+    fun toFormattedMessage(event: IncidentNoteEvent): String = with(event.note) {
+        val headline = when (event) {
+            is IncidentNoteCreatedEvent -> Messages.incidentNoteAdded()
+            is IncidentNoteUpdatedEvent -> Messages.incidentNoteUpdated()
+        }
+        listOfNotNull(
+            Emoji.MEMO + " " + bold(headline) + " · " + italic(status.label),
+            timestamp?.let { noteTime -> italic(Messages.incidentNoteTime(noteTime)) },
+            escape(content.sanitizeAsDetails()),
+        )
     }.assemble()
 
     override fun toFormattedMessage(event: SSLMonitorEvent): String = when (event) {

@@ -10,10 +10,13 @@ import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentDto
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentNoteCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentNoteDto
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentNoteUpdateDto
+import com.kuvaszuptime.kuvasz.models.events.IncidentNoteCreatedEvent
+import com.kuvaszuptime.kuvasz.models.events.IncidentNoteUpdatedEvent
 import com.kuvaszuptime.kuvasz.models.isShownPublicly
 import com.kuvaszuptime.kuvasz.repositories.IncidentNoteRepository
 import com.kuvaszuptime.kuvasz.repositories.IncidentRepository
 import com.kuvaszuptime.kuvasz.repositories.toDto
+import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageCacheInvalidator
 import com.kuvaszuptime.kuvasz.util.entityUpdateMapper
 import com.kuvaszuptime.kuvasz.util.transactionResultWithError
@@ -31,6 +34,7 @@ class IncidentActions(
     private val statusPageCacheInvalidator: StatusPageCacheInvalidator,
     private val dslContext: DSLContext,
     private val validator: Validator,
+    private val eventDispatcher: EventDispatcher,
 ) {
 
     fun getIncidentDetails(incidentType: IncidentType, eventId: Long): IncidentDetailsDto =
@@ -74,7 +78,10 @@ class IncidentActions(
             .setPublic(createDto.public)
 
         return incidentNoteRepository.returningInsert(note).toDto()
-            .also { invalidateStatusPagesIfShown(incident.incidentType, it.public) }
+            .also { created ->
+                invalidateStatusPagesIfShown(incident.incidentType, created.public)
+                eventDispatcher.dispatch(IncidentNoteCreatedEvent(created))
+            }
     }
 
     fun updateNote(incidentNoteId: Long, updates: ObjectNode): IncidentNoteDto {
@@ -96,6 +103,7 @@ class IncidentActions(
         }
         // A note that has just been hidden has to disappear from the status pages too
         invalidateStatusPagesIfShown(updated.incidentType, wasPublic || updated.public)
+        eventDispatcher.dispatch(IncidentNoteUpdatedEvent(updated))
 
         return updated
     }

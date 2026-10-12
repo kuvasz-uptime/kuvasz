@@ -11,6 +11,7 @@ import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.IncidentNoteEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEndEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowStartEvent
@@ -58,6 +59,7 @@ class EventDispatcher {
     private val monitorLifecycleEvents = serializedSubject<MonitorLifecycleEvent>()
     private val maintenanceStartEvents = serializedSubject<MaintenanceWindowStartEvent>()
     private val maintenanceEndEvents = serializedSubject<MaintenanceWindowEndEvent>()
+    private val incidentNoteEvents = serializedSubject<IncidentNoteEvent>()
 
     fun dispatch(event: MonitorEvent<*>) =
         when (event) {
@@ -99,6 +101,8 @@ class EventDispatcher {
             is MaintenanceWindowStartEvent -> maintenanceStartEvents.onNext(event)
             is MaintenanceWindowEndEvent -> maintenanceEndEvents.onNext(event)
         }
+
+    fun dispatch(event: IncidentNoteEvent) = incidentNoteEvents.onNext(event)
 
     private inline fun <reified T : Any> Subject<T>.safeSubscribeOnIo(
         crossinline consumer: (T) -> Unit
@@ -169,6 +173,9 @@ class EventDispatcher {
 
     fun subscribeToMaintenanceEndEvents(consumer: (MaintenanceWindowEndEvent) -> Unit): Disposable =
         maintenanceEndEvents.safeSubscribeOnIo(consumer)
+
+    fun subscribeToIncidentNoteEvents(consumer: (IncidentNoteEvent) -> Unit): Disposable =
+        incidentNoteEvents.safeSubscribeOnIo(consumer)
 
     fun subscribeToUptimeMonitorEvents(consumer: (UptimeMonitorEvent) -> Unit): Disposable =
         CompositeDisposable(

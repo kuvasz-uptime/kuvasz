@@ -5,6 +5,11 @@ object SlackTextFormatter : RichTextMessageFormatter() {
 
     override fun italic(input: String): String = "_${input}_"
 
+    // Slack interprets only these as control characters, e.g. in <!channel> or <https://example.com|link>
+    // See: https://docs.slack.dev/messaging/formatting-message-text#escaping
+    override fun escape(input: String): String =
+        input.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
     fun strikethrough(input: String): String = "~$input~"
 
     fun strikethroughHeadline(message: String): String =

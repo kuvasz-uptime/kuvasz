@@ -82,6 +82,9 @@ interface SlackBotNotificationConfig : IntegrationConfig {
 
     val resolutionReaction: String?
 
+    @get:Bindable(defaultValue = "PUBLIC")
+    val incidentNotes: IncidentNoteMirroring
+
     companion object {
         const val IDENTIFIER = "slack-bot"
         const val CONFIG_PREFIX = "${IntegrationConfig.CONFIG_PREFIX}.$IDENTIFIER"
@@ -206,6 +209,12 @@ interface WebhookNotificationConfig : IntegrationConfig {
         const val IDENTIFIER = "webhook"
         const val CONFIG_PREFIX = "${IntegrationConfig.CONFIG_PREFIX}.$IDENTIFIER"
     }
+}
+
+enum class IncidentNoteMirroring {
+    ALL,
+    PUBLIC,
+    NONE,
 }
 
 enum class WebhookHttpMethod {

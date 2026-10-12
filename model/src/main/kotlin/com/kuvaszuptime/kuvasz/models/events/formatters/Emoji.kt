@@ -30,6 +30,7 @@ object Emoji {
     const val INFO = "ℹ️"
     const val LOCK = "🔒️"
     const val TOOL = "🔧"
+    const val MEMO = "📝"
 }
 
 fun MonitorEvent<*>.getEmoji(): String =

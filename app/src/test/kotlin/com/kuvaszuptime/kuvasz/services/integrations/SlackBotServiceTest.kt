@@ -43,8 +43,6 @@ class SlackBotServiceTest(
         channel = "C0123",
         attachments = listOf(attachment(text, color)),
         threadTs = threadTs,
-        unfurlLinks = false,
-        unfurlMedia = false,
     )
 
     fun ok(ts: String?) = Single.just(SlackApiResponse(ok = true, error = null, needed = null, ts = ts))
@@ -74,7 +72,8 @@ class SlackBotServiceTest(
             val request = expectedRequest("*Up*", "#2fb344", threadTs = "1.1")
             every { mockClient.postMessage("xoxb-test", request) } returns ok("2.2")
 
-            slackBotService.reply(config, "1.1", "*Up*", SlackColor.GREEN).blockingGet() shouldBe "2.2"
+            slackBotService.reply(config, "1.1", "*Up*", SlackColor.GREEN).blockingGet() shouldBe
+                SlackReply(ts = "2.2", inThread = true)
 
             verify(exactly = 1) { mockClient.postMessage("xoxb-test", request) }
         }
@@ -89,7 +88,8 @@ class SlackBotServiceTest(
                     slackError(SlackApiMethod.CHAT_POST_MESSAGE, goneError)
                 every { mockClient.postMessage("xoxb-test", channelRequest) } returns ok("3.3")
 
-                slackBotService.reply(config, "1.1", "*Up*", SlackColor.GREEN).blockingGet() shouldBe "3.3"
+                slackBotService.reply(config, "1.1", "*Up*", SlackColor.GREEN).blockingGet() shouldBe
+                    SlackReply(ts = "3.3", inThread = false)
 
                 verify(exactly = 1) { mockClient.postMessage("xoxb-test", threadRequest) }
                 verify(exactly = 1) { mockClient.postMessage("xoxb-test", channelRequest) }

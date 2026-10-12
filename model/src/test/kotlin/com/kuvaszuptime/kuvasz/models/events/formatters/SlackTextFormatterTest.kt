@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.models.events.formatters
 
+import com.kuvaszuptime.kuvasz.jooq.enums.InvestigationStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
@@ -14,6 +15,8 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.MaintenanceWindowRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.SslEventRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpUptimeEventRecord
+import com.kuvaszuptime.kuvasz.models.IncidentType
+import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentNoteDto
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
@@ -24,6 +27,8 @@ import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.IncidentNoteCreatedEvent
+import com.kuvaszuptime.kuvasz.models.events.IncidentNoteUpdatedEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEndEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowStartEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
@@ -39,6 +44,8 @@ import com.kuvaszuptime.kuvasz.util.toDurationString
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.micronaut.http.HttpStatus
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 
 private const val DOCKER_ERROR = "The container exited (137)"
 
@@ -649,6 +656,68 @@ class SlackTextFormatterTest : BehaviorSpec(
                 then("it should omit the description line") {
                     formatter.toFormattedMessage(event) shouldBe
                         "✅ *Maintenance \"test_window\" has ended*"
+                }
+            }
+        }
+
+        given("toFormattedMessage(event: IncidentNoteEvent)") {
+            val note = IncidentNoteDto(
+                id = 1,
+                incidentType = IncidentType.HTTP,
+                eventId = 2,
+                status = InvestigationStatus.IDENTIFIED,
+                content = "The database is down\nRestarting it",
+                timestamp = null,
+                public = false,
+                createdAt = getCurrentTimestamp(),
+                updatedAt = getCurrentTimestamp(),
+            )
+
+            `when`("it gets a created note with a custom time") {
+                val noteTime = OffsetDateTime.of(2026, 10, 12, 10, 15, 0, 0, ZoneOffset.UTC)
+                val event = IncidentNoteCreatedEvent(note.copy(timestamp = noteTime))
+
+                then("it should return the headline with the status, the time, and the content") {
+                    formatter.toFormattedMessage(event) shouldBe
+                        "📝 *Incident note* · _Identified_\n_Time: 2026-10-12T10:15Z_\n" +
+                        "The database is down\nRestarting it"
+                }
+            }
+
+            `when`("it gets an updated note without a custom time") {
+                val event = IncidentNoteUpdatedEvent(note.copy(status = InvestigationStatus.RESOLVED))
+
+                then("it should tell that the note has been updated, without a time") {
+                    formatter.toFormattedMessage(event) shouldBe
+                        "📝 *Incident note updated* · _Resolved_\nThe database is down\nRestarting it"
+                }
+            }
+
+            `when`("it gets a note with a very long content") {
+                val event = IncidentNoteCreatedEvent(note.copy(content = "a".repeat(1500)))
+
+                then("it should truncate the content, so that the message fits the limits of the integrations") {
+                    formatter.toFormattedMessage(event) shouldBe
+                        "📝 *Incident note* · _Identified_\n" + "a".repeat(1000) + "... [REDACTED]"
+                }
+            }
+
+            `when`("it gets a note with characters that Slack would interpret as markup") {
+                val event = IncidentNoteCreatedEvent(note.copy(content = "<!channel> latency < 200ms & > 100ms"))
+
+                then("it should escape them, so that the note neither mentions anyone, nor gets garbled") {
+                    formatter.toFormattedMessage(event) shouldBe
+                        "📝 *Incident note* · _Identified_\n&lt;!channel&gt; latency &lt; 200ms &amp; &gt; 100ms"
+                }
+            }
+        }
+
+        given("escape(input: String)") {
+
+            `when`("it gets a text with the control characters of Slack") {
+                then("it should escape them, so that the text is shown as it is, even if it looks escaped already") {
+                    formatter.escape("<https://example.com|link> &amp; <@U123>") shouldBe
+                        "&lt;https://example.com|link&gt; &amp;amp; &lt;@U123&gt;"
                 }
             }
         }

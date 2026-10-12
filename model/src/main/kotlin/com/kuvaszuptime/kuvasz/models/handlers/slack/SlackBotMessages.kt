@@ -15,11 +15,14 @@ data class SlackPostMessageRequest(
     val attachments: List<SlackAttachment>,
     @field:JsonProperty("thread_ts")
     val threadTs: String?,
+) {
+    // No previews of the links in the messages, neither text based (e.g. a web page), nor media (e.g. an image)
     @field:JsonProperty("unfurl_links")
-    val unfurlLinks: Boolean,
+    val unfurlLinks = false
+
     @field:JsonProperty("unfurl_media")
-    val unfurlMedia: Boolean,
-)
+    val unfurlMedia = false
+}
 
 /**
  * Request body of Slack's chat.update

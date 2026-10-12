@@ -4,7 +4,9 @@ import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.dto.integration.EmailNotificationConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.integration.IntegrationConfigDto
+import com.kuvaszuptime.kuvasz.models.dto.integration.SlackBotNotificationConfigDto
 import com.kuvaszuptime.kuvasz.models.dto.settings.SettingsDto
+import com.kuvaszuptime.kuvasz.models.handlers.IncidentNoteMirroring
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.ui.*
@@ -74,16 +76,10 @@ fun renderIntegrations(globals: AppGlobals, integrations: List<IntegrationConfig
                                             td {
                                                 classes(TEXT_WRAP, TEXT_BREAK)
                                                 code { +integration.id.toString() }
-                                                if (integration is EmailNotificationConfigDto) {
+                                                integration.detailsTooltip()?.let { details ->
                                                     span {
                                                         classes(MS_2)
-                                                        tooltip(
-                                                            title = Messages.emailFromToDescription(
-                                                                integration.fromAddress,
-                                                                integration.toAddress,
-                                                            ),
-                                                            html = true,
-                                                        )
+                                                        tooltip(title = details, html = true)
                                                         icon(Icon.INFO_CIRCLE)
                                                     }
                                                 }
@@ -219,6 +215,35 @@ private fun HtmlBlockTag.integrationsPageHeader() {
         }
     }
 }
+
+internal fun IntegrationConfigDto.detailsTooltip(): String? = when (this) {
+    is EmailNotificationConfigDto -> Messages.emailFromToDescription(fromAddress, toAddress)
+    is SlackBotNotificationConfigDto -> listOfNotNull(
+        Messages.slackBotChannelIdDescription(channelId),
+        reactionsDescription(),
+        Messages.slackBotIncidentNotesDescription(incidentNotes.label),
+    ).joinToString("<br>")
+
+    else -> null
+}
+
+private fun SlackBotNotificationConfigDto.reactionsDescription(): String? {
+    val trigger = triggerReaction?.takeIf { emoji -> emoji.isNotBlank() }
+    val resolution = resolutionReaction?.takeIf { emoji -> emoji.isNotBlank() }
+
+    return if (trigger == null && resolution == null) {
+        null
+    } else {
+        Messages.slackBotReactionsDescription(trigger ?: "-", resolution ?: "-")
+    }
+}
+
+private val IncidentNoteMirroring.label: String
+    get() = when (this) {
+        IncidentNoteMirroring.ALL -> Messages.incidentNoteMirroringAll()
+        IncidentNoteMirroring.PUBLIC -> Messages.incidentNoteMirroringPublic()
+        IncidentNoteMirroring.NONE -> Messages.incidentNoteMirroringNone()
+    }
 
 private fun IntegrationType.toCssColor(): CSSClass? = when (this) {
     IntegrationType.SLACK, IntegrationType.SLACK_BOT -> TEXT_PURPLE

@@ -127,8 +127,6 @@ class SlackBotService(
                 channel = integrationConfig.channelId,
                 attachments = listOf(text.toAttachment(color)),
                 threadTs = threadTs,
-                unfurlLinks = false,
-                unfurlMedia = false,
             ),
         ).map { response -> response.ts.orEmpty() }
 
@@ -141,18 +139,20 @@ class SlackBotService(
         threadTs: String,
         text: String,
         color: SlackColor?,
-    ): Single<String> =
-        postMessage(integrationConfig, text, color, threadTs).onErrorResumeNext { error ->
-            if (error is SlackApiException && error.error in GONE_THREAD_ERRORS) {
-                logger.warn(
-                    "The root message of thread $threadTs is gone (${error.error}), so the reply is posted to the " +
-                        "channel instead"
-                )
-                postMessage(integrationConfig, text, color)
-            } else {
-                Single.error(error)
+    ): Single<SlackReply> =
+        postMessage(integrationConfig, text, color, threadTs)
+            .map { ts -> SlackReply(ts = ts, inThread = true) }
+            .onErrorResumeNext { error ->
+                if (error is SlackApiException && error.error in GONE_THREAD_ERRORS) {
+                    logger.warn(
+                        "The root message of thread $threadTs is gone (${error.error}), so the reply is posted to " +
+                            "the channel instead"
+                    )
+                    postMessage(integrationConfig, text, color).map { ts -> SlackReply(ts = ts, inThread = false) }
+                } else {
+                    Single.error(error)
+                }
             }
-        }
 
     fun recolorRoot(
         integrationConfig: SlackBotNotificationConfig,
@@ -236,6 +236,8 @@ internal object SlackError {
     // Not Slack's, the fallback if a failed response doesn't have an error at all
     const val UNKNOWN_ERROR = "unknown_error"
 }
+
+data class SlackReply(val ts: String, val inThread: Boolean)
 
 enum class SlackColor(val hex: String) {
     RED("#d63939"),

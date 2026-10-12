@@ -30,6 +30,13 @@ class IntegrationThreadRepository(private val dslContext: DSLContext) {
         .and(INTEGRATION_THREAD.SUBJECT_ID.eq(subjectId))
         .fetchOne()
 
+    fun findBySubject(subjectType: IntegrationThreadSubject, subjectId: Long): List<IntegrationThreadRecord> =
+        dslContext
+            .selectFrom(INTEGRATION_THREAD)
+            .where(INTEGRATION_THREAD.SUBJECT_TYPE.eq(subjectType))
+            .and(INTEGRATION_THREAD.SUBJECT_ID.eq(subjectId))
+            .fetch()
+
     fun delete(integrationId: IntegrationID, subjectType: IntegrationThreadSubject, subjectId: Long): Int = dslContext
         .deleteFrom(INTEGRATION_THREAD)
         .where(INTEGRATION_THREAD.INTEGRATION_ID.eq(integrationId))

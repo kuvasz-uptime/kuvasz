@@ -10,3 +10,9 @@ integrations:
       webhook-url: https://hooks.slack.com/services/T00000000/B00000000/ZZZZZZZZZZZZZZZZ
     - name: alpha
       webhook-url: https://hooks.slack.com/services/T00000000/B00000000/WWWWWWWWWWWWWWWW
+  slack-bot:
+    - name: echo
+      bot-token: xoxb-ui-test
+      channel-id: C0UITEST
+      trigger-reaction: rotating_light
+      incident-notes: ALL

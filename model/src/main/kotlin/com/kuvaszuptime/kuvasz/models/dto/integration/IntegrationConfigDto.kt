@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.kuvaszuptime.kuvasz.models.handlers.AppriseNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.DiscordNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.IncidentNoteMirroring
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
@@ -109,6 +110,11 @@ data class SlackBotNotificationConfigDto(
         description = "The emoji reaction added to the first message of an incident or a maintenance once it is over"
     )
     val resolutionReaction: String?,
+    @param:Schema(
+        description = "Which notes of the incidents are posted into the threads of the incidents",
+        required = true,
+    )
+    val incidentNotes: IncidentNoteMirroring,
 ) : IntegrationConfigDto {
     constructor(integrationID: IntegrationID, config: SlackBotNotificationConfig) : this(
         id = integrationID,
@@ -120,6 +126,7 @@ data class SlackBotNotificationConfigDto(
         channelId = config.channelId,
         triggerReaction = config.triggerReaction,
         resolutionReaction = config.resolutionReaction,
+        incidentNotes = config.incidentNotes,
     )
 }
 

@@ -11,6 +11,7 @@ import com.kuvaszuptime.kuvasz.models.dto.integration.TelegramNotificationConfig
 import com.kuvaszuptime.kuvasz.models.dto.integration.WebhookNotificationConfigDto
 import com.kuvaszuptime.kuvasz.models.handlers.DiscordNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.IncidentNoteMirroring
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
@@ -115,6 +116,7 @@ class IntegrationControllerTest(
                 implicitlyEnabledSlackBot.channelId shouldBe "C0IMPLICIT"
                 implicitlyEnabledSlackBot.triggerReaction shouldBe null
                 implicitlyEnabledSlackBot.resolutionReaction shouldBe null
+                implicitlyEnabledSlackBot.incidentNotes shouldBe IncidentNoteMirroring.ALL
             }
             response.forOne { globalSlackBot ->
                 globalSlackBot.shouldBeInstanceOf<SlackBotNotificationConfigDto>()
@@ -125,11 +127,14 @@ class IntegrationControllerTest(
                 globalSlackBot.channelId shouldBe "C0GLOBAL"
                 globalSlackBot.triggerReaction shouldBe "rotating_light"
                 globalSlackBot.resolutionReaction shouldBe ":white_check_mark:"
+                // The default
+                globalSlackBot.incidentNotes shouldBe IncidentNoteMirroring.PUBLIC
             }
             response.forOne { excludingSlackBot ->
                 excludingSlackBot.shouldBeInstanceOf<SlackBotNotificationConfigDto>()
                 excludingSlackBot.id shouldBe IntegrationID(IntegrationType.SLACK_BOT, "excluding_http_down")
                 excludingSlackBot.excludedEvents shouldBe listOf(IntegrationEventType.HTTP_DOWN)
+                excludingSlackBot.incidentNotes shouldBe IncidentNoteMirroring.NONE
             }
             response.forOne { disabledSlackBot ->
                 disabledSlackBot.shouldBeInstanceOf<SlackBotNotificationConfigDto>()

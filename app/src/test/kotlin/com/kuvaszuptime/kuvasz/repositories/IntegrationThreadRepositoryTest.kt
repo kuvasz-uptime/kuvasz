@@ -23,6 +23,8 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.inspectors.forAll
+import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -207,6 +209,28 @@ class IntegrationThreadRepositoryTest(
                     threadRepository.find(otherIntegrationId, IntegrationThreadSubject.DNS, 1).shouldBeNull()
                     threadRepository.find(integrationId, IntegrationThreadSubject.TCP, 1).shouldBeNull()
                     threadRepository.find(integrationId, IntegrationThreadSubject.DNS, 2).shouldBeNull()
+                }
+            }
+        }
+
+        given("the findBySubject() method") {
+
+            `when`("several integrations have a thread of the same subject") {
+                threadRepository.upsert(thread(IntegrationThreadSubject.SSL, 1, ts = "1.1"))
+                threadRepository.upsert(thread(IntegrationThreadSubject.SSL, 1, otherIntegrationId, ts = "2.2"))
+                threadRepository.upsert(thread(IntegrationThreadSubject.SSL, 2))
+                threadRepository.upsert(thread(IntegrationThreadSubject.HTTP, 1))
+
+                then("it should return the thread of every integration, but only of that subject") {
+                    threadRepository.findBySubject(IntegrationThreadSubject.SSL, 1)
+                        .map { thread -> thread.integrationId to thread.ts } shouldContainExactlyInAnyOrder
+                        listOf(integrationId to "1.1", otherIntegrationId to "2.2")
+                }
+            }
+
+            `when`("there is no thread of the subject") {
+                then("it should return nothing") {
+                    threadRepository.findBySubject(IntegrationThreadSubject.DNS, 1).shouldBeEmpty()
                 }
             }
         }

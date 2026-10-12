@@ -605,5 +605,15 @@ class TelegramTextFormatterTest : BehaviorSpec(
                 }
             }
         }
+
+        given("escape(input: String)") {
+
+            `when`("it gets a text with HTML control characters") {
+                then("it should escape them, so that Telegram shows them as they are") {
+                    formatter.escape("<b>latency</b> < 200ms & > 100ms") shouldBe
+                        "&lt;b&gt;latency&lt;/b&gt; &lt; 200ms &amp; &gt; 100ms"
+                }
+            }
+        }
     }
 )
