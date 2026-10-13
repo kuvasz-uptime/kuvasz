@@ -16,14 +16,37 @@ This guide will walk you through the deployment process.
 
 Kuvasz can be deployed in several ways depending on your infrastructure:
 
+- [**Interactive install script**](#interactive-install-script) - The fastest way to get a secure Docker Compose setup on Linux or macOS
 - [**Docker Compose**](#quick-start-with-docker-compose) - Recommended for quick start and simple deployments
 - [**Helm Chart**](helm-deployment.md) - Recommended for Kubernetes clusters
 - [**Other Deployment Methods**](#other-deployment-methods)
 - [**One-click Deployment Options**](#one-click-deployment-options)
 
+## Interactive install script
+
+If you're on **Linux** or **macOS**, and you have [**Docker**](https://docs.docker.com/engine/install/) & [**Docker Compose**](https://docs.docker.com/compose/install/) installed, the install script sets up the same _Docker Compose_ stack as the [**manual guide**](#quick-start-with-docker-compose) below, but it asks for your credentials and settings first, so you don't have to edit any file by hand:
+
+```shell
+curl -fsSL https://raw.githubusercontent.com/kuvasz-uptime/kuvasz/refs/heads/main/docker-examples/install.sh | bash
+```
+
+??? tip "Prefer to look into the script before running it?"
+
+    ```shell
+    curl -fsSL https://raw.githubusercontent.com/kuvasz-uptime/kuvasz/refs/heads/main/docker-examples/install.sh -o install.sh
+    less install.sh
+    bash install.sh
+    ```
+
+After a summary of your answers, the script writes the `docker-compose.yml` & `kuvasz.yml` files, starts the stack, and prints the **location of the files**. They're regular files, just like the ones in the manual guide, so you can edit them later the same way (e.g. to set up your [**integrations**](../management/integrations.md)), then restart the stack to apply the changes.
+
+!!! info
+
+    The script **never overwrites** an existing _Docker Compose_ file (it stops instead), and keeps your existing `kuvasz.yml` untouched. If the database volume of a **previous installation** in the same directory still exists, it warns you: _PostgreSQL_ keeps the data, and the user & password the volume was created with, so you have to enter the same credentials again (or remove the volume first). On _Windows_, follow the [**manual guide**](#quick-start-with-docker-compose) below.
+
 ## Quick start with Docker Compose
 
-!!!tip "TL;DR - A very quick start"
+??? tip "TL;DR - A very quick start"
 
     1. Make sure you have [**Docker**](https://docs.docker.com/engine/install/) & [**Docker Compose**](https://docs.docker.com/compose/install/) installed.
     2. Run the following commands in your terminal
