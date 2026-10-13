@@ -25,6 +25,32 @@ case "$*" in
 esac
 EOF
   chmod +x "${WORK_DIR}/bin/docker"
+  printf '#!/usr/bin/env bash\necho "${UNAME_STUB:-Linux}"\n' >"${WORK_DIR}/bin/uname"
+  chmod +x "${WORK_DIR}/bin/uname"
+
+  # A small time zone database in the format of tzdata.zi: zones (Z), their continuation lines, rules (R), links (L)
+  mkdir -p "${WORK_DIR}/zoneinfo"
+  cat >"${WORK_DIR}/zoneinfo/tzdata.zi" <<'EOF'
+# version 2026c
+R E 1981 ma - Mar lastSu 1u 1 S
+Z America/New_York -4:56:2 - LMT 1883 N 18 17u
+-5 u E%sT
+Z Asia/Tokyo 9:18:59 - LMT 1887 D 31 15u
+9 JP J%sT
+Z Etc/UTC 0 - UTC
+Z Europe/Berlin 0:53:28 - LMT 1893 Ap
+1 E CE%sT
+Z Europe/Budapest 1:16:20 - LMT 1890 N
+1 E CE%sT
+Z Europe/Kyiv 2:2:4 - LMT 1880
+2 E EE%sT
+Z Factory 0 - -00
+L Etc/UTC UTC
+L Europe/Kyiv Europe/Kiev
+EOF
+  export KUVASZ_ZONEINFO="${WORK_DIR}/zoneinfo"
+  export KUVASZ_LOCALTIME="${WORK_DIR}/localtime"
+  unset TZ
 
   export DOCKER_STUB_LOG="${WORK_DIR}/docker.log"
   export KUVASZ_COMPOSE_URL="file://${REPO_DIR}/docker-examples/docker-compose.yml"
@@ -235,7 +261,7 @@ refute_file_contains() {
   local answers=(
     "$TARGET"
     "y"            # own PostgreSQL
-    "localhost"    # host
+    "LOCALHOST"    # host, hostnames are case-insensitive
     ""             # use host.docker.internal -> yes
     ""             # port -> 5432
     ""             # database name -> postgres
@@ -255,6 +281,91 @@ refute_file_contains() {
   [ "$(compose_value '.services.kuvasz.extra_hosts | join(",")')" = "host.docker.internal=host-gateway" ]
   [ "$(compose_value '.services.kuvasz.environment | has("DATABASE_PORT")')" = "false" ]
   [ "$(compose_value '.services.kuvasz.environment | has("DATABASE_NAME")')" = "false" ]
+}
+
+@test "maps host.docker.internal to the host gateway when it's typed directly" {
+  local answers=(
+    "$TARGET"
+    "y" "Host.Docker.Internal" "" "" ""   # hostnames are case-insensitive
+    "DbPassword" "DbPassword"
+    "" "" ""
+    "3" ""
+    "" ""
+    ""
+  )
+  install_with "${answers[@]}"
+
+  [ "$status" -eq 0 ]
+  refute_output_contains "would point to the Kuvasz container itself"
+  [ "$(compose_value '.services.kuvasz.environment.DATABASE_HOST')" = "Host.Docker.Internal" ]
+  [ "$(compose_value '.services.kuvasz.extra_hosts | join(",")')" = "host.docker.internal=host-gateway" ]
+}
+
+@test "mounts the unix socket directory of an own PostgreSQL" {
+  local answers=(
+    "$TARGET"
+    "y"
+    "/var/run/pg:sql"   # a colon would break the volume syntax
+    "/var/run/postgresql"
+    "5433" "kuvasz_db" ""
+    "DbPassword" "DbPassword"
+    "" "" ""
+    "3" ""
+    "y" ""   # non-root -> 1000:1000
+    ""
+    ""
+  )
+  install_with "${answers[@]}"
+
+  [ "$status" -eq 0 ]
+  assert_output_contains "The socket directory will be mounted into the container"
+  assert_output_contains "/setup/configuration/#connecting-through-a-unix-socket"
+  assert_output_contains "own PostgreSQL through its unix socket in /var/run/postgresql (port 5433), kuvasz_db"
+  assert_output_contains "the directory of a socket must not contain a colon"
+  assert_output_contains "There's no PostgreSQL socket at /var/run/postgresql/.s.PGSQL.5433"
+  [ "$(compose_value '.services.kuvasz.environment.DATABASE_HOST')" = "/var/run/postgresql" ]
+  [ "$(compose_value '.services.kuvasz.environment.DATABASE_PORT')" = "5433" ]
+  [ "$(compose_value '.services.kuvasz.volumes | length')" = "2" ]
+  [ "$(compose_value '.services.kuvasz.volumes[1].source')" = "/var/run/postgresql" ]
+  [ "$(compose_value '.services.kuvasz.volumes[1].target')" = "/var/run/postgresql" ]
+  [ "$(compose_value '.services.kuvasz | has("extra_hosts")')" = "false" ]
+}
+
+@test "doesn't warn about an existing PostgreSQL socket" {
+  mkdir -p "${WORK_DIR}/pg"
+  touch "${WORK_DIR}/pg/.s.PGSQL.5432"
+  local answers=(
+    "$TARGET"
+    "y" "${WORK_DIR}/pg" "" "" ""
+    "DbPassword" "DbPassword"
+    "" "" ""
+    "3" ""
+    "" ""
+    ""
+  )
+  install_with "${answers[@]}"
+
+  [ "$status" -eq 0 ]
+  refute_output_contains "There's no PostgreSQL socket"
+  [ "$(compose_value '.services.kuvasz.volumes[1].source')" = "${WORK_DIR}/pg" ]
+}
+
+@test "warns that Docker Desktop can't reach the unix socket of PostgreSQL" {
+  export DOCKER_STUB_OS="Docker Desktop"
+  local answers=(
+    "$TARGET"
+    "y" "/var/run/postgresql" "" "" ""
+    "DbPassword" "DbPassword"
+    "" "" ""
+    "3" ""
+    "" ""
+    ""
+  )
+  install_with "${answers[@]}"
+
+  [ "$status" -eq 0 ]
+  assert_output_contains "Docker Desktop runs the containers in a VM, which can't reach the unix sockets of this machine"
+  refute_output_contains "There's no PostgreSQL socket"
 }
 
 @test "keeps a loopback database host if the operator insists" {
@@ -343,6 +454,143 @@ refute_file_contains() {
   assert_output_contains "Everybody your OIDC provider can authenticate will get full access to Kuvasz"
   assert_output_contains "Allowed emails:     everyone"
   [ "$(compose_value '.services.kuvasz.environment | has("OIDC_ALLOWED_EMAILS")')" = "false" ]
+}
+
+# Usage: install_with_timezone <timezone answers...>, with defaults for everything else
+install_with_timezone() {
+  install_with "$TARGET" "" "" "" "$@" "" "" "3" "" "" "" ""
+}
+
+@test "accepts the zones and the aliases of the time zone database" {
+  install_with_timezone "Europe/Kiev"
+
+  [ "$status" -eq 0 ]
+  [ "$(compose_value '.services.kuvasz.environment.TZ')" = "Europe/Kiev" ]
+}
+
+@test "offers the only matching zone for a mistyped timezone" {
+  install_with_timezone "budapest" ""   # Enter accepts the suggestion
+
+  [ "$status" -eq 0 ]
+  assert_output_contains "Unknown timezone, did you mean Europe/Budapest? Press Enter to accept it."
+  assert_output_contains "Timezone [Europe/Budapest]: "
+  [ "$(compose_value '.services.kuvasz.environment.TZ')" = "Europe/Budapest" ]
+}
+
+@test "offers the exact match of a timezone typed with a different case" {
+  install_with_timezone "new york" "america/new_york" ""
+
+  [ "$status" -eq 0 ]
+  assert_output_contains "did you mean America/New_York?"
+  [ "$(compose_value '.services.kuvasz.environment.TZ')" = "America/New_York" ]
+}
+
+@test "prefers the exact match over the partial ones" {
+  install_with_timezone "utc" ""   # matches UTC exactly, and Etc/UTC partially
+
+  [ "$status" -eq 0 ]
+  assert_output_contains "did you mean UTC?"
+  [ "$(compose_value '.services.kuvasz.environment.TZ')" = "UTC" ]
+}
+
+@test "lists the matching zones of an ambiguous timezone" {
+  install_with_timezone "europe/b" "Europe/Berlin"
+
+  [ "$status" -eq 0 ]
+  assert_output_contains "Unknown timezone, did you mean one of these?"$'\n'"    Europe/Berlin"$'\n'"    Europe/Budapest"
+  [ "$(compose_value '.services.kuvasz.environment.TZ')" = "Europe/Berlin" ]
+}
+
+@test "rejects the names that aren't zones" {
+  install_with_timezone "Factory" "factory" "posixrules" "Asia/Tokyo"
+
+  [ "$status" -eq 0 ]
+  assert_output_contains "Unknown timezone, use a name like Europe/Budapest"
+  refute_output_contains "did you mean Factory"
+  [ "$(compose_value '.services.kuvasz.environment.TZ')" = "Asia/Tokyo" ]
+}
+
+@test "suggests the time zone of the host from its localtime symlink" {
+  ln -s "/var/db/timezone/zoneinfo/Asia/Tokyo" "$KUVASZ_LOCALTIME"
+  install_with_timezone ""
+
+  [ "$status" -eq 0 ]
+  assert_output_contains "Timezone [Asia/Tokyo]: "
+  [ "$(compose_value '.services.kuvasz.environment.TZ')" = "Asia/Tokyo" ]
+}
+
+@test "suggests the time zone of the host from a relative localtime symlink" {
+  ln -s "../usr/share/zoneinfo/America/New_York" "$KUVASZ_LOCALTIME"
+  install_with_timezone ""
+
+  [ "$status" -eq 0 ]
+  [ "$(compose_value '.services.kuvasz.environment.TZ')" = "America/New_York" ]
+}
+
+@test "suggests the time zone of the TZ variable over the localtime symlink" {
+  ln -s "/usr/share/zoneinfo/Asia/Tokyo" "$KUVASZ_LOCALTIME"
+  export TZ=":Europe/Berlin"
+  install_with_timezone ""
+
+  [ "$status" -eq 0 ]
+  [ "$(compose_value '.services.kuvasz.environment.TZ')" = "Europe/Berlin" ]
+}
+
+@test "falls back to the localtime symlink when TZ isn't a zone" {
+  ln -s "/usr/share/zoneinfo/Asia/Tokyo" "$KUVASZ_LOCALTIME"
+  export TZ=":/etc/localtime"
+  install_with_timezone ""
+
+  [ "$status" -eq 0 ]
+  [ "$(compose_value '.services.kuvasz.environment.TZ')" = "Asia/Tokyo" ]
+}
+
+@test "suggests the time zone of a TZ variable that is a zone file path" {
+  export TZ="/usr/share/zoneinfo/Europe/Budapest"
+  install_with_timezone ""
+
+  [ "$status" -eq 0 ]
+  [ "$(compose_value '.services.kuvasz.environment.TZ')" = "Europe/Budapest" ]
+}
+
+@test "suggests the time zone of a localtime symlink pointing into the posix tree" {
+  ln -s "/usr/share/zoneinfo/posix/Europe/Berlin" "$KUVASZ_LOCALTIME"
+  install_with_timezone ""
+
+  [ "$status" -eq 0 ]
+  [ "$(compose_value '.services.kuvasz.environment.TZ')" = "Europe/Berlin" ]
+}
+
+@test "suggests UTC when the time zone of the host is unknown" {
+  ln -s "/usr/share/zoneinfo/posixrules" "$KUVASZ_LOCALTIME"
+  install_with_timezone ""
+
+  [ "$status" -eq 0 ]
+  assert_output_contains "Timezone [UTC]: "
+  [ "$(compose_value '.services.kuvasz.environment.TZ')" = "UTC" ]
+}
+
+@test "checks the zone files on hosts without tzdata.zi" {
+  export KUVASZ_ZONEINFO="${WORK_DIR}/zoneinfo-files"
+  mkdir -p "${KUVASZ_ZONEINFO}/Europe"
+  for file in Europe/Budapest posixrules leapseconds +VERSION SECURITY Factory; do
+    touch "${KUVASZ_ZONEINFO}/${file}"
+  done
+  install_with_timezone "Europe/Nowhere" "posixrules" "leapseconds" "+VERSION" "SECURITY" "Factory" "Europe/Budapest"
+
+  [ "$status" -eq 0 ]
+  assert_output_contains "Unknown timezone, use a name like Europe/Budapest"
+  refute_output_contains "did you mean"
+  [ "$(compose_value '.services.kuvasz.environment.TZ')" = "Europe/Budapest" ]
+}
+
+@test "only checks the format of the timezone on hosts without a time zone database" {
+  export KUVASZ_ZONEINFO="${WORK_DIR}/missing-zoneinfo"
+  install_with_timezone "Europe/Buda pest" "Mars/Olympus_Mons"
+
+  [ "$status" -eq 0 ]
+  assert_output_contains "Unknown timezone, use a name like Europe/Budapest"
+  [ "$(compose_value '.services.kuvasz.environment.TZ')" = "Mars/Olympus_Mons" ]
 }
 
 @test "disables authentication without asking for credentials or API keys" {
@@ -455,6 +703,57 @@ refute_file_contains() {
   assert_output_contains "/management/docker-monitors/"
 }
 
+@test "detects the group of the Docker socket behind a symlink" {
+  local socket="${WORK_DIR}/real.sock" link_group group
+  touch "$socket"
+  ln -s "$socket" "$KUVASZ_DOCKER_SOCKET"
+  link_group="$(stat -c '%g' "$KUVASZ_DOCKER_SOCKET" 2>/dev/null || stat -f '%g' "$KUVASZ_DOCKER_SOCKET")"
+  # The socket needs a group that differs from the one of the symlink, otherwise the test proves nothing
+  group="$(id -G | tr ' ' '\n' | grep -vx "$link_group" | head -1)"
+  if [ -z "$group" ]; then
+    skip "the user has no group other than the one of the symlink"
+  fi
+  chgrp "$group" "$socket"
+  local answers=(
+    "$TARGET"
+    "" "" ""
+    "" "" ""
+    "3" ""
+    "y" ""
+    "y"
+    ""        # GID -> detected
+    ""
+  )
+  install_with "${answers[@]}"
+
+  [ "$status" -eq 0 ]
+  [ "$(compose_value '.services.kuvasz.group_add | join(",")')" = "$group" ]
+}
+
+@test "doesn't guess the group of the Docker socket on macOS without Docker Desktop" {
+  touch "$KUVASZ_DOCKER_SOCKET"
+  export UNAME_STUB="Darwin"
+  export DOCKER_STUB_OS="Ubuntu 24.04.1 LTS"   # e.g. colima
+  local answers=(
+    "$TARGET"
+    "" "" ""
+    "" "" ""
+    "3" ""
+    "y" ""
+    "y"
+    ""        # no default -> asked again
+    "1001"
+    ""
+  )
+  install_with "${answers[@]}"
+
+  [ "$status" -eq 0 ]
+  assert_output_contains "It can't be detected here, but you can look it up with:"
+  assert_output_contains "Group ID owning the Docker socket: "
+  assert_output_contains "A value is required"
+  [ "$(compose_value '.services.kuvasz.group_add | join(",")')" = "1001" ]
+}
+
 @test "suggests the root group for the Docker socket on Docker Desktop" {
   touch "$KUVASZ_DOCKER_SOCKET"
   export DOCKER_STUB_OS="Docker Desktop"
@@ -562,9 +861,12 @@ refute_file_contains() {
 
 @test "warns when the database volume of a previous installation exists" {
   export DOCKER_STUB_VOLUMES="other_kuvasz-db-data mykuvasz-2_kuvasz-db-data"
+  TARGET="${WORK_DIR}/-My.Kuvasz-2" # compose normalizes it to "mykuvasz-2"
   local answers=(
-    "${WORK_DIR}/-My.Kuvasz-2"   # compose normalizes it to "mykuvasz-2"
-    "" "" ""
+    "$TARGET"
+    "" ""                        # bundled DB, DB user -> kuvasz
+    ""                           # DB password -> can't be generated for a reused volume, asked again
+    "OldPassword" "OldPassword"
     "" "" ""
     "3" ""
     "" ""
@@ -575,6 +877,10 @@ refute_file_contains() {
   [ "$status" -eq 0 ]
   assert_output_contains "The mykuvasz-2_kuvasz-db-data volume of a previous installation already exists"
   assert_output_contains "docker volume rm mykuvasz-2_kuvasz-db-data"
+  assert_output_contains "Database password of Kuvasz (hidden): "
+  refute_output_contains "Database password of Kuvasz (hidden, leave it empty to generate one)"
+  assert_output_contains "A value is required"
+  [ "$(compose_value '.services["kuvasz-db"].environment.POSTGRES_PASSWORD')" = "OldPassword" ]
 }
 
 @test "uses COMPOSE_PROJECT_NAME to find the database volume of a previous installation" {
@@ -582,7 +888,7 @@ refute_file_contains() {
   export DOCKER_STUB_VOLUMES="custom_kuvasz-db-data"
   local answers=(
     "$TARGET"
-    "" "" ""
+    "" "" "OldPassword" "OldPassword"
     "" "" ""
     "3" ""
     "" ""
@@ -714,6 +1020,7 @@ refute_file_contains() {
   assert_output_contains "Couldn't start the stack"
   assert_output_contains "${TARGET}/docker-compose.yml"
   [ -f "${TARGET}/docker-compose.yml" ]
+  assert_output_contains "Database password of Kuvasz: $(compose_value '.services.kuvasz.environment.DATABASE_PASSWORD')"
 }
 
 @test "fails early when the Docker daemon can't be reached" {

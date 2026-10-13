@@ -12,12 +12,16 @@
 #   KUVASZ_INSTALL_TTY    - where the answers are read from (default: /dev/tty)
 #   KUVASZ_COMPOSE_URL    - where the docker-compose.yml is downloaded from
 #   KUVASZ_DOCKER_SOCKET  - the Docker socket used to detect its group ID (default: /var/run/docker.sock)
+#   KUVASZ_ZONEINFO       - the time zone database of the host (default: /usr/share/zoneinfo)
+#   KUVASZ_LOCALTIME      - the time zone file of the host, to detect its time zone (default: /etc/localtime)
 
 set -euo pipefail
 
 COMPOSE_URL="${KUVASZ_COMPOSE_URL:-https://raw.githubusercontent.com/kuvasz-uptime/kuvasz/refs/heads/main/docker-examples/docker-compose.yml}"
 INPUT="${KUVASZ_INSTALL_TTY:-/dev/tty}"
 DOCKER_SOCKET="${KUVASZ_DOCKER_SOCKET:-/var/run/docker.sock}"
+ZONEINFO="${KUVASZ_ZONEINFO:-/usr/share/zoneinfo}"
+LOCALTIME="${KUVASZ_LOCALTIME:-/etc/localtime}"
 DOCS_URL="https://kuvasz-uptime.dev"
 
 ADMIN_PASSWORD_MIN_LENGTH=12
@@ -26,6 +30,7 @@ API_KEY_MIN_LENGTH=16
 LOCAL_DOCKER_HOST_YAML=$'docker-hosts:\n  - name: "local"\n    url: "unix:///var/run/docker.sock"'
 
 DOCKER_OS=""
+TIMEZONES=""
 GENERATED_SECRETS=""
 TMP_COMPOSE=""
 
@@ -201,8 +206,18 @@ is_port() { is_number "$1" && [ "$1" -ge 1 ] && [ "$1" -le 65535 ]; }
 
 is_timezone() {
   [[ "$1" =~ ^[A-Za-z0-9_+-]+(/[A-Za-z0-9_+-]+)*$ ]] || return 1
-  if [ -d /usr/share/zoneinfo ]; then
-    [ -f "/usr/share/zoneinfo/$1" ]
+  if [ -n "$TIMEZONES" ]; then
+    case $'\n'"${TIMEZONES}"$'\n' in
+      *$'\n'"$1"$'\n'*) return 0 ;;
+      *) return 1 ;;
+    esac
+  fi
+  # Hosts without tzdata.zi (but with the compiled zone files): everything except the files that aren't zones
+  if [ -d "$ZONEINFO" ]; then
+    case "$1" in
+      posix/* | right/* | posixrules | localtime | leapseconds | +VERSION | SECURITY | Factory) return 1 ;;
+    esac
+    [ -f "${ZONEINFO}/$1" ]
   fi
 }
 
@@ -221,6 +236,15 @@ is_local_host() {
     localhost | localhost.* | 127.* | 0.0.0.0 | ::1 | "[::1]" | ::) return 0 ;;
     *) return 1 ;;
   esac
+}
+
+# Just like libpq, Kuvasz treats a DATABASE_HOST starting with a "/" as the directory of the unix socket
+is_socket_dir() { [[ "$1" == /* ]]; }
+
+# The directory of a socket is mounted with the short volume syntax, where a colon would be a separator
+is_db_host() {
+  is_without_whitespace "$1" || return 1
+  ! { is_socket_dir "$1" && [[ "$1" == *:* ]]; }
 }
 
 is_email_list() {
@@ -252,8 +276,12 @@ detect_socket_gid() {
       return
       ;;
   esac
+  # Other daemons on macOS (colima, OrbStack, ...) run in a VM too, so the mounted socket is the one of the VM
+  if [ "$(uname -s)" = "Darwin" ]; then
+    return
+  fi
   if [ -e "$DOCKER_SOCKET" ]; then
-    stat -c '%g' "$DOCKER_SOCKET" 2>/dev/null || stat -f '%g' "$DOCKER_SOCKET" 2>/dev/null || true
+    stat -L -c '%g' "$DOCKER_SOCKET" 2>/dev/null || stat -L -f '%g' "$DOCKER_SOCKET" 2>/dev/null || true
     return
   fi
   if command -v getent >/dev/null 2>&1; then
@@ -296,6 +324,9 @@ transform_compose() {
       db_lines+=$'\n'"$(env_line DATABASE_NAME "$DB_NAME")"
     fi
     replace_anchor DATABASE_HOST "$db_lines"
+    if is_socket_dir "$DB_HOST"; then
+      replace_anchor CONFIG_MOUNT "      - ./kuvasz.yml:/config/kuvasz.yml"$'\n'"      - $(yaml_quote "${DB_HOST}:${DB_HOST}")"
+    fi
     replace_anchor DATABASE_USER "$(env_line DATABASE_USER "$DB_USER")"
     replace_anchor DATABASE_PASSWORD "$(env_line DATABASE_PASSWORD "$DB_PASSWORD")"
 
@@ -390,6 +421,7 @@ transform_compose() {
         anchor("app", "DATABASE_PASSWORD", "^      DATABASE_PASSWORD: ")
         anchor("app", "ADMIN_USER", "^      ADMIN_USER: ")
         anchor("app", "ADMIN_PASSWORD", "^      ADMIN_PASSWORD: ")
+        anchor("app", "CONFIG_MOUNT", "^      - \\./kuvasz\\.yml:/config/kuvasz\\.yml$")
         anchor("app", "DOCKER_SOCKET", "^      # - /var/run/docker\\.sock:/var/run/docker\\.sock$")
         anchor("app", "GROUP_ADD", "^    # group_add:$")
         anchor("app", "GROUP_ADD_ID", "^    #   - \"999\"$")
@@ -508,38 +540,137 @@ ask_database() {
   DB_PORT=5432
   DB_NAME=postgres
   if [ "$OWN_DB" = "true" ]; then
-    ask DB_HOST "Host of your PostgreSQL" "" is_without_whitespace "The host must not contain whitespace"
-    if is_local_host "$DB_HOST"; then
+    ask DB_HOST "Host of your PostgreSQL (or the directory of its unix socket)" "" is_db_host \
+      "The host must not contain whitespace, and the directory of a socket must not contain a colon either"
+    if is_local_host "$(lowercase "$DB_HOST")"; then
       warn "\"${DB_HOST}\" would point to the Kuvasz container itself, not to this machine."
-      ask_yes_no USE_HOST_GATEWAY "Use host.docker.internal instead, to reach the PostgreSQL of this machine?" y
-      if [ "$USE_HOST_GATEWAY" = "true" ]; then
+      local use_gateway
+      ask_yes_no use_gateway "Use host.docker.internal instead, to reach the PostgreSQL of this machine?" y
+      if [ "$use_gateway" = "true" ]; then
         DB_HOST="host.docker.internal"
         info "Make sure that your PostgreSQL listens on an address that is reachable from the containers too."
       fi
     fi
+    # Docker Desktop resolves it out of the box, Docker Engine on Linux only with the host-gateway mapping
+    if [ "$(lowercase "$DB_HOST")" = "host.docker.internal" ]; then
+      USE_HOST_GATEWAY=true
+    fi
+    if is_socket_dir "$DB_HOST"; then
+      info "The socket directory will be mounted into the container. This only works if Docker runs on the same"
+      info "machine as PostgreSQL (not in a VM), and if pg_hba.conf allows password authentication for local"
+      info "connections, see: ${DOCS_URL}/setup/configuration/#connecting-through-a-unix-socket"
+    fi
     ask DB_PORT "Port of your PostgreSQL" "5432" is_port "It must be a number between 1 and 65535"
+    if is_socket_dir "$DB_HOST"; then
+      case "$DOCKER_OS" in
+        *"Docker Desktop"*)
+          warn "Docker Desktop runs the containers in a VM, which can't reach the unix sockets of this machine."
+          warn "Use a TCP connection instead (e.g. host.docker.internal)."
+          ;;
+        *)
+          # The daemon would create a missing directory, and Kuvasz would never find the socket in it
+          if [ ! -e "${DB_HOST}/.s.PGSQL.${DB_PORT}" ]; then
+            warn "There's no PostgreSQL socket at ${DB_HOST}/.s.PGSQL.${DB_PORT}, check the directory and the port."
+          fi
+          ;;
+      esac
+    fi
     ask DB_NAME "Name of the database" "postgres" is_without_whitespace "The name must not contain whitespace"
     ask DB_USER "Database user of Kuvasz" "kuvasz" is_without_whitespace "The user must not contain whitespace"
     ask_secret DB_PASSWORD "Database password of Kuvasz" 1 false
   else
     DB_HOST="kuvasz-db"
     # Postgres only applies the user & password when it creates its data directory, a reused volume keeps the old ones
-    local volume
+    local volume can_generate=true
     volume="$(compose_project_name)_kuvasz-db-data"
     if docker volume inspect "$volume" >/dev/null 2>&1; then
       warn "The ${volume} volume of a previous installation already exists, so its data will be reused,"
-      warn "together with the database user & password it was created with. Enter the same ones (don't generate a"
-      warn "new password), or remove the volume first with: docker volume rm ${volume}"
+      warn "together with the database user & password it was created with. Enter the same ones, or remove"
+      warn "the volume first with: docker volume rm ${volume}"
+      can_generate=false
     fi
     ask DB_USER "Database user of Kuvasz" "kuvasz" is_pg_identifier \
       "Use only letters, digits and underscores, and don't start with a digit"
-    ask_secret DB_PASSWORD "Database password of Kuvasz" 1 true
+    ask_secret DB_PASSWORD "Database password of Kuvasz" 1 "$can_generate"
   fi
+}
+
+# The names of every zone and alias (e.g. Europe/Kiev) of the host's time zone database, except Factory, which is
+# just a placeholder in it that Java doesn't know
+load_timezones() {
+  if [ -f "${ZONEINFO}/tzdata.zi" ]; then
+    TIMEZONES="$(awk '$1 == "Z" && $2 != "Factory" { print $2 } $1 == "L" { print $3 }' "${ZONEINFO}/tzdata.zi")"
+  fi
+}
+
+# The zone name in a TZ value or a zone file path, e.g. Europe/Budapest in ":/usr/share/zoneinfo/posix/Europe/Budapest"
+zone_name_of() {
+  local zone="${1#:}"
+  case "$zone" in
+    *zoneinfo/*) zone="${zone##*zoneinfo/}" ;;
+  esac
+  zone="${zone#posix/}"
+  printf '%s' "${zone#right/}"
+}
+
+# The zone of the TZ variable, or of the file /etc/localtime links to, whichever is valid first, otherwise UTC
+detect_timezone() {
+  local candidate zone
+  for candidate in "${TZ:-}" "$(readlink "$LOCALTIME" 2>/dev/null || true)"; do
+    zone="$(zone_name_of "$candidate")"
+    if [ -n "$zone" ] && is_timezone "$zone"; then
+      printf '%s' "$zone"
+      return
+    fi
+  done
+  printf 'UTC'
+}
+
+# Case-insensitive matches of a mistyped zone (spaces count as underscores, like in America/New_York): only the
+# exact match if there's one, otherwise the first 10 partial ones
+timezone_suggestions() {
+  if [ -z "$TIMEZONES" ]; then
+    return
+  fi
+  local query="${1// /_}"
+  printf '%s\n' "$TIMEZONES" | QUERY="$(lowercase "$query")" awk '
+    { name = tolower($0) }
+    name == ENVIRON["QUERY"] { exact = $0 }
+    index(name, ENVIRON["QUERY"]) { matches[++count] = $0 }
+    END {
+      if (exact != "") { print exact; exit }
+      for (i = 1; i <= count && i <= 10; i++) print matches[i]
+      if (count > 10) printf "(and %d more)\n", count - 10
+    }
+  '
+}
+
+ask_timezone() {
+  local default zone suggestions
+  default="$(detect_timezone)"
+  while true; do
+    ask zone "Timezone" "$default"
+    if is_timezone "$zone"; then
+      break
+    fi
+    suggestions="$(timezone_suggestions "$zone")"
+    if [ -z "$suggestions" ]; then
+      error "Unknown timezone, use a name like Europe/Budapest"
+    elif [[ "$suggestions" != *$'\n'* ]]; then
+      error "Unknown timezone, did you mean ${suggestions}? Press Enter to accept it."
+      default="$suggestions"
+    else
+      error "Unknown timezone, did you mean one of these?"
+      printf '%s\n' "$suggestions" | sed 's/^/    /'
+    fi
+  done
+  TIMEZONE="$zone"
 }
 
 ask_general() {
   section "General"
-  ask TIMEZONE "Timezone" "UTC" is_timezone "Unknown timezone, use a name like Europe/Budapest"
+  load_timezones
+  ask_timezone
   ask KUVASZ_VERSION "Kuvasz version" "latest" is_image_tag "It must be a valid image tag, like latest or 4.5.0"
   ask KUVASZ_PORT "Port to expose Kuvasz on" "8080" is_port "It must be a number between 1 and 65535"
 }
@@ -617,7 +748,13 @@ ask_container() {
     fi
     if [ "$NON_ROOT" = "true" ]; then
       info "The non-root user needs the group of the socket to use it."
-      ask SOCKET_GID "Group ID owning the Docker socket" "$(detect_socket_gid)" is_number "It must be a number"
+      local detected_gid
+      detected_gid="$(detect_socket_gid)"
+      if [ -z "$detected_gid" ]; then
+        info "It can't be detected here, but you can look it up with:"
+        info "  docker run --rm -v /var/run/docker.sock:/s alpine stat -c %g /s"
+      fi
+      ask SOCKET_GID "Group ID owning the Docker socket" "$detected_gid" is_number "It must be a number"
     fi
   fi
 }
@@ -630,7 +767,11 @@ print_summary() {
   section "Summary"
   info "  Directory:          ${TARGET_DIR}"
   if [ "$OWN_DB" = "true" ]; then
-    info "  Database:           own PostgreSQL at ${DB_HOST}:${DB_PORT}/${DB_NAME}"
+    if is_socket_dir "$DB_HOST"; then
+      info "  Database:           own PostgreSQL through its unix socket in ${DB_HOST} (port ${DB_PORT}), ${DB_NAME}"
+    else
+      info "  Database:           own PostgreSQL at ${DB_HOST}:${DB_PORT}/${DB_NAME}"
+    fi
   else
     info "  Database:           bundled PostgreSQL (kuvasz-db service)"
   fi
@@ -692,8 +833,18 @@ install() {
   mv "${TMP_COMPOSE}.new" docker-compose.yml
   write_kuvasz_config
   info "Starting Kuvasz..."
-  docker compose up -d ||
+  if ! docker compose up -d; then
+    print_generated_secrets
     die "Couldn't start the stack. Check the error above, adjust ${TARGET_DIR}/docker-compose.yml if needed, then run: docker compose up -d"
+  fi
+}
+
+print_generated_secrets() {
+  if [ -n "$GENERATED_SECRETS" ]; then
+    printf '\n'
+    warn "Generated secrets (they won't be shown again, but you can find them in the compose file):"
+    printf '%s' "$GENERATED_SECRETS"
+  fi
 }
 
 print_result() {
@@ -704,11 +855,7 @@ print_result() {
   info "Your files, if you'd like to change something later (restart the stack after editing them):"
   info "  Compose file:       ${TARGET_DIR}/docker-compose.yml"
   info "  Configuration file: ${TARGET_DIR}/kuvasz.yml"
-  if [ -n "$GENERATED_SECRETS" ]; then
-    printf '\n'
-    warn "Generated secrets (they won't be shown again, but you can find them in the compose file):"
-    printf '%s' "$GENERATED_SECRETS"
-  fi
+  print_generated_secrets
   printf '\n'
   info "Follow the logs with: cd \"${TARGET_DIR}\" && docker compose logs -f"
   info "Next steps:"
