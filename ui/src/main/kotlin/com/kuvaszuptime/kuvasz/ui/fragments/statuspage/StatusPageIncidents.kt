@@ -193,7 +193,6 @@ private fun PublicTimelineNode.isResolvedNote() =
 internal fun FlowContent.monitorIncidentsBadge(
     monitor: StatusPageMonitorDetailsDto,
     incidents: List<StatusPageIncidentDto>,
-    historyDays: Int,
 ) {
     if (incidents.isEmpty()) return
     a(href = "#") {
@@ -202,10 +201,9 @@ internal fun FlowContent.monitorIncidentsBadge(
         modalOpener(STATUS_PAGE_INCIDENTS_MODAL_ID)
         attributes["data-incidents-of"] = monitor.incidentsKey
         onClick = "showStatusPageIncidents(this.dataset.incidentsOf)"
-        inlineStatusBadge(
+        inlineBadge(
             text = incidents.size.toString(),
             icon = Icon.FLAME,
-            tooltip = Messages.statusPageIncidentsInTheLastDays(historyDays.toString()),
         )
     }
 }
@@ -226,7 +224,7 @@ internal fun FlowContent.monitorIncidentsTemplate(
         div {
             classes(MODAL_HEADER)
             h5 {
-                classes(MODAL_TITLE)
+                classes(MODAL_TITLE, PY_3)
                 +Messages.statusPageIncidentsOfMonitor(monitor.name, historyDays.toString())
             }
             button(type = ButtonType.button) {
@@ -236,7 +234,7 @@ internal fun FlowContent.monitorIncidentsTemplate(
             }
         }
         div {
-            classes(MODAL_BODY, D_FLEX, FLEX_COLUMN, GAP_3)
+            classes(MODAL_BODY, D_FLEX, FLEX_COLUMN, GAP_3, PX_1, PX_SM_2, PX_MD_4)
             testId("status-page-incidents-modal-body")
             incidents.forEach { incident ->
                 statusCard(

@@ -120,7 +120,7 @@ private fun FlowContent.statusPageAccordion(accordion: StatusPageAccordion, coun
                     classes(mutableSetOf(ACCORDION_COLLAPSE, COLLAPSE).addIf(isOpen, SHOW))
                     attributes["data-status-page-accordion"] = accordion.key
                     div {
-                        classes(ACCORDION_BODY, D_FLEX, FLEX_COLUMN, GAP_3, PX_3, PT_0)
+                        classes(ACCORDION_BODY, D_FLEX, FLEX_COLUMN, GAP_3, PT_0, PX_1, PX_SM_2, PX_MD_3)
                         body()
                     }
                 }

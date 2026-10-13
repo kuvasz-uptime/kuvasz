@@ -214,10 +214,16 @@ internal fun FlowContent.inlineVersionUpdateBadge(versionInfo: VersionInfo) {
     }
 }
 
-internal fun FlowContent.inlineBadge(text: String, color: Color = Color.DEFAULT, tooltip: String? = null) {
+internal fun FlowContent.inlineBadge(
+    text: String,
+    color: Color = Color.DEFAULT,
+    tooltip: String? = null,
+    icon: Icon? = null,
+) {
     span {
         classes(BADGE, color.bgColor, color.textColor)
         tooltip?.let { tooltip(it) }
+        icon?.let { icon(it) }
         +text
     }
 }

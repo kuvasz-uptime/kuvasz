@@ -319,7 +319,6 @@ class StatusPageIncidentsUiTest(
             assertThat(statusPage.monitorIncidentsBadge(quiet.name)).hasCount(0)
             val badge = statusPage.monitorIncidentsBadge(monitor.name)
             assertThat(badge).hasText("3")
-            badge.locator(".status").tooltipText() shouldBe Messages.statusPageIncidentsInTheLastDays("30")
 
             badge.click()
             val modal = statusPage.incidentsModal
