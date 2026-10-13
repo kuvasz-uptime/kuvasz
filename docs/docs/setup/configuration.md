@@ -944,6 +944,40 @@ By default, the checks share a pool of **64 threads** (or as many as the number 
 
     **ICMP monitors** are the exception: every ping runs as a separate `ping` process, which still needs regular (platform) threads and extra memory, so **at most 64 ICMP checks run at the same time**. Unlike the default pool, this limit is dedicated to the ICMP checks: if a lot of your ICMP monitors go down together, their checks can still be delayed, but they don't hold up the checks of your other monitors anymore.
 
+### YAML max aliases
+
+<!-- md:version 4.5.0 -->
+<!-- md:default 50 -->
+<!-- md:type `number` -->
+
+=== "ENV"
+
+    ```bash
+    YAML_MAX_ALIASES=50
+    ```
+
+The **maximum number of aliases** (e.g. `*defaults`) to collections that a YAML configuration file passed via `MICRONAUT_CONFIG_FILES` can contain. It's useful if you share common settings between your monitors with **anchors and merge keys**, because with more than 50 monitors referring to the same anchor, _Kuvasz_ fails to start:
+
+```yaml
+http-monitor-defaults: &http-monitor-defaults
+  uptime-check-interval: 180
+  ssl-check-enabled: true
+  ssl-expiry-threshold: 20
+http-monitors:
+  - name: "My first monitor"
+    url: "https://example.com"
+    <<: *http-monitor-defaults
+  - name: "My second monitor"
+    url: "https://example.org"
+    <<: *http-monitor-defaults
+```
+
+The limit applies to **each file** separately. It can only be set as an environment variable, because it's needed before the configuration files are processed.
+
+!!! warning
+
+    The limit protects against YAML files that use a lot of **nested aliases** to blow up into a structure that exhausts the memory of _Kuvasz_ during startup. As long as your configuration files are only writable by **trusted parties**, it's safe to raise it, but keep it close to what your files actually need.
+
 ## Full configuration example
 
 You can find the full configuration example below, which includes all the options currently available. You can use it as a starting point for your own configuration.
@@ -1070,6 +1104,7 @@ You can find the full configuration example below, which includes all the option
     CONNECTIVITY_CHECK_INTERVAL_SECONDS=60
     CONNECTIVITY_CHECK_TIMEOUT_SECONDS=5
     USE_VIRTUAL_THREAD_SCHEDULING=false
+    YAML_MAX_ALIASES=50
     ENABLE_MCP_SERVER=false
     TZ=UTC
     ENABLE_METRICS_EXPORT=true

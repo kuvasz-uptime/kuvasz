@@ -1,0 +1,65 @@
+# Used by YamlConfigPropertySourceLoaderTest: 60 aliases, while the default limit of SnakeYAML is 50 (YAML_MAX_ALIASES is
+# raised for the test task in build.gradle.kts)
+defaults: &defaults
+  uptime-check-interval: 180
+monitors:
+  m0: { <<: *defaults }
+  m1: { <<: *defaults }
+  m2: { <<: *defaults }
+  m3: { <<: *defaults }
+  m4: { <<: *defaults }
+  m5: { <<: *defaults }
+  m6: { <<: *defaults }
+  m7: { <<: *defaults }
+  m8: { <<: *defaults }
+  m9: { <<: *defaults }
+  m10: { <<: *defaults }
+  m11: { <<: *defaults }
+  m12: { <<: *defaults }
+  m13: { <<: *defaults }
+  m14: { <<: *defaults }
+  m15: { <<: *defaults }
+  m16: { <<: *defaults }
+  m17: { <<: *defaults }
+  m18: { <<: *defaults }
+  m19: { <<: *defaults }
+  m20: { <<: *defaults }
+  m21: { <<: *defaults }
+  m22: { <<: *defaults }
+  m23: { <<: *defaults }
+  m24: { <<: *defaults }
+  m25: { <<: *defaults }
+  m26: { <<: *defaults }
+  m27: { <<: *defaults }
+  m28: { <<: *defaults }
+  m29: { <<: *defaults }
+  m30: { <<: *defaults }
+  m31: { <<: *defaults }
+  m32: { <<: *defaults }
+  m33: { <<: *defaults }
+  m34: { <<: *defaults }
+  m35: { <<: *defaults }
+  m36: { <<: *defaults }
+  m37: { <<: *defaults }
+  m38: { <<: *defaults }
+  m39: { <<: *defaults }
+  m40: { <<: *defaults }
+  m41: { <<: *defaults }
+  m42: { <<: *defaults }
+  m43: { <<: *defaults }
+  m44: { <<: *defaults }
+  m45: { <<: *defaults }
+  m46: { <<: *defaults }
+  m47: { <<: *defaults }
+  m48: { <<: *defaults }
+  m49: { <<: *defaults }
+  m50: { <<: *defaults }
+  m51: { <<: *defaults }
+  m52: { <<: *defaults }
+  m53: { <<: *defaults }
+  m54: { <<: *defaults }
+  m55: { <<: *defaults }
+  m56: { <<: *defaults }
+  m57: { <<: *defaults }
+  m58: { <<: *defaults }
+  m59: { <<: *defaults }
