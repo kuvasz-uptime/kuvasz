@@ -1,0 +1,47 @@
+name: Install script
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'docker-examples/**'
+      - '.github/workflows/install-script.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'docker-examples/**'
+      - '.github/workflows/install-script.yml'
+jobs:
+  linux:
+    name: Test on Linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install bats
+        run: sudo apt-get update && sudo apt-get install -y bats
+      - name: Lint
+        run: shellcheck docker-examples/install.sh
+      - name: Test
+        run: bats docker-examples/test/install.bats
+
+  macos:
+    name: Test on macOS (bash 3.2, BSD tools)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+      # Only the CLI is needed, to validate the generated files with "docker compose config", the daemon is stubbed
+      - name: Install bats and the Docker CLI with Compose
+        run: |
+          brew install bats-core docker docker-compose
+          mkdir -p ~/.docker/cli-plugins
+          ln -sfn "$(brew --prefix)/lib/docker/cli-plugins/docker-compose" ~/.docker/cli-plugins/docker-compose
+          docker compose version
+      # The runner image has a newer bash from Homebrew, but the users of the script get the one shipped with macOS
+      - name: Use the bash of macOS
+        run: |
+          mkdir -p "$RUNNER_TEMP/system-bash"
+          ln -s /bin/bash "$RUNNER_TEMP/system-bash/bash"
+          echo "$RUNNER_TEMP/system-bash" >>"$GITHUB_PATH"
+      - name: Check the bash version
+        run: bash --version | head -1 | grep -F 'version 3.2'
+      - name: Test
+        run: bats docker-examples/test/install.bats
