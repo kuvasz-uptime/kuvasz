@@ -197,11 +197,11 @@ private fun FlowContent.monitorCard(monitor: StatusPageMonitorDetailsDto, histor
             div {
                 classes(D_FLEX, FLEX_WRAP, ALIGN_ITEMS_CENTER, GAP_2, MB_3)
                 testId("monitor-badges")
-                monitorIncidentsBadge(monitor, incidents, historyDays)
+                monitorIncidentsBadge(monitor, incidents)
                 lastCheckBadge(monitor)
                 if (monitor is WithLatency) {
                     monitor.averageLatencyInMs?.let { avgLatency ->
-                        inlineStatusBadge(
+                        inlineBadge(
                             text = Messages.statusPageResponseTimeValue(avgLatency.toString()),
                             icon = Icon.WAVE_SQUARE,
                             tooltip = Messages.statusPageAverageResponseTime(),
@@ -231,7 +231,7 @@ private fun FlowContent.lastCheckBadge(monitor: StatusPageMonitorDetailsDto) {
     }
     span {
         testId("monitor-last-check")
-        inlineStatusBadge(text = time?.timeAgo() ?: Messages.noData(), icon = Icon.CLOCK, tooltip = label)
+        inlineBadge(text = time?.timeAgo() ?: Messages.noData(), icon = Icon.CLOCK, tooltip = label)
     }
 }
 
