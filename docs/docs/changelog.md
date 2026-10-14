@@ -1,4 +1,10 @@
-## 4.5.0 <small>unreleased</small> { id="4.5.0" data-toc-label="4.5.0" }
+## 4.5.0 <small>2026-10-14</small> { id="4.5.0" data-toc-label="4.5.0" }
+
+!!! question "Make your voice heard!"
+
+    There is a **short questionnaire about Kuvasz** in general, which you can fill out anonymously. It takes only a few minutes, and your feedback is highly appreciated as it helps me to focus on the most important features and improvements in the future. You can find it [**here**](https://forms.gle/Lb1q6CmW8eUgVbNr9).
+
+    _Thanks, Adam_
 
 ### Features
 
@@ -46,7 +52,7 @@ The status pages got a lot more talkative too: the **active** and the **recently
 
 **🖥️ A fully redesigned dashboard** 
 
-![New dashboard](images/ui/dashboard.webp)
+![New dashboard](images/ui/dashboard_full.webp)
 
 Instead of repeating the same set of stat cards for every monitor type in a boring way, the brand new dashboard gives you a single overview of **all of your monitors** now: a **verdict** in the header about what needs your attention, the key figures (**uptime**, **incidents**, **downtime** and **mean time to resolve**), an **uptime timeline** per monitor type, the **recent incidents** (both ongoing and resolved), the **certificates** that need your attention, the **active and upcoming maintenance windows**, and the **least reliable monitors** of the period. The period it covers can be picked with a **period selector** (from the last hour up to the last 30 days).
 
@@ -83,12 +89,6 @@ The new [**connectivity check**](features/connectivity-check.md) periodically di
 - Added a new recipe about [**running Kuvasz as a non-root user**](management/examples.md#running-kuvasz-as-a-non-root-user) (optionally without any capabilities, and with a read-only root filesystem), including the things to look out for with **ICMP** and **Docker** monitors. The [**Docker Compose example**](setup/installation.md#2-docker-compose-file) comes with the related settings too, commented out.
 
 ## 4.4.0 <small>2026-09-15</small> { id="4.4.0" data-toc-label="4.4.0" }
-
-!!! question "Make your voice heard!"
-
-    There is a **short questionnaire about Kuvasz** in general, which you can fill out anonymously. It takes only a few minutes, and your feedback is highly appreciated as it helps me to focus on the most important features and improvements in the future. You can find it [**here**](https://forms.gle/Lb1q6CmW8eUgVbNr9).
-
-    _Thanks, Adam_
 
 ### Features
 
@@ -446,8 +446,6 @@ By adding the **webhooks support**, this release introduces a huge step towards 
 
 - [**Status pages**](features/status-pages.md): You can create public and also private, brandable status pages for your monitors, to keep your customers or your own team informed about the status of your services. See the [**Managing status pages**](management/status-pages.md) section for more details regarding the configuration options.
 
-![Status page in Kuvasz](images/ui/status_page.webp)
-
 ### Improvements
 
 - [**Integration names**](management/integrations.md#name) can be totally **arbitrary** now, the previous restriction of containing only alphanumeric characters, hyphens and underscores has been lifted.
@@ -474,17 +472,12 @@ Don't be afraid, the upgrade process is straightforward and well-documented, and
 ### New features
 
 - **Integrations** have their own section on the UI now, and they are also exposed under a new API endpoint (`GET /api/v2/integrations`). Furthermore, [**you can test them**](management/integrations.md#testing-integrations) directly from the UI, or via the API to make sure that they are working as expected, before you would enable them or assign them to monitors.
-
-![Kuvasz integrations management UI](images/integrations/integrations_list.webp)
-
 - **Update notifications**: you can now [**get notified about new releases**](setup/installation.md#keeping-kuvasz-up-to-date) of _Kuvasz_ on the UI and through the API on `GET /api/v2/settings`. This way, it's easier to stay up-to-date with the latest features and improvements.
 - **Monitor-level metrics**: the uptime ratio, incident count and total downtime metrics are now available on a per-monitor basis (both on the UI & via the v2 [API](https://api-docs.kuvasz-uptime.dev)), not just as cumulated metrics across all monitors.
 
 ![Kuvasz monitor-level metrics UI](images/features/monitor-metrics.webp)
 
 - **Incidents**: there is a brand new section on the UI, and a dedicated endpoint under `GET /api/v2/incidents` to see/fetch **all your incidents in one single place**, where you can also filter them by a monitor, or by a time range.
-
-![Kuvasz incident list UI](images/ui/incident_list.webp)
 
 ### Fixes
 

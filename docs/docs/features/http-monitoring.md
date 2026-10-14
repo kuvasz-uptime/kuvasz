@@ -1,7 +1,5 @@
 HTTP uptime monitoring is a crucial feature that allows you to keep track of the **availability and performance** of your websites and services. It helps you ensure that your applications are running smoothly and **alerts you** when they are down or experiencing issues, which is essential for maintaining a reliable user experience.
 
-![Uptime dashboard](../images/features/uptime_monitoring.webp)
-
 ## How does it work?
 
 _Kuvasz_ monitors your websites and services by **periodically sending requests** to them. It checks the response status codes, response times, and other metrics to determine if the service is up and running. If a service is down or not responding as expected, Kuvasz will **notify you** through your configured notification channels.

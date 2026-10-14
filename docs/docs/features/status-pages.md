@@ -1,5 +1,3 @@
-![Status page](../images/ui/status_page.webp)
-
 Status pages are one of the key features of a proper monitoring system. They help you **communicate the status of your services** to your customers or internal teams, and can also be used to display historical uptime and incident information.
 
 !!! info "An example status page"
@@ -7,7 +5,7 @@ Status pages are one of the key features of a proper monitoring system. They hel
 
 ![Status pages](../images/ui/status_page_list.webp)
 
-## What can be configured?
+## What can be configured? <!-- md:config ../management/status-pages.md -->
 
 There are two types of status pages available: the **default, built-in one, that contains every enabled monitors automatically**. The other type is a **custom status page**, which allows you to select the monitors you would like to display.
 Both types supports the following features:

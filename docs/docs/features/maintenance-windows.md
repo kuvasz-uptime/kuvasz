@@ -26,8 +26,6 @@ Regardless of the schedule, you can configure:
 - **Notified integrations**: the integrations that should receive the window's **start and end** notifications.
 - **Status page visibility**: whether the window may be [displayed on your status pages](status-pages.md), so your users can see that a maintenance is active or coming up.
 
-![Maintenance on status pages](../images/maintenance/statuspage_maintenance.webp)
-
 !!!tip
 
     You can **choose how you would like to manage** your maintenance windows: via the _Web UI_, the _REST API_, or with a _YAML configuration_ file. For more information, please refer to the [**Maintenance windows management**](../management/maintenance-windows.md) section of the documentation.

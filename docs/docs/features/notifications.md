@@ -1,8 +1,6 @@
 _Kuvasz_ supports a variety of integrations to help you **stay informed
 ** about the status of your monitors. If you're curious about the configuration options, just click on the <!-- md:config --> icon, next to the integration name, and it will take you to the relevant section of the configuration documentation.
 
-![Integrations list](../images/integrations/integrations_list.webp)
-
 !!! info
 
     Integrations can be:
