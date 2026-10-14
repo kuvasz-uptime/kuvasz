@@ -1240,8 +1240,6 @@ It's vital to ensure that your integrations are correctly set up to receive noti
 
     When you test a _Webhook_ integration, **a separate test message will be generated and sent for every event type that the integration watches**, so for example if you have an integration that watches both `HTTP_UP` and `HTTP_DOWN` events, you will receive two separate messages in your target endpoint when you test the integration: one for the `UP` event and one for the `DOWN` event. The **"down" events will be always fired first** to simulate a real downtime scenario, and the "up" events will be fired immediately after to simulate the recovery of the monitor.
 
-![Integrations list](../images/integrations/integrations_list.webp)
-
 ## Do you miss an integration?
 
 If you miss an integration, please [**open an issue**](https://github.com/kuvasz-uptime/kuvasz/issues/new?template=feature_request.md), or consider contributing it yourself! We are always open to new integrations and would love to see your contribution.

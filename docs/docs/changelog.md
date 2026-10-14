@@ -1,4 +1,4 @@
-## 4.5.0 <small>unreleased</small> { id="4.5.0" data-toc-label="4.5.0" }
+## 4.5.0 <small>2026-10-14</small> { id="4.5.0" data-toc-label="4.5.0" }
 
 !!! question "Make your voice heard!"
 
@@ -446,8 +446,6 @@ By adding the **webhooks support**, this release introduces a huge step towards 
 
 - [**Status pages**](features/status-pages.md): You can create public and also private, brandable status pages for your monitors, to keep your customers or your own team informed about the status of your services. See the [**Managing status pages**](management/status-pages.md) section for more details regarding the configuration options.
 
-![Status page in Kuvasz](images/ui/status_page.webp)
-
 ### Improvements
 
 - [**Integration names**](management/integrations.md#name) can be totally **arbitrary** now, the previous restriction of containing only alphanumeric characters, hyphens and underscores has been lifted.
@@ -474,17 +472,12 @@ Don't be afraid, the upgrade process is straightforward and well-documented, and
 ### New features
 
 - **Integrations** have their own section on the UI now, and they are also exposed under a new API endpoint (`GET /api/v2/integrations`). Furthermore, [**you can test them**](management/integrations.md#testing-integrations) directly from the UI, or via the API to make sure that they are working as expected, before you would enable them or assign them to monitors.
-
-![Kuvasz integrations management UI](images/integrations/integrations_list.webp)
-
 - **Update notifications**: you can now [**get notified about new releases**](setup/installation.md#keeping-kuvasz-up-to-date) of _Kuvasz_ on the UI and through the API on `GET /api/v2/settings`. This way, it's easier to stay up-to-date with the latest features and improvements.
 - **Monitor-level metrics**: the uptime ratio, incident count and total downtime metrics are now available on a per-monitor basis (both on the UI & via the v2 [API](https://api-docs.kuvasz-uptime.dev)), not just as cumulated metrics across all monitors.
 
 ![Kuvasz monitor-level metrics UI](images/features/monitor-metrics.webp)
 
 - **Incidents**: there is a brand new section on the UI, and a dedicated endpoint under `GET /api/v2/incidents` to see/fetch **all your incidents in one single place**, where you can also filter them by a monitor, or by a time range.
-
-![Kuvasz incident list UI](images/ui/incident_list.webp)
 
 ### Fixes
 
