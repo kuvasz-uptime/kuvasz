@@ -10,7 +10,6 @@ import org.yaml.snakeyaml.DumperOptions
 import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.representer.Representer
-import org.yaml.snakeyaml.resolver.Resolver
 import java.io.InputStream
 import java.util.Optional
 
@@ -40,7 +39,7 @@ class YamlConfigPropertySourceLoader(
     override fun processInput(name: String, input: InputStream, finalMap: MutableMap<String, Any>) {
         val loaderOptions = LoaderOptions().apply { maxAliasesForCollections = resolveMaxAliases(name) }
         val dumperOptions = DumperOptions()
-        Yaml(micronautYamlConstructor(), Representer(dumperOptions), dumperOptions, loaderOptions, Resolver())
+        Yaml(micronautYamlConstructor(), Representer(dumperOptions), dumperOptions, loaderOptions)
             .loadAll(input)
             .filterIsInstance<Map<*, *>>()
             .forEach { processMap(finalMap, it, "") }

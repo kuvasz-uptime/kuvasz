@@ -10,6 +10,7 @@ import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.Environment
 import io.micronaut.context.env.yaml.YamlPropertySourceLoader
 import io.micronaut.context.exceptions.ConfigurationException
+import io.micronaut.core.io.scan.ClassPathResourceLoader
 import org.yaml.snakeyaml.error.YAMLException
 import java.time.OffsetDateTime
 
@@ -150,14 +151,11 @@ class YamlConfigPropertySourceLoaderTest : BehaviorSpec(
 
             `when`("the standard files (e.g. application.yml) are loaded") {
                 then("it should leave them to Micronaut's built-in YAML loader, so they're parsed only once") {
-                    val environment = ApplicationContext.builder("test").build().environment
-                    try {
-                        environment.start()
+                    val resourceLoader = ClassPathResourceLoader.defaultLoader(javaClass.classLoader)
 
-                        environment.propertySources.count { it.name == "application" } shouldBe 1
-                        environment.propertySources.count { it.name == "application-test" } shouldBe 1
-                    } finally {
-                        environment.stop()
+                    listOf("application", "application-test").forEach { name ->
+                        YamlPropertySourceLoader().load(name, resourceLoader).isPresent shouldBe true
+                        loader().load(name, resourceLoader).isPresent shouldBe false
                     }
                 }
             }
