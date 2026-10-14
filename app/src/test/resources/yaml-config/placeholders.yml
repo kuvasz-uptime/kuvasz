@@ -1,0 +1,9 @@
+# Used by YamlConfigPropertySourceLoaderTest, passed via micronaut.config.files
+placeholder-test:
+  with-fallback: ${KUVASZ_UNDEFINED_VARIABLE:fallback-value}
+  from-env: ${YAML_MAX_ALIASES}
+  from-system-property: ${placeholder-test-system-property}
+  camelCaseKey: camel-value
+  overridden-by-system-property: from-file
+# YAML_MAX_ALIASES is set for the test task, and environment variables take precedence over the config files
+yaml-max-aliases: from-file

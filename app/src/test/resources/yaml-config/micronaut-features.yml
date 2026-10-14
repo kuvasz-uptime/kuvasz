@@ -1,0 +1,40 @@
+# Used by YamlConfigPropertySourceLoaderTest to compare the result with the one of Micronaut's built-in loader
+defaults: &defaults
+  uptime-check-interval: 180
+  ssl-check-enabled: true
+http-monitors:
+  - name: kebab-case
+    url: "${MONITOR_URL:https://example.com}"
+    <<: *defaults
+  - name: camelCase
+    url: https://example.org
+    uptimeCheckInterval: 60
+    sslExpiryThreshold: 20
+    requestHeaders:
+      X-Foo: bar
+app-config.dotted-key: dotted
+app-config:
+  nested-placeholder: ${FIRST_VAR:${SECOND_VAR:fallback}}
+  quoted: "123"
+  number: 123
+  float: 1.5
+  negative: -1
+  bool: true
+  empty:
+  list: [a, b]
+  list-of-maps:
+    - key: first
+    - key: second
+  empty-list: []
+  empty-map: {}
+  multiline: |
+    first line
+    second line
+  timestamp: 2026-10-13T10:00:00+02:00
+  utc-timestamp: 2026-10-13T08:00:00Z
+  timestamp-with-space-and-fraction: 2026-10-13 08:15:30.5Z
+  quoted-timestamp: "2026-10-13T08:00:00Z"
+  date: 2026-10-13
+---
+second-document:
+  key: value

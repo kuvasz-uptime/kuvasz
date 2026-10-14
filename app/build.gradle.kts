@@ -57,7 +57,7 @@ dependencies {
     implementation(mn.jackson.dataformat.yaml)
     implementation(mn.micronaut.kotlin.runtime)
     implementation(mn.micronaut.jackson.databind)
-    runtimeOnly(mn.snakeyaml)
+    implementation(mn.snakeyaml)
     implementation(mn.micronaut.validation)
     implementation(mn.logback.classic)
     implementation(mn.micronaut.http.client)
@@ -164,6 +164,8 @@ tasks.withType<Test> {
  */
 tasks.named<Test>("test") {
     forkEvery = 100
+    // Lets YamlConfigPropertySourceLoaderTest verify that the service-loaded instance parses MICRONAUT_CONFIG_FILES
+    environment("YAML_MAX_ALIASES", "100")
 }
 
 /**
