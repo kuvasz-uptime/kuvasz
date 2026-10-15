@@ -12,7 +12,7 @@
 
 [**Docker monitors**](features/docker-monitoring.md) ask the **Docker daemon itself** whether a container is running and healthy, so they catch what a port check misses: crash loops, OOM kills, paused containers, failing healthchecks, and containers without any port at all. The errors tell you **what actually happened**, e.g. _"The container exited (137) after it was OOM killed"_, and the **image** of the container is recorded with every incident. The [**restart count**](features/docker-monitoring.md#restarts) is recorded as well, and you can [**get alerted**](management/docker-monitors.md#restart-alerts-enabled) when it goes up. With [**metrics history**](management/docker-monitors.md#metrics-history-enabled) enabled, the **CPU and memory usage** of the container is charted too.
 
-![Chart with Docker metrics](images/features/docker_resources_chart.webp){ width="550"}
+![Chart with Docker metrics](images/features/docker_resources_chart.webp){ width="550" loading=lazy }
 
 The daemons are configured as named [**Docker hosts**](management/docker-hosts.md) in your configuration file: the **local socket**, a **socket proxy**, or a **remote daemon** over TCP with **(mutual) TLS**, from **Engine 19.03** onwards (see the [**compatibility matrix**](features/docker-monitoring.md#compatibility)).
 
@@ -40,19 +40,19 @@ The new [**Slack Bot**](management/integrations.md#slack-bot) integration posts 
 
 Every incident has its own [**details page**](features/incidents.md#incident-details) now, with a **timeline** of its story: its start, the **integrations that were notified** about it (and about its resolution), its resolution, and the [**notes**](features/incidents.md#incident-notes) you add to it. A note has a status (_Investigating_, _Identified_ or _Resolved_), a plain text content, an optional custom time, and it can be marked as **public**. Notes are manageable via the **Web UI**, the **REST API** and the [**MCP server**](features/mcp-server.md).
 
-![Admin incident timeline](images/changelog/admin-incident-timeline.webp){ width="550"}
-![Public incident timeline](images/changelog/public-incident-timeline.webp){ width="550"}
+![Admin incident timeline](images/changelog/admin-incident-timeline.webp){ width="550" loading=lazy }
+![Public incident timeline](images/changelog/public-incident-timeline.webp){ width="550" loading=lazy }
 
 The status pages got a lot more talkative too: the **active** and the **recently resolved incidents** are listed right below the overall status, with their **public notes**, every monitor card counts its incidents and lists them on click, and hovering a day tells its **downtime** and the time span of its incidents. Everything else about the incidents (e.g. the errors of the checks, or the private notes) stays private. The pages **refresh themselves in place** instead of reloading the whole page.
 
-![Public incident timeline](images/changelog/status-page-incidents.webp){ width="550"}
-![Public incident timeline](images/changelog/statuspage-tracker-details.webp){ width="350"}
+![Public incident timeline](images/changelog/status-page-incidents.webp){ width="550" loading=lazy }
+![Public incident timeline](images/changelog/statuspage-tracker-details.webp){ width="350" loading=lazy }
 
 ---
 
 **🖥️ A fully redesigned dashboard** 
 
-![New dashboard](images/ui/dashboard_full.webp)
+![New dashboard](images/ui/dashboard_full.webp){ loading=lazy }
 
 Instead of repeating the same set of stat cards for every monitor type in a boring way, the brand new dashboard gives you a single overview of **all of your monitors** now: a **verdict** in the header about what needs your attention, the key figures (**uptime**, **incidents**, **downtime** and **mean time to resolve**), an **uptime timeline** per monitor type, the **recent incidents** (both ongoing and resolved), the **certificates** that need your attention, the **active and upcoming maintenance windows**, and the **least reliable monitors** of the period. The period it covers can be picked with a **period selector** (from the last hour up to the last 30 days).
 
@@ -94,7 +94,7 @@ The new [**connectivity check**](features/connectivity-check.md) periodically di
 
 **🗂️ Monitor categories**
 
-![Categorized status pages](images/features/statuspage_categories.webp)
+![Categorized status pages](images/features/statuspage_categories.webp){ loading=lazy }
 
 Every monitor can have an optional, free-form [**category**](management/http-monitors.md#category) now — a product, a service, a team, whatever you group by. It doesn't just label them, it **selects** them:
 
@@ -113,12 +113,12 @@ The **metrics** on the monitor details pages got some love as well:
 
 - The **incidents** that started or got resolved in the displayed time range are **marked on the charts**.
 
-![Incidents on the charts](images/features/new_charts.webp)
+![Incidents on the charts](images/features/new_charts.webp){ loading=lazy }
 
 - The metrics can be displayed for a **selectable period**, from the last hour up to the last 30 days (the last day by default).
 - The latency and the packet loss of **ICMP monitors** are drawn on a **single chart**, each of them with an axis of its own.
 
-![Merged charts of ICMP monitors](images/features/new_icmp_charts.webp)
+![Merged charts of ICMP monitors](images/features/new_icmp_charts.webp){ loading=lazy }
 
 ---
 
@@ -187,7 +187,7 @@ All three behave like every other integration: they can be **global** or assigne
 
 - [**DNS monitors**](features/dns-monitoring.md) arrived as well! They check whether a name resolves, and you can assert on the records it resolves to. A monitor holds a list of **record matchers** (`A`, `AAAA`, `CNAME`, `MX`, `NS`, `TXT`, `SOA`, `SRV`, `CAA`, `PTR`) matched as `EXACT`, `CONTAINS` or `REGEX`, can expect a specific **response code** (so _"this name must **not** resolve"_ checks work too), and can query a custom nameserver over `UDP` or `TCP`. On top of that, an opt-in **drift detection** notifies you when the resolved records change, without flipping the monitor to DOWN. See the [**Managing DNS monitors**](management/dns-monitors.md) section for further details.
 
-![DNS assertions](images/features/dns_monitor_settings.webp)
+![DNS assertions](images/features/dns_monitor_settings.webp){ loading=lazy }
 
 Both new types are fully integrated across _Kuvasz_: they're manageable via the [**Web UI, REST API, or YAML**](management/managing-monitors/index.md), participate in **incidents**, **uptime & latency stats**, **notifications** (including generic webhook templating), the **metrics** exporter, **YAML import/restore**, and are exposed to AI assistants through the [**MCP server**](features/mcp-server.md).
 
@@ -218,13 +218,13 @@ Both new types are fully integrated across _Kuvasz_: they're manageable via the 
 
 The long-awaited **maintenance window support** is finally here! 🎉
 
-![Maintenance windows](images/maintenance/maintenance_list.webp)
+![Maintenance windows](images/maintenance/maintenance_list.webp){ loading=lazy }
 
 - You can now schedule [**planned downtime**](features/maintenance-windows.md) so _Kuvasz_ pauses the affected checks and suppresses false alerts while you do scheduled work. A window can be **manual** (toggled on and off by hand), **recurring** (a `cron` expression + `duration`), or a **one-off** (a `start` timestamp + `duration`), and can be scoped to specific monitors or made global. Assigned integrations receive dedicated **start and end notifications**, and windows can optionally be shown on your status pages. Manageable via the [**Web UI, REST API, or YAML**](management/maintenance-windows.md), and exposed to AI assistants through the [**MCP server**](features/mcp-server.md).
 
 - **YAML import/restore** is now available for your whole configuration: on top of monitors, you can restore **maintenance windows** and **status pages** from exported YAML backups, both through the Web UI and the REST API. This makes it easy to migrate or recover an entire _Kuvasz_ setup. To try it out, head to the _"Settings"_ page and click the _"Backup & Restore"_ button! Thanks for the monitor imports to [**@visorcraft**](https://github.com/visorcraft)!
 
-![Kuvasz backup & restore UI](images/features/monitor-imports.webp)
+![Kuvasz backup & restore UI](images/features/monitor-imports.webp){ loading=lazy }
 
 - **Clonable monitors**: you can now duplicate an existing monitor straight from the Web UI, so creating similar checks no longer means filling out the whole form from scratch.
 
@@ -427,7 +427,7 @@ By adding the **webhooks support**, this release introduces a huge step towards 
 
 - [**Push monitors**](features/push-monitoring.md): Also known as _cron_ or _heartbeat_ monitors. You can create monitors to watch your services or scheduled jobs that are not accessible via HTTP, but you still want to keep an eye on them.
 
-![Creating a push monitor](images/ui/create_push_monitor.webp)
+![Creating a push monitor](images/ui/create_push_monitor.webp){ loading=lazy }
 
 ### Improvements
 
@@ -475,7 +475,7 @@ Don't be afraid, the upgrade process is straightforward and well-documented, and
 - **Update notifications**: you can now [**get notified about new releases**](setup/installation.md#keeping-kuvasz-up-to-date) of _Kuvasz_ on the UI and through the API on `GET /api/v2/settings`. This way, it's easier to stay up-to-date with the latest features and improvements.
 - **Monitor-level metrics**: the uptime ratio, incident count and total downtime metrics are now available on a per-monitor basis (both on the UI & via the v2 [API](https://api-docs.kuvasz-uptime.dev)), not just as cumulated metrics across all monitors.
 
-![Kuvasz monitor-level metrics UI](images/features/monitor-metrics.webp)
+![Kuvasz monitor-level metrics UI](images/features/monitor-metrics.webp){ loading=lazy }
 
 - **Incidents**: there is a brand new section on the UI, and a dedicated endpoint under `GET /api/v2/incidents` to see/fetch **all your incidents in one single place**, where you can also filter them by a monitor, or by a time range.
 
@@ -500,7 +500,7 @@ Don't be afraid, the upgrade process is straightforward and well-documented, and
 - **New HTTP request methods**: `POST`, `PUT`, `PATCH`, `DELETE` and `OPTIONS` are now supported in addition to the existing `GET` and `HEAD`. This allows you to monitor endpoints that require different HTTP methods, such as APIs that expect a `POST` request with a specific payload. See the [**HTTP monitors > Request method**](management/http-monitors.md#request-method) section for more details.
 - **Revamped UI for creating and editing HTTP monitors**: the UI of the existing modal has been slightly redesigned to make it easier and more convenient to configure HTTP monitors with the new features. The fresh look is hopefully more intuitive and user-friendlier by having a **better structure**.
 
-![Kuvasz HTTP monitor creation modal](images/features/new_monitor_modal.webp)
+![Kuvasz HTTP monitor creation modal](images/features/new_monitor_modal.webp){ loading=lazy }
 
 ## 2.4.0 <small>2025-08-15</small> { id="2.4.0" data-toc-label="2.4.0" }
 
@@ -511,7 +511,7 @@ Don't be afraid, the upgrade process is straightforward and well-documented, and
     - check for a [**keyword in the response body**](management/http-monitors.md#expected-keyword), and you can make the check optionally [**case-sensitive**](management/http-monitors.md#expected-keyword-case-sensitivity), or also [**reversed**](management/http-monitors.md#expected-keyword-negation) to check for the absence of the keyword
     - **[check the response time](management/http-monitors.md#response-time-threshold)** against a **threshold** (in milliseconds) to ensure that the response is not only valid but also fast enough
 
-![Kuvasz evaluation settings](images/features/kuvasz_new_matchers.webp)
+![Kuvasz evaluation settings](images/features/kuvasz_new_matchers.webp){ loading=lazy }
 
 - **More details** are persisted **about the errors** that occur during the HTTP uptime checks
 - Added **French** translation, thanks to [**@waazaa-fr**](https://github.com/waazaa-fr)!

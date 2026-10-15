@@ -18,7 +18,7 @@ _Kuvasz_ monitors your websites and services by **periodically sending requests*
 - expected headers in the response
 - an optional [proxy](../management/proxies.md) (HTTP or SOCKS5) to route the checks through, including the SSL check
 
-![Kuvasz evaluation settings](../images/features/new_monitor_modal.webp)
+![Kuvasz evaluation settings](../images/features/new_monitor_modal.webp){ loading=lazy }
 
 ## Notable features
 

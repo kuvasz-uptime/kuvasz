@@ -221,7 +221,7 @@ sensor:
 
 **Result:**
 
-![HA JSON attributes](../images/examples/ha_json_attributes.webp)
+![HA JSON attributes](../images/examples/ha_json_attributes.webp){ loading=lazy }
 
 ### Binary sensor for uptime as `connectivity`
 
@@ -245,7 +245,7 @@ binary_sensor:
 
 **Result:**
 
-![HA connectivity](../images/examples/ha_connectivity.webp)
+![HA connectivity](../images/examples/ha_connectivity.webp){ loading=lazy }
 
 ## Running Kuvasz behind a reverse proxy
 
@@ -370,7 +370,7 @@ The examples below doesn't necessarily map all the possible fields, but it gives
 
 ### Global HTTP stats
 
-![global HTTP stats on homepage](../images/examples/homepage-global-stats.webp)
+![global HTTP stats on homepage](../images/examples/homepage-global-stats.webp){ loading=lazy }
 
 ??? example "Expand for example configuration"
     ```yaml
@@ -423,7 +423,7 @@ The examples below doesn't necessarily map all the possible fields, but it gives
 
 ### Individual monitor stats
 
-![individual monitor stats on homepage](../images/examples/homepage-monitor-stats.webp)
+![individual monitor stats on homepage](../images/examples/homepage-monitor-stats.webp){ loading=lazy }
 
 ??? example "Expand for example configuration"
     ```yaml
@@ -461,7 +461,7 @@ The examples below doesn't necessarily map all the possible fields, but it gives
 
 ### Individual monitor details
 
-![individual monitor details on homepage](../images/examples/homepage-monitor-details.webp)
+![individual monitor details on homepage](../images/examples/homepage-monitor-details.webp){ loading=lazy }
 
 ??? example "Expand for example configuration"
     ```yaml
@@ -522,7 +522,7 @@ The examples below doesn't necessarily map all the possible fields, but it gives
 
 ### Overview with a clickable list of monitors
 
-![dynamic list of monitors on homepage](../images/examples/homepage-monitor-list.webp)
+![dynamic list of monitors on homepage](../images/examples/homepage-monitor-list.webp){ loading=lazy }
 
 ??? example "Expand for example configuration"
     ```yaml
@@ -565,7 +565,7 @@ Across all the widgets it's better to set your host and API key via environment 
 
 This widget can be used for both HTTP and push monitor stats, depending on the configuration. It shows the total count, the up and down monitors, the number of incidents, the affected monitors and the uptime ratio over a given period.
 
-![Kuvasz stats widget on Glance](../images/examples/kuvasz-glance-http-stats-preview.png)
+![Kuvasz stats widget on Glance](../images/examples/kuvasz-glance-http-stats-preview.webp){ loading=lazy }
 
 **Options**
 
@@ -636,11 +636,11 @@ A single widget for the HTTP, ICMP, TCP, DNS and Docker monitors, since they onl
 
 === "Full style"
 
-    ![Kuvasz HTTP monitors widget (full style) on Glance](../images/examples/kuvasz-glance-preview.png)
+    ![Kuvasz HTTP monitors widget (full style) on Glance](../images/examples/kuvasz-glance-preview.webp){ loading=lazy }
 
 === "Compact style"
 
-    ![Kuvasz HTTP monitors widget (compact style) on Glance](../images/examples/kuvasz-glance-http-compact-preview.png)
+    ![Kuvasz HTTP monitors widget (compact style) on Glance](../images/examples/kuvasz-glance-http-compact-preview.webp){ loading=lazy }
 
 | Monitor type | Target                                           | Metrics                             |
 |--------------|--------------------------------------------------|-------------------------------------|
@@ -884,7 +884,7 @@ When `show-configured-only` is `true`, only the monitors that have a custom icon
 
 Very similar to the [compact style](#http-icmp-tcp-dns-and-docker-monitors) of the widget above, but only the uptime ratio is shown, since latency is not relevant here.
 
-![Kuvasz push monitors widget on Glance](../images/examples/kuvasz-glance-push-preview.png)
+![Kuvasz push monitors widget on Glance](../images/examples/kuvasz-glance-push-preview.webp){ loading=lazy }
 
 **Options**
 

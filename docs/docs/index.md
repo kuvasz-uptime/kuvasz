@@ -5,9 +5,9 @@ title: The developer- and cloud-friendly uptime monitor
 #
 
 <figure markdown="span">
-  ![Kuvasz banner](images/kuvasz-banner-light.webp#only-light){ width="550" .skip-lb }
-  ![Kuvasz banner](images/kuvasz-banner-dark.webp#only-dark){ width="550" .skip-lb }
-  <figcaption>Welcome to <strong>Kuvasz</strong> [ˈkuvɒs], an open-source, self-hosted uptime & SSL monitoring service with status pages, webhooks, an MCP server and IAC support!</figcaption>
+  ![Kuvasz banner](images/kuvasz-banner-light.webp#only-light){ width="550" }
+  ![Kuvasz banner](images/kuvasz-banner-dark.webp#only-dark){ width="550" }
+  <figcaption>Welcome to <strong>Kuvasz</strong> <span class="ipa">[ˈkuvɒs]</span>, an open-source, self-hosted uptime & SSL monitoring service with status pages, webhooks, an MCP server and IAC support!</figcaption>
 </figure>
 
 !!! tip "TL;DR"
@@ -221,7 +221,7 @@ First and foremost, if you want to **stay up-to-date with the latest news**, fea
 
 ## Where does the name come from?
 
-Kuvasz (pronounce as [ˈkuvɒs]) is an ancient hungarian breed of livestock & guard dog. You can read more about them
+Kuvasz (pronounce as <span class="ipa">[ˈkuvɒs]</span>) is an ancient hungarian breed of livestock & guard dog. You can read more about them
 on [**Wikipedia**](https://en.wikipedia.org/wiki/Kuvasz).
 
 ## Do you like it?

@@ -20,8 +20,7 @@ You can reference your integrations in your monitors by their _ID_, which is alw
 
 ## Common settings
 
-All the integrations **share some common, generic settings
-**, which means that it doesn't matter which integration you configure, you can use the same settings for all of them.
+All the integrations **share some common, generic settings**, which means that it doesn't matter which integration you configure, you can use the same settings for all of them.
 
 ### Name
 
@@ -720,7 +719,7 @@ The _PagerDuty_ integration allows you to **trigger incidents in PagerDuty** whe
     3. Enter an **Integration Name** in the format `monitoring-tool-service-name` (e.g.  Kuvasz-Your-Service) and select "Kuvasz" from the Integration Type menu.
     4. Click the **Add Integration** button to save your new integration. You will be redirected to the Integrations tab for your service.
     5. An **Integration Key** will be generated on this screen. Keep this key saved in a safe place, as it will be used when you configure the integration with Kuvasz in the next section.
-      ![Copy PD key](https://pdpartner.s3.amazonaws.com/ig-template-copy-integration-key.png)
+      ![Copy PD key](../images/integrations/pagerduty-copy-integration-key.webp){ loading=lazy }
 
 ### Integration Key
 
@@ -1082,7 +1081,7 @@ integrations:
         }
 ```
 
-![Ntfy test notification](../images/examples/ntfy_webhook.webp)
+![Ntfy test notification](../images/examples/ntfy_webhook.webp){ loading=lazy }
 
 ### Pushover
 

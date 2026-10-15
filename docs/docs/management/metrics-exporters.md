@@ -737,4 +737,4 @@ kuvasz.docker.memory.usage.latest.bytes{name=my-app,target=local/my-app} 5452595
 
 You can check the effective configuration of the metrics exporters on the UI, by navigating to the **Settings** page, where you'll find an overview of all the available settings (except the ones that could contain sensitive data, e.g. the _OpenTelemetry_ report's headers).
 
-![Metrics exporters settings](../images/exporters/settings.webp)
+![Metrics exporters settings](../images/exporters/settings.webp){ loading=lazy }

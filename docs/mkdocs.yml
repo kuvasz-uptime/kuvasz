@@ -74,9 +74,6 @@ plugins:
       cards_layout_options:
         background_image: docs/images/card-layout-bg.png
         background_color: transparent
-  - glightbox:
-      skip_classes:
-        - skip-lb
   - privacy:
       assets: false
       links_attr_map:
