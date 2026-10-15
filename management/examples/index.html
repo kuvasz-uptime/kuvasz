@@ -2872,7 +2872,7 @@
 </span><span id="__span-8-39"><a id="__codelineno-8-39" name="__codelineno-8-39" href="#__codelineno-8-39"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">effectiveIntegrations</span>
 </span></code></pre></div>
 <p><strong>Result:</strong></p>
-<p><img loading="lazy" alt="HA JSON attributes" src="../../images/examples/ha_json_attributes.webp" /></p>
+<p><img width="1158" height="1388" alt="HA JSON attributes" loading="lazy" src="../../images/examples/ha_json_attributes.webp" /></p>
 <h3 id="binary-sensor-for-uptime-as-connectivity">Binary sensor for uptime as <code>connectivity</code></h3>
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nt">binary_sensor</span><span class="p">:</span>
 </span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"kuvasz</span><span class="nv"> </span><span class="s">docs</span><span class="nv"> </span><span class="s">uptime</span><span class="nv"> </span><span class="s">status"</span>
@@ -2891,7 +2891,7 @@
 </span><span id="__span-9-15"><a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a><span class="w">      </span><span class="no">{{ value_json.uptimeStatus is not none }}</span>
 </span></code></pre></div>
 <p><strong>Result:</strong></p>
-<p><img loading="lazy" alt="HA connectivity" src="../../images/examples/ha_connectivity.webp" /></p>
+<p><img width="1120" height="272" alt="HA connectivity" loading="lazy" src="../../images/examples/ha_connectivity.webp" /></p>
 <h2 id="running-kuvasz-behind-a-reverse-proxy">Running Kuvasz behind a reverse proxy</h2>
 <p>If you put <em>Kuvasz</em> behind a reverse proxy (e.g. <em>Nginx</em>, <em>Caddy</em>, <em>Traefik</em>, etc.), especially one that terminates TLS, <em>Kuvasz</em> has to know the <strong>original host and scheme</strong> the browser used, because it builds certain absolute URLs on the server side, from the headers of the incoming request. The most notable ones are the <strong>redirect URI</strong> and the <strong>post-logout redirect URI</strong> that are sent to your provider during the <a href="../../setup/configuration/#oidc-authentication-optional">OIDC</a> login and logout flows. If these are resolved incorrectly (e.g. <code>http://...</code> instead of <code>https://...</code>), providers that strictly match the registered redirect URI (e.g. <em>Authentik</em>) will reject the login with a <em>"Redirect URI Error"</em>.</p>
 <div class="admonition warning">
@@ -2987,7 +2987,7 @@ The response in both cases will be <strong>a <em>YAML</em> file, which you can s
 <p><a href="https://gethomepage.dev/" target="_blank" rel="noopener">Homepage</a> is a really nice open-source tool to create a personal dashboard with links, widgets, and more. You can integrate Kuvasz into your homepage dashboard by using their <a href="https://gethomepage.dev/widgets/services/customapi/" target="_blank" rel="noopener">custom API widget</a>.</p>
 <p>The examples below doesn't necessarily map all the possible fields, but it gives you a good starting point to create your own widgets.</p>
 <h3 id="global-http-stats">Global HTTP stats</h3>
-<p><img loading="lazy" alt="global HTTP stats on homepage" src="../../images/examples/homepage-global-stats.webp" /></p>
+<p><img width="1178" height="938" alt="global HTTP stats on homepage" loading="lazy" src="../../images/examples/homepage-global-stats.webp" /></p>
 <details class="example">
 <summary>Expand for example configuration</summary>
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">Global HTTP stats</span><span class="p">:</span>
@@ -3038,7 +3038,7 @@ The response in both cases will be <strong>a <em>YAML</em> file, which you can s
 </span></code></pre></div>
 </details>
 <h3 id="individual-monitor-stats">Individual monitor stats</h3>
-<p><img loading="lazy" alt="individual monitor stats on homepage" src="../../images/examples/homepage-monitor-stats.webp" /></p>
+<p><img width="1170" height="424" alt="individual monitor stats on homepage" loading="lazy" src="../../images/examples/homepage-monitor-stats.webp" /></p>
 <details class="example">
 <summary>Expand for example configuration</summary>
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">kuvasz-uptime.dev stats</span><span class="p">:</span>
@@ -3074,7 +3074,7 @@ The response in both cases will be <strong>a <em>YAML</em> file, which you can s
 </span></code></pre></div>
 </details>
 <h3 id="individual-monitor-details">Individual monitor details</h3>
-<p><img loading="lazy" alt="individual monitor details on homepage" src="../../images/examples/homepage-monitor-details.webp" /></p>
+<p><img width="1158" height="556" alt="individual monitor details on homepage" loading="lazy" src="../../images/examples/homepage-monitor-details.webp" /></p>
 <details class="example">
 <summary>Expand for example configuration</summary>
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">kuvasz-uptime.dev details</span><span class="p">:</span>
@@ -3133,7 +3133,7 @@ The response in both cases will be <strong>a <em>YAML</em> file, which you can s
 </span></code></pre></div>
 </details>
 <h3 id="overview-with-a-clickable-list-of-monitors">Overview with a clickable list of monitors</h3>
-<p><img loading="lazy" alt="dynamic list of monitors on homepage" src="../../images/examples/homepage-monitor-list.webp" /></p>
+<p><img width="1162" height="428" alt="dynamic list of monitors on homepage" loading="lazy" src="../../images/examples/homepage-monitor-list.webp" /></p>
 <details class="example">
 <summary>Expand for example configuration</summary>
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">Monitors</span><span class="p">:</span>
@@ -3170,7 +3170,7 @@ The response in both cases will be <strong>a <em>YAML</em> file, which you can s
 <p>Across all the widgets it's better to set your host and API key via environment variables (e.g. <code>KUVASZ_HOST</code> and <code>KUVASZ_API_KEY</code>), so you don't have to repeat them in every widget.</p>
 <h3 id="global-stats">Global stats</h3>
 <p>This widget can be used for both HTTP and push monitor stats, depending on the configuration. It shows the total count, the up and down monitors, the number of incidents, the affected monitors and the uptime ratio over a given period.</p>
-<p><img loading="lazy" alt="Kuvasz stats widget on Glance" src="../../images/examples/kuvasz-glance-http-stats-preview.webp" /></p>
+<p><img width="670" height="282" alt="Kuvasz stats widget on Glance" loading="lazy" src="../../images/examples/kuvasz-glance-http-stats-preview.webp" /></p>
 <p><strong>Options</strong></p>
 <ul>
 <li><code>base-url</code>: your Kuvasz host (mandatory)</li>
@@ -3239,10 +3239,10 @@ The response in both cases will be <strong>a <em>YAML</em> file, which you can s
 <div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Full style</label><label for="__tabbed_2_2">Compact style</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<p><img loading="lazy" alt="Kuvasz HTTP monitors widget (full style) on Glance" src="../../images/examples/kuvasz-glance-preview.webp" /></p>
+<p><img width="894" height="462" alt="Kuvasz HTTP monitors widget (full style) on Glance" loading="lazy" src="../../images/examples/kuvasz-glance-preview.webp" /></p>
 </div>
 <div class="tabbed-block">
-<p><img loading="lazy" alt="Kuvasz HTTP monitors widget (compact style) on Glance" src="../../images/examples/kuvasz-glance-http-compact-preview.webp" /></p>
+<p><img width="896" height="372" alt="Kuvasz HTTP monitors widget (compact style) on Glance" loading="lazy" src="../../images/examples/kuvasz-glance-http-compact-preview.webp" /></p>
 </div>
 </div>
 </div>
@@ -3509,7 +3509,7 @@ The response in both cases will be <strong>a <em>YAML</em> file, which you can s
 </details>
 <h3 id="push-monitors">Push monitors</h3>
 <p>Very similar to the <a href="#http-icmp-tcp-dns-and-docker-monitors">compact style</a> of the widget above, but only the uptime ratio is shown, since latency is not relevant here.</p>
-<p><img loading="lazy" alt="Kuvasz push monitors widget on Glance" src="../../images/examples/kuvasz-glance-push-preview.webp" /></p>
+<p><img width="826" height="248" alt="Kuvasz push monitors widget on Glance" loading="lazy" src="../../images/examples/kuvasz-glance-push-preview.webp" /></p>
 <p><strong>Options</strong></p>
 <ul>
 <li><code>base-url</code>: your Kuvasz host (mandatory)</li>
