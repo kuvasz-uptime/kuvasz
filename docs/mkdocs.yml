@@ -96,6 +96,7 @@ extra:
       With your consent, you're helping us to make our documentation better.
 hooks:
   - overrides/hooks/shortcodes.py
+  - overrides/hooks/image_dimensions.py
 extra_css:
   - stylesheets/custom.css
 nav:
