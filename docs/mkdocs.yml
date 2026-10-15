@@ -81,6 +81,7 @@ plugins:
       assets: false
       links_attr_map:
         target: _blank
+  - optimize
 extra:
   annotate:
     json: [ .s2 ]
