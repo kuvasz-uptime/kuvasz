@@ -35,6 +35,7 @@ theme:
     - navigation.top
     - navigation.footer
     - navigation.indexes
+    - navigation.path
     - search.suggest
     - search.highlight
     - content.code.copy
@@ -74,13 +75,13 @@ plugins:
       cards_layout_options:
         background_image: docs/images/card-layout-bg.png
         background_color: transparent
-  - glightbox:
-      skip_classes:
-        - skip-lb
   - privacy:
-      assets: false
+      assets: true
+      assets_exclude:
+        - static.cloudflareinsights.com/beacon.min.js
       links_attr_map:
         target: _blank
+  - optimize
 extra:
   annotate:
     json: [ .s2 ]
@@ -95,6 +96,7 @@ extra:
       With your consent, you're helping us to make our documentation better.
 hooks:
   - overrides/hooks/shortcodes.py
+  - overrides/hooks/image_dimensions.py
 extra_css:
   - stylesheets/custom.css
 nav:

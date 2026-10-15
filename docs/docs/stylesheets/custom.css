@@ -153,3 +153,9 @@
   vertical-align: top;
   margin-right: 0.2em;
 }
+
+/* The IPA characters are outside of the latin subset of the text font, so rendering them with it would download its
+   latin-ext subsets too (~180 kB) */
+.md-typeset .ipa {
+  font-family: system-ui, sans-serif;
+}

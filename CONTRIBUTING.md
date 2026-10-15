@@ -30,6 +30,29 @@ The most important command you will have to run before sending your changes is t
 
 For a successful contribution, all tests should be green and there shouldn't be any issue in detekt.
 
+## Working on the documentation
+
+The documentation lives under `docs` and is built with [mkdocs-material](https://squidfunk.github.io/mkdocs-material/). It
+requires Python (see `docs/.python-version`), and the following system libraries:
+
+- [Cairo](https://www.cairographics.org/) for generating the social cards
+- [pngquant](https://pngquant.org/) for optimizing the PNG images
+
+On macOS (with Homebrew):
+
+```bash
+brew install cairo pngquant
+# Homebrew's libraries are not on the default library path on Apple Silicon
+export DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib
+
+cd docs
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+mkdocs serve
+```
+
 ## Changing the DB schema
 
 _Kuvasz_ uses [Flyway](https://flywaydb.org/) for database migrations and [jOOQ](https://www.jooq.org/) for the type-safe database access, and the convenience plugins to manage changes are set up in the `model` submodule.

@@ -25,4 +25,4 @@ Both types supports the following features:
 
     You can **choose how would like to manage** your status pages: via the _Web UI_, the _REST API_, or with a _YAML configuration_ file. For more information, please refer to the [**Status pages management**](../management/status-pages.md) section of the documentation.
 
-![Status page configuration](../images/ui/create_status_page.webp)
+![Status page configuration](../images/ui/create_status_page.webp){ loading=lazy }

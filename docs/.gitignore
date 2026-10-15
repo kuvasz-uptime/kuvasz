@@ -1,3 +1,4 @@
 .cache
 site
 overrides/hooks/__pycache__
+.venv

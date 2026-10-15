@@ -39,7 +39,7 @@ When [**restart alerts**](../management/docker-monitors.md#restart-alerts-enable
 
 When [**metrics history**](../management/docker-monitors.md#metrics-history-enabled) is enabled, the checks that found the container restarted are also marked on the metrics chart of the monitor's details page, and the count can be exported as a [**metric**](../management/metrics-exporters.md#docker-container-restart-count) too.
 
-![Chart with Docker container restart](../images/features/docker_restart_chart.webp)
+![Chart with Docker container restart](../images/features/docker_restart_chart.webp){ loading=lazy }
 
 ### Docker hosts
 
@@ -53,7 +53,7 @@ When [**metrics history**](../management/docker-monitors.md#metrics-history-enab
 
 Sampling is **opt-in**, because it isn't free: it costs an **extra Docker API call** on every check, and the daemon needs two reads of the counters to calculate the CPU usage, which comes out of the monitor's [**timeout**](../management/docker-monitors.md#timeout).
 
-![Chart with Docker metrics](../images/features/docker_resources_chart.webp)
+![Chart with Docker metrics](../images/features/docker_resources_chart.webp){ loading=lazy }
 
 !!!info "About the latency"
 

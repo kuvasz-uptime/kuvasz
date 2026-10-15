@@ -10,15 +10,15 @@ A maintenance window has a **schedule**, a **scope**, and an optional set of **i
 
 - **Manual**: no schedule at all — the window is active for as long as you keep it enabled, and you toggle it on and off yourself. Useful for ad-hoc, open-ended maintenance when you don't know exactly how long it will take.
 
-![Manual maintenance](../images/maintenance/manual_maintenance.webp)
+![Manual maintenance](../images/maintenance/manual_maintenance.webp){ loading=lazy }
 
 - **Recurring**: defined by a **cron expression** and a **duration**, e.g. "every night at 02:00 for 1 hour". Perfect for regularly scheduled tasks like nightly backups.
 
-![Cron maintenance](../images/maintenance/cron_maintenance.webp)
+![Cron maintenance](../images/maintenance/cron_maintenance.webp){ loading=lazy }
 
 - **One-off**: defined by a **start timestamp** and a **duration**, e.g. "next Saturday at 22:00 for 2 hours". Ideal for a single planned event.
 
-![Single maintenance](../images/maintenance/single_maintenance.webp)
+![Single maintenance](../images/maintenance/single_maintenance.webp){ loading=lazy }
 
 Regardless of the schedule, you can configure:
 
