@@ -76,7 +76,9 @@ plugins:
         background_image: docs/images/card-layout-bg.png
         background_color: transparent
   - privacy:
-      assets: false
+      assets: true
+      assets_exclude:
+        - static.cloudflareinsights.com/beacon.min.js
       links_attr_map:
         target: _blank
   - optimize
