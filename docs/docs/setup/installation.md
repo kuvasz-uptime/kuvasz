@@ -12,6 +12,10 @@ This guide will walk you through the deployment process.
 
     The **minimum, tested version of _PostgreSQL_ is 14**, `alpine` distributions are supported.
 
+!!! tip "How much memory and CPU does _Kuvasz_ need?"
+
+    With the default settings, _Kuvasz_ needs **768 MB of memory** and **at least half a CPU** for up to 500 monitors (less monitors would most probably fit well under 512 MB, but 768 MB is a safe limit here). If you have more monitors, see the [**hardware requirements**](sizing.md).
+
 ## Choose Your Deployment Method
 
 Kuvasz can be deployed in several ways depending on your infrastructure:

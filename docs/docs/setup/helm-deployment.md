@@ -129,7 +129,7 @@ postgresql:
 
 ### Resource limits
 
-Configure resource requests and limits for Kuvasz (these are the recommended minimums):
+Configure resource requests and limits for Kuvasz. The values below are enough for **up to 500 monitors**. If you have more, give _Kuvasz_ more memory, and make its heap bigger with the `JAVA_TOOL_OPTIONS` environment variable (through `extraEnv`), as described in the [**hardware requirements**](sizing.md#the-memory-setting):
 
 ```yaml
 resources:
@@ -138,8 +138,10 @@ resources:
     memory: 768Mi
   requests:
     cpu: 100m
-    memory: 256Mi
+    memory: 768Mi
 ```
+
+The memory request is the same as the limit on purpose: this way Kubernetes starts _Kuvasz_ only on a node that has enough free memory for it. The default values of the chart request less (`256Mi`), so set it yourself.
 
 ### Ingress configuration
 

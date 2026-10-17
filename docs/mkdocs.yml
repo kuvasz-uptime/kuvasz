@@ -120,6 +120,7 @@ nav:
       - API: features/api.md
   - Getting started:
       - Deployment: setup/installation.md
+      - Hardware requirements: setup/sizing.md
       - Configuration reference: setup/configuration.md
       - Official Helm chart: setup/helm-deployment.md
   - Management:
