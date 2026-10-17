@@ -1,0 +1,78 @@
+# A small, fixed set of real internet targets, added to every step as-is (never scaled), to keep real DNS, TLS and
+# network latency in the mix. Kuvasz config format. Keep the intervals polite.
+# These are reported separately and are not part of the pass/fail gate, since the internet is not under our control.
+http-monitors:
+  - name: real-kuvasz-uptime-dev
+    url: https://kuvasz-uptime.dev
+    uptime-check-interval: 120
+    ssl-check-enabled: true
+  - name: real-api-docs-kuvasz-uptime-dev
+    url: https://api-docs.kuvasz-uptime.dev
+    uptime-check-interval: 300
+    ssl-check-enabled: true
+  - name: real-github
+    url: https://github.com
+    uptime-check-interval: 120
+    ssl-check-enabled: true
+  - name: real-github-api
+    url: https://api.github.com
+    uptime-check-interval: 300
+    request-method: HEAD
+  - name: real-cloudflare
+    url: https://www.cloudflare.com
+    uptime-check-interval: 120
+    ssl-check-enabled: true
+  - name: real-google
+    url: https://www.google.com
+    uptime-check-interval: 120
+    ssl-check-enabled: true
+  - name: real-wikipedia
+    url: https://en.wikipedia.org/wiki/Main_Page
+    uptime-check-interval: 300
+    expected-keyword: Wikipedia
+  - name: real-example-com
+    url: http://example.com
+    uptime-check-interval: 300
+dns-monitors:
+  - name: real-dns-kuvasz-uptime-dev-cloudflare
+    host: kuvasz-uptime.dev
+    resolver-host: 1.1.1.1
+    uptime-check-interval: 300
+  - name: real-dns-kuvasz-uptime-dev-google
+    host: kuvasz-uptime.dev
+    resolver-host: 8.8.8.8
+    uptime-check-interval: 300
+  - name: real-dns-github-mx
+    host: github.com
+    resolver-host: 9.9.9.9
+    uptime-check-interval: 600
+    record-matchers:
+      - record-type: MX
+        match-type: CONTAINS
+        value: outlook
+  - name: real-dns-system-resolver
+    host: www.google.com
+    uptime-check-interval: 300
+icmp-monitors:
+  - name: real-ping-cloudflare
+    host: 1.1.1.1
+    uptime-check-interval: 60
+  - name: real-ping-google
+    host: 8.8.8.8
+    uptime-check-interval: 60
+  - name: real-ping-quad9
+    host: 9.9.9.9
+    uptime-check-interval: 120
+tcp-monitors:
+  - name: real-tcp-cloudflare-dns
+    host: 1.1.1.1
+    port: 53
+    uptime-check-interval: 120
+  - name: real-tcp-github-https
+    host: github.com
+    port: 443
+    uptime-check-interval: 120
+  - name: real-tcp-google-https
+    host: www.google.com
+    port: 443
+    uptime-check-interval: 300

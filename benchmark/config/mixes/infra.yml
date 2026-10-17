@@ -1,0 +1,2 @@
+# An infrastructure team: hosts, ports and resolvers more than websites
+types: { http: 20, push: 10, tcp: 25, icmp: 20, dns: 20, docker: 5 }

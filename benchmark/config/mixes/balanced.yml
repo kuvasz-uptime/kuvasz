@@ -1,0 +1,2 @@
+# A small business: mostly websites/APIs, some cron jobs and infrastructure
+types: { http: 45, push: 15, tcp: 10, icmp: 10, dns: 10, docker: 10 }

@@ -1,0 +1,2 @@
+# A web agency: client websites and their domains
+types: { http: 70, push: 5, tcp: 5, icmp: 5, dns: 13, docker: 2 }

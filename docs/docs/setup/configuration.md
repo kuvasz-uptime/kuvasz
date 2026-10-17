@@ -936,7 +936,7 @@ By default, the checks share a pool of **64 threads** (or as many as the number 
 
 !!! tip
 
-    It's worth enabling if you have **hundreds of TCP, DNS or Docker monitors**, or you use **long timeouts** on many of them. For a smaller setup it won't make a noticeable difference, neither in the timing of the checks, nor in the resource usage.
+    We recommend enabling it if you have **more than 100 monitors**, especially if many of them are **TCP, DNS or Docker monitors**, or you use **long timeouts**. For a smaller setup it won't make a noticeable difference, neither in the timing of the checks, nor in the resource usage. See also the [**hardware requirements**](sizing.md).
 
 !!! warning
 
