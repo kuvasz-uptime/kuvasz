@@ -150,7 +150,7 @@ public class DnsMetricsLog extends TableImpl<DnsMetricsLogRecord> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.asList(Indexes.DNS_METRICS_LOG_CREATED_AT_IDX, Indexes.DNS_METRICS_LOG_MONITOR_ID_IDX);
+        return Arrays.asList(Indexes.DNS_METRICS_LOG_CREATED_AT_IDX, Indexes.DNS_METRICS_LOG_MONITOR_ID_CREATED_AT_IDX);
     }
 
     @Override

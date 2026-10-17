@@ -19,27 +19,26 @@ CREATE TABLE http_latency_log (
     id BIGSERIAL PRIMARY KEY, monitor_id BIGINT NOT NULL, latency INTEGER NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-CREATE INDEX latency_log_monitor_idx ON http_latency_log USING btree (monitor_id ASC NULLS LAST);
-CREATE INDEX latency_log_latency_idx ON http_latency_log USING btree (latency);
-CREATE INDEX latency_log_latency_monitor_idx ON http_latency_log USING btree (monitor_id, round(latency, -1));
+CREATE INDEX http_latency_log_monitor_id_created_at_idx ON http_latency_log USING btree (monitor_id, created_at);
+CREATE INDEX http_latency_log_created_at_idx ON http_latency_log USING btree (created_at);
 
 CREATE TABLE tcp_metrics_log (
     id BIGSERIAL PRIMARY KEY, monitor_id BIGINT NOT NULL, latency_ms INT NULL, created_at TIMESTAMPTZ DEFAULT now() NOT NULL
 );
-CREATE INDEX tcp_metrics_log_monitor_id_idx ON tcp_metrics_log USING btree (monitor_id);
+CREATE INDEX tcp_metrics_log_monitor_id_created_at_idx ON tcp_metrics_log USING btree (monitor_id, created_at);
 CREATE INDEX tcp_metrics_log_created_at_idx ON tcp_metrics_log USING btree (created_at);
 
 CREATE TABLE icmp_metrics_log (
     id BIGSERIAL PRIMARY KEY, monitor_id BIGINT NOT NULL, latency_ms INT NULL, packet_loss_percentage INT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT now() NOT NULL
 );
-CREATE INDEX icmp_metrics_log_monitor_id_idx ON icmp_metrics_log USING btree (monitor_id);
+CREATE INDEX icmp_metrics_log_monitor_id_created_at_idx ON icmp_metrics_log USING btree (monitor_id, created_at);
 CREATE INDEX icmp_metrics_log_created_at_idx ON icmp_metrics_log USING btree (created_at);
 
 CREATE TABLE dns_metrics_log (
     id BIGSERIAL PRIMARY KEY, monitor_id BIGINT NOT NULL, latency_ms INT NULL, created_at TIMESTAMPTZ DEFAULT now() NOT NULL
 );
-CREATE INDEX dns_metrics_log_monitor_id_idx ON dns_metrics_log USING btree (monitor_id);
+CREATE INDEX dns_metrics_log_monitor_id_created_at_idx ON dns_metrics_log USING btree (monitor_id, created_at);
 CREATE INDEX dns_metrics_log_created_at_idx ON dns_metrics_log USING btree (created_at);
 
 CREATE TABLE docker_metrics_log (
@@ -47,7 +46,7 @@ CREATE TABLE docker_metrics_log (
     memory_usage_bytes BIGINT NULL, memory_limit_bytes BIGINT NULL, created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
     restart_count INT NULL, container_created_at TIMESTAMPTZ NULL
 );
-CREATE INDEX docker_metrics_log_monitor_id_idx ON docker_metrics_log USING btree (monitor_id);
+CREATE INDEX docker_metrics_log_monitor_id_created_at_idx ON docker_metrics_log USING btree (monitor_id, created_at);
 CREATE INDEX docker_metrics_log_created_at_idx ON docker_metrics_log USING btree (created_at);
 """
 

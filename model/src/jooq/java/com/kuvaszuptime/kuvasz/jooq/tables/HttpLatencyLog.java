@@ -150,7 +150,7 @@ public class HttpLatencyLog extends TableImpl<HttpLatencyLogRecord> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.asList(Indexes.LATENCY_LOG_LATENCY_IDX, Indexes.LATENCY_LOG_MONITOR_IDX);
+        return Arrays.asList(Indexes.HTTP_LATENCY_LOG_CREATED_AT_IDX, Indexes.HTTP_LATENCY_LOG_MONITOR_ID_CREATED_AT_IDX);
     }
 
     @Override

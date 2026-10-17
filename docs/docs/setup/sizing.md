@@ -12,8 +12,8 @@ you numbers that we measured, and shows the one setting you need to change if yo
 | Number of monitors | Memory for _Kuvasz_ | Memory setting                     | CPU for _Kuvasz_ | Database (CPU / memory) | Disk for the database (7 days of history) |
 |--------------------|---------------------|------------------------------------|------------------|-------------------------|-----------------------|
 | up to 500          | 768 MB              | none, the default is enough        | 0.5 CPU          | 0.5 CPU / 512 MB        | about 0.6 GB          |
-| up to 3,000        | 1 GB                | `JAVA_TOOL_OPTIONS="-Xmx512M"`     | 1 CPU            | 1 CPU / 1 GB            | about 3.5 GB          |
-| up to 5,000        | 1.5 GB              | `JAVA_TOOL_OPTIONS="-Xmx768M"`     | 1 CPU            | 1 CPU / 1 GB            | about 6 GB            |
+| up to 3,000        | 1 GB                | `JAVA_TOOL_OPTIONS="-Xmx512M"`     | 1 CPU            | 1 CPU / 1 GB            | about 3.8 GB          |
+| up to 5,000        | 1.5 GB              | `JAVA_TOOL_OPTIONS="-Xmx768M"`     | 1 CPU            | 1 CPU / 1 GB            | about 6.4 GB          |
 
 - **Memory setting** is an environment variable of the _Kuvasz_ container, see [the memory setting](#the-memory-setting)
   below for what it means and where to set it.
@@ -76,13 +76,13 @@ _Kuvasz_ keeps it for 7 days by default, but you can change this with the
 
 | Number of monitors | 7 days (default) | 30 days      | 90 days      |
 |--------------------|------------------|--------------|--------------|
-| 500                | about 0.6 GB     | about 2.3 GB | about 7 GB   |
-| 3,000              | about 3.5 GB     | about 14 GB  | about 40 GB  |
-| 5,000              | about 6 GB       | about 23 GB  | about 67 GB  |
+| 500                | about 0.6 GB     | about 2.5 GB | about 7.3 GB |
+| 3,000              | about 3.8 GB     | about 15 GB  | about 44 GB  |
+| 5,000              | about 6.4 GB     | about 25 GB  | about 73 GB  |
 
-As a rule of thumb: about **150 MB for every 1,000 monitors and every day** of history. Add one more day to the
+As a rule of thumb: about **160 MB for every 1,000 monitors and every day** of history. Add one more day to the
 retention when you calculate, because the old history is deleted only once a day. If most of your monitors are HTTP
-monitors, count with about 170 MB instead.
+monitors, count with about 175 MB instead.
 
 The uptime events (when a monitor went up or down) need very little space, even if you keep them for a year.
 
