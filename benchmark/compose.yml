@@ -1,0 +1,204 @@
+# The benchmark stack. Driven by kbench (see README.md), which sets the resource limits, the image tag and the JVM
+# options through the environment variables below, and generates everything under ./generated.
+# Targets are addressed by fixed IPs instead of their names, so disconnecting a target from the network (the outage
+# storm) makes it unreachable, instead of turning into a fast DNS failure.
+name: kbench
+
+x-target-defaults: &target-defaults
+  restart: unless-stopped
+  networks:
+    - bench
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: kb-postgres
+    restart: unless-stopped
+    command:
+      - postgres
+      - -c
+      - shared_buffers=${PG_SHARED_BUFFERS:-256MB}
+      - -c
+      - effective_cache_size=${PG_EFFECTIVE_CACHE_SIZE:-768MB}
+      - -c
+      - shared_preload_libraries=pg_stat_statements
+      - -c
+      - pg_stat_statements.track=top
+      - -c
+      - track_io_timing=on
+    environment:
+      POSTGRES_USER: kuvasz
+      POSTGRES_PASSWORD: kuvasz
+      TZ: UTC
+    cpus: ${PG_CPUS:-1}
+    mem_limit: ${PG_MEM:-1g}
+    memswap_limit: ${PG_MEM:-1g}
+    shm_size: 256m
+    ports:
+      - "127.0.0.1:55432:5432"
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "kuvasz" ]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+    volumes:
+      - kb-pgdata:/var/lib/postgresql
+    networks:
+      bench:
+        ipv4_address: 172.31.89.6
+
+  kuvasz:
+    image: kuvaszmonitoring/kuvasz:${KUVASZ_TAG:-4.5.0}
+    container_name: kb-kuvasz
+    restart: "no" # a crash or an OOM kill has to stay visible, so it must not be restarted automatically
+    environment:
+      TZ: UTC
+      DATABASE_HOST: 172.31.89.6
+      DATABASE_USER: kuvasz
+      DATABASE_PASSWORD: kuvasz
+      ADMIN_USER: bench
+      ADMIN_PASSWORD: bench-password
+      ADMIN_API_KEY: kbench-api-key-0123456789
+      ENABLE_CHECK_UPDATES: "false"
+      USE_VIRTUAL_THREAD_SCHEDULING: ${KUVASZ_VIRTUAL_THREADS:-false}
+      JAVA_TOOL_OPTIONS: ${KUVASZ_JAVA_OPTS:--Xms64M -Xmx192M}
+    cpus: ${KUVASZ_CPUS:-1}
+    mem_limit: ${KUVASZ_MEM:-1g}
+    memswap_limit: ${KUVASZ_MEM:-1g}
+    ports:
+      - "127.0.0.1:18080:8080"
+    volumes:
+      - ./generated/kuvasz.yml:/config/kuvasz.yml:ro
+      - ./generated/pki/truststore.p12:/bench/truststore.p12:ro
+      - ${KUVASZ_GC_LOG_DIR:-./generated/gc}:/bench/gc
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      bench:
+        ipv4_address: 172.31.89.5
+
+  # Two identical target groups: "a" serves ~70% of the stub monitors, "b" the rest, so that the outage storm can take
+  # out a realistic slice of the targets at once by disconnecting group b from the network
+  openresty-a:
+    <<: *target-defaults
+    image: openresty/openresty:1.27.1.2-alpine
+    container_name: kb-openresty-a
+    cpus: ${TARGET_HTTP_CPUS:-1}
+    mem_limit: 256m
+    volumes: &openresty-volumes
+      - ./stack/openresty/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro
+      - ./stack/openresty/locations.conf:/usr/local/openresty/nginx/conf/kbench/locations.conf:ro
+      - ./generated/pki/target.crt:/pki/target.crt:ro
+      - ./generated/pki/target.key:/pki/target.key:ro
+    networks:
+      bench:
+        ipv4_address: 172.31.89.10
+  openresty-b:
+    <<: *target-defaults
+    image: openresty/openresty:1.27.1.2-alpine
+    container_name: kb-openresty-b
+    cpus: ${TARGET_HTTP_CPUS:-1}
+    mem_limit: 256m
+    volumes: *openresty-volumes
+    networks:
+      bench:
+        ipv4_address: 172.31.89.11
+
+  coredns-a:
+    <<: *target-defaults
+    image: coredns/coredns:1.12.1
+    container_name: kb-coredns-a
+    command: [ "-conf", "/etc/coredns/Corefile" ]
+    cpus: ${TARGET_DNS_CPUS:-0.5}
+    mem_limit: 128m
+    volumes: &coredns-volumes
+      - ./stack/coredns:/etc/coredns:ro
+    networks:
+      bench:
+        ipv4_address: 172.31.89.20
+  coredns-b:
+    <<: *target-defaults
+    image: coredns/coredns:1.12.1
+    container_name: kb-coredns-b
+    command: [ "-conf", "/etc/coredns/Corefile" ]
+    cpus: ${TARGET_DNS_CPUS:-0.5}
+    mem_limit: 128m
+    volumes: *coredns-volumes
+    networks:
+      bench:
+        ipv4_address: 172.31.89.21
+
+  # Workloads for the docker monitors (and extra ping targets)
+  work-healthy-1: &workload-healthy
+    <<: *target-defaults
+    image: busybox:1.37
+    container_name: kb-work-healthy-1
+    command: [ "sleep", "999999999" ]
+    cpus: 0.1
+    mem_limit: 32m
+    healthcheck:
+      test: [ "CMD", "true" ]
+      interval: 30s
+      start_period: 10s
+      start_interval: 1s
+    networks:
+      bench:
+        ipv4_address: 172.31.89.30
+  work-healthy-2:
+    <<: *workload-healthy
+    container_name: kb-work-healthy-2
+    networks:
+      bench:
+        ipv4_address: 172.31.89.31
+  work-healthy-3:
+    <<: *workload-healthy
+    container_name: kb-work-healthy-3
+    networks:
+      bench:
+        ipv4_address: 172.31.89.32
+  work-unhealthy:
+    <<: *target-defaults
+    image: busybox:1.37
+    container_name: kb-work-unhealthy
+    command: [ "sleep", "999999999" ]
+    cpus: 0.1
+    mem_limit: 32m
+    healthcheck:
+      test: [ "CMD", "false" ]
+      interval: 10s
+      retries: 1
+    networks:
+      bench:
+        ipv4_address: 172.31.89.33
+  work-flapping:
+    <<: *target-defaults
+    image: busybox:1.37
+    container_name: kb-work-flapping
+    # Dies every 90 seconds and gets restarted by the daemon, so it keeps flipping between running and restarting
+    command: [ "sh", "-c", "sleep 90; exit 1" ]
+    restart: always
+    cpus: 0.1
+    mem_limit: 32m
+    networks:
+      bench:
+        ipv4_address: 172.31.89.34
+  work-stopped:
+    image: busybox:1.37
+    container_name: kb-work-stopped
+    command: [ "true" ]
+    restart: "no"
+    networks:
+      - bench
+
+networks:
+  bench:
+    name: kbench
+    ipam:
+      config:
+        - subnet: 172.31.89.0/24
+
+volumes:
+  kb-pgdata:
+    name: kb-pgdata

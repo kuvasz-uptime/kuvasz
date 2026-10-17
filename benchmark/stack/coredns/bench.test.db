@@ -1,0 +1,13 @@
+$ORIGIN bench.test.
+$TTL 300
+@       IN SOA  ns.bench.test. admin.bench.test. 2026101601 7200 3600 1209600 300
+@       IN NS   ns.bench.test.
+@       IN MX   10 mail.bench.test.
+@       IN TXT  "v=spf1 mx -all"
+ns      IN A    172.31.89.20
+mail    IN A    172.31.89.10
+www     IN A    172.31.89.10
+app     IN CNAME www.bench.test.
+; every DNS monitor gets its own name under svc, so no two monitors ask the very same question
+*.svc   IN A    172.31.89.10
+*.svc   IN TXT  "kuvasz-bench"

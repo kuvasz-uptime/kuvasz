@@ -1,0 +1,18 @@
+# Healthy resolver, authoritative for bench.test
+bench.test:53 {
+    file /etc/coredns/bench.test.db
+}
+
+# Slow resolver: every answer is delayed (erratic answers every name with a static A record)
+.:1053 {
+    erratic {
+        delay 1 800ms
+    }
+}
+
+# Dead resolver: every query is dropped, so the monitors run into their timeout
+.:2053 {
+    erratic {
+        drop 1
+    }
+}

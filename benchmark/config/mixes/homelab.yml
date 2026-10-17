@@ -1,0 +1,2 @@
+# A homelab: lots of containers, some self-hosted web apps and network devices
+types: { http: 25, push: 10, tcp: 10, icmp: 15, dns: 5, docker: 35 }

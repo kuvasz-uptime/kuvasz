@@ -1,0 +1,86 @@
+# Resource profiles, JVM heap modes and the run timeline. Kuvasz and Postgres scale together, like on a single box.
+profiles:
+  XS:
+    kuvasz: { cpus: 0.5, mem: 512m }
+    postgres: { cpus: 0.5, mem: 512m, shared_buffers: 128MB, effective_cache_size: 384MB }
+  # Used to validate the recommendations of the sizing guide (with the UI load test)
+  XS768:
+    kuvasz: { cpus: 0.5, mem: 768m }
+    postgres: { cpus: 0.5, mem: 512m, shared_buffers: 128MB, effective_cache_size: 384MB }
+  S:
+    kuvasz: { cpus: 1, mem: 1g }
+    postgres: { cpus: 1, mem: 1g, shared_buffers: 256MB, effective_cache_size: 768MB }
+  S1536:
+    kuvasz: { cpus: 1, mem: 1536m }
+    postgres: { cpus: 1, mem: 1g, shared_buffers: 256MB, effective_cache_size: 768MB }
+  M:
+    kuvasz: { cpus: 2, mem: 2g }
+    postgres: { cpus: 1, mem: 2g, shared_buffers: 512MB, effective_cache_size: 1536MB }
+  L:
+    kuvasz: { cpus: 4, mem: 4g }
+    postgres: { cpus: 2, mem: 4g, shared_buffers: 1GB, effective_cache_size: 3GB }
+
+heap_modes:
+  stock: "-Xms64M -Xmx192M" # what the image ships with
+  ram75: "-XX:InitialRAMPercentage=25 -XX:MaxRAMPercentage=75"
+  ram60: "-XX:InitialRAMPercentage=25 -XX:MaxRAMPercentage=60"
+  xmx512: "-Xms64M -Xmx512M"
+  xmx768: "-Xms64M -Xmx768M"
+
+# Appended to every heap mode
+jvm_common: >-
+  -Djavax.net.ssl.trustStore=/bench/truststore.p12
+  -Djavax.net.ssl.trustStorePassword=changeit
+  -Djavax.net.ssl.trustStoreType=PKCS12
+  -Xlog:gc*:file=/bench/gc/gc.log:time,uptime,level,tags:filecount=10,filesize=20m
+
+targets:
+  http_cpus: 1
+  dns_cpus: 0.5
+
+defaults:
+  kuvasz_tag: "4.5.0"
+  mix: balanced
+  heap: ram75
+  # Virtual thread scheduling (USE_VIRTUAL_THREAD_SCHEDULING) is meant to become the default, so that's what's measured
+  virtual_threads: true
+  # Multipliers of the 100-monitor base set. Capped at 5,000 monitors: beyond that, the target audience of the sizing
+  # guide is not affected (a knee/storm block never goes above the last step either)
+  ladder: [ 1, 5, 15, 40, 50 ]
+  bisect_steps: 1 # extra steps of a ramp after its first failure, halfway between the last pass and the first fail
+  warmup_seconds: 120
+  measure_seconds: 300
+
+# A step passes only if all of these hold (see kbench/analyze.py: evaluate_gates)
+gates:
+  lag_p99_normalized: 1.0 # p99 of (lag / max(5s, 10% of the interval)), per monitor type
+  missed_ratio: 0.01 # share of the checks that were late by more than a whole interval
+  false_positives: 0 # monitors of healthy targets reported DOWN
+  false_negatives: 0 # monitors of failing targets not reported DOWN in time
+  push_p99_ms: 1000
+  push_errors: 0
+  probe_p95_ms: 2000 # UI and API requests
+  probe_max_ms: 10000
+  hikari_timeouts: 0
+# A target above this CPU usage (% of a core) may have been the bottleneck instead of Kuvasz: the step gets a warning
+max_target_cpu_percent: 80
+
+# The outage storm: after `steady` seconds, the targets of group b are disconnected for `outage` seconds, then the
+# recovery is watched for `recovery` seconds
+storm:
+  steady_seconds: 180
+  outage_seconds: 240
+  recovery_seconds: 180
+
+# What `kbench.run campaign` runs, in this order. A knee/storm block takes its scale from a ramp: the last scale that
+# passed (`last_pass`), or the first one that didn't (`first_fail`), but never more than the top of the ladder.
+campaign:
+  # 75% of 512 MB leaves too little room for the ~190 MB the JVM needs besides the heap, so XS keeps the image's heap
+  - { name: ramp-XS, kind: ramp, profile: XS, heap: stock }
+  - { name: ramp-S, kind: ramp, profile: S }
+  - { name: ramp-M, kind: ramp, profile: M }
+  - { name: ramp-L, kind: ramp, profile: L }
+  - { name: knee-M-stock-heap, kind: knee, profile: M, heap: stock, scale_from: ramp-M, pick: last_pass }
+  - { name: storm-M, kind: storm, profile: M, scale_from: ramp-M, pick: last_pass }
+  # The default setup (512 MB, the image's 192 MB heap) at the edge of what it handles, while 5 users use the UI and API
+  - { name: uiload-XS-stock, kind: uiload, profile: XS, heap: stock, scale: 15, users: 5 }

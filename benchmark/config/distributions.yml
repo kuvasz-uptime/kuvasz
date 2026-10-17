@@ -1,0 +1,43 @@
+# Shared distributions of every mix. Values are relative weights (they don't have to add up to 100).
+# A mix file can override any of the top-level keys below.
+
+# Uptime check interval (heartbeat interval for push monitors) in seconds
+intervals:
+  http: { 10: 5, 30: 15, 60: 45, 120: 10, 300: 25 }
+  push: { 60: 35, 300: 25, 900: 15, 3600: 20, 86400: 5 }
+  tcp: { 30: 20, 60: 60, 300: 20 }
+  icmp: { 30: 30, 60: 60, 300: 10 }
+  dns: { 60: 20, 300: 50, 900: 30 }
+  docker: { 30: 30, 60: 60, 300: 10 }
+
+# What the target of a monitor does. Not every behavior exists for every type (e.g. a TCP connect can't be "slow").
+# - healthy:  answers fast, expected to stay UP
+# - slow:     answers slowly (or a push client is late within the grace period), expected to stay UP
+# - flapping: alternates between UP and DOWN, no expectation
+# - down:     fails fast (503, refused port, NXDOMAIN, stopped/unhealthy container, a push client that dies after its
+#             first heartbeat, since Kuvasz evaluates a push monitor only after one), expected DOWN
+# - timeout:  never answers, holds the check until its timeout, expected DOWN
+behaviors:
+  http: { healthy: 88, slow: 5, flapping: 3, down: 3, timeout: 1 }
+  push: { healthy: 88, slow: 5, flapping: 3, down: 4 }
+  tcp: { healthy: 94, down: 4, timeout: 2 }
+  icmp: { healthy: 96, timeout: 4 }
+  dns: { healthy: 88, slow: 5, down: 4, timeout: 3 }
+  docker: { healthy: 90, flapping: 3, down: 7 }
+
+failure_count_threshold: { 1: 60, 2: 25, 3: 15 }
+
+# Share (%) of the stub monitors whose target is in group "b" (taken offline by the outage storm)
+group_b_share: 30
+
+# Share (%) of the monitors with the given feature enabled
+features:
+  integration: 10 # notifies the webhook sink
+  http_ssl: 60
+  http_https_without_ssl_check: 20 # of the rest
+  http_keyword: 20
+  http_expected_headers: 10
+  http_response_time_threshold: 10
+  http_head_method: 10 # only without a keyword
+  dns_drift_detection: 20
+  docker_metrics_history: 30
