@@ -10,11 +10,15 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.TcpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorId
 import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorsWithCategory
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorCreateDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorSortField
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorUpdateDto
+import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageTcpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
+import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.toStatsDto
@@ -28,10 +32,10 @@ import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageMonitorDataProvider
 import com.kuvaszuptime.kuvasz.validation.IntegrationIdValidator
 import io.micronaut.validation.validator.Validator
 import jakarta.inject.Singleton
+import java.time.Duration
 import org.jooq.DSLContext
 import org.jooq.SortField
 import tools.jackson.databind.node.ObjectNode
-import java.time.Duration
 
 @Singleton
 class TcpMonitorActions(
@@ -86,26 +90,31 @@ class TcpMonitorActions(
         uptimeStatus: List<UptimeStatus> = emptyList(),
         sortedBy: SortField<*>? = null,
         categoryFilter: CategoryFilter? = null,
-    ): List<TcpMonitorDetailsDto> {
-        val monitors = monitorRepository.getMonitorsWithDetails(
+    ): List<TcpMonitorDetailsDto> =
+        monitorRepository.getMonitorsWithDetails(
             enabled = enabled,
             uptimeStatus = uptimeStatus,
             sortedBy = sortedBy,
             categoryFilter = categoryFilter,
-        )
-        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(monitors.monitorsWithCategory())
+        ).withListDetails()
 
-        return monitors.map { detailsDto ->
-            val windows = windowsByMonitor[detailsDto.monitorId()].orEmpty()
-            detailsDto.copy(
-                nextUptimeCheck = checkScheduler.getNextCheck(detailsDto.id),
-                effectiveIntegrations = integrationRepository
-                    .getEffectiveIntegrations(detailsDto.integrations)
-                    .toSet(),
-                maintenanceWindows = windows,
-                inMaintenance = windows.any { it.active },
-            )
-        }
+    fun getMonitorsPage(
+        enabled: Boolean?,
+        uptimeStatus: List<UptimeStatus>,
+        categoryFilter: CategoryFilter?,
+        name: String?,
+        sorting: Sorting<TcpMonitorSortField>,
+        pageRequest: PageRequest,
+    ): PagedResult<TcpMonitorDetailsDto> {
+        val page = monitorRepository.getMonitorsPage(
+            enabled = enabled,
+            uptimeStatus = uptimeStatus,
+            categoryFilter = categoryFilter,
+            name = name,
+            sorting = sorting,
+            pageRequest = pageRequest,
+        )
+        return page.withResult(page.result.withListDetails())
     }
 
     fun createMonitor(monitorCreateDto: TcpMonitorCreateDto): TcpMonitorRecord {
@@ -192,4 +201,19 @@ class TcpMonitorActions(
                 category = monitor.category,
             )
         }
+
+    private fun List<TcpMonitorDetailsDto>.withListDetails(): List<TcpMonitorDetailsDto> {
+        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(monitorsWithCategory())
+        return map { detailsDto ->
+            val windows = windowsByMonitor[detailsDto.monitorId()].orEmpty()
+            detailsDto.copy(
+                nextUptimeCheck = checkScheduler.getNextCheck(detailsDto.id),
+                effectiveIntegrations = integrationRepository
+                    .getEffectiveIntegrations(detailsDto.integrations)
+                    .toSet(),
+                maintenanceWindows = windows,
+                inMaintenance = windows.any { it.active },
+            )
+        }
+    }
 }

@@ -7,17 +7,27 @@ import com.kuvaszuptime.kuvasz.jooq.tables.DockerUptimeEvent.DOCKER_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DockerMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DockerUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.DockerMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.DockerMonitorSummary
+import com.kuvaszuptime.kuvasz.models.dto.monitor.docker.DockerMonitorSortField
+import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
-import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.docker.idWithName
-import com.kuvaszuptime.kuvasz.models.dto.monitor.DockerMonitorSummary
+import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
+import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
+import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
+import com.kuvaszuptime.kuvasz.util.fetchPage
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import com.kuvaszuptime.kuvasz.util.sortedIn
 import jakarta.inject.Singleton
+import org.jooq.Condition
 import org.jooq.DSLContext
+import org.jooq.Field
 import org.jooq.Record
+import org.jooq.Record1
+import org.jooq.Select
 import org.jooq.SelectConditionStep
 import org.jooq.SortField
 import org.jooq.Table
@@ -80,7 +90,7 @@ class DockerMonitorRepository(
         .where(DOCKER_MONITOR.ID.eq(monitorId))
         .execute()
 
-    @Suppress("IgnoredReturnValue", "UnsafeCallOnNullableType")
+    @Suppress("IgnoredReturnValue")
     fun getMonitorsWithDetails(
         enabled: Boolean? = null,
         uptimeStatus: List<UptimeStatus> = emptyList(),
@@ -90,17 +100,80 @@ class DockerMonitorRepository(
         categoryFilter: CategoryFilter? = null,
     ): List<DockerMonitorDetailsDto> =
         monitorDetailsSelect()
+            .and(filterCondition(enabled, uptimeStatus, categoryFilter))
             .apply {
-                enabled?.let { and(DOCKER_MONITOR.ENABLED.eq(it)) }
-                uptimeStatus.takeIf { it.isNotEmpty() }?.let {
-                    and(latestUptimeEventSelect.field(DOCKER_UPTIME_EVENT.STATUS)!!.`in`(it))
-                }
                 selectionCondition(DOCKER_MONITOR.NAME, DOCKER_MONITOR.CATEGORY, monitorNames, categories)
                     ?.let { and(it) }
-                categoryFilterCondition(DOCKER_MONITOR.CATEGORY, categoryFilter)?.let { and(it) }
                 sortedBy?.let { orderBy(it, DOCKER_MONITOR.ID.asc()) }
             }
             .fetchInto(DockerMonitorDetailsDto::class.java)
+
+    fun getMonitorsPage(
+        enabled: Boolean?,
+        uptimeStatus: List<UptimeStatus>,
+        categoryFilter: CategoryFilter?,
+        name: String?,
+        sorting: Sorting<DockerMonitorSortField>,
+        pageRequest: PageRequest,
+    ): PagedResult<DockerMonitorDetailsDto> {
+        val condition = DSL.and(
+            filterCondition(enabled, uptimeStatus, categoryFilter),
+            containsIgnoreCaseCondition(DOCKER_MONITOR.NAME, name),
+        )
+        return monitorDetailsSelect()
+            .and(condition)
+            .fetchPage(
+                countQuery = countSelect(uptimeStatus, condition),
+                pageRequest = pageRequest,
+                orderBy = listOf(sorting.field.toField().sortedIn(sorting.order), DOCKER_MONITOR.ID.asc()),
+                type = DockerMonitorDetailsDto::class.java,
+            )
+    }
+
+    private fun filterCondition(
+        enabled: Boolean?,
+        uptimeStatus: List<UptimeStatus>,
+        categoryFilter: CategoryFilter?,
+    ): Condition = DSL.and(
+        listOfNotNull(
+            enabled?.let { DOCKER_MONITOR.ENABLED.eq(it) },
+            uptimeStatus.takeIf { it.isNotEmpty() }
+                ?.let { checkNotNull(latestUptimeEventSelect.field(DOCKER_UPTIME_EVENT.STATUS)).`in`(it) },
+            categoryFilterCondition(DOCKER_MONITOR.CATEGORY, categoryFilter),
+        )
+    )
+
+    /**
+     * Counts the monitors [condition] selects, joining only what it can refer to: the latest uptime event only when it
+     * filters by the uptime status. The status pages can't change the number of the rows, so they are never joined.
+     */
+    private fun countSelect(uptimeStatus: List<UptimeStatus>, condition: Condition): Select<Record1<Int>> {
+        val monitors = if (uptimeStatus.isEmpty()) {
+            DOCKER_MONITOR
+        } else {
+            DOCKER_MONITOR.leftJoin(DSL.lateral(latestUptimeEventSelect)).on(DSL.trueCondition())
+        }
+        return dslContext
+            .selectCount()
+            .from(monitors)
+            .where(condition)
+    }
+
+    private fun DockerMonitorSortField.toField(): Field<*> = when (this) {
+        DockerMonitorSortField.ID -> DOCKER_MONITOR.ID
+        DockerMonitorSortField.NAME -> DOCKER_MONITOR.NAME
+        DockerMonitorSortField.ENABLED -> DOCKER_MONITOR.ENABLED
+        DockerMonitorSortField.UPTIME_STATUS -> checkNotNull(latestUptimeEventSelect.field(DOCKER_UPTIME_EVENT.STATUS))
+        DockerMonitorSortField.UPTIME_STATUS_STARTED_AT ->
+            checkNotNull(latestUptimeEventSelect.field(DOCKER_UPTIME_EVENT.STARTED_AT))
+        DockerMonitorSortField.LAST_UPTIME_CHECK ->
+            checkNotNull(latestUptimeEventSelect.field(DOCKER_UPTIME_EVENT.UPDATED_AT))
+        DockerMonitorSortField.UPTIME_CHECK_INTERVAL -> DOCKER_MONITOR.UPTIME_CHECK_INTERVAL
+        DockerMonitorSortField.DOCKER_HOST -> DOCKER_MONITOR.DOCKER_HOST
+        DockerMonitorSortField.CONTAINER -> DOCKER_MONITOR.CONTAINER
+        DockerMonitorSortField.CREATED_AT -> DOCKER_MONITOR.CREATED_AT
+        DockerMonitorSortField.UPDATED_AT -> DOCKER_MONITOR.UPDATED_AT
+    }
 
     fun getMonitorWithDetails(monitorId: Long): DockerMonitorDetailsDto? =
         monitorDetailsSelect()

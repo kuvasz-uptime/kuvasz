@@ -25,7 +25,11 @@ import java.time.Duration
 
 interface TcpMonitorOperations {
 
-    @Operation(summary = "Get all monitors with their details")
+    @Operation(
+        summary = "Get all monitors with their details",
+        description = "Deprecated: use GET /api/v3/tcp-monitors instead, which returns the monitors page by page",
+        deprecated = true,
+    )
     @Get("/")
     fun getMonitorsWithDetails(
         @QueryValue

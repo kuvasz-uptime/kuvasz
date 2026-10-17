@@ -25,7 +25,11 @@ import java.time.Duration
 
 interface IcmpMonitorOperations {
 
-    @Operation(summary = "Get all monitors with their details")
+    @Operation(
+        summary = "Get all monitors with their details",
+        description = "Deprecated: use GET /api/v3/icmp-monitors instead, which returns the monitors page by page",
+        deprecated = true,
+    )
     @Get("/")
     fun getMonitorsWithDetails(
         @QueryValue

@@ -14,6 +14,7 @@ import io.kotest.matchers.shouldBe
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import java.math.BigDecimal
 import java.time.Duration
+import java.time.OffsetDateTime
 
 private val PERIOD = Duration.ofHours(1)
 
@@ -25,9 +26,11 @@ private fun stats(cpu: Double?, memory: Long?) = DockerContainerStats(
 )
 
 /**
- * Covers the aggregation the shared [MonitorMetricsLogRepository] runs, which every other type's spec stubs out.
- * The Docker log is the one that exercises all three column types it has to cope with: an `Int` latency, a `Long`
- * memory reading that overflows an `Int`, and a fractional CPU percentage that must not be rounded to whole units.
+ * Covers the queries the shared [MonitorMetricsLogRepository] runs, which every other type's spec stubs out.
+ * The Docker log is the one that exercises all three column types the aggregation has to cope with: an `Int` latency,
+ * a `Long` memory reading that overflows an `Int`, and a fractional CPU percentage that must not be rounded to whole
+ * units. The reads and the deletions are checked with the logs of several monitors on both sides of the time limit,
+ * which is what the (monitor_id, created_at) indexes of the log tables are built for.
  */
 @MicronautTest(startApplication = false)
 class DockerMetricsLogRepositoryTest(
@@ -95,7 +98,7 @@ class DockerMetricsLogRepositoryTest(
 
             `when`("every log is older than the period") {
                 val monitor = createDockerMonitor(monitorRepository)
-                insertLogAt(monitor.id, cpu = BigDecimal("10.00"), minutesAgo = 120)
+                insertLogAt(monitor.id, createdAt = minutesAgo(120), cpu = BigDecimal("10.00"))
 
                 then("it should return null") {
                     metricsLogRepository.getCpuUsageMetrics(monitor.id, PERIOD).shouldBeNull()
@@ -166,18 +169,166 @@ class DockerMetricsLogRepositoryTest(
                     result?.p99 shouldBe 40
                 }
             }
+
+            `when`("there are logs of other monitors and logs older than the period too") {
+                val monitor = createDockerMonitor(monitorRepository)
+                val otherMonitor = createDockerMonitor(monitorRepository)
+                insertLogAt(monitor.id, createdAt = minutesAgo(10), latencyMs = 10)
+                insertLogAt(monitor.id, createdAt = minutesAgo(20), latencyMs = 20)
+                insertLogAt(monitor.id, createdAt = minutesAgo(120), latencyMs = 1_000)
+                insertLogAt(otherMonitor.id, createdAt = minutesAgo(10), latencyMs = 5_000)
+
+                then("it should aggregate only the logs of the given monitor within the period") {
+                    val result = metricsLogRepository.getLatencyMetrics(monitor.id, PERIOD)
+
+                    result?.monitorId shouldBe monitor.id
+                    result?.avg shouldBe 15
+                    result?.min shouldBe 10
+                    result?.max shouldBe 20
+                }
+            }
+        }
+
+        given("the inherited fetchLatestByMonitorId() method") {
+
+            `when`("there are logs of other monitors and logs older than the period too") {
+                val monitor = createDockerMonitor(monitorRepository)
+                val otherMonitor = createDockerMonitor(monitorRepository)
+                val oldest = insertLogAt(monitor.id, createdAt = minutesAgo(120))
+                val older = insertLogAt(monitor.id, createdAt = minutesAgo(30))
+                val newest = insertLogAt(monitor.id, createdAt = minutesAgo(10))
+                insertLogAt(otherMonitor.id, createdAt = minutesAgo(5))
+
+                then("it should return only the logs of the given monitor within the period, the newest first") {
+                    metricsLogRepository.fetchLatestByMonitorId(monitor.id, PERIOD).map { it.id } shouldBe
+                        listOf(newest, older)
+                }
+
+                then("without a period, it should return every log of the given monitor, the newest first") {
+                    metricsLogRepository.fetchLatestByMonitorId(monitor.id).map { it.id } shouldBe
+                        listOf(newest, older, oldest)
+                }
+            }
+        }
+
+        given("the inherited fetchLastByMonitorId() method") {
+
+            `when`("there are logs of other monitors too") {
+                val monitor = createDockerMonitor(monitorRepository)
+                val otherMonitor = createDockerMonitor(monitorRepository)
+                insertLogAt(monitor.id, createdAt = minutesAgo(30))
+                val newest = insertLogAt(monitor.id, createdAt = minutesAgo(10))
+                insertLogAt(otherMonitor.id, createdAt = minutesAgo(1))
+
+                then("it should return the newest log of the given monitor") {
+                    metricsLogRepository.fetchLastByMonitorId(monitor.id)?.id shouldBe newest
+                }
+            }
+
+            `when`("two logs of the monitor were created at the very same time") {
+                val monitor = createDockerMonitor(monitorRepository)
+                val createdAt = minutesAgo(10)
+                insertLogAt(monitor.id, createdAt = createdAt)
+                val insertedLater = insertLogAt(monitor.id, createdAt = createdAt)
+
+                then("it should return the one that was inserted later") {
+                    metricsLogRepository.fetchLastByMonitorId(monitor.id)?.id shouldBe insertedLater
+                }
+            }
+
+            `when`("the monitor has no log at all") {
+                val monitor = createDockerMonitor(monitorRepository)
+
+                then("it should return null") {
+                    metricsLogRepository.fetchLastByMonitorId(monitor.id).shouldBeNull()
+                }
+            }
+        }
+
+        given("the fetchLastLatencyByMonitorId() method") {
+
+            `when`("there are logs of other monitors too") {
+                val monitor = createDockerMonitor(monitorRepository)
+                val otherMonitor = createDockerMonitor(monitorRepository)
+                insertLogAt(monitor.id, createdAt = minutesAgo(30), latencyMs = 30)
+                insertLogAt(monitor.id, createdAt = minutesAgo(10), latencyMs = 10)
+                insertLogAt(otherMonitor.id, createdAt = minutesAgo(1), latencyMs = 1)
+
+                then("it should return the latency of the newest log of the given monitor") {
+                    metricsLogRepository.fetchLastLatencyByMonitorId(monitor.id) shouldBe 10
+                }
+            }
+
+            `when`("the monitor has no log at all") {
+                val monitor = createDockerMonitor(monitorRepository)
+
+                then("it should return null") {
+                    metricsLogRepository.fetchLastLatencyByMonitorId(monitor.id).shouldBeNull()
+                }
+            }
+        }
+
+        given("the inherited deleteAllByMonitorId() method") {
+
+            `when`("there are logs of other monitors too") {
+                val monitor = createDockerMonitor(monitorRepository)
+                val otherMonitor = createDockerMonitor(monitorRepository)
+                insertLogAt(monitor.id, createdAt = minutesAgo(120))
+                insertLogAt(monitor.id, createdAt = minutesAgo(10))
+                insertLogAt(otherMonitor.id, createdAt = minutesAgo(10))
+
+                val deleted = metricsLogRepository.deleteAllByMonitorId(monitor.id)
+
+                then("it should delete every log of the given monitor, but only those") {
+                    deleted shouldBe 2
+                    countLogsOf(monitor.id) shouldBe 0
+                    countLogsOf(otherMonitor.id) shouldBe 1
+                }
+            }
+        }
+
+        given("the inherited deleteLogsBeforeDate() method") {
+
+            `when`("several monitors have logs on both sides of the limit") {
+                val monitor = createDockerMonitor(monitorRepository)
+                val otherMonitor = createDockerMonitor(monitorRepository)
+                insertLogAt(monitor.id, createdAt = minutesAgo(120))
+                val kept = insertLogAt(monitor.id, createdAt = minutesAgo(10))
+                insertLogAt(otherMonitor.id, createdAt = minutesAgo(90))
+                val otherKept = insertLogAt(otherMonitor.id, createdAt = minutesAgo(5))
+
+                val deleted = metricsLogRepository.deleteLogsBeforeDate(minutesAgo(60))
+
+                then("it should delete the logs older than the limit of every monitor, and keep the newer ones") {
+                    deleted shouldBe 2
+                    metricsLogRepository.fetchLatestByMonitorId(monitor.id).map { it.id } shouldBe listOf(kept)
+                    metricsLogRepository.fetchLatestByMonitorId(otherMonitor.id).map { it.id } shouldBe
+                        listOf(otherKept)
+                }
+            }
         }
     }
 
-    private fun insertLogAt(monitorId: Long, cpu: BigDecimal, minutesAgo: Long) {
+    private fun minutesAgo(minutes: Long): OffsetDateTime = getCurrentTimestamp().minusMinutes(minutes)
+
+    private fun insertLogAt(
+        monitorId: Long,
+        createdAt: OffsetDateTime,
+        cpu: BigDecimal? = null,
+        latencyMs: Int = 5,
+    ): Long = checkNotNull(
         dslContext.insertInto(DOCKER_METRICS_LOG)
             .set(
                 DockerMetricsLogRecord()
                     .setMonitorId(monitorId)
-                    .setLatencyMs(5)
+                    .setLatencyMs(latencyMs)
                     .setCpuUsagePercent(cpu)
-                    .setCreatedAt(getCurrentTimestamp().minusMinutes(minutesAgo))
+                    .setCreatedAt(createdAt)
             )
-            .execute()
-    }
+            .returning(DOCKER_METRICS_LOG.ID)
+            .fetchSingle(DOCKER_METRICS_LOG.ID)
+    )
+
+    private fun countLogsOf(monitorId: Long): Int =
+        dslContext.fetchCount(DOCKER_METRICS_LOG, DOCKER_METRICS_LOG.MONITOR_ID.eq(monitorId))
 }
