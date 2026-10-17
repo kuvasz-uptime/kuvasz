@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -853,6 +853,8 @@
       
         
       
+        
+      
     
     
     
@@ -908,6 +910,34 @@
     
   
     Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/sizing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware requirements
   
 
     
@@ -2702,25 +2732,25 @@
 </div>
 <div class="tabbed-block">
 <div class="language-yaml highlight"><span class="filename">YAML monitor reference</span><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">dns-monitors</span><span class="p">:</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"My</span><span class="nv"> </span><span class="s">DNS</span><span class="nv"> </span><span class="s">Monitor"</span><span class="w"> </span><span class="c1"># (1)!</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">category</span><span class="p">:</span><span class="w"> </span><span class="s">"Core</span><span class="nv"> </span><span class="s">services"</span><span class="w"> </span><span class="c1"># (17)!</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="s">"example.com"</span><span class="w"> </span><span class="c1"># (2)!</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;My</span><span class="nv"> </span><span class="s">DNS</span><span class="nv"> </span><span class="s">Monitor&quot;</span><span class="w"> </span><span class="c1"># (1)!</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">category</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Core</span><span class="nv"> </span><span class="s">services&quot;</span><span class="w"> </span><span class="c1"># (17)!</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;example.com&quot;</span><span class="w"> </span><span class="c1"># (2)!</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="nt">uptime-check-interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">60</span><span class="w"> </span><span class="c1"># (3)!</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="nt">resolver-host</span><span class="p">:</span><span class="w"> </span><span class="s">"1.1.1.1"</span><span class="w"> </span><span class="c1"># (4)!</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="nt">resolver-host</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1.1.1.1&quot;</span><span class="w"> </span><span class="c1"># (4)!</span>
 </span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="nt">resolver-port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">53</span><span class="w"> </span><span class="c1"># (5)!</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span><span class="nt">transport</span><span class="p">:</span><span class="w"> </span><span class="s">"UDP"</span><span class="w"> </span><span class="c1"># (6)!</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span><span class="nt">transport</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;UDP&quot;</span><span class="w"> </span><span class="c1"># (6)!</span>
 </span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">  </span><span class="nt">record-matchers</span><span class="p">:</span><span class="w"> </span><span class="c1"># (7)!</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">record-type</span><span class="p">:</span><span class="w"> </span><span class="s">"A"</span>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">      </span><span class="nt">match-type</span><span class="p">:</span><span class="w"> </span><span class="s">"EXACT"</span>
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">      </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">"93.184.216.34"</span>
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">record-type</span><span class="p">:</span><span class="w"> </span><span class="s">"TXT"</span>
-</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">      </span><span class="nt">match-type</span><span class="p">:</span><span class="w"> </span><span class="s">"CONTAINS"</span>
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">      </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">"v=spf1"</span>
-</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">  </span><span class="nt">expected-response-code</span><span class="p">:</span><span class="w"> </span><span class="s">"NOERROR"</span><span class="w"> </span><span class="c1"># (8)!</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">record-type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;A&quot;</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">      </span><span class="nt">match-type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;EXACT&quot;</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">      </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;93.184.216.34&quot;</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">record-type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;TXT&quot;</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">      </span><span class="nt">match-type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;CONTAINS&quot;</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">      </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;v=spf1&quot;</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">  </span><span class="nt">expected-response-code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;NOERROR&quot;</span><span class="w"> </span><span class="c1"># (8)!</span>
 </span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">  </span><span class="nt">drift-detection-enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w"> </span><span class="c1"># (9)!</span>
 </span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">  </span><span class="nt">drift-record-types</span><span class="p">:</span><span class="w"> </span><span class="c1"># (10)!</span>
-</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"NS"</span>
-</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"MX"</span>
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;NS&quot;</span>
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;MX&quot;</span>
 </span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">  </span><span class="nt">timeout-ms</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5000</span><span class="w"> </span><span class="c1"># (11)!</span>
 </span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">  </span><span class="nt">latency-threshold-ms</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1000</span><span class="w"> </span><span class="c1"># (12)!</span>
 </span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w">  </span><span class="nt">failure-count-threshold</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span><span class="w"> </span><span class="c1"># (13)!</span>
@@ -2728,7 +2758,7 @@
 </span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"> </span><span class="c1"># (14)!</span>
 </span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="w">  </span><span class="nt">metrics-history-enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"> </span><span class="c1"># (15)!</span>
 </span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="w">  </span><span class="nt">integrations</span><span class="p">:</span><span class="w"> </span><span class="c1"># (16)!</span>
-</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"slack:devops_channel"</span>
+</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;slack:devops_channel&quot;</span>
 </span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a><span class="c1"># ... other monitors</span>
 </span></code></pre></div>
 <ol>
@@ -2945,7 +2975,7 @@
 </div>
 <div class="admonition tip">
 <p class="admonition-title">Requiring <em>all</em> of several values</p>
-<p>Because a matcher passes when <em>any</em> record satisfies it, <em>"the answer must contain <strong>both</strong> <code>1.2.3.4</code> and <code>5.6.7.8</code>"</em> is expressed as <strong>two <code>EXACT</code> matchers</strong>, one per required value. Each of them has to find its own record, and since all matchers are ANDed, both values must be present.</p>
+<p>Because a matcher passes when <em>any</em> record satisfies it, <em>"the answer must contain </em><em>both</em><em> <code>1.2.3.4</code> and <code>5.6.7.8</code>"</em> is expressed as <strong>two <code>EXACT</code> matchers</strong>, one per required value. Each of them has to find its own record, and since all matchers are ANDed, both values must be present.</p>
 <p>This does <strong>not</strong> assert that <em>nothing else</em> is in the answer - use <a href="#drift-detection">drift detection</a> if you want to know about records you didn't expect.</p>
 </div>
 <h4 id="normalization">Normalization</h4>
@@ -3002,37 +3032,37 @@
 </div>
 <h4 id="examples">Examples</h4>
 <div class="language-yaml highlight"><span class="filename">The name must resolve to a specific pair of IPs</span><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">record-matchers</span><span class="p">:</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">record-type</span><span class="p">:</span><span class="w"> </span><span class="s">"A"</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">match-type</span><span class="p">:</span><span class="w"> </span><span class="s">"EXACT"</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">"93.184.216.34"</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">record-type</span><span class="p">:</span><span class="w"> </span><span class="s">"A"</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">    </span><span class="nt">match-type</span><span class="p">:</span><span class="w"> </span><span class="s">"EXACT"</span>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">"93.184.216.35"</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">record-type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;A&quot;</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">match-type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;EXACT&quot;</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;93.184.216.34&quot;</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">record-type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;A&quot;</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">    </span><span class="nt">match-type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;EXACT&quot;</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;93.184.216.35&quot;</span>
 </span></code></pre></div>
 <div class="language-yaml highlight"><span class="filename">Mail is intact: the MX points to us and SPF is published</span><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">record-matchers</span><span class="p">:</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">record-type</span><span class="p">:</span><span class="w"> </span><span class="s">"MX"</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">match-type</span><span class="p">:</span><span class="w"> </span><span class="s">"EXACT"</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">"10</span><span class="nv"> </span><span class="s">mail.example.com"</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">record-type</span><span class="p">:</span><span class="w"> </span><span class="s">"TXT"</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="nt">match-type</span><span class="p">:</span><span class="w"> </span><span class="s">"CONTAINS"</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">"v=spf1"</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">record-type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;MX&quot;</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">match-type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;EXACT&quot;</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;10</span><span class="nv"> </span><span class="s">mail.example.com&quot;</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">record-type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;TXT&quot;</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="nt">match-type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;CONTAINS&quot;</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;v=spf1&quot;</span>
 </span></code></pre></div>
 <div class="language-yaml highlight"><span class="filename">The CNAME still points somewhere inside our CDN account</span><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nt">record-matchers</span><span class="p">:</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">record-type</span><span class="p">:</span><span class="w"> </span><span class="s">"CNAME"</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="nt">match-type</span><span class="p">:</span><span class="w"> </span><span class="s">"REGEX"</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">record-type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;CNAME&quot;</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="nt">match-type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;REGEX&quot;</span>
 </span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">    </span><span class="c1"># Single-quoted, so the backslashes are taken literally. Anchored, so the</span>
 </span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span><span class="c1"># whole record must match, not just a part of it.</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">    </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">'^[a-z0-9-]+\.our-cdn\.net$'</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">    </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;^[a-z0-9-]+\.our-cdn\.net$&#39;</span>
 </span></code></pre></div>
 <div class="language-yaml highlight"><span class="filename">The same pattern, double-quoted: every backslash has to be doubled</span><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nt">record-matchers</span><span class="p">:</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">record-type</span><span class="p">:</span><span class="w"> </span><span class="s">"CNAME"</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="nt">match-type</span><span class="p">:</span><span class="w"> </span><span class="s">"REGEX"</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">"^[a-z0-9-]+\\.our-cdn\\.net$"</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">record-type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;CNAME&quot;</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="nt">match-type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;REGEX&quot;</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;^[a-z0-9-]+\\.our-cdn\\.net$&quot;</span>
 </span></code></pre></div>
 <div class="language-yaml highlight"><span class="filename">Unanchored: the DKIM record must contain an RSA key of any length</span><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nt">record-matchers</span><span class="p">:</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">record-type</span><span class="p">:</span><span class="w"> </span><span class="s">"TXT"</span>
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="nt">match-type</span><span class="p">:</span><span class="w"> </span><span class="s">"REGEX"</span>
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">    </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">'v=dkim1;.*p=[a-z0-9+/]{100,}={0,2}'</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">record-type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;TXT&quot;</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="nt">match-type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;REGEX&quot;</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">    </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;v=dkim1;.*p=[a-z0-9+/]{100,}={0,2}&#39;</span>
 </span></code></pre></div>
 <h3 id="expected-response-code">Expected response code</h3>
 <p><span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#version" title="Minimum version"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21.41 11.58-9-9A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 .59 1.42l9 9A2 2 0 0 0 13 22a2 2 0 0 0 1.41-.59l7-7A2 2 0 0 0 22 13a2 2 0 0 0-.59-1.42M13 20l-9-9V4h7l9 9M6.5 5A1.5 1.5 0 1 1 5 6.5 1.5 1.5 0 0 1 6.5 5"/></svg></span></a></span><span class="mdx-badge__text"><a href="../../changelog/#4.2.0">4.2.0</a></span></span>
@@ -3130,8 +3160,8 @@
 <div class="tabbed-block">
 <p>Set the <code>enabled</code> field to <code>true</code> or <code>false</code> in your YAML file.</p>
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nt">dns-monitors</span><span class="p">:</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"My</span><span class="nv"> </span><span class="s">DNS</span><span class="nv"> </span><span class="s">Monitor"</span>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="s">"example.com"</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;My</span><span class="nv"> </span><span class="s">DNS</span><span class="nv"> </span><span class="s">Monitor&quot;</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;example.com&quot;</span>
 </span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="hll"><span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
 </span></span></code></pre></div>
 </div>
@@ -3164,20 +3194,20 @@
 <div class="tabbed-block">
 <p>Modify the <code>integrations</code> property of your affected monitor, by adding or removing list items, and then restart <em>Kuvasz</em> to apply the changes.</p>
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nt">dns-monitors</span><span class="p">:</span>
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"My</span><span class="nv"> </span><span class="s">DNS</span><span class="nv"> </span><span class="s">Monitor"</span>
-</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="s">"example.com"</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;My</span><span class="nv"> </span><span class="s">DNS</span><span class="nv"> </span><span class="s">Monitor&quot;</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;example.com&quot;</span>
 </span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">  </span><span class="nt">uptime-check-interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">60</span>
 </span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">  </span><span class="nt">integrations</span><span class="p">:</span>
-</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="hll"><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"slack:devops_channel"</span>
-</span></span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"email:my-email-integration"</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="hll"><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;slack:devops_channel&quot;</span>
+</span></span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;email:my-email-integration&quot;</span>
 </span></code></pre></div>
 </div>
 <div class="tabbed-block">
 <p>Use the <code>PATCH /api/v2/dns-monitors/{id}</code> endpoint to update the <code>integrations</code> field of the monitor. You can add or remove integrations as needed.</p>
 <div class="language-json highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="p">{</span>
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">"integrations"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span><span class="s2">"email:my-email-integration"</span><span class="p">,</span>
-</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">    </span><span class="s2">"slack:my-slack-integration"</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">&quot;integrations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span><span class="s2">&quot;email:my-email-integration&quot;</span><span class="p">,</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">    </span><span class="s2">&quot;slack:my-slack-integration&quot;</span>
 </span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">  </span><span class="p">]</span>
 </span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="p">}</span>
 </span></code></pre></div>
@@ -3354,7 +3384,7 @@
     
     
 
-      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon="{&quot;token&quot;: &quot;d7e0ee97fade40d5ab19fabc05b4502e&quot;}">

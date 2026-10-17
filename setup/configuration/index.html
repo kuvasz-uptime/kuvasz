@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://kuvasz-uptime.dev/setup/configuration/">
       
       
-        <link rel="prev" href="../installation/">
+        <link rel="prev" href="../sizing/">
       
       
         <link rel="next" href="../helm-deployment/">
@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -855,6 +855,8 @@
       
         
       
+        
+      
     
     
     
@@ -910,6 +912,34 @@
     
   
     Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sizing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware requirements
   
 
     
@@ -3579,7 +3609,7 @@
 <div class="tabbed-set tabbed-alternate" data-tabs="22:2"><input checked="checked" id="__tabbed_22_1" name="__tabbed_22" type="radio" /><input id="__tabbed_22_2" name="__tabbed_22" type="radio" /><div class="tabbed-labels"><label for="__tabbed_22_1">YAML</label><label for="__tabbed_22_2">ENV</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-39-1"><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a><span class="nt">smtp-config.host</span><span class="p">:</span><span class="w"> </span><span class="s">'your.smtp.server'</span>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-39-1"><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a><span class="nt">smtp-config.host</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;your.smtp.server&#39;</span>
 </span></code></pre></div>
 </div>
 <div class="tabbed-block">
@@ -3872,8 +3902,8 @@
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-70-1"><a id="__codelineno-70-1" name="__codelineno-70-1" href="#__codelineno-70-1"></a><span class="nt">app-config.connectivity-check.targets</span><span class="p">:</span>
-</span><span id="__span-70-2"><a id="__codelineno-70-2" name="__codelineno-70-2" href="#__codelineno-70-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"1.1.1.1:53"</span>
-</span><span id="__span-70-3"><a id="__codelineno-70-3" name="__codelineno-70-3" href="#__codelineno-70-3"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"8.8.8.8:53"</span>
+</span><span id="__span-70-2"><a id="__codelineno-70-2" name="__codelineno-70-2" href="#__codelineno-70-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;1.1.1.1:53&quot;</span>
+</span><span id="__span-70-3"><a id="__codelineno-70-3" name="__codelineno-70-3" href="#__codelineno-70-3"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;8.8.8.8:53&quot;</span>
 </span></code></pre></div>
 </div>
 <div class="tabbed-block">
@@ -3942,7 +3972,7 @@
 <p>By default, the checks share a pool of <strong>64 threads</strong> (or as many as the number of CPU cores, if that's more). That's plenty as long as your targets respond quickly, and an <strong>HTTP</strong> check doesn't even occupy a thread while it waits for the response, but a <strong>TCP, ICMP, DNS or Docker</strong> check keeps its thread busy until it gets a response, or until its <strong>timeout</strong> expires. If many targets become unreachable at once (e.g. a whole network segment goes down), these slow checks can use up the pool, and the <strong>checks of every other monitor get delayed</strong> until a thread frees up — exactly when you need them the most. With virtual threads, a check that is waiting for a timeout costs next to nothing, so <strong>the rest of your monitors keep being checked on time</strong>.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>It's worth enabling if you have <strong>hundreds of TCP, DNS or Docker monitors</strong>, or you use <strong>long timeouts</strong> on many of them. For a smaller setup it won't make a noticeable difference, neither in the timing of the checks, nor in the resource usage.</p>
+<p>We recommend enabling it if you have <strong>more than 100 monitors</strong>, especially if many of them are <strong>TCP, DNS or Docker monitors</strong>, or you use <strong>long timeouts</strong>. For a smaller setup it won't make a noticeable difference, neither in the timing of the checks, nor in the resource usage. See also the <a href="../sizing/"><strong>hardware requirements</strong></a>.</p>
 </div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
@@ -3967,11 +3997,11 @@
 </span><span id="__span-79-3"><a id="__codelineno-79-3" name="__codelineno-79-3" href="#__codelineno-79-3"></a><span class="w">  </span><span class="nt">ssl-check-enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </span><span id="__span-79-4"><a id="__codelineno-79-4" name="__codelineno-79-4" href="#__codelineno-79-4"></a><span class="w">  </span><span class="nt">ssl-expiry-threshold</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">20</span>
 </span><span id="__span-79-5"><a id="__codelineno-79-5" name="__codelineno-79-5" href="#__codelineno-79-5"></a><span class="nt">http-monitors</span><span class="p">:</span>
-</span><span id="__span-79-6"><a id="__codelineno-79-6" name="__codelineno-79-6" href="#__codelineno-79-6"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"My</span><span class="nv"> </span><span class="s">first</span><span class="nv"> </span><span class="s">monitor"</span>
-</span><span id="__span-79-7"><a id="__codelineno-79-7" name="__codelineno-79-7" href="#__codelineno-79-7"></a><span class="w">    </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">"https://example.com"</span>
+</span><span id="__span-79-6"><a id="__codelineno-79-6" name="__codelineno-79-6" href="#__codelineno-79-6"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;My</span><span class="nv"> </span><span class="s">first</span><span class="nv"> </span><span class="s">monitor&quot;</span>
+</span><span id="__span-79-7"><a id="__codelineno-79-7" name="__codelineno-79-7" href="#__codelineno-79-7"></a><span class="w">    </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://example.com&quot;</span>
 </span><span id="__span-79-8"><a id="__codelineno-79-8" name="__codelineno-79-8" href="#__codelineno-79-8"></a><span class="w">    </span><span class="nt">&lt;&lt;</span><span class="p">:</span><span class="w"> </span><span class="nv">*http-monitor-defaults</span>
-</span><span id="__span-79-9"><a id="__codelineno-79-9" name="__codelineno-79-9" href="#__codelineno-79-9"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"My</span><span class="nv"> </span><span class="s">second</span><span class="nv"> </span><span class="s">monitor"</span>
-</span><span id="__span-79-10"><a id="__codelineno-79-10" name="__codelineno-79-10" href="#__codelineno-79-10"></a><span class="w">    </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">"https://example.org"</span>
+</span><span id="__span-79-9"><a id="__codelineno-79-9" name="__codelineno-79-9" href="#__codelineno-79-9"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;My</span><span class="nv"> </span><span class="s">second</span><span class="nv"> </span><span class="s">monitor&quot;</span>
+</span><span id="__span-79-10"><a id="__codelineno-79-10" name="__codelineno-79-10" href="#__codelineno-79-10"></a><span class="w">    </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://example.org&quot;</span>
 </span><span id="__span-79-11"><a id="__codelineno-79-11" name="__codelineno-79-11" href="#__codelineno-79-11"></a><span class="w">    </span><span class="nt">&lt;&lt;</span><span class="p">:</span><span class="w"> </span><span class="nv">*http-monitor-defaults</span>
 </span></code></pre></div>
 <p>The limit applies to <strong>each file</strong> separately. It can only be set as an environment variable, because it's needed before the configuration files are processed.</p>
@@ -4006,7 +4036,7 @@
 </span><span id="__span-80-20"><a id="__codelineno-80-20" name="__codelineno-80-20" href="#__codelineno-80-20"></a><span class="w">      </span><span class="nt">otlp</span><span class="p">:</span>
 </span><span id="__span-80-21"><a id="__codelineno-80-21" name="__codelineno-80-21" href="#__codelineno-80-21"></a><span class="w">        </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </span><span id="__span-80-22"><a id="__codelineno-80-22" name="__codelineno-80-22" href="#__codelineno-80-22"></a><span class="w">        </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://example.host:4318/v1/metrics</span>
-</span><span id="__span-80-23"><a id="__codelineno-80-23" name="__codelineno-80-23" href="#__codelineno-80-23"></a><span class="w">        </span><span class="nt">headers</span><span class="p">:</span><span class="w"> </span><span class="s">'Authorization=Bearer</span><span class="nv"> </span><span class="s">Your-collectors-API-token,key2=value'</span>
+</span><span id="__span-80-23"><a id="__codelineno-80-23" name="__codelineno-80-23" href="#__codelineno-80-23"></a><span class="w">        </span><span class="nt">headers</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;Authorization=Bearer</span><span class="nv"> </span><span class="s">Your-collectors-API-token,key2=value&#39;</span>
 </span><span id="__span-80-24"><a id="__codelineno-80-24" name="__codelineno-80-24" href="#__codelineno-80-24"></a><span class="w">        </span><span class="nt">step</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PT1M</span>
 </span><span id="__span-80-25"><a id="__codelineno-80-25" name="__codelineno-80-25" href="#__codelineno-80-25"></a><span class="w">      </span><span class="nt">prometheus</span><span class="p">:</span>
 </span><span id="__span-80-26"><a id="__codelineno-80-26" name="__codelineno-80-26" href="#__codelineno-80-26"></a><span class="w">        </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
@@ -4055,13 +4085,13 @@
 </span><span id="__span-80-69"><a id="__codelineno-80-69" name="__codelineno-80-69" href="#__codelineno-80-69"></a><span class="w">  </span><span class="nt">connectivity-check</span><span class="p">:</span>
 </span><span id="__span-80-70"><a id="__codelineno-80-70" name="__codelineno-80-70" href="#__codelineno-80-70"></a><span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
 </span><span id="__span-80-71"><a id="__codelineno-80-71" name="__codelineno-80-71" href="#__codelineno-80-71"></a><span class="w">    </span><span class="nt">targets</span><span class="p">:</span>
-</span><span id="__span-80-72"><a id="__codelineno-80-72" name="__codelineno-80-72" href="#__codelineno-80-72"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"1.1.1.1:53"</span>
-</span><span id="__span-80-73"><a id="__codelineno-80-73" name="__codelineno-80-73" href="#__codelineno-80-73"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"8.8.8.8:53"</span>
+</span><span id="__span-80-72"><a id="__codelineno-80-72" name="__codelineno-80-72" href="#__codelineno-80-72"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;1.1.1.1:53&quot;</span>
+</span><span id="__span-80-73"><a id="__codelineno-80-73" name="__codelineno-80-73" href="#__codelineno-80-73"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;8.8.8.8:53&quot;</span>
 </span><span id="__span-80-74"><a id="__codelineno-80-74" name="__codelineno-80-74" href="#__codelineno-80-74"></a><span class="w">    </span><span class="nt">interval-seconds</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">60</span>
 </span><span id="__span-80-75"><a id="__codelineno-80-75" name="__codelineno-80-75" href="#__codelineno-80-75"></a><span class="w">    </span><span class="nt">timeout-seconds</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
 </span><span id="__span-80-76"><a id="__codelineno-80-76" name="__codelineno-80-76" href="#__codelineno-80-76"></a><span class="nn">---</span>
 </span><span id="__span-80-77"><a id="__codelineno-80-77" name="__codelineno-80-77" href="#__codelineno-80-77"></a><span class="nt">smtp-config</span><span class="p">:</span>
-</span><span id="__span-80-78"><a id="__codelineno-80-78" name="__codelineno-80-78" href="#__codelineno-80-78"></a><span class="w">  </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="s">'your.smtp.server'</span>
+</span><span id="__span-80-78"><a id="__codelineno-80-78" name="__codelineno-80-78" href="#__codelineno-80-78"></a><span class="w">  </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;your.smtp.server&#39;</span>
 </span><span id="__span-80-79"><a id="__codelineno-80-79" name="__codelineno-80-79" href="#__codelineno-80-79"></a><span class="w">  </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">465</span>
 </span><span id="__span-80-80"><a id="__codelineno-80-80" name="__codelineno-80-80" href="#__codelineno-80-80"></a><span class="w">  </span><span class="nt">transport-strategy</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SMTP_TLS</span>
 </span><span id="__span-80-81"><a id="__codelineno-80-81" name="__codelineno-80-81" href="#__codelineno-80-81"></a><span class="w">  </span><span class="nt">username</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">YourSMTPUsername</span>
@@ -4107,7 +4137,7 @@
 </span><span id="__span-81-36"><a id="__codelineno-81-36" name="__codelineno-81-36" href="#__codelineno-81-36"></a><span class="nv">ENABLE_METRICS_EXPORT</span><span class="o">=</span><span class="nb">true</span>
 </span><span id="__span-81-37"><a id="__codelineno-81-37" name="__codelineno-81-37" href="#__codelineno-81-37"></a><span class="nv">ENABLE_OTLP_EXPORT</span><span class="o">=</span><span class="nb">true</span>
 </span><span id="__span-81-38"><a id="__codelineno-81-38" name="__codelineno-81-38" href="#__codelineno-81-38"></a><span class="nv">OTLP_EXPORT_URL</span><span class="o">=</span>https://example.host:4318/v1/metrics
-</span><span id="__span-81-39"><a id="__codelineno-81-39" name="__codelineno-81-39" href="#__codelineno-81-39"></a><span class="nv">OTLP_EXPORT_HEADERS</span><span class="o">=</span><span class="s1">'Authorization=Bearer Your-collectors-API-token,key2=value'</span>
+</span><span id="__span-81-39"><a id="__codelineno-81-39" name="__codelineno-81-39" href="#__codelineno-81-39"></a><span class="nv">OTLP_EXPORT_HEADERS</span><span class="o">=</span><span class="s1">&#39;Authorization=Bearer Your-collectors-API-token,key2=value&#39;</span>
 </span><span id="__span-81-40"><a id="__codelineno-81-40" name="__codelineno-81-40" href="#__codelineno-81-40"></a><span class="nv">OTLP_EXPORT_STEP</span><span class="o">=</span>PT1M
 </span><span id="__span-81-41"><a id="__codelineno-81-41" name="__codelineno-81-41" href="#__codelineno-81-41"></a><span class="nv">ENABLE_PROMETHEUS_EXPORT</span><span class="o">=</span><span class="nb">true</span>
 </span><span id="__span-81-42"><a id="__codelineno-81-42" name="__codelineno-81-42" href="#__codelineno-81-42"></a><span class="nv">ENABLE_PROMETHEUS_DESCRIPTIONS</span><span class="o">=</span><span class="nb">true</span>
@@ -4176,7 +4206,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../installation/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Deployment">
+          <a href="../sizing/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Hardware requirements">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -4186,7 +4216,7 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Deployment
+                Hardware requirements
               </div>
             </div>
           </a>
@@ -4309,7 +4339,7 @@
     
     
 
-      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon="{&quot;token&quot;: &quot;d7e0ee97fade40d5ab19fabc05b4502e&quot;}">

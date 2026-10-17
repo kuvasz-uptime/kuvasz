@@ -16,14 +16,14 @@
         <link rel="prev" href="../../features/api/">
       
       
-        <link rel="next" href="../configuration/">
+        <link rel="next" href="../sizing/">
       
       
         
       
       
       <link rel="icon" href="../../images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -855,6 +855,8 @@
       
         
       
+        
+      
     
     
     
@@ -1154,6 +1156,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sizing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware requirements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -2330,6 +2360,10 @@ you can use the provided <em>Docker compose</em> file to easily set up a <em>Pos
 The Helm chart also provides a basic database setup, if you don't want to bring your own PostgreSQL instance (be aware that it might not be a good fit for a production setup).</p>
 <p>The <strong>minimum, tested version of <em>PostgreSQL</em> is 14</strong>, <code>alpine</code> distributions are supported.</p>
 </div>
+<div class="admonition tip">
+<p class="admonition-title">How much memory and CPU does <em>Kuvasz</em> need?</p>
+<p>With the default settings, <em>Kuvasz</em> needs <strong>768 MB of memory</strong> and <strong>at least half a CPU</strong> for up to 500 monitors (less monitors would most probably fit well under 512 MB, but 768 MB is a safe limit here). If you have more monitors, see the <a href="../sizing/"><strong>hardware requirements</strong></a>.</p>
+</div>
 <h2 id="choose-your-deployment-method">Choose Your Deployment Method</h2>
 <p>Kuvasz can be deployed in several ways depending on your infrastructure:</p>
 <ul>
@@ -2377,7 +2411,7 @@ The Helm chart also provides a basic database setup, if you don't want to bring 
 <div class="tabbed-block">
 <div class="language-powershell highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">mkdir</span> <span class="n">kuvasz-uptime</span><span class="p">;</span> <span class="nb">cd </span><span class="n">kuvasz-uptime</span>
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nb">New-Item</span> <span class="n">kuvasz</span><span class="p">.</span><span class="n">yml</span> <span class="n">-ItemType</span> <span class="n">File</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="nb">Invoke-WebRequest</span> <span class="n">-Uri</span> <span class="s2">"https://raw.githubusercontent.com/kuvasz-uptime/kuvasz/refs/heads/main/docker-examples/docker-compose.yml"</span> <span class="n">-OutFile</span> <span class="s2">"docker-compose.yml"</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="nb">Invoke-WebRequest</span> <span class="n">-Uri</span> <span class="s2">&quot;https://raw.githubusercontent.com/kuvasz-uptime/kuvasz/refs/heads/main/docker-examples/docker-compose.yml&quot;</span> <span class="n">-OutFile</span> <span class="s2">&quot;docker-compose.yml&quot;</span>
 </span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c"># At this point you might want to change your docker-compose.yml and/or your</span>
 </span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="c"># kuvasz.yml files to change the default configuration, especially the </span>
 </span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="c"># credentials and secrets in there  </span>
@@ -2410,9 +2444,9 @@ documentation right now to see how you can set up integrations, app-level settin
 </span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
 </span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">      </span><span class="nt">POSTGRES_USER</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kuvasz</span>
 </span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">      </span><span class="nt">POSTGRES_PASSWORD</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">YourSuperSecretDbPassword</span><span class="w"> </span><span class="c1"># change it!</span>
-</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">      </span><span class="nt">TZ</span><span class="p">:</span><span class="w"> </span><span class="s">'UTC'</span><span class="w"> </span><span class="c1"># optional, but recommended, use your own timezone</span>
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">      </span><span class="nt">TZ</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;UTC&#39;</span><span class="w"> </span><span class="c1"># optional, but recommended, use your own timezone</span>
 </span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">    </span><span class="nt">healthcheck</span><span class="p">:</span>
-</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">      </span><span class="nt">test</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="w"> </span><span class="s">"CMD"</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">"pg_isready"</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">"-U"</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">"kuvasz"</span><span class="w"> </span><span class="p p-Indicator">]</span>
+</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">      </span><span class="nt">test</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="w"> </span><span class="s">&quot;CMD&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;pg_isready&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;-U&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;kuvasz&quot;</span><span class="w"> </span><span class="p p-Indicator">]</span>
 </span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">      </span><span class="nt">interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10s</span>
 </span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="w">      </span><span class="nt">start_period</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30s</span>
 </span><span id="__span-4-15"><a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
@@ -2424,16 +2458,16 @@ documentation right now to see how you can set up integrations, app-level settin
 </span><span id="__span-4-21"><a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a><span class="w">    </span><span class="c1"># platform: linux/arm64</span>
 </span><span id="__span-4-22"><a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a><span class="w">    </span><span class="c1"># Uncomment these lines to run Kuvasz as a non-root user (make sure that your config file is readable by it)</span>
 </span><span id="__span-4-23"><a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a><span class="w">    </span><span class="c1"># See: https://kuvasz-uptime.dev/management/examples/#running-kuvasz-as-a-non-root-user</span>
-</span><span id="__span-4-24"><a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a><span class="w">    </span><span class="c1"># user: "1000:1000"</span>
+</span><span id="__span-4-24"><a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a><span class="w">    </span><span class="c1"># user: &quot;1000:1000&quot;</span>
 </span><span id="__span-4-25"><a id="__codelineno-4-25" name="__codelineno-4-25" href="#__codelineno-4-25"></a><span class="w">    </span><span class="c1"># cap_drop:</span>
 </span><span id="__span-4-26"><a id="__codelineno-4-26" name="__codelineno-4-26" href="#__codelineno-4-26"></a><span class="w">    </span><span class="c1">#   - ALL</span>
 </span><span id="__span-4-27"><a id="__codelineno-4-27" name="__codelineno-4-27" href="#__codelineno-4-27"></a><span class="w">    </span><span class="c1"># security_opt:</span>
 </span><span id="__span-4-28"><a id="__codelineno-4-28" name="__codelineno-4-28" href="#__codelineno-4-28"></a><span class="w">    </span><span class="c1">#   - no-new-privileges:true</span>
 </span><span id="__span-4-29"><a id="__codelineno-4-29" name="__codelineno-4-29" href="#__codelineno-4-29"></a><span class="w">    </span><span class="nt">ports</span><span class="p">:</span>
-</span><span id="__span-4-30"><a id="__codelineno-4-30" name="__codelineno-4-30" href="#__codelineno-4-30"></a><span class="w">      </span><span class="c1"># If the port 8080 is already in use on your host machine, change the left side of the mapping (e.g. "9090:8080")</span>
-</span><span id="__span-4-31"><a id="__codelineno-4-31" name="__codelineno-4-31" href="#__codelineno-4-31"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"8080:8080"</span>
+</span><span id="__span-4-30"><a id="__codelineno-4-30" name="__codelineno-4-30" href="#__codelineno-4-30"></a><span class="w">      </span><span class="c1"># If the port 8080 is already in use on your host machine, change the left side of the mapping (e.g. &quot;9090:8080&quot;)</span>
+</span><span id="__span-4-31"><a id="__codelineno-4-31" name="__codelineno-4-31" href="#__codelineno-4-31"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;8080:8080&quot;</span>
 </span><span id="__span-4-32"><a id="__codelineno-4-32" name="__codelineno-4-32" href="#__codelineno-4-32"></a><span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
-</span><span id="__span-4-33"><a id="__codelineno-4-33" name="__codelineno-4-33" href="#__codelineno-4-33"></a><span class="w">      </span><span class="nt">TZ</span><span class="p">:</span><span class="w"> </span><span class="s">'UTC'</span><span class="w"> </span><span class="c1"># optional, but recommended, match it with the kuvasz-db service above</span>
+</span><span id="__span-4-33"><a id="__codelineno-4-33" name="__codelineno-4-33" href="#__codelineno-4-33"></a><span class="w">      </span><span class="nt">TZ</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;UTC&#39;</span><span class="w"> </span><span class="c1"># optional, but recommended, match it with the kuvasz-db service above</span>
 </span><span id="__span-4-34"><a id="__codelineno-4-34" name="__codelineno-4-34" href="#__codelineno-4-34"></a><span class="w">      </span><span class="nt">DATABASE_HOST</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kuvasz-db</span><span class="w"> </span><span class="c1"># the service name of the PostgreSQL service above</span>
 </span><span id="__span-4-35"><a id="__codelineno-4-35" name="__codelineno-4-35" href="#__codelineno-4-35"></a><span class="w">      </span><span class="nt">DATABASE_USER</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kuvasz</span><span class="w"> </span><span class="c1"># the same user as in the PostgreSQL service above</span>
 </span><span id="__span-4-36"><a id="__codelineno-4-36" name="__codelineno-4-36" href="#__codelineno-4-36"></a><span class="w">      </span><span class="nt">DATABASE_PASSWORD</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">YourSuperSecretDbPassword</span><span class="w"> </span><span class="c1"># the same password as in the PostgreSQL service above</span>
@@ -2442,14 +2476,14 @@ documentation right now to see how you can set up integrations, app-level settin
 </span><span id="__span-4-39"><a id="__codelineno-4-39" name="__codelineno-4-39" href="#__codelineno-4-39"></a><span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
 </span><span id="__span-4-40"><a id="__codelineno-4-40" name="__codelineno-4-40" href="#__codelineno-4-40"></a><span class="w">      </span><span class="c1"># Make sure your config file is readable and the mount path is correct (/config/kuvasz.yml)</span>
 </span><span id="__span-4-41"><a id="__codelineno-4-41" name="__codelineno-4-41" href="#__codelineno-4-41"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./kuvasz.yml:/config/kuvasz.yml</span>
-</span><span id="__span-4-42"><a id="__codelineno-4-42" name="__codelineno-4-42" href="#__codelineno-4-42"></a><span class="w">      </span><span class="c1"># Only needed to monitor the containers of this machine through a Docker host with a "unix:///var/run/docker.sock" URL</span>
+</span><span id="__span-4-42"><a id="__codelineno-4-42" name="__codelineno-4-42" href="#__codelineno-4-42"></a><span class="w">      </span><span class="c1"># Only needed to monitor the containers of this machine through a Docker host with a &quot;unix:///var/run/docker.sock&quot; URL</span>
 </span><span id="__span-4-43"><a id="__codelineno-4-43" name="__codelineno-4-43" href="#__codelineno-4-43"></a><span class="w">      </span><span class="c1"># - /var/run/docker.sock:/var/run/docker.sock</span>
 </span><span id="__span-4-44"><a id="__codelineno-4-44" name="__codelineno-4-44" href="#__codelineno-4-44"></a><span class="w">    </span><span class="c1"># Only if you run Kuvasz as a non-root user AND mount the Docker socket above: the ID of the group owning the socket</span>
-</span><span id="__span-4-45"><a id="__codelineno-4-45" name="__codelineno-4-45" href="#__codelineno-4-45"></a><span class="w">    </span><span class="c1"># (look it up with `getent group docker | cut -d: -f3`, or use "0" on Docker Desktop)</span>
+</span><span id="__span-4-45"><a id="__codelineno-4-45" name="__codelineno-4-45" href="#__codelineno-4-45"></a><span class="w">    </span><span class="c1"># (look it up with `getent group docker | cut -d: -f3`, or use &quot;0&quot; on Docker Desktop)</span>
 </span><span id="__span-4-46"><a id="__codelineno-4-46" name="__codelineno-4-46" href="#__codelineno-4-46"></a><span class="w">    </span><span class="c1"># group_add:</span>
-</span><span id="__span-4-47"><a id="__codelineno-4-47" name="__codelineno-4-47" href="#__codelineno-4-47"></a><span class="w">    </span><span class="c1">#   - "999"</span>
+</span><span id="__span-4-47"><a id="__codelineno-4-47" name="__codelineno-4-47" href="#__codelineno-4-47"></a><span class="w">    </span><span class="c1">#   - &quot;999&quot;</span>
 </span><span id="__span-4-48"><a id="__codelineno-4-48" name="__codelineno-4-48" href="#__codelineno-4-48"></a><span class="w">    </span><span class="nt">healthcheck</span><span class="p">:</span>
-</span><span id="__span-4-49"><a id="__codelineno-4-49" name="__codelineno-4-49" href="#__codelineno-4-49"></a><span class="w">      </span><span class="nt">test</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="w"> </span><span class="s">"CMD-SHELL"</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">"wget</span><span class="nv"> </span><span class="s">--quiet</span><span class="nv"> </span><span class="s">--tries=1</span><span class="nv"> </span><span class="s">--spider</span><span class="nv"> </span><span class="s">http://localhost:8080/api/v2/health</span><span class="nv"> </span><span class="s">||</span><span class="nv"> </span><span class="s">exit</span><span class="nv"> </span><span class="s">1"</span><span class="w"> </span><span class="p p-Indicator">]</span>
+</span><span id="__span-4-49"><a id="__codelineno-4-49" name="__codelineno-4-49" href="#__codelineno-4-49"></a><span class="w">      </span><span class="nt">test</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="w"> </span><span class="s">&quot;CMD-SHELL&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;wget</span><span class="nv"> </span><span class="s">--quiet</span><span class="nv"> </span><span class="s">--tries=1</span><span class="nv"> </span><span class="s">--spider</span><span class="nv"> </span><span class="s">http://localhost:8080/api/v2/health</span><span class="nv"> </span><span class="s">||</span><span class="nv"> </span><span class="s">exit</span><span class="nv"> </span><span class="s">1&quot;</span><span class="w"> </span><span class="p p-Indicator">]</span>
 </span><span id="__span-4-50"><a id="__codelineno-4-50" name="__codelineno-4-50" href="#__codelineno-4-50"></a><span class="w">      </span><span class="nt">interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">60s</span>
 </span><span id="__span-4-51"><a id="__codelineno-4-51" name="__codelineno-4-51" href="#__codelineno-4-51"></a><span class="w">      </span><span class="nt">start_period</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30s</span>
 </span><span id="__span-4-52"><a id="__codelineno-4-52" name="__codelineno-4-52" href="#__codelineno-4-52"></a><span class="w">    </span><span class="nt">depends_on</span><span class="p">:</span>
@@ -2493,7 +2527,7 @@ web UI of <em>Kuvasz</em> at
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nt">integrations</span><span class="p">:</span>
 </span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="nt">slack</span><span class="p">:</span>
 </span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">use_your_desired_name</span>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">      </span><span class="nt">webhook-url</span><span class="p">:</span><span class="w"> </span><span class="s">'https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXX'</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">      </span><span class="nt">webhook-url</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXX&#39;</span>
 </span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">      </span><span class="nt">global</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"> </span><span class="c1"># (1)!</span>
 </span></code></pre></div>
 <ol>
@@ -2520,7 +2554,7 @@ Furthermore, to make it easier to get notified about new releases, the UI will s
 <h2 id="readinesshealth-probes">Readiness/health probes</h2>
 <p>If you run <em>Kuvasz</em> in a container orchestration system, you can use the <code>GET /api/v2/health</code> endpoint as a readiness probe to check if the application is UP and running. The endpoint <strong>doesn't need authentication</strong>, and returns a simple JSON response with the status of the application.</p>
 <div class="language-json highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="p">{</span>
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="nt">"status"</span><span class="p">:</span><span class="w"> </span><span class="s2">"UP"</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;UP&quot;</span>
 </span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="p">}</span>
 </span></code></pre></div>
 <div class="admonition tip">
@@ -2601,13 +2635,13 @@ Furthermore, to make it easier to get notified about new releases, the UI will s
         
         
           
-          <a href="../configuration/" class="md-footer__link md-footer__link--next" aria-label="Next: Configuration reference">
+          <a href="../sizing/" class="md-footer__link md-footer__link--next" aria-label="Next: Hardware requirements">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Configuration reference
+                Hardware requirements
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -2717,7 +2751,7 @@ Furthermore, to make it easier to get notified about new releases, the UI will s
     
     
 
-      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon="{&quot;token&quot;: &quot;d7e0ee97fade40d5ab19fabc05b4502e&quot;}">

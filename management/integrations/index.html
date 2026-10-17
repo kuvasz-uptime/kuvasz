@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -853,6 +853,8 @@
       
         
       
+        
+      
     
     
     
@@ -908,6 +910,34 @@
     
   
     Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/sizing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware requirements
   
 
     
@@ -3439,7 +3469,7 @@
 <p>The name of the integration. It must be <strong>unique across the given type</strong> of integration, so you can have multiple Slack integrations, for example, but they must have different names, and vice versa: you can have multiple integrations of different types with the same name. <strong>Can't be a blank string!</strong></p>
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">integrations</span><span class="p">:</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">pagerduty</span><span class="p">:</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="hll"><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"PD</span><span class="nv"> </span><span class="s">global</span><span class="nv"> </span><span class="s">integration"</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="hll"><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;PD</span><span class="nv"> </span><span class="s">global</span><span class="nv"> </span><span class="s">integration&quot;</span>
 </span></span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">      </span><span class="nt">integration-key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">YourOwnIntegrationKey</span>
 </span></code></pre></div>
 <h3 id="enabled">Enabled</h3>
@@ -3516,9 +3546,9 @@
 <div class="language-yaml highlight"><span class="filename">Slack integration example</span><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nt">integrations</span><span class="p">:</span>
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">slack</span><span class="p">:</span>
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">slack-example</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">      </span><span class="nt">webhook-url</span><span class="p">:</span><span class="w"> </span><span class="s">'https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXX'</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">      </span><span class="nt">webhook-url</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXX&#39;</span>
 </span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">slack-global</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">      </span><span class="nt">webhook-url</span><span class="p">:</span><span class="w"> </span><span class="s">'https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXX'</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">      </span><span class="nt">webhook-url</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXX&#39;</span>
 </span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">      </span><span class="nt">global</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">    </span><span class="c1"># ... other Slack integrations</span>
 </span></code></pre></div>
@@ -3685,7 +3715,7 @@ in the meantime), its root stays red.</p>
 </span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="nt">slack-bot</span><span class="p">:</span>
 </span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">slack-ops</span>
 </span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">      </span><span class="nt">bot-token</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${SLACK_BOT_TOKEN}</span>
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">      </span><span class="nt">channel-id</span><span class="p">:</span><span class="w"> </span><span class="s">'C0123456789'</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">      </span><span class="nt">channel-id</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;C0123456789&#39;</span>
 </span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">      </span><span class="nt">global</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">      </span><span class="nt">trigger-reaction</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rotating_light</span>
 </span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">      </span><span class="nt">resolution-reaction</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">white_check_mark</span>
@@ -3713,9 +3743,9 @@ in the meantime), its root stays red.</p>
 <div class="language-yaml highlight"><span class="filename">Discord integration example</span><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nt">integrations</span><span class="p">:</span>
 </span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="nt">discord</span><span class="p">:</span>
 </span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">discord-example</span>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">      </span><span class="nt">webhook-url</span><span class="p">:</span><span class="w"> </span><span class="s">'https://discord.com/api/webhooks/123456789/abcdef1234567890abcdef1234567890'</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">      </span><span class="nt">webhook-url</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;https://discord.com/api/webhooks/123456789/abcdef1234567890abcdef1234567890&#39;</span>
 </span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">discord-global</span>
-</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">      </span><span class="nt">webhook-url</span><span class="p">:</span><span class="w"> </span><span class="s">'https://discord.com/api/webhooks/987654321/fedcba0987654321fedcba0987654321'</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">      </span><span class="nt">webhook-url</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;https://discord.com/api/webhooks/987654321/fedcba0987654321fedcba0987654321&#39;</span>
 </span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">      </span><span class="nt">global</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">    </span><span class="c1"># ... other Discord integrations</span>
 </span></code></pre></div>
@@ -3753,9 +3783,9 @@ on how to keep it out of your configuration file.</p>
 <div class="language-yaml highlight"><span class="filename">Microsoft Teams integration example</span><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nt">integrations</span><span class="p">:</span>
 </span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="nt">ms-teams</span><span class="p">:</span>
 </span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ms-teams-example</span>
-</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">      </span><span class="nt">webhook-url</span><span class="p">:</span><span class="w"> </span><span class="s">'https://prod-11.westeurope.logic.azure.com:443/workflows/.../triggers/manual/paths/invoke?...'</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">      </span><span class="nt">webhook-url</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;https://prod-11.westeurope.logic.azure.com:443/workflows/.../triggers/manual/paths/invoke?...&#39;</span>
 </span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ms-teams-global</span>
-</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">      </span><span class="nt">webhook-url</span><span class="p">:</span><span class="w"> </span><span class="s">'https://prod-22.westeurope.logic.azure.com:443/workflows/.../triggers/manual/paths/invoke?...'</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">      </span><span class="nt">webhook-url</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;https://prod-22.westeurope.logic.azure.com:443/workflows/.../triggers/manual/paths/invoke?...&#39;</span>
 </span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">      </span><span class="nt">global</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="w">    </span><span class="c1"># ... other Microsoft Teams integrations</span>
 </span></code></pre></div>
@@ -3887,25 +3917,25 @@ entry of your stored configuration is tagged, <strong>nothing is delivered</stro
 carries its own signature - an <em>Apprise</em> endpoint is only as protected as the network it sits on. If you put
 yours behind a reverse proxy that requires a token, you can pass it here.</p>
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nt">request-headers</span><span class="p">:</span>
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">Authorization</span><span class="p">:</span><span class="w"> </span><span class="s">"Bearer</span><span class="nv"> </span><span class="s">YourToken"</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">Authorization</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Bearer</span><span class="nv"> </span><span class="s">YourToken&quot;</span>
 </span></code></pre></div>
 <hr />
 <div class="language-yaml highlight"><span class="filename">Apprise integration example</span><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nt">integrations</span><span class="p">:</span>
 </span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="nt">apprise</span><span class="p">:</span>
-</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">    </span><span class="c1"># Stateful: the target services are stored in Apprise under the "kuvasz" key</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">    </span><span class="c1"># Stateful: the target services are stored in Apprise under the &quot;kuvasz&quot; key</span>
 </span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">apprise-example</span>
-</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">      </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">'http://your-apprise-host:8000/notify/kuvasz'</span>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">      </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;http://your-apprise-host:8000/notify/kuvasz&#39;</span>
 </span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">    </span><span class="c1"># ...routing to a subset of that stored configuration</span>
 </span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">apprise-devops</span>
-</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">      </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">'http://your-apprise-host:8000/notify/kuvasz'</span>
-</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="w">      </span><span class="nt">tag</span><span class="p">:</span><span class="w"> </span><span class="s">'devops,</span><span class="nv"> </span><span class="s">oncall'</span>
+</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">      </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;http://your-apprise-host:8000/notify/kuvasz&#39;</span>
+</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="w">      </span><span class="nt">tag</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;devops,</span><span class="nv"> </span><span class="s">oncall&#39;</span>
 </span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="w">      </span><span class="nt">global</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </span><span id="__span-9-11"><a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="w">    </span><span class="c1"># Stateless: the target services travel in every request</span>
 </span><span id="__span-9-12"><a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">apprise-stateless</span>
-</span><span id="__span-9-13"><a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="w">      </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">'http://your-apprise-host:8000/notify'</span>
+</span><span id="__span-9-13"><a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="w">      </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;http://your-apprise-host:8000/notify&#39;</span>
 </span><span id="__span-9-14"><a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a><span class="w">      </span><span class="nt">target-urls</span><span class="p">:</span>
-</span><span id="__span-9-15"><a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'slack://TokenA/TokenB/TokenC'</span>
-</span><span id="__span-9-16"><a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'tgram://bottoken/ChatID'</span>
+</span><span id="__span-9-15"><a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;slack://TokenA/TokenB/TokenC&#39;</span>
+</span><span id="__span-9-16"><a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;tgram://bottoken/ChatID&#39;</span>
 </span><span id="__span-9-17"><a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a><span class="w">    </span><span class="c1"># ... other Apprise integrations</span>
 </span></code></pre></div>
 <h2 id="pushover">Pushover</h2>
@@ -3963,7 +3993,7 @@ a group key comes from a delivery group, and lets you notify several people with
 <span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#yaml_property" title="YAML property"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.6 16.6 4.6-4.6-4.6-4.6L16 6l6 6-6 6zm-5.2 0L4.8 12l4.6-4.6L8 6l-6 6 6 6z"/></svg></span></a></span><span class="mdx-badge__text"><code>device</code></span></span></p>
 <p>Limits the delivery to <strong>specific devices</strong> instead of every device of the user. Separate the device names with
 commas, exactly as <em>Pushover</em> expects them:</p>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nt">device</span><span class="p">:</span><span class="w"> </span><span class="s">'iphone,desk'</span>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nt">device</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;iphone,desk&#39;</span>
 </span></code></pre></div>
 <p>Leave it empty to reach every device, which is what you usually want for an uptime alert.</p>
 <h3 id="sound">Sound</h3>
@@ -4017,14 +4047,14 @@ when <a href="#emergency-priority"><strong><code>emergency-enabled</code></stron
 </span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span><span class="nt">pushover</span><span class="p">:</span>
 </span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">    </span><span class="c1"># The simplest setup: every device of the user, default sound</span>
 </span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pushover-example</span>
-</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="w">      </span><span class="nt">api-token</span><span class="p">:</span><span class="w"> </span><span class="s">'YourApplicationToken'</span>
-</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="w">      </span><span class="nt">user-key</span><span class="p">:</span><span class="w"> </span><span class="s">'YourUserKey'</span>
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="w">      </span><span class="nt">api-token</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;YourApplicationToken&#39;</span>
+</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="w">      </span><span class="nt">user-key</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;YourUserKey&#39;</span>
 </span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="w">      </span><span class="nt">global</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </span><span id="__span-11-8"><a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="w">    </span><span class="c1"># An on-call setup that nags until someone acknowledges it, but calls itself off on recovery</span>
 </span><span id="__span-11-9"><a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pushover-oncall</span>
-</span><span id="__span-11-10"><a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="w">      </span><span class="nt">api-token</span><span class="p">:</span><span class="w"> </span><span class="s">'YourApplicationToken'</span>
-</span><span id="__span-11-11"><a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="w">      </span><span class="nt">user-key</span><span class="p">:</span><span class="w"> </span><span class="s">'YourGroupKey'</span>
-</span><span id="__span-11-12"><a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a><span class="w">      </span><span class="nt">sound</span><span class="p">:</span><span class="w"> </span><span class="s">'siren'</span>
+</span><span id="__span-11-10"><a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="w">      </span><span class="nt">api-token</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;YourApplicationToken&#39;</span>
+</span><span id="__span-11-11"><a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="w">      </span><span class="nt">user-key</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;YourGroupKey&#39;</span>
+</span><span id="__span-11-12"><a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a><span class="w">      </span><span class="nt">sound</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;siren&#39;</span>
 </span><span id="__span-11-13"><a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a><span class="w">      </span><span class="nt">emergency-enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </span><span id="__span-11-14"><a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a><span class="w">      </span><span class="nt">emergency-retry-seconds</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">60</span>
 </span><span id="__span-11-15"><a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a><span class="w">      </span><span class="nt">emergency-expire-seconds</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1800</span>
@@ -4108,10 +4138,10 @@ when <a href="#emergency-priority"><strong><code>emergency-enabled</code></stron
 <p>To get your chat ID, send a message to your desired chat and then visit <code>https://api.telegram.org/bot&lt;YourApiToken&gt;/getUpdates</code> in your browser, where <code>&lt;YourApiToken&gt;</code> is the token you received from the BotFather. <strong>Look for something like this</strong> in the response, this will be your <code>chat-id</code>:</p>
 <div class="language-json highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="p">{</span>
 </span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">   </span><span class="c1">// ... other fields ...</span>
-</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">   </span><span class="nt">"sender_chat"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="hll"><span class="w">   </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">-343243243111</span><span class="p">,</span>
-</span></span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="w">   </span><span class="nt">"title"</span><span class="p">:</span><span class="w"> </span><span class="s2">"kuvasz uptime events"</span><span class="p">,</span>
-</span><span id="__span-14-6"><a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="w">   </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"channel"</span>
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">   </span><span class="nt">&quot;sender_chat&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="hll"><span class="w">   </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">-343243243111</span><span class="p">,</span>
+</span></span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="w">   </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;kuvasz uptime events&quot;</span><span class="p">,</span>
+</span><span id="__span-14-6"><a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="w">   </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;channel&quot;</span>
 </span><span id="__span-14-7"><a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="w">   </span><span class="p">},</span>
 </span><span id="__span-14-8"><a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="w">   </span><span class="c1">// ... other fields ...</span>
 </span><span id="__span-14-9"><a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="p">}</span>
@@ -4135,12 +4165,12 @@ when <a href="#emergency-priority"><strong><code>emergency-enabled</code></stron
 <div class="language-yaml highlight"><span class="filename">Telegram integration example</span><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nt">integrations</span><span class="p">:</span>
 </span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">  </span><span class="nt">telegram</span><span class="p">:</span>
 </span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">telegram_global</span>
-</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="w">      </span><span class="nt">api-token</span><span class="p">:</span><span class="w"> </span><span class="s">'YourToken'</span>
-</span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="w">      </span><span class="nt">chat-id</span><span class="p">:</span><span class="w"> </span><span class="s">'-1232642423121'</span>
+</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="w">      </span><span class="nt">api-token</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;YourToken&#39;</span>
+</span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="w">      </span><span class="nt">chat-id</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;-1232642423121&#39;</span>
 </span><span id="__span-15-6"><a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="w">      </span><span class="nt">global</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </span><span id="__span-15-7"><a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">telegram_disabled</span>
-</span><span id="__span-15-8"><a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="w">      </span><span class="nt">api-token</span><span class="p">:</span><span class="w"> </span><span class="s">'YourOtherToken'</span>
-</span><span id="__span-15-9"><a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="w">      </span><span class="nt">chat-id</span><span class="p">:</span><span class="w"> </span><span class="s">'-1232546142423121'</span>
+</span><span id="__span-15-8"><a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="w">      </span><span class="nt">api-token</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;YourOtherToken&#39;</span>
+</span><span id="__span-15-9"><a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="w">      </span><span class="nt">chat-id</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;-1232546142423121&#39;</span>
 </span><span id="__span-15-10"><a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="w">      </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
 </span><span id="__span-15-11"><a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a><span class="w">    </span><span class="c1"># ... other Telegram integrations</span>
 </span></code></pre></div>
@@ -4156,13 +4186,13 @@ when <a href="#emergency-priority"><strong><code>emergency-enabled</code></stron
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-json highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="p">{</span>
-</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">  </span><span class="nt">"monitorId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"234 (6)"</span><span class="p">,</span>
-</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">  </span><span class="nt">"monitorUrn"</span><span class="p">:</span><span class="w"> </span><span class="s2">"http:GitHub API (1)"</span><span class="p">,</span>
-</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="w">  </span><span class="nt">"monitorName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"GitHub API (2)"</span><span class="p">,</span>
-</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="w">  </span><span class="nt">"monitorDetailsUrl"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/http-monitors/1 (7)"</span><span class="p">,</span>
-</span><span id="__span-16-6"><a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="w">  </span><span class="nt">"timestamp"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1777661064488 (3)"</span><span class="p">,</span><span class="w"> </span>
-</span><span id="__span-16-7"><a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="w">  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"HTTP_DOWN (4)"</span><span class="p">,</span>
-</span><span id="__span-16-8"><a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="w">  </span><span class="nt">"eventDetails"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Your monitor \"GitHub API\" (https://api.github.com) is DOWN. Reason: Connect Error: Connection refused: api.github.com (5)"</span>
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">  </span><span class="nt">&quot;monitorId&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;234 (6)&quot;</span><span class="p">,</span>
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">  </span><span class="nt">&quot;monitorUrn&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http:GitHub API (1)&quot;</span><span class="p">,</span>
+</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="w">  </span><span class="nt">&quot;monitorName&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;GitHub API (2)&quot;</span><span class="p">,</span>
+</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="w">  </span><span class="nt">&quot;monitorDetailsUrl&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/http-monitors/1 (7)&quot;</span><span class="p">,</span>
+</span><span id="__span-16-6"><a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="w">  </span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1777661064488 (3)&quot;</span><span class="p">,</span><span class="w"> </span>
+</span><span id="__span-16-7"><a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;HTTP_DOWN (4)&quot;</span><span class="p">,</span>
+</span><span id="__span-16-8"><a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="w">  </span><span class="nt">&quot;eventDetails&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Your monitor \&quot;GitHub API\&quot; (https://api.github.com) is DOWN. Reason: Connect Error: Connection refused: api.github.com (5)&quot;</span>
 </span><span id="__span-16-9"><a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span class="p">}</span>
 </span></code></pre></div>
 <ol>
@@ -4238,7 +4268,7 @@ when <a href="#emergency-priority"><strong><code>emergency-enabled</code></stron
 <p class="admonition-title">Having conflicting characters in your hard-coded headers?</p>
 <p>In case your template would contain some characters that interfere with Pebble's own syntax, you can use the <code>{% verbatim %}</code> tag to bypass parsing them, like this:</p>
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="nt">request-headers</span><span class="p">:</span>
-</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">  </span><span class="nt">This-Should-Work-Too</span><span class="p">:</span><span class="w"> </span><span class="s">"{%</span><span class="nv"> </span><span class="s">verbatim</span><span class="nv"> </span><span class="s">%}{%{%</span><span class="nv"> </span><span class="s">endverbatim</span><span class="nv"> </span><span class="s">%}"</span><span class="w"> </span><span class="c1"># Rendered as "{%"</span>
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">  </span><span class="nt">This-Should-Work-Too</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{%</span><span class="nv"> </span><span class="s">verbatim</span><span class="nv"> </span><span class="s">%}{%{%</span><span class="nv"> </span><span class="s">endverbatim</span><span class="nv"> </span><span class="s">%}&quot;</span><span class="w"> </span><span class="c1"># Rendered as &quot;{%&quot;</span>
 </span></code></pre></div>
 </div>
 <h3 id="url_1">URL</h3>
@@ -4248,7 +4278,7 @@ when <a href="#emergency-priority"><strong><code>emergency-enabled</code></stron
 <span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#yaml_property" title="YAML property"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.6 16.6 4.6-4.6-4.6-4.6L16 6l6 6-6 6zm-5.2 0L4.8 12l4.6-4.6L8 6l-6 6 6 6z"/></svg></span></a></span><span class="mdx-badge__text"><code>url</code></span></span></p>
 <p>The URL of the <strong>endpoint where the notifications will be sent</strong>. This can be any URL that can receive HTTP requests, for example, an API endpoint of a 3rd party service, or an endpoint of your own backend.</p>
 <p>Starting <strong>from version 3.11.0</strong>, you can also <strong>use templates in the URL</strong>, which allows you to construct dynamic endpoint URLs based on the context of the event that triggered the webhook. For example, you can route notifications to different paths based on the event type:</p>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">"https://my-backend.example.com/webhooks/{{</span><span class="nv"> </span><span class="s">ctx.type</span><span class="nv"> </span><span class="s">}}/{{</span><span class="nv"> </span><span class="s">ctx.monitorName</span><span class="nv"> </span><span class="s">}}"</span>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://my-backend.example.com/webhooks/{{</span><span class="nv"> </span><span class="s">ctx.type</span><span class="nv"> </span><span class="s">}}/{{</span><span class="nv"> </span><span class="s">ctx.monitorName</span><span class="nv"> </span><span class="s">}}&quot;</span>
 </span></code></pre></div>
 <h3 id="request-headers_1">Request headers</h3>
 <p><span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#version" title="Minimum version"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21.41 11.58-9-9A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 .59 1.42l9 9A2 2 0 0 0 13 22a2 2 0 0 0 1.41-.59l7-7A2 2 0 0 0 22 13a2 2 0 0 0-.59-1.42M13 20l-9-9V4h7l9 9M6.5 5A1.5 1.5 0 1 1 5 6.5 1.5 1.5 0 0 1 6.5 5"/></svg></span></a></span><span class="mdx-badge__text"><a href="../../changelog/#3.8.0">3.8.0</a></span></span>
@@ -4258,8 +4288,8 @@ when <a href="#emergency-priority"><strong><code>emergency-enabled</code></stron
 The only header that is <strong>always included in the requests</strong> is the <code>Content-Type</code> header, which is set to <code>application/json</code> by default, but you can override it with your own value if needed.</p>
 <p>Starting <strong>from version 3.9.0</strong>, you can also <strong>use templates in the header values</strong>, which allows you to include dynamic information in the headers based on the context of the event that triggered the webhook. For example, you can include the monitor name or the event type in a custom header by using a template like this:</p>
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="nt">request-headers</span><span class="p">:</span>
-</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="w">  </span><span class="nt">X-Monitor-Name</span><span class="p">:</span><span class="w"> </span><span class="s">"{{ctx.monitorName}}"</span>
-</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="w">  </span><span class="nt">X-Event-Type</span><span class="p">:</span><span class="w"> </span><span class="s">"{{ctx.type}}"</span>
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="w">  </span><span class="nt">X-Monitor-Name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{{ctx.monitorName}}&quot;</span>
+</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="w">  </span><span class="nt">X-Event-Type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{{ctx.type}}&quot;</span>
 </span></code></pre></div>
 <h3 id="http-method">HTTP method</h3>
 <p><span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#version" title="Minimum version"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21.41 11.58-9-9A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 .59 1.42l9 9A2 2 0 0 0 13 22a2 2 0 0 0 1.41-.59l7-7A2 2 0 0 0 22 13a2 2 0 0 0-.59-1.42M13 20l-9-9V4h7l9 9M6.5 5A1.5 1.5 0 1 1 5 6.5 1.5 1.5 0 0 1 6.5 5"/></svg></span></a></span><span class="mdx-badge__text"><a href="../../changelog/#3.11.0">3.11.0</a></span></span>
@@ -4270,7 +4300,7 @@ The only header that is <strong>always included in the requests</strong> is the 
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="nt">integrations</span><span class="p">:</span>
 </span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="w">  </span><span class="nt">webhook</span><span class="p">:</span>
 </span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">matrix</span>
-</span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="w">      </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">'http://your-matrix-webhook-host:4785/!roomid:your-homeserver/your-shared-token'</span>
+</span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="w">      </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;http://your-matrix-webhook-host:4785/!roomid:your-homeserver/your-shared-token&#39;</span>
 </span><span id="__span-21-5"><a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="w">      </span><span class="nt">http-method</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PUT</span>
 </span></code></pre></div>
 <h3 id="payload-template">Payload template</h3>
@@ -4288,21 +4318,21 @@ The only header that is <strong>always included in the requests</strong> is the 
 </span><span id="__span-22-7"><a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HTTP_UP</span>
 </span><span id="__span-22-8"><a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SSL_WILL_EXPIRE</span>
 </span><span id="__span-22-9"><a id="__codelineno-22-9" name="__codelineno-22-9" href="#__codelineno-22-9"></a><span class="w">    </span><span class="nt">request-headers</span><span class="p">:</span>
-</span><span id="__span-22-10"><a id="__codelineno-22-10" name="__codelineno-22-10" href="#__codelineno-22-10"></a><span class="w">      </span><span class="nt">Accept</span><span class="p">:</span><span class="w"> </span><span class="s">'*/*'</span>
+</span><span id="__span-22-10"><a id="__codelineno-22-10" name="__codelineno-22-10" href="#__codelineno-22-10"></a><span class="w">      </span><span class="nt">Accept</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;*/*&#39;</span>
 </span><span id="__span-22-11"><a id="__codelineno-22-11" name="__codelineno-22-11" href="#__codelineno-22-11"></a><span class="w">      </span><span class="nt">Authorization</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Bearer your-webhook-secret-token</span>
 </span><span id="__span-22-12"><a id="__codelineno-22-12" name="__codelineno-22-12" href="#__codelineno-22-12"></a><span class="w">      </span><span class="nt">X-Custom-Header</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">custom-value</span>
 </span><span id="__span-22-13"><a id="__codelineno-22-13" name="__codelineno-22-13" href="#__codelineno-22-13"></a><span class="w">    </span><span class="nt">payload-template</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
 </span><span id="__span-22-14"><a id="__codelineno-22-14" name="__codelineno-22-14" href="#__codelineno-22-14"></a><span class="w">      </span><span class="no">{</span>
-</span><span id="__span-22-15"><a id="__codelineno-22-15" name="__codelineno-22-15" href="#__codelineno-22-15"></a><span class="w">        </span><span class="no">"monitorName": "{{ctx.monitorName}}",</span>
-</span><span id="__span-22-16"><a id="__codelineno-22-16" name="__codelineno-22-16" href="#__codelineno-22-16"></a><span class="w">        </span><span class="no">"type": "{{ctx.type}}"</span>
+</span><span id="__span-22-15"><a id="__codelineno-22-15" name="__codelineno-22-15" href="#__codelineno-22-15"></a><span class="w">        </span><span class="no">&quot;monitorName&quot;: &quot;{{ctx.monitorName}}&quot;,</span>
+</span><span id="__span-22-16"><a id="__codelineno-22-16" name="__codelineno-22-16" href="#__codelineno-22-16"></a><span class="w">        </span><span class="no">&quot;type&quot;: &quot;{{ctx.type}}&quot;</span>
 </span><span id="__span-22-17"><a id="__codelineno-22-17" name="__codelineno-22-17" href="#__codelineno-22-17"></a><span class="w">      </span><span class="no">}</span>
 </span><span id="__span-22-18"><a id="__codelineno-22-18" name="__codelineno-22-18" href="#__codelineno-22-18"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">webhook_put</span>
 </span><span id="__span-22-19"><a id="__codelineno-22-19" name="__codelineno-22-19" href="#__codelineno-22-19"></a><span class="w">    </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://any-other-http.service/resource/123</span>
 </span><span id="__span-22-20"><a id="__codelineno-22-20" name="__codelineno-22-20" href="#__codelineno-22-20"></a><span class="w">    </span><span class="nt">http-method</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PUT</span>
 </span><span id="__span-22-21"><a id="__codelineno-22-21" name="__codelineno-22-21" href="#__codelineno-22-21"></a><span class="w">    </span><span class="nt">payload-template</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
 </span><span id="__span-22-22"><a id="__codelineno-22-22" name="__codelineno-22-22" href="#__codelineno-22-22"></a><span class="w">      </span><span class="no">{</span>
-</span><span id="__span-22-23"><a id="__codelineno-22-23" name="__codelineno-22-23" href="#__codelineno-22-23"></a><span class="w">        </span><span class="no">"monitorName": "{{ctx.monitorName}}",</span>
-</span><span id="__span-22-24"><a id="__codelineno-22-24" name="__codelineno-22-24" href="#__codelineno-22-24"></a><span class="w">        </span><span class="no">"type": "{{ctx.type}}"</span>
+</span><span id="__span-22-23"><a id="__codelineno-22-23" name="__codelineno-22-23" href="#__codelineno-22-23"></a><span class="w">        </span><span class="no">&quot;monitorName&quot;: &quot;{{ctx.monitorName}}&quot;,</span>
+</span><span id="__span-22-24"><a id="__codelineno-22-24" name="__codelineno-22-24" href="#__codelineno-22-24"></a><span class="w">        </span><span class="no">&quot;type&quot;: &quot;{{ctx.type}}&quot;</span>
 </span><span id="__span-22-25"><a id="__codelineno-22-25" name="__codelineno-22-25" href="#__codelineno-22-25"></a><span class="w">      </span><span class="no">}</span>
 </span><span id="__span-22-26"><a id="__codelineno-22-26" name="__codelineno-22-26" href="#__codelineno-22-26"></a><span class="w">  </span><span class="c1"># ... other Webhook integrations</span>
 </span></code></pre></div>
@@ -4318,12 +4348,12 @@ The only header that is <strong>always included in the requests</strong> is the 
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="nt">integrations</span><span class="p">:</span>
 </span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="w">  </span><span class="nt">webhook</span><span class="p">:</span>
 </span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">signal</span>
-</span><span id="__span-23-4"><a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="w">      </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">'http://your-signal-api-host:8080/v2/send'</span>
+</span><span id="__span-23-4"><a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="w">      </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;http://your-signal-api-host:8080/v2/send&#39;</span>
 </span><span id="__span-23-5"><a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a><span class="w">      </span><span class="nt">payload-template</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
 </span><span id="__span-23-6"><a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a><span class="w">        </span><span class="no">{</span>
-</span><span id="__span-23-7"><a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a><span class="w">          </span><span class="no">"message":    "{{ ctx.eventDetails | escape(strategy="js") }}",</span>
-</span><span id="__span-23-8"><a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a><span class="w">          </span><span class="no">"number":     "+15550001234",</span>
-</span><span id="__span-23-9"><a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a><span class="w">          </span><span class="no">"recipients": ["+15550005678"]</span>
+</span><span id="__span-23-7"><a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a><span class="w">          </span><span class="no">&quot;message&quot;:    &quot;{{ ctx.eventDetails | escape(strategy=&quot;js&quot;) }}&quot;,</span>
+</span><span id="__span-23-8"><a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a><span class="w">          </span><span class="no">&quot;number&quot;:     &quot;+15550001234&quot;,</span>
+</span><span id="__span-23-9"><a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a><span class="w">          </span><span class="no">&quot;recipients&quot;: [&quot;+15550005678&quot;]</span>
 </span><span id="__span-23-10"><a id="__codelineno-23-10" name="__codelineno-23-10" href="#__codelineno-23-10"></a><span class="w">        </span><span class="no">}</span>
 </span></code></pre></div>
 <h3 id="twilio-sms">Twilio — SMS</h3>
@@ -4339,19 +4369,19 @@ The only header that is <strong>always included in the requests</strong> is the 
 <li>Make sure you have a Twilio phone number capable of sending SMS. You can get one under <strong>Phone Numbers → Manage → Buy a number</strong>.</li>
 <li>
 <p>Compute your Base64-encoded credentials by running the following command, then copy the output:</p>
-<div class="language-shell highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="nb">echo</span><span class="w"> </span>-n<span class="w"> </span><span class="s2">"ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx:your_auth_token"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>base64
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="nb">echo</span><span class="w"> </span>-n<span class="w"> </span><span class="s2">&quot;ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx:your_auth_token&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>base64
 </span></code></pre></div>
 </li>
 </ol>
 <div class="language-yaml highlight"><span class="filename">Kuvasz configuration</span><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="nt">integrations</span><span class="p">:</span>
 </span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="w">  </span><span class="nt">webhook</span><span class="p">:</span>
 </span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">twilio-sms</span>
-</span><span id="__span-25-4"><a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="w">      </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">'https://api.twilio.com/2010-04-01/Accounts/ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/Messages.json'</span>
+</span><span id="__span-25-4"><a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="w">      </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;https://api.twilio.com/2010-04-01/Accounts/ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/Messages.json&#39;</span>
 </span><span id="__span-25-5"><a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a><span class="w">      </span><span class="nt">request-headers</span><span class="p">:</span>
-</span><span id="__span-25-6"><a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a><span class="w">        </span><span class="nt">Content-Type</span><span class="p">:</span><span class="w"> </span><span class="s">"application/x-www-form-urlencoded"</span>
-</span><span id="__span-25-7"><a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a><span class="w">        </span><span class="nt">Authorization</span><span class="p">:</span><span class="w"> </span><span class="s">"Basic</span><span class="nv"> </span><span class="s">&lt;your-base64-encoded-credentials&gt;"</span>
+</span><span id="__span-25-6"><a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a><span class="w">        </span><span class="nt">Content-Type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;application/x-www-form-urlencoded&quot;</span>
+</span><span id="__span-25-7"><a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a><span class="w">        </span><span class="nt">Authorization</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Basic</span><span class="nv"> </span><span class="s">&lt;your-base64-encoded-credentials&gt;&quot;</span>
 </span><span id="__span-25-8"><a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a><span class="w">      </span><span class="nt">payload-template</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
-</span><span id="__span-25-9"><a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a><span class="w">        </span><span class="no">From=%2B15551234567&amp;To=%2B15550005678&amp;Body={{ ctx.eventDetails | escape(strategy="url_param") }}</span>
+</span><span id="__span-25-9"><a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a><span class="w">        </span><span class="no">From=%2B15551234567&amp;To=%2B15550005678&amp;Body={{ ctx.eventDetails | escape(strategy=&quot;url_param&quot;) }}</span>
 </span></code></pre></div>
 <p>Replace <code>%2B15551234567</code> with your Twilio number and <code>%2B15550005678</code> with the recipient number — both with the leading <code>+</code> pre-encoded as <code>%2B</code>.</p>
 <h3 id="ntfy">ntfy</h3>
@@ -4362,15 +4392,15 @@ The only header that is <strong>always included in the requests</strong> is the 
 </span><span id="__span-26-4"><a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a><span class="w">      </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://ntfy.sh</span>
 </span><span id="__span-26-5"><a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a><span class="w">      </span><span class="nt">payload-template</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
 </span><span id="__span-26-6"><a id="__codelineno-26-6" name="__codelineno-26-6" href="#__codelineno-26-6"></a><span class="w">        </span><span class="no">{</span>
-</span><span id="__span-26-7"><a id="__codelineno-26-7" name="__codelineno-26-7" href="#__codelineno-26-7"></a><span class="w">          </span><span class="no">"topic": "kuvasz_uptime_test",</span>
-</span><span id="__span-26-8"><a id="__codelineno-26-8" name="__codelineno-26-8" href="#__codelineno-26-8"></a><span class="w">          </span><span class="no">"message": "{{ ctx.eventDetails | escape(strategy="js") }}",</span>
-</span><span id="__span-26-9"><a id="__codelineno-26-9" name="__codelineno-26-9" href="#__codelineno-26-9"></a><span class="w">          </span><span class="no">"title": "Kuvasz Uptime Alert",</span>
-</span><span id="__span-26-10"><a id="__codelineno-26-10" name="__codelineno-26-10" href="#__codelineno-26-10"></a><span class="w">          </span><span class="no">"tags": [ "rotating_light" ],</span>
-</span><span id="__span-26-11"><a id="__codelineno-26-11" name="__codelineno-26-11" href="#__codelineno-26-11"></a><span class="w">          </span><span class="no">"priority": 4,</span>
-</span><span id="__span-26-12"><a id="__codelineno-26-12" name="__codelineno-26-12" href="#__codelineno-26-12"></a><span class="w">          </span><span class="no">"attach": null,</span>
-</span><span id="__span-26-13"><a id="__codelineno-26-13" name="__codelineno-26-13" href="#__codelineno-26-13"></a><span class="w">          </span><span class="no">"filename": null,</span>
-</span><span id="__span-26-14"><a id="__codelineno-26-14" name="__codelineno-26-14" href="#__codelineno-26-14"></a><span class="w">          </span><span class="no">"click": null,</span>
-</span><span id="__span-26-15"><a id="__codelineno-26-15" name="__codelineno-26-15" href="#__codelineno-26-15"></a><span class="w">          </span><span class="no">"actions": [ { "action": "view", "label": "View details", "url": "https://demo.kuvasz-uptime.dev{{ctx.monitorDetailsUrl}}" } ]</span>
+</span><span id="__span-26-7"><a id="__codelineno-26-7" name="__codelineno-26-7" href="#__codelineno-26-7"></a><span class="w">          </span><span class="no">&quot;topic&quot;: &quot;kuvasz_uptime_test&quot;,</span>
+</span><span id="__span-26-8"><a id="__codelineno-26-8" name="__codelineno-26-8" href="#__codelineno-26-8"></a><span class="w">          </span><span class="no">&quot;message&quot;: &quot;{{ ctx.eventDetails | escape(strategy=&quot;js&quot;) }}&quot;,</span>
+</span><span id="__span-26-9"><a id="__codelineno-26-9" name="__codelineno-26-9" href="#__codelineno-26-9"></a><span class="w">          </span><span class="no">&quot;title&quot;: &quot;Kuvasz Uptime Alert&quot;,</span>
+</span><span id="__span-26-10"><a id="__codelineno-26-10" name="__codelineno-26-10" href="#__codelineno-26-10"></a><span class="w">          </span><span class="no">&quot;tags&quot;: [ &quot;rotating_light&quot; ],</span>
+</span><span id="__span-26-11"><a id="__codelineno-26-11" name="__codelineno-26-11" href="#__codelineno-26-11"></a><span class="w">          </span><span class="no">&quot;priority&quot;: 4,</span>
+</span><span id="__span-26-12"><a id="__codelineno-26-12" name="__codelineno-26-12" href="#__codelineno-26-12"></a><span class="w">          </span><span class="no">&quot;attach&quot;: null,</span>
+</span><span id="__span-26-13"><a id="__codelineno-26-13" name="__codelineno-26-13" href="#__codelineno-26-13"></a><span class="w">          </span><span class="no">&quot;filename&quot;: null,</span>
+</span><span id="__span-26-14"><a id="__codelineno-26-14" name="__codelineno-26-14" href="#__codelineno-26-14"></a><span class="w">          </span><span class="no">&quot;click&quot;: null,</span>
+</span><span id="__span-26-15"><a id="__codelineno-26-15" name="__codelineno-26-15" href="#__codelineno-26-15"></a><span class="w">          </span><span class="no">&quot;actions&quot;: [ { &quot;action&quot;: &quot;view&quot;, &quot;label&quot;: &quot;View details&quot;, &quot;url&quot;: &quot;https://demo.kuvasz-uptime.dev{{ctx.monitorDetailsUrl}}&quot; } ]</span>
 </span><span id="__span-26-16"><a id="__codelineno-26-16" name="__codelineno-26-16" href="#__codelineno-26-16"></a><span class="w">        </span><span class="no">}</span>
 </span></code></pre></div>
 <p><img width="886" height="216" alt="Ntfy test notification" loading="lazy" src="../../images/examples/ntfy_webhook.webp" /></p>
@@ -4420,12 +4450,12 @@ to the emergency priority, and it calls that alert off by itself once the monito
 <div class="language-yaml highlight"><span class="filename">Kuvasz configuration</span><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="nt">integrations</span><span class="p">:</span>
 </span><span id="__span-27-2"><a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="w">  </span><span class="nt">webhook</span><span class="p">:</span>
 </span><span id="__span-27-3"><a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">home-assistant</span>
-</span><span id="__span-27-4"><a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a><span class="w">      </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">'http://your-ha-instance:8123/api/webhook/yourVerySecretWebhookId'</span>
+</span><span id="__span-27-4"><a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a><span class="w">      </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;http://your-ha-instance:8123/api/webhook/yourVerySecretWebhookId&#39;</span>
 </span><span id="__span-27-5"><a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a><span class="w">      </span><span class="nt">payload-template</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
 </span><span id="__span-27-6"><a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a><span class="w">        </span><span class="no">{</span>
-</span><span id="__span-27-7"><a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a><span class="w">          </span><span class="no">"type":        "{{ ctx.type }}",</span>
-</span><span id="__span-27-8"><a id="__codelineno-27-8" name="__codelineno-27-8" href="#__codelineno-27-8"></a><span class="w">          </span><span class="no">"monitorName": "{{ ctx.monitorName | escape(strategy="js") }}",</span>
-</span><span id="__span-27-9"><a id="__codelineno-27-9" name="__codelineno-27-9" href="#__codelineno-27-9"></a><span class="w">          </span><span class="no">"message":     "{{ ctx.eventDetails | escape(strategy="js") }}"</span>
+</span><span id="__span-27-7"><a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a><span class="w">          </span><span class="no">&quot;type&quot;:        &quot;{{ ctx.type }}&quot;,</span>
+</span><span id="__span-27-8"><a id="__codelineno-27-8" name="__codelineno-27-8" href="#__codelineno-27-8"></a><span class="w">          </span><span class="no">&quot;monitorName&quot;: &quot;{{ ctx.monitorName | escape(strategy=&quot;js&quot;) }}&quot;,</span>
+</span><span id="__span-27-9"><a id="__codelineno-27-9" name="__codelineno-27-9" href="#__codelineno-27-9"></a><span class="w">          </span><span class="no">&quot;message&quot;:     &quot;{{ ctx.eventDetails | escape(strategy=&quot;js&quot;) }}&quot;</span>
 </span><span id="__span-27-10"><a id="__codelineno-27-10" name="__codelineno-27-10" href="#__codelineno-27-10"></a><span class="w">        </span><span class="no">}</span>
 </span></code></pre></div>
 <div class="admonition info">
@@ -4443,10 +4473,10 @@ to the emergency priority, and it calls that alert off by itself once the monito
 <div class="language-yaml highlight"><span class="filename">Kuvasz configuration — plain text</span><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="nt">integrations</span><span class="p">:</span>
 </span><span id="__span-28-2"><a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="w">  </span><span class="nt">webhook</span><span class="p">:</span>
 </span><span id="__span-28-3"><a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">google-chat</span>
-</span><span id="__span-28-4"><a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a><span class="w">      </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">'https://chat.googleapis.com/v1/spaces/SPACE_ID/messages?key=KEY&amp;token=TOKEN'</span>
+</span><span id="__span-28-4"><a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a><span class="w">      </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;https://chat.googleapis.com/v1/spaces/SPACE_ID/messages?key=KEY&amp;token=TOKEN&#39;</span>
 </span><span id="__span-28-5"><a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a><span class="w">      </span><span class="nt">payload-template</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
 </span><span id="__span-28-6"><a id="__codelineno-28-6" name="__codelineno-28-6" href="#__codelineno-28-6"></a><span class="w">        </span><span class="no">{</span>
-</span><span id="__span-28-7"><a id="__codelineno-28-7" name="__codelineno-28-7" href="#__codelineno-28-7"></a><span class="w">          </span><span class="no">"text": "{{ ctx.eventDetails | escape(strategy="js") }}"</span>
+</span><span id="__span-28-7"><a id="__codelineno-28-7" name="__codelineno-28-7" href="#__codelineno-28-7"></a><span class="w">          </span><span class="no">&quot;text&quot;: &quot;{{ ctx.eventDetails | escape(strategy=&quot;js&quot;) }}&quot;</span>
 </span><span id="__span-28-8"><a id="__codelineno-28-8" name="__codelineno-28-8" href="#__codelineno-28-8"></a><span class="w">        </span><span class="no">}</span>
 </span></code></pre></div>
 <h3 id="apprise-api">Apprise API</h3>
@@ -4471,23 +4501,23 @@ severity, and it supports both the stateful and the stateless mode.</p>
 <div class="language-yaml highlight"><span class="filename">Kuvasz configuration</span><pre><span></span><code><span id="__span-29-1"><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="nt">integrations</span><span class="p">:</span>
 </span><span id="__span-29-2"><a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="w">  </span><span class="nt">webhook</span><span class="p">:</span>
 </span><span id="__span-29-3"><a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mattermost</span>
-</span><span id="__span-29-4"><a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a><span class="w">      </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">'https://your-mattermost-instance/hooks/your_webhook_token'</span>
+</span><span id="__span-29-4"><a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a><span class="w">      </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;https://your-mattermost-instance/hooks/your_webhook_token&#39;</span>
 </span><span id="__span-29-5"><a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a><span class="w">      </span><span class="nt">payload-template</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
 </span><span id="__span-29-6"><a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a><span class="w">        </span><span class="no">{</span>
-</span><span id="__span-29-7"><a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a><span class="w">          </span><span class="no">"text": "{{ ctx.eventDetails | escape(strategy="js") }}"</span>
+</span><span id="__span-29-7"><a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a><span class="w">          </span><span class="no">&quot;text&quot;: &quot;{{ ctx.eventDetails | escape(strategy=&quot;js&quot;) }}&quot;</span>
 </span><span id="__span-29-8"><a id="__codelineno-29-8" name="__codelineno-29-8" href="#__codelineno-29-8"></a><span class="w">        </span><span class="no">}</span>
 </span></code></pre></div>
 <p>You can also target a different channel than the one set during webhook creation, set a custom username, or override the icon — all via standard Mattermost payload fields:</p>
 <div class="language-yaml highlight"><span class="filename">Kuvasz configuration - with overrides</span><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="nt">integrations</span><span class="p">:</span>
 </span><span id="__span-30-2"><a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a><span class="w">  </span><span class="nt">webhook</span><span class="p">:</span>
 </span><span id="__span-30-3"><a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mattermost-custom</span>
-</span><span id="__span-30-4"><a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a><span class="w">      </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">'https://your-mattermost-instance/hooks/your_webhook_token'</span>
+</span><span id="__span-30-4"><a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a><span class="w">      </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;https://your-mattermost-instance/hooks/your_webhook_token&#39;</span>
 </span><span id="__span-30-5"><a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a><span class="w">      </span><span class="nt">payload-template</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
 </span><span id="__span-30-6"><a id="__codelineno-30-6" name="__codelineno-30-6" href="#__codelineno-30-6"></a><span class="w">        </span><span class="no">{</span>
-</span><span id="__span-30-7"><a id="__codelineno-30-7" name="__codelineno-30-7" href="#__codelineno-30-7"></a><span class="w">          </span><span class="no">"channel":   "town-square",</span>
-</span><span id="__span-30-8"><a id="__codelineno-30-8" name="__codelineno-30-8" href="#__codelineno-30-8"></a><span class="w">          </span><span class="no">"username":  "Kuvasz",</span>
-</span><span id="__span-30-9"><a id="__codelineno-30-9" name="__codelineno-30-9" href="#__codelineno-30-9"></a><span class="w">          </span><span class="no">"icon_url":  "https://kuvasz-uptime.dev/images/kuvasz-logo.webp",</span>
-</span><span id="__span-30-10"><a id="__codelineno-30-10" name="__codelineno-30-10" href="#__codelineno-30-10"></a><span class="w">          </span><span class="no">"text":      "{{ ctx.eventDetails | escape(strategy="js") }}"</span>
+</span><span id="__span-30-7"><a id="__codelineno-30-7" name="__codelineno-30-7" href="#__codelineno-30-7"></a><span class="w">          </span><span class="no">&quot;channel&quot;:   &quot;town-square&quot;,</span>
+</span><span id="__span-30-8"><a id="__codelineno-30-8" name="__codelineno-30-8" href="#__codelineno-30-8"></a><span class="w">          </span><span class="no">&quot;username&quot;:  &quot;Kuvasz&quot;,</span>
+</span><span id="__span-30-9"><a id="__codelineno-30-9" name="__codelineno-30-9" href="#__codelineno-30-9"></a><span class="w">          </span><span class="no">&quot;icon_url&quot;:  &quot;https://kuvasz-uptime.dev/images/kuvasz-logo.webp&quot;,</span>
+</span><span id="__span-30-10"><a id="__codelineno-30-10" name="__codelineno-30-10" href="#__codelineno-30-10"></a><span class="w">          </span><span class="no">&quot;text&quot;:      &quot;{{ ctx.eventDetails | escape(strategy=&quot;js&quot;) }}&quot;</span>
 </span><span id="__span-30-11"><a id="__codelineno-30-11" name="__codelineno-30-11" href="#__codelineno-30-11"></a><span class="w">        </span><span class="no">}</span>
 </span></code></pre></div>
 <h3 id="rocketchat">Rocket.Chat</h3>
@@ -4501,10 +4531,10 @@ severity, and it supports both the stateful and the stateless mode.</p>
 <div class="language-yaml highlight"><span class="filename">Kuvasz configuration</span><pre><span></span><code><span id="__span-31-1"><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="nt">integrations</span><span class="p">:</span>
 </span><span id="__span-31-2"><a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="w">  </span><span class="nt">webhook</span><span class="p">:</span>
 </span><span id="__span-31-3"><a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rocketchat</span>
-</span><span id="__span-31-4"><a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a><span class="w">      </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">'https://your-rocketchat-instance/hooks/your_token/your_secret'</span>
+</span><span id="__span-31-4"><a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a><span class="w">      </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;https://your-rocketchat-instance/hooks/your_token/your_secret&#39;</span>
 </span><span id="__span-31-5"><a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a><span class="w">      </span><span class="nt">payload-template</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
 </span><span id="__span-31-6"><a id="__codelineno-31-6" name="__codelineno-31-6" href="#__codelineno-31-6"></a><span class="w">        </span><span class="no">{</span>
-</span><span id="__span-31-7"><a id="__codelineno-31-7" name="__codelineno-31-7" href="#__codelineno-31-7"></a><span class="w">          </span><span class="no">"text": "{{ ctx.eventDetails | escape(strategy="js") }}"</span>
+</span><span id="__span-31-7"><a id="__codelineno-31-7" name="__codelineno-31-7" href="#__codelineno-31-7"></a><span class="w">          </span><span class="no">&quot;text&quot;: &quot;{{ ctx.eventDetails | escape(strategy=&quot;js&quot;) }}&quot;</span>
 </span><span id="__span-31-8"><a id="__codelineno-31-8" name="__codelineno-31-8" href="#__codelineno-31-8"></a><span class="w">        </span><span class="no">}</span>
 </span></code></pre></div>
 <p>Rocket.Chat supports the same optional fields as Mattermost (<code>channel</code>, <code>username</code>, <code>icon_url</code>, <code>icon_emoji</code>) so you can use the same overrides shown in the Mattermost example above.</p>
@@ -4694,7 +4724,7 @@ severity, and it supports both the stateful and the stateless mode.</p>
     
     
 
-      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon="{&quot;token&quot;: &quot;d7e0ee97fade40d5ab19fabc05b4502e&quot;}">

@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -853,6 +853,8 @@
       
         
       
+        
+      
     
     
     
@@ -908,6 +910,34 @@
     
   
     Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/sizing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware requirements
   
 
     
@@ -2425,28 +2455,28 @@
 <div class="language-yaml highlight"><span class="filename">YAML status page reference</span><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Default status page configuration</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nt">default-status-page</span><span class="p">:</span><span class="w"> </span><span class="c1"># (1)!</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">public</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">title</span><span class="p">:</span><span class="w"> </span><span class="s">"Status</span><span class="nv"> </span><span class="s">-</span><span class="nv"> </span><span class="s">Kuvasz</span><span class="nv"> </span><span class="s">Uptime"</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="nt">custom-logo-url</span><span class="p">:</span><span class="w"> </span><span class="s">"https://example.com/logo.png"</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="nt">custom-favicon-url</span><span class="p">:</span><span class="w"> </span><span class="s">"https://example.com/favicon.png"</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="nt">theme-base</span><span class="p">:</span><span class="w"> </span><span class="s">"SLATE"</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">title</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Status</span><span class="nv"> </span><span class="s">-</span><span class="nv"> </span><span class="s">Kuvasz</span><span class="nv"> </span><span class="s">Uptime&quot;</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="nt">custom-logo-url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://example.com/logo.png&quot;</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="nt">custom-favicon-url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://example.com/favicon.png&quot;</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="nt">theme-base</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;SLATE&quot;</span>
 </span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="nt">status-pages</span><span class="p">:</span><span class="w"> </span><span class="c1"># (2)!</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">title</span><span class="p">:</span><span class="w"> </span><span class="s">"Example</span><span class="nv"> </span><span class="s">Status</span><span class="nv"> </span><span class="s">Page"</span><span class="w"> </span><span class="c1"># (3)!</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="nt">slug</span><span class="p">:</span><span class="w"> </span><span class="s">"example-status"</span><span class="w"> </span><span class="c1"># (4)!</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">title</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Example</span><span class="nv"> </span><span class="s">Status</span><span class="nv"> </span><span class="s">Page&quot;</span><span class="w"> </span><span class="c1"># (3)!</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="nt">slug</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;example-status&quot;</span><span class="w"> </span><span class="c1"># (4)!</span>
 </span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">    </span><span class="nt">public</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"> </span><span class="c1"># (5)!</span>
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">    </span><span class="nt">custom-logo-url</span><span class="p">:</span><span class="w"> </span><span class="s">"https://example.com/logo.png"</span><span class="w"> </span><span class="c1"># (6)!</span>
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">    </span><span class="nt">custom-favicon-url</span><span class="p">:</span><span class="w"> </span><span class="s">"https://example.com/favicon.png"</span><span class="w"> </span><span class="c1"># (7)!</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">    </span><span class="nt">custom-logo-url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://example.com/logo.png&quot;</span><span class="w"> </span><span class="c1"># (6)!</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">    </span><span class="nt">custom-favicon-url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://example.com/favicon.png&quot;</span><span class="w"> </span><span class="c1"># (7)!</span>
 </span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">    </span><span class="nt">monitors</span><span class="p">:</span><span class="w"> </span><span class="c1"># (8)!</span>
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"http:My</span><span class="nv"> </span><span class="s">monitor</span><span class="nv"> </span><span class="s">1"</span>
-</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"http:My</span><span class="nv"> </span><span class="s">monitor</span><span class="nv"> </span><span class="s">2"</span>
-</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"push:My</span><span class="nv"> </span><span class="s">backup</span><span class="nv"> </span><span class="s">1"</span>
-</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"icmp:My</span><span class="nv"> </span><span class="s">ICMP</span><span class="nv"> </span><span class="s">Monitor"</span>
-</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"tcp:My</span><span class="nv"> </span><span class="s">TCP</span><span class="nv"> </span><span class="s">Monitor"</span>
-</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"dns:My</span><span class="nv"> </span><span class="s">DNS</span><span class="nv"> </span><span class="s">Monitor"</span>
-</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"docker:My</span><span class="nv"> </span><span class="s">Docker</span><span class="nv"> </span><span class="s">Monitor"</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;http:My</span><span class="nv"> </span><span class="s">monitor</span><span class="nv"> </span><span class="s">1&quot;</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;http:My</span><span class="nv"> </span><span class="s">monitor</span><span class="nv"> </span><span class="s">2&quot;</span>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;push:My</span><span class="nv"> </span><span class="s">backup</span><span class="nv"> </span><span class="s">1&quot;</span>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;icmp:My</span><span class="nv"> </span><span class="s">ICMP</span><span class="nv"> </span><span class="s">Monitor&quot;</span>
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;tcp:My</span><span class="nv"> </span><span class="s">TCP</span><span class="nv"> </span><span class="s">Monitor&quot;</span>
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;dns:My</span><span class="nv"> </span><span class="s">DNS</span><span class="nv"> </span><span class="s">Monitor&quot;</span>
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;docker:My</span><span class="nv"> </span><span class="s">Docker</span><span class="nv"> </span><span class="s">Monitor&quot;</span>
 </span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">    </span><span class="nt">categories</span><span class="p">:</span><span class="w"> </span><span class="c1"># (9)!</span>
-</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"Payments"</span>
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;Payments&quot;</span>
 </span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="w">    </span><span class="nt">display-categories</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"> </span><span class="c1"># (10)!</span>
-</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="w">    </span><span class="nt">theme-base</span><span class="p">:</span><span class="w"> </span><span class="s">"SLATE"</span><span class="w"> </span><span class="c1"># (11)!</span>
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="w">    </span><span class="nt">theme-base</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;SLATE&quot;</span><span class="w"> </span><span class="c1"># (11)!</span>
 </span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="w">  </span><span class="c1"># ... other status pages</span>
 </span></code></pre></div>
 <ol>
@@ -2531,7 +2561,7 @@
 <div class="tabbed-block">
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nt">default-status-page</span><span class="p">:</span>
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="c1"># ...</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="hll"><span class="w">  </span><span class="nt">title</span><span class="p">:</span><span class="w"> </span><span class="s">"Your</span><span class="nv"> </span><span class="s">desired</span><span class="nv"> </span><span class="s">title"</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="hll"><span class="w">  </span><span class="nt">title</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Your</span><span class="nv"> </span><span class="s">desired</span><span class="nv"> </span><span class="s">title&quot;</span>
 </span></span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="c1"># ...</span>
 </span></code></pre></div>
 </div>
@@ -2572,7 +2602,7 @@
 <div class="tabbed-block">
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nt">default-status-page</span><span class="p">:</span>
 </span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="c1"># ...</span>
-</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="hll"><span class="w">  </span><span class="nt">custom-logo-url</span><span class="p">:</span><span class="w"> </span><span class="s">"https://example.com/logo.png"</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="hll"><span class="w">  </span><span class="nt">custom-logo-url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://example.com/logo.png&quot;</span>
 </span></span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">  </span><span class="c1"># ...</span>
 </span></code></pre></div>
 </div>
@@ -2592,7 +2622,7 @@
 <div class="tabbed-block">
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nt">default-status-page</span><span class="p">:</span>
 </span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="c1"># ...</span>
-</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="hll"><span class="w">  </span><span class="nt">custom-favicon-url</span><span class="p">:</span><span class="w"> </span><span class="s">"https://example.com/favicon.png"</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="hll"><span class="w">  </span><span class="nt">custom-favicon-url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://example.com/favicon.png&quot;</span>
 </span></span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">  </span><span class="c1"># ...</span>
 </span></code></pre></div>
 </div>
@@ -2634,7 +2664,7 @@
 <div class="tabbed-block">
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nt">default-status-page</span><span class="p">:</span>
 </span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span><span class="c1"># ...</span>
-</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="hll"><span class="w">  </span><span class="nt">theme-base</span><span class="p">:</span><span class="w"> </span><span class="s">"SLATE"</span>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="hll"><span class="w">  </span><span class="nt">theme-base</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;SLATE&quot;</span>
 </span></span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">  </span><span class="c1"># ...</span>
 </span></code></pre></div>
 </div>
@@ -2694,13 +2724,13 @@
 <p>A list of <a href="../http-monitors/#category"><strong>monitor categories</strong></a> to assign to the status page. Every monitor belonging to one of them is displayed, so you can describe a page once and let it follow your monitors as you add, re-tag or remove them.</p>
 <p>The two selectors are <strong>additive</strong>: the page shows the monitors listed under <a href="#monitors"><strong>Monitors</strong></a> <strong>plus</strong> every monitor of the categories listed here. A monitor picked up by both ways is displayed only once.</p>
 <div class="language-yaml highlight"><span class="filename">A page combining the two selectors</span><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nt">status-pages</span><span class="p">:</span>
-</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">title</span><span class="p">:</span><span class="w"> </span><span class="s">"Platform"</span>
-</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">    </span><span class="nt">slug</span><span class="p">:</span><span class="w"> </span><span class="s">"platform"</span>
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">title</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Platform&quot;</span>
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">    </span><span class="nt">slug</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;platform&quot;</span>
 </span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="w">    </span><span class="nt">monitors</span><span class="p">:</span>
-</span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"http:Landing</span><span class="nv"> </span><span class="s">page"</span><span class="w"> </span><span class="c1"># (1)!</span>
+</span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;http:Landing</span><span class="nv"> </span><span class="s">page&quot;</span><span class="w"> </span><span class="c1"># (1)!</span>
 </span><span id="__span-15-6"><a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="w">    </span><span class="nt">categories</span><span class="p">:</span>
-</span><span id="__span-15-7"><a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"Payments"</span><span class="w"> </span><span class="c1"># (2)!</span>
-</span><span id="__span-15-8"><a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"Search"</span>
+</span><span id="__span-15-7"><a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;Payments&quot;</span><span class="w"> </span><span class="c1"># (2)!</span>
+</span><span id="__span-15-8"><a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;Search&quot;</span>
 </span></code></pre></div>
 <ol>
 <li>A single, uncategorized monitor, pinned to the page explicitly.</li>
@@ -2933,7 +2963,7 @@
     
     
 
-      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon="{&quot;token&quot;: &quot;d7e0ee97fade40d5ab19fabc05b4502e&quot;}">

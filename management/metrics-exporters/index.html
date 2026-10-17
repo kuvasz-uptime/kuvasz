@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -853,6 +853,8 @@
       
         
       
+        
+      
     
     
     
@@ -908,6 +910,34 @@
     
   
     Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/sizing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware requirements
   
 
     
@@ -3350,22 +3380,22 @@ every metric has all of them:</p>
 <h3 id="scraping-the-metrics">Scraping the metrics</h3>
 <p>The metrics are scrapeable through the <strong><code>/api/v2/prometheus</code></strong> endpoint, and you'll need to <strong>use</strong> <a href="../../features/api/#authentication"><strong>your API key</strong></a> by default to access it, just like on any other API endpoint. In case you have disabled the authentication, the endpoint will be available without authentication, of course.</p>
 <h3 id="example-output">Example output</h3>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-40-1"><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a>kuvasz_http_uptime_status{name="nytimes.com",target="https://www.nytimes.com"} 1.0
-</span><span id="__span-40-2"><a id="__codelineno-40-2" name="__codelineno-40-2" href="#__codelineno-40-2"></a>kuvasz_http_latency_latest_milliseconds{name="nytimes.com",target="https://www.nytimes.com"} 29.0
-</span><span id="__span-40-3"><a id="__codelineno-40-3" name="__codelineno-40-3" href="#__codelineno-40-3"></a>kuvasz_http_ssl_status{name="nytimes.com",target="https://www.nytimes.com"} 1.0
-</span><span id="__span-40-4"><a id="__codelineno-40-4" name="__codelineno-40-4" href="#__codelineno-40-4"></a>kuvasz_http_ssl_expiry_seconds{name="nytimes.com",target="https://www.nytimes.com"} 1.758828296E9
-</span><span id="__span-40-5"><a id="__codelineno-40-5" name="__codelineno-40-5" href="#__codelineno-40-5"></a>kuvasz_icmp_uptime_status{name="my-router",target="192.168.1.1"} 1.0
-</span><span id="__span-40-6"><a id="__codelineno-40-6" name="__codelineno-40-6" href="#__codelineno-40-6"></a>kuvasz_icmp_latency_latest_milliseconds{name="my-router",target="192.168.1.1"} 4.0
-</span><span id="__span-40-7"><a id="__codelineno-40-7" name="__codelineno-40-7" href="#__codelineno-40-7"></a>kuvasz_icmp_packet_loss_latest_percentage{name="my-router",target="192.168.1.1"} 0.0
-</span><span id="__span-40-8"><a id="__codelineno-40-8" name="__codelineno-40-8" href="#__codelineno-40-8"></a>kuvasz_tcp_uptime_status{name="postgres",target="192.168.1.1:5432"} 1.0
-</span><span id="__span-40-9"><a id="__codelineno-40-9" name="__codelineno-40-9" href="#__codelineno-40-9"></a>kuvasz_tcp_latency_latest_milliseconds{name="postgres",target="192.168.1.1:5432"} 3.0
-</span><span id="__span-40-10"><a id="__codelineno-40-10" name="__codelineno-40-10" href="#__codelineno-40-10"></a>kuvasz_dns_uptime_status{name="example.com",target="example.com"} 1.0
-</span><span id="__span-40-11"><a id="__codelineno-40-11" name="__codelineno-40-11" href="#__codelineno-40-11"></a>kuvasz_dns_latency_latest_milliseconds{name="example.com",target="example.com"} 12.0
-</span><span id="__span-40-12"><a id="__codelineno-40-12" name="__codelineno-40-12" href="#__codelineno-40-12"></a>kuvasz_docker_uptime_status{name="my-app",target="local/my-app"} 1.0
-</span><span id="__span-40-13"><a id="__codelineno-40-13" name="__codelineno-40-13" href="#__codelineno-40-13"></a>kuvasz_docker_api_latency_latest_milliseconds{name="my-app",target="local/my-app"} 4.0
-</span><span id="__span-40-14"><a id="__codelineno-40-14" name="__codelineno-40-14" href="#__codelineno-40-14"></a>kuvasz_docker_cpu_usage_latest_percent{name="my-app",target="local/my-app"} 2.35
-</span><span id="__span-40-15"><a id="__codelineno-40-15" name="__codelineno-40-15" href="#__codelineno-40-15"></a>kuvasz_docker_memory_usage_latest_bytes{name="my-app",target="local/my-app"} 5.4525952E7
-</span><span id="__span-40-16"><a id="__codelineno-40-16" name="__codelineno-40-16" href="#__codelineno-40-16"></a>kuvasz_docker_restart_count{name="my-app",target="local/my-app"} 3.0
+<div class="language-text highlight"><pre><span></span><code><span id="__span-40-1"><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a>kuvasz_http_uptime_status{name=&quot;nytimes.com&quot;,target=&quot;https://www.nytimes.com&quot;} 1.0
+</span><span id="__span-40-2"><a id="__codelineno-40-2" name="__codelineno-40-2" href="#__codelineno-40-2"></a>kuvasz_http_latency_latest_milliseconds{name=&quot;nytimes.com&quot;,target=&quot;https://www.nytimes.com&quot;} 29.0
+</span><span id="__span-40-3"><a id="__codelineno-40-3" name="__codelineno-40-3" href="#__codelineno-40-3"></a>kuvasz_http_ssl_status{name=&quot;nytimes.com&quot;,target=&quot;https://www.nytimes.com&quot;} 1.0
+</span><span id="__span-40-4"><a id="__codelineno-40-4" name="__codelineno-40-4" href="#__codelineno-40-4"></a>kuvasz_http_ssl_expiry_seconds{name=&quot;nytimes.com&quot;,target=&quot;https://www.nytimes.com&quot;} 1.758828296E9
+</span><span id="__span-40-5"><a id="__codelineno-40-5" name="__codelineno-40-5" href="#__codelineno-40-5"></a>kuvasz_icmp_uptime_status{name=&quot;my-router&quot;,target=&quot;192.168.1.1&quot;} 1.0
+</span><span id="__span-40-6"><a id="__codelineno-40-6" name="__codelineno-40-6" href="#__codelineno-40-6"></a>kuvasz_icmp_latency_latest_milliseconds{name=&quot;my-router&quot;,target=&quot;192.168.1.1&quot;} 4.0
+</span><span id="__span-40-7"><a id="__codelineno-40-7" name="__codelineno-40-7" href="#__codelineno-40-7"></a>kuvasz_icmp_packet_loss_latest_percentage{name=&quot;my-router&quot;,target=&quot;192.168.1.1&quot;} 0.0
+</span><span id="__span-40-8"><a id="__codelineno-40-8" name="__codelineno-40-8" href="#__codelineno-40-8"></a>kuvasz_tcp_uptime_status{name=&quot;postgres&quot;,target=&quot;192.168.1.1:5432&quot;} 1.0
+</span><span id="__span-40-9"><a id="__codelineno-40-9" name="__codelineno-40-9" href="#__codelineno-40-9"></a>kuvasz_tcp_latency_latest_milliseconds{name=&quot;postgres&quot;,target=&quot;192.168.1.1:5432&quot;} 3.0
+</span><span id="__span-40-10"><a id="__codelineno-40-10" name="__codelineno-40-10" href="#__codelineno-40-10"></a>kuvasz_dns_uptime_status{name=&quot;example.com&quot;,target=&quot;example.com&quot;} 1.0
+</span><span id="__span-40-11"><a id="__codelineno-40-11" name="__codelineno-40-11" href="#__codelineno-40-11"></a>kuvasz_dns_latency_latest_milliseconds{name=&quot;example.com&quot;,target=&quot;example.com&quot;} 12.0
+</span><span id="__span-40-12"><a id="__codelineno-40-12" name="__codelineno-40-12" href="#__codelineno-40-12"></a>kuvasz_docker_uptime_status{name=&quot;my-app&quot;,target=&quot;local/my-app&quot;} 1.0
+</span><span id="__span-40-13"><a id="__codelineno-40-13" name="__codelineno-40-13" href="#__codelineno-40-13"></a>kuvasz_docker_api_latency_latest_milliseconds{name=&quot;my-app&quot;,target=&quot;local/my-app&quot;} 4.0
+</span><span id="__span-40-14"><a id="__codelineno-40-14" name="__codelineno-40-14" href="#__codelineno-40-14"></a>kuvasz_docker_cpu_usage_latest_percent{name=&quot;my-app&quot;,target=&quot;local/my-app&quot;} 2.35
+</span><span id="__span-40-15"><a id="__codelineno-40-15" name="__codelineno-40-15" href="#__codelineno-40-15"></a>kuvasz_docker_memory_usage_latest_bytes{name=&quot;my-app&quot;,target=&quot;local/my-app&quot;} 5.4525952E7
+</span><span id="__span-40-16"><a id="__codelineno-40-16" name="__codelineno-40-16" href="#__codelineno-40-16"></a>kuvasz_docker_restart_count{name=&quot;my-app&quot;,target=&quot;local/my-app&quot;} 3.0
 </span></code></pre></div>
 <h3 id="example-config">Example config</h3>
 <div class="tabbed-set tabbed-alternate" data-tabs="21:2"><input checked="checked" id="__tabbed_21_1" name="__tabbed_21" type="radio" /><input id="__tabbed_21_2" name="__tabbed_21" type="radio" /><div class="tabbed-labels"><label for="__tabbed_21_1">YAML</label><label for="__tabbed_21_2">ENV</label></div>
@@ -3470,11 +3500,11 @@ every metric has all of them:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="24:2"><input checked="checked" id="__tabbed_24_1" name="__tabbed_24" type="radio" /><input id="__tabbed_24_2" name="__tabbed_24" type="radio" /><div class="tabbed-labels"><label for="__tabbed_24_1">YAML</label><label for="__tabbed_24_2">ENV</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-47-1"><a id="__codelineno-47-1" name="__codelineno-47-1" href="#__codelineno-47-1"></a><span class="nt">micronaut.metrics.export.otlp.headers</span><span class="p">:</span><span class="w"> </span><span class="s">'Authorization=Bearer</span><span class="nv"> </span><span class="s">Your-collectors-API-token,key2=value'</span>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-47-1"><a id="__codelineno-47-1" name="__codelineno-47-1" href="#__codelineno-47-1"></a><span class="nt">micronaut.metrics.export.otlp.headers</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;Authorization=Bearer</span><span class="nv"> </span><span class="s">Your-collectors-API-token,key2=value&#39;</span>
 </span></code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-48-1"><a id="__codelineno-48-1" name="__codelineno-48-1" href="#__codelineno-48-1"></a><span class="nv">OTLP_EXPORT_HEADERS</span><span class="o">=</span><span class="s1">'Authorization=Bearer Your-collectors-API-token,key2=value'</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-48-1"><a id="__codelineno-48-1" name="__codelineno-48-1" href="#__codelineno-48-1"></a><span class="nv">OTLP_EXPORT_HEADERS</span><span class="o">=</span><span class="s1">&#39;Authorization=Bearer Your-collectors-API-token,key2=value&#39;</span>
 </span></code></pre></div>
 </div>
 </div>
@@ -3525,7 +3555,7 @@ every metric has all of them:</p>
 </span><span id="__span-52-5"><a id="__codelineno-52-5" name="__codelineno-52-5" href="#__codelineno-52-5"></a><span class="w">      </span><span class="nt">otlp</span><span class="p">:</span>
 </span><span id="__span-52-6"><a id="__codelineno-52-6" name="__codelineno-52-6" href="#__codelineno-52-6"></a><span class="w">        </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </span><span id="__span-52-7"><a id="__codelineno-52-7" name="__codelineno-52-7" href="#__codelineno-52-7"></a><span class="w">        </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://example.host:4318/v1/metrics</span>
-</span><span id="__span-52-8"><a id="__codelineno-52-8" name="__codelineno-52-8" href="#__codelineno-52-8"></a><span class="w">        </span><span class="nt">headers</span><span class="p">:</span><span class="w"> </span><span class="s">'Authorization=Bearer</span><span class="nv"> </span><span class="s">Your-collectors-API-token,key2=value'</span>
+</span><span id="__span-52-8"><a id="__codelineno-52-8" name="__codelineno-52-8" href="#__codelineno-52-8"></a><span class="w">        </span><span class="nt">headers</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;Authorization=Bearer</span><span class="nv"> </span><span class="s">Your-collectors-API-token,key2=value&#39;</span>
 </span><span id="__span-52-9"><a id="__codelineno-52-9" name="__codelineno-52-9" href="#__codelineno-52-9"></a><span class="w">        </span><span class="nt">step</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PT1M</span>
 </span><span id="__span-52-10"><a id="__codelineno-52-10" name="__codelineno-52-10" href="#__codelineno-52-10"></a><span class="nn">---</span>
 </span><span id="__span-52-11"><a id="__codelineno-52-11" name="__codelineno-52-11" href="#__codelineno-52-11"></a><span class="nt">metrics-exports</span><span class="p">:</span>
@@ -3552,7 +3582,7 @@ every metric has all of them:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-53-1"><a id="__codelineno-53-1" name="__codelineno-53-1" href="#__codelineno-53-1"></a><span class="nv">ENABLE_METRICS_EXPORT</span><span class="o">=</span><span class="nb">true</span>
 </span><span id="__span-53-2"><a id="__codelineno-53-2" name="__codelineno-53-2" href="#__codelineno-53-2"></a><span class="nv">ENABLE_OTLP_EXPORT</span><span class="o">=</span><span class="nb">true</span>
 </span><span id="__span-53-3"><a id="__codelineno-53-3" name="__codelineno-53-3" href="#__codelineno-53-3"></a><span class="nv">OTLP_EXPORT_URL</span><span class="o">=</span>https://example.host:4318/v1/metrics
-</span><span id="__span-53-4"><a id="__codelineno-53-4" name="__codelineno-53-4" href="#__codelineno-53-4"></a><span class="nv">OTLP_EXPORT_HEADERS</span><span class="o">=</span><span class="s1">'Authorization=Bearer Your-collectors-API-token,key2=value'</span>
+</span><span id="__span-53-4"><a id="__codelineno-53-4" name="__codelineno-53-4" href="#__codelineno-53-4"></a><span class="nv">OTLP_EXPORT_HEADERS</span><span class="o">=</span><span class="s1">&#39;Authorization=Bearer Your-collectors-API-token,key2=value&#39;</span>
 </span><span id="__span-53-5"><a id="__codelineno-53-5" name="__codelineno-53-5" href="#__codelineno-53-5"></a><span class="nv">OTLP_EXPORT_STEP</span><span class="o">=</span>PT1M
 </span><span id="__span-53-6"><a id="__codelineno-53-6" name="__codelineno-53-6" href="#__codelineno-53-6"></a><span class="c1"># Enable the individual metrics</span>
 </span><span id="__span-53-7"><a id="__codelineno-53-7" name="__codelineno-53-7" href="#__codelineno-53-7"></a><span class="nv">ENABLE_HTTP_UPTIME_STATUS_EXPORT</span><span class="o">=</span><span class="nb">true</span>
@@ -3750,7 +3780,7 @@ every metric has all of them:</p>
     
     
 
-      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon="{&quot;token&quot;: &quot;d7e0ee97fade40d5ab19fabc05b4502e&quot;}">
