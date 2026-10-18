@@ -25,7 +25,6 @@ const {
     distinctSeriesColor,
     resolveMaintenanceWindowType,
     createRandomSecret,
-    buildIncidentFilterUrl,
 } = require('../main/resources/js/kuvasz.js');
 
 const UUID_V4_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
@@ -267,14 +266,5 @@ test('createRandomSecret falls back to getRandomValues in non-secure contexts', 
     } finally {
         crypto.randomUUID = original;
     }
-});
-
-test('buildIncidentFilterUrl sets or removes one filter, keeping the others', () => {
-    assert.equal(buildIncidentFilterUrl('', 'type', 'http'), '/incidents?type=http');
-    assert.equal(buildIncidentFilterUrl('?period=P7D', 'type', 'docker'), '/incidents?period=P7D&type=docker');
-    assert.equal(buildIncidentFilterUrl('?period=P7D&type=http', 'period', 'P1D'), '/incidents?period=P1D&type=http');
-    // An empty value removes the filter, and the unfiltered list keeps its plain URL
-    assert.equal(buildIncidentFilterUrl('?period=P7D&type=http', 'type', ''), '/incidents?period=P7D');
-    assert.equal(buildIncidentFilterUrl('?type=http', 'type', ''), '/incidents');
 });
 

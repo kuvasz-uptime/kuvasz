@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowDetailsDt
 import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowSortField
 import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
 import com.kuvaszuptime.kuvasz.models.dto.pagination.SortOrder
+import com.kuvaszuptime.kuvasz.models.pagination.ListDefaults
 import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
 import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowActions
@@ -50,11 +51,7 @@ class MaintenanceWindowV3Controller(
         actions.getMaintenanceWindowsPage(
             enabled = enabled,
             name = name,
-            sorting = Sorting.of(sortedBy, sortOrder, default = DEFAULT_SORTING),
+            sorting = Sorting.of(sortedBy, sortOrder, default = ListDefaults.MAINTENANCE_WINDOW_SORTING),
             pageRequest = PageRequest(page, size),
         )
-
-    companion object {
-        private val DEFAULT_SORTING = Sorting(MaintenanceWindowSortField.NAME, SortOrder.ASC)
-    }
 }

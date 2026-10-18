@@ -2,7 +2,11 @@ package com.kuvaszuptime.kuvasz.ui.fragments.statuspage
 
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
+import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageSortField
+import com.kuvaszuptime.kuvasz.models.pagination.ListDefaults
+import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
@@ -13,110 +17,160 @@ import kotlinx.html.*
 import kotlinx.html.stream.*
 
 internal const val CREATE_STATUS_PAGE_MODAL_ID = "create-status-page-modal"
+internal const val STATUS_PAGE_LIST_ID = "status-page-list"
+private const val STATUS_PAGE_LIST_PATH = "/status-pages"
 private const val STATUS_PAGE_SLUG_MAX_LENGTH = 50
 private const val CLONED_SLUG_SUFFIX = "-copy"
 
-fun renderStatusPageList(statusPages: List<StatusPageDto>, appGlobals: AppGlobals): String =
+/** The filters of the status page list, named after the query parameters of the v3 API. */
+class StatusPageListFilters internal constructor(params: QueryParams) : ListFilters {
+
+    val name: TextFilter = textFilter(params, "name", Messages.title(), placeholder = Messages.searchByTitle())
+
+    val public: ChoiceFilter<Boolean> = yesNoFilter(params, "public", Messages.public())
+
+    override val all: List<ListFilter> = listOf(name, public)
+}
+
+typealias StatusPageListQuery = ListQuery<StatusPageSortField, StatusPageListFilters>
+
+/** The state of the status page list, parsed from the query parameters of its page or fragment. */
+fun statusPageListQuery(params: QueryParams): StatusPageListQuery = ListQuery.parse(
+    params = params,
+    path = STATUS_PAGE_LIST_PATH,
+    filters = StatusPageListFilters(params),
+    sortFields = StatusPageSortField.entries,
+    defaultSorting = ListDefaults.STATUS_PAGE_SORTING,
+)
+
+/**
+ * Whether the default status page is listed. It's configured in the settings instead of being stored with the other
+ * ones, so it's not in their pages: it's pinned to the top of the first page instead, as long as it matches the filters.
+ */
+internal fun StatusPageListQuery.listsDefaultStatusPage(settings: AppGlobals.DefaultStatusPageSettings): Boolean =
+    pageRequest.page == PageRequest.DEFAULT_PAGE &&
+        filters.name.value?.let { settings.title.contains(it, ignoreCase = true) } != false &&
+        filters.public.value?.let { it == settings.public } != false
+
+fun renderStatusPageList(
+    statusPages: PagedResult<StatusPageDto>,
+    query: StatusPageListQuery,
+    appGlobals: AppGlobals,
+): String =
     createHTML(prettyPrint = false, xhtmlCompatible = false).run {
         val isReadOnlyMode = appGlobals.editabilityState.areStatusPagesReadOnly()
+        val listsDefaultStatusPage = query.listsDefaultStatusPage(appGlobals.defaultStatusPageSettings)
         div {
-            classes(CARD_TABLE, TABLE_RESPONSIVE)
-            table {
-                classes(TABLE, TABLE_SM, TABLE_VCENTER, CARD_TABLE)
-                thead {
-                    tr {
-                        // ID
-                        th {
-                            classes(TEXT_CENTER)
-                            +"ID"
+            // The page shown, which is the last one if the requested page is past the end, see listQuery in kuvasz.js
+            attributes["data-list-page"] = "${statusPages.page}"
+            activeFilterCount(STATUS_PAGE_LIST_ID, query.activeFilterCount, outOfBand = true)
+            if (statusPages.result.isEmpty() && !listsDefaultStatusPage) {
+                emptyState(
+                    icon = Icon.FILTER,
+                    title = Messages.noMatchingStatusPages(),
+                    subtitle = Messages.noMatchingStatusPagesDescription(),
+                )
+            } else {
+                div {
+                    classes(TABLE_RESPONSIVE)
+                    table {
+                        classes(TABLE, TABLE_SM, TABLE_VCENTER, CARD_TABLE)
+                        thead {
+                            tr {
+                                sortableHeader(query, StatusPageSortField.ID, "ID", setOf(TEXT_CENTER))
+                                sortableHeader(query, StatusPageSortField.TITLE, Messages.title())
+                                sortableHeader(
+                                    query,
+                                    StatusPageSortField.SLUG,
+                                    Messages.slug(),
+                                    setOf(D_NONE, D_MD_TABLE_CELL),
+                                )
+                                // Preview
+                                th {}
+                                sortableHeader(query, StatusPageSortField.PUBLIC, Messages.public(), setOf(TEXT_CENTER))
+                                // Monitors count
+                                th {
+                                    classes(D_NONE, D_MD_TABLE_CELL, TEXT_CENTER)
+                                    +Messages.monitors()
+                                }
+                                // Categories count
+                                th {
+                                    classes(D_NONE, D_MD_TABLE_CELL, TEXT_CENTER)
+                                    +Messages.categories()
+                                }
+                                // Actions
+                                th {}
+                            }
                         }
-                        // Title
-                        th { +Messages.title() }
-                        // Slug
-                        th {
-                            classes(D_NONE, D_MD_TABLE_CELL)
-                            +Messages.slug()
+                        tbody {
+                            if (listsDefaultStatusPage) {
+                                defaultStatusPageRow(appGlobals.defaultStatusPageSettings)
+                            }
+                            statusPages.result.forEach { page -> statusPageListItem(isReadOnlyMode, page) }
                         }
-                        // Preview
-                        th {}
-                        // Visibility
-                        th {
-                            classes(TEXT_CENTER)
-                            +Messages.public()
-                        }
-                        // Monitors count
-                        th {
-                            classes(D_NONE, D_MD_TABLE_CELL, TEXT_CENTER)
-                            +Messages.monitors()
-                        }
-                        // Categories count
-                        th {
-                            classes(D_NONE, D_MD_TABLE_CELL, TEXT_CENTER)
-                            +Messages.categories()
-                        }
-                        // Actions
-                        th {}
                     }
                 }
-                tbody {
-                    // Default status page - special row
-                    tr {
-                        // ID
-                        th {
-                            classes(TEXT_CENTER)
-                            +"0"
-                        }
-                        // Title
-                        td {
-                            classes(TEXT_WRAP, TEXT_BREAK)
-                            span {
-                                classes(ME_2)
-                                val title = appGlobals.defaultStatusPageSettings.title
-                                if (title.length > STATUS_PAGE_TITLE_MAX_LENGTH) {
-                                    tooltip(title)
-                                }
-                                +title.abbreviate(STATUS_PAGE_TITLE_MAX_LENGTH)
-                            }
-                            inlineBadge(
-                                text = Messages.default(),
-                                tooltip = Messages.defaultStatusPageDescription(),
-                            )
-                        }
-                        // Slug
-                        td {
-                            classes(D_NONE, D_MD_TABLE_CELL)
-                            code {
-                                +UIDefaults.STATUS_PAGE_PATH
-                            }
-                        }
-                        // Preview
-                        td {
-                            classes(TEXT_CENTER)
-                            // Preview button
-                            statusPagePreviewButton(slug = "")
-                        }
-                        // Visibility
-                        td {
-                            classes(TEXT_CENTER)
-                            statusPageVisibilityStatus(appGlobals.defaultStatusPageSettings.public)
-                        }
-                        // Monitors count: the default page always shows everything enabled, so it has no count
-                        td {
-                            classes(D_NONE, D_MD_TABLE_CELL, TEXT_CENTER)
-                        }
-                        // Categories count: it has no selectors at all either
-                        td {
-                            classes(D_NONE, D_MD_TABLE_CELL, TEXT_CENTER)
-                        }
-                        // Actions: it's configured in the settings instead
-                        td {}
-                    }
-                    // Status pages
-                    statusPages.forEach { page -> statusPageListItem(isReadOnlyMode, page) }
+                if (statusPages.result.isNotEmpty()) {
+                    listPagination(statusPages, query)
                 }
             }
         }
     }
+
+private fun TBODY.defaultStatusPageRow(settings: AppGlobals.DefaultStatusPageSettings) {
+    tr {
+        testId("default-status-page-row")
+        // ID
+        th {
+            classes(TEXT_CENTER)
+            +"0"
+        }
+        // Title
+        td {
+            classes(TEXT_WRAP, TEXT_BREAK)
+            span {
+                classes(ME_2)
+                val title = settings.title
+                if (title.length > STATUS_PAGE_TITLE_MAX_LENGTH) {
+                    tooltip(title)
+                }
+                +title.abbreviate(STATUS_PAGE_TITLE_MAX_LENGTH)
+            }
+            inlineBadge(
+                text = Messages.default(),
+                tooltip = Messages.defaultStatusPageDescription(),
+            )
+        }
+        // Slug
+        td {
+            classes(D_NONE, D_MD_TABLE_CELL)
+            code {
+                +UIDefaults.STATUS_PAGE_PATH
+            }
+        }
+        // Preview
+        td {
+            classes(TEXT_CENTER)
+            // Preview button
+            statusPagePreviewButton(slug = "")
+        }
+        // Visibility
+        td {
+            classes(TEXT_CENTER)
+            statusPageVisibilityStatus(settings.public)
+        }
+        // Monitors count: the default page always shows everything enabled, so it has no count
+        td {
+            classes(D_NONE, D_MD_TABLE_CELL, TEXT_CENTER)
+        }
+        // Categories count: it has no selectors at all either
+        td {
+            classes(D_NONE, D_MD_TABLE_CELL, TEXT_CENTER)
+        }
+        // Actions: it's configured in the settings instead
+        td {}
+    }
+}
 
 private fun FlowContent.statusPageVisibilityStatus(isPublic: Boolean) {
     val icon = if (isPublic) {

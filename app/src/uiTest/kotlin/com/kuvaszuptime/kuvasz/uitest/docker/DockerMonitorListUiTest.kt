@@ -2,14 +2,16 @@ package com.kuvaszuptime.kuvasz.uitest.docker
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
-import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createDockerMonitor
 import com.kuvaszuptime.kuvasz.mocks.createDockerUptimeEventRecord
+import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.DockerMonitorRepository
+import com.kuvaszuptime.kuvasz.uitest.MonitorListUiTestConfig
 import com.kuvaszuptime.kuvasz.uitest.PlaywrightSupport
 import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
+import com.kuvaszuptime.kuvasz.uitest.monitorListQueryTests
 import com.kuvaszuptime.kuvasz.uitest.pages.docker.DockerMonitorListPage
 import com.microsoft.playwright.assertions.LocatorAssertions
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
@@ -119,6 +121,24 @@ class DockerMonitorListUiTest(private val dockerMonitorRepository: DockerMonitor
             assertThat(list.rows).hasCount(names.size)
             list.names shouldBe listOf("alpha", "bravo", "Charlie", "Delta")
         }
+
+        monitorListQueryTests(
+            MonitorListUiTestConfig(
+                slug = "docker",
+                createMonitor = { name, category, enabled ->
+                    createDockerMonitor(
+                        dockerMonitorRepository,
+                        monitorName = name,
+                        category = category,
+                        enabled = enabled,
+                    )
+                },
+                startUptimeStatus = { name, status, startedAt ->
+                    val monitorId = checkNotNull(dockerMonitorRepository.findByName(name)).id
+                    createDockerUptimeEventRecord(dslContext, monitorId, status, startedAt, endedAt = null)
+                },
+            )
+        )
     }
 
     companion object {

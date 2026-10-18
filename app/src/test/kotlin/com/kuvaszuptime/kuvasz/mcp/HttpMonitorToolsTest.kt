@@ -96,6 +96,17 @@ class HttpMonitorToolsTest(
                 }
             }
 
+            `when`("list-http-monitors is called with a blank sort field and order") {
+                listOf("b", "a").forEach { createHttpMonitor(httpMonitorRepository, monitorName = it) }
+                val response = callToolWithMcpClient(LIST_HTTP_MONITORS, mapOf("sortedBy" to "", "sortOrder" to " "))
+
+                then("it should ignore them, and sort by name") {
+                    response.isError shouldBe false
+                    val list = response.structuredContentAs<HttpMonitorListSchema>().shouldNotBeNull()
+                    list.monitors.map { it.name } shouldBe listOf("a", "b")
+                }
+            }
+
             `when`("list-http-monitors is called with a page or a size below 1") {
                 val zeroPage = callTool(LIST_HTTP_MONITORS, mapOf("page" to 0))
                 val zeroSize = callTool(LIST_HTTP_MONITORS, mapOf("size" to 0))

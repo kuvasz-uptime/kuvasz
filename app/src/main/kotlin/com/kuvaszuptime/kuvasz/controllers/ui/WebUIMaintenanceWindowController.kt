@@ -1,13 +1,13 @@
 package com.kuvaszuptime.kuvasz.controllers.ui
 
 import com.kuvaszuptime.kuvasz.AppGlobals
-import com.kuvaszuptime.kuvasz.jooq.tables.MaintenanceWindow.MAINTENANCE_WINDOW
 import com.kuvaszuptime.kuvasz.security.ui.WebSecured
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowActions
 import com.kuvaszuptime.kuvasz.services.monitor.SharedMonitorActions
 import com.kuvaszuptime.kuvasz.ui.fragments.maintenance.*
 import com.kuvaszuptime.kuvasz.ui.pages.maintenance.*
-import com.kuvaszuptime.kuvasz.util.ascIgnoreCase
+import io.micronaut.http.HttpRequest
+import io.micronaut.http.HttpResponse
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
@@ -28,7 +28,8 @@ class WebUIMaintenanceWindowController(
     @Get("/")
     @WebSecured
     @Produces(MediaType.TEXT_HTML)
-    fun maintenanceWindows() = renderMaintenanceWindowsPage(appGlobals)
+    fun maintenanceWindows(request: HttpRequest<*>) =
+        renderMaintenanceWindowsPage(appGlobals, maintenanceWindowListQuery(request.queryParams()))
 
     @Get("/{maintenanceWindowId}")
     @WebSecured
@@ -58,13 +59,18 @@ class WebUIMaintenanceWindowController(
     @WebSecured
     @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
-    fun maintenanceWindowList(): String {
-        val maintenanceWindows =
-            maintenanceWindowActions.getMaintenanceWindows(sortedBy = MAINTENANCE_WINDOW.NAME.ascIgnoreCase())
-
-        return renderMaintenanceWindowList(
-            maintenanceWindows = maintenanceWindows,
-            appGlobals = appGlobals,
-        )
+    fun maintenanceWindowList(request: HttpRequest<*>): HttpResponse<String> {
+        val query = maintenanceWindowListQuery(request.queryParams())
+        val maintenanceWindows = fetchListPage(query.pageRequest) { pageRequest ->
+            maintenanceWindowActions.getMaintenanceWindowsPage(
+                enabled = query.filters.enabled.value,
+                name = query.filters.name.value,
+                sorting = query.sorting,
+                pageRequest = pageRequest,
+            )
+        }
+        return pagedListFragment(query, maintenanceWindows) { shownQuery ->
+            renderMaintenanceWindowList(maintenanceWindows, shownQuery, appGlobals)
+        }
     }
 }

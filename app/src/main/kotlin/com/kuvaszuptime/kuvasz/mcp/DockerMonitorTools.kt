@@ -12,9 +12,7 @@ import com.kuvaszuptime.kuvasz.mcp.schemas.DockerMonitorSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.DockerMonitorStatsSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.DockerMonitorSummarySchema
 import com.kuvaszuptime.kuvasz.models.dto.monitor.docker.DockerMonitorDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.docker.DockerMonitorSortField
-import com.kuvaszuptime.kuvasz.models.dto.pagination.SortOrder
-import com.kuvaszuptime.kuvasz.models.pagination.Sorting
+import com.kuvaszuptime.kuvasz.models.pagination.ListDefaults
 import com.kuvaszuptime.kuvasz.services.check.docker.DockerMonitorActions
 import com.kuvaszuptime.kuvasz.validation.throwIfNotEmpty
 import io.micronaut.mcp.annotations.Tool
@@ -47,7 +45,7 @@ class DockerMonitorTools(
             uptimeStatus = emptyList(),
             categoryFilter = null,
             name = name,
-            sorting = sortingOf(sortedBy, sortOrder, default = Sorting(DockerMonitorSortField.NAME, SortOrder.ASC)),
+            sorting = sortingOf(sortedBy, sortOrder, default = ListDefaults.DOCKER_MONITOR_SORTING),
             pageRequest = pageRequestOf(page, size),
         )
         return DockerMonitorListSchema(

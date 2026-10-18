@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.ui.pages.maintenance
 
-import com.iodesystems.htmx.Htmx.Companion.hx
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.ui.*
@@ -11,7 +10,7 @@ import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
 
-fun renderMaintenanceWindowsPage(globals: AppGlobals) =
+fun renderMaintenanceWindowsPage(globals: AppGlobals, query: MaintenanceWindowListQuery) =
     withLayout(
         globals,
         title = Messages.maintenanceWindows(),
@@ -21,21 +20,13 @@ fun renderMaintenanceWindowsPage(globals: AppGlobals) =
             classes(ROW, ROW_CARDS)
             div {
                 classes(COL_12)
-                div {
-                    classes(CARD)
-                    div {
-                        hx {
-                            get("/maintenance-windows/fragments/list")
-                            trigger {
-                                load()
-                                event("refresh-maintenance-window-list")
-                            }
-                            onSwapReinitTooltips()
-                        }
-                        id = "maintenance-window-list"
-                        htmxLoadingIndicator()
-                    }
-                }
+                pagedListCard(
+                    query = query,
+                    listElementId = MAINTENANCE_WINDOW_LIST_ID,
+                    fragmentPath = "/maintenance-windows/fragments/list",
+                    refreshEvent = "refresh-maintenance-window-list",
+                    refreshInterval = null,
+                )
             }
         }
     }

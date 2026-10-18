@@ -355,3 +355,9 @@ div.ts-wrapper.form-select.plugin-clear_button > div.ts-control > div.clear-butt
 .text-pre-line {
     white-space: pre-line;
 }
+
+/* Tabler removes the bottom border of the last row of a card table only from its td cells, which leaves a stub under
+   the th ones (e.g. the IDs of the status pages) above the pagination of the list */
+.card-table tbody tr:last-child th {
+    border-bottom: 0;
+}

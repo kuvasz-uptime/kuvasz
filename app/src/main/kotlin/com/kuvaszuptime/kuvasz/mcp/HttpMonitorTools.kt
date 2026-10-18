@@ -12,9 +12,7 @@ import com.kuvaszuptime.kuvasz.mcp.schemas.HttpMonitorSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.HttpMonitorStatsSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.HttpMonitorSummarySchema
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorSortField
-import com.kuvaszuptime.kuvasz.models.dto.pagination.SortOrder
-import com.kuvaszuptime.kuvasz.models.pagination.Sorting
+import com.kuvaszuptime.kuvasz.models.pagination.ListDefaults
 import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorActions
 import com.kuvaszuptime.kuvasz.validation.throwIfNotEmpty
 import io.micronaut.mcp.annotations.Tool
@@ -49,7 +47,7 @@ class HttpMonitorTools(
             sslCheckEnabled = null,
             categoryFilter = null,
             name = name,
-            sorting = sortingOf(sortedBy, sortOrder, default = Sorting(HttpMonitorSortField.NAME, SortOrder.ASC)),
+            sorting = sortingOf(sortedBy, sortOrder, default = ListDefaults.HTTP_MONITOR_SORTING),
             pageRequest = pageRequestOf(page, size),
         )
         return HttpMonitorListSchema(

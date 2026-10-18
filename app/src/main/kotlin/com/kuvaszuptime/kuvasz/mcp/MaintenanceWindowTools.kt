@@ -8,9 +8,7 @@ import com.kuvaszuptime.kuvasz.mcp.schemas.MaintenanceWindowCreatorSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.MaintenanceWindowListSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.MaintenanceWindowSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.MaintenanceWindowSummarySchema
-import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowSortField
-import com.kuvaszuptime.kuvasz.models.dto.pagination.SortOrder
-import com.kuvaszuptime.kuvasz.models.pagination.Sorting
+import com.kuvaszuptime.kuvasz.models.pagination.ListDefaults
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowActions
 import com.kuvaszuptime.kuvasz.validation.throwIfNotEmpty
 import io.micronaut.mcp.annotations.Tool
@@ -42,7 +40,7 @@ class MaintenanceWindowTools(
         val maintenanceWindows = maintenanceWindowActions.getMaintenanceWindowsPage(
             enabled = null,
             name = name,
-            sorting = sortingOf(sortedBy, sortOrder, default = Sorting(MaintenanceWindowSortField.NAME, SortOrder.ASC)),
+            sorting = sortingOf(sortedBy, sortOrder, default = ListDefaults.MAINTENANCE_WINDOW_SORTING),
             pageRequest = pageRequestOf(page, size),
         )
         return MaintenanceWindowListSchema(

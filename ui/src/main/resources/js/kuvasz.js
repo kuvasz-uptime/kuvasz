@@ -257,6 +257,87 @@ const refreshIncidentList = () => sendHtmxEvent('#incident-list', 'refresh-incid
 // Refreshes the dashboard by triggering an HTMX event
 const refreshDashboard = () => sendHtmxEvent('#dashboard-overview', 'refresh-dashboard');
 
+// --------- Paged lists ---------
+
+// Makes the list of a listQuery load again with the current state, see PagedList.kt
+const LIST_QUERY_CHANGE_EVENT = 'list-query-change';
+
+// The parameters that the sort headers, the pages and the page sizes change, while the filters are kept
+const LIST_NAVIGATION_PARAMS = ['page', 'size', 'sortedBy', 'sortOrder'];
+
+// The query string of the given states of a list: a null value is no parameter at all, and an array is a parameter
+// repeated for each of its items
+const buildListQueryString = (...states) => {
+    const params = new URLSearchParams();
+    states.forEach(state => Object.entries(state).forEach(([name, value]) => {
+        if (value === null || value === undefined) return;
+        (Array.isArray(value) ? value : [value]).forEach(item => params.append(name, item));
+    }));
+    return params.toString();
+};
+
+/**
+ * The state of a paged list: its filters, and how it's navigated (its page, page size and sorting), both by the names of
+ * their query parameters. Every request of the list (the periodic refreshes too) is made with the current state, see
+ * configureRequest(), and the server answers with the URL of the list page with the same state, so the address bar is
+ * always a permalink.
+ *
+ * The navigation values are the ones of the URL of the list page, null where it leaves out the default, so the sort
+ * headers and the pages simply hand over the ones of their links, see followLink().
+ */
+const listQuery = ({filters, emptyFilters, navigation}) => ({
+    filters,
+    navigation,
+
+    init() {
+        // A change of the filters starts the list over from its first page
+        this.$watch('filters', () => {
+            this.navigation.page = null;
+            this.reload();
+        });
+    },
+
+    reload() {
+        htmx.trigger(this.$refs.list, LIST_QUERY_CHANGE_EVENT);
+    },
+
+    // Called on the htmx:configRequest event of the list
+    configureRequest(event) {
+        const path = event.detail.path.split('?')[0];
+        const query = buildListQueryString(this.filters, this.navigation);
+        event.detail.path = query ? `${path}?${query}` : path;
+    },
+
+    // A plain click on a sort header or a page loads the list in place, any other one (e.g. to open the link in a new
+    // tab) is left to the browser
+    followLink(event) {
+        if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        const params = new URL(event.currentTarget.href).searchParams;
+        LIST_NAVIGATION_PARAMS.forEach(name => this.navigation[name] = params.get(name));
+        this.reload();
+    },
+
+    setSize(size) {
+        this.navigation.size = size;
+        this.navigation.page = null;
+        this.reload();
+    },
+
+    clearFilters() {
+        this.filters = structuredClone(emptyFilters);
+    },
+
+    // Called after every swap of the list: the server shows the last page instead of one past the end, e.g. after the
+    // last items of the last page were deleted
+    syncFromList(list) {
+        const page = list.querySelector('[data-list-page]')?.dataset.listPage;
+        if (page) {
+            this.navigation.page = page;
+        }
+    },
+});
+
 // --------- Alpine.js x-data ---------
 
 // Shared list-row component for every monitor type; only the API binding and list refresh differ
@@ -2910,23 +2991,6 @@ const upsertMaintenanceWindowForm = (
 
 // --------- Incidents ---------
 
-// The URL of the incident list with one of its filters changed, keeping the others. An empty value removes the filter,
-// so the unfiltered list keeps its plain URL
-const buildIncidentFilterUrl = (search, name, value) => {
-    const params = new URLSearchParams(search);
-    if (value) {
-        params.set(name, value);
-    } else {
-        params.delete(name);
-    }
-    const query = params.toString();
-    return query ? `/incidents?${query}` : '/incidents';
-};
-
-const applyIncidentFilter = (name, value) => {
-    window.location.href = buildIncidentFilterUrl(window.location.search, name, value);
-};
-
 const INVESTIGATION_STATUSES = {
     INVESTIGATING: 'INVESTIGATING',
     IDENTIFIED: 'IDENTIFIED',
@@ -3183,6 +3247,8 @@ if (typeof module !== 'undefined' && module.exports) {
         setThemeOption,
         appearanceSettings,
         // Alpine x-data component factories
+        listQuery,
+        LIST_QUERY_CHANGE_EVENT,
         monitorListItem,
         statusPageListItem,
         maintenanceWindowListItem,
@@ -3201,7 +3267,6 @@ if (typeof module !== 'undefined' && module.exports) {
         rememberShownStatusPageAccordions,
         showStatusPageIncidents,
         refreshStatusPageIncidentsModal,
-        buildIncidentFilterUrl,
         INVESTIGATION_STATUSES,
         httpMetricsBlock,
         icmpMetricsBlock,

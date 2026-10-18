@@ -14,6 +14,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorSortField
 import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
 import com.kuvaszuptime.kuvasz.models.dto.pagination.SortOrder
 import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
+import com.kuvaszuptime.kuvasz.models.pagination.ListDefaults
 import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
 import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorActions
@@ -67,7 +68,7 @@ class HttpMonitorV3Controller(
             sslCheckEnabled = sslCheckEnabled,
             categoryFilter = CategoryFilter.fromQueryParam(category),
             name = name,
-            sorting = Sorting.of(sortedBy, sortOrder, default = DEFAULT_SORTING),
+            sorting = Sorting.of(sortedBy, sortOrder, default = ListDefaults.HTTP_MONITOR_SORTING),
             pageRequest = PageRequest(page, size),
         )
 
@@ -92,7 +93,7 @@ class HttpMonitorV3Controller(
     ): PagedResult<HttpUptimeEventDto> =
         monitorActions.getUptimeEventsPage(
             monitorId = monitorId,
-            sorting = Sorting.of(sortedBy, sortOrder, default = DEFAULT_EVENT_SORTING),
+            sorting = Sorting.of(sortedBy, sortOrder, default = ListDefaults.EVENT_SORTING),
             pageRequest = PageRequest(page, size),
         )
 
@@ -117,12 +118,7 @@ class HttpMonitorV3Controller(
     ): PagedResult<SSLEventDto> =
         monitorActions.getSSLEventsPage(
             monitorId = monitorId,
-            sorting = Sorting.of(sortedBy, sortOrder, default = DEFAULT_EVENT_SORTING),
+            sorting = Sorting.of(sortedBy, sortOrder, default = ListDefaults.EVENT_SORTING),
             pageRequest = PageRequest(page, size),
         )
-
-    companion object {
-        private val DEFAULT_SORTING = Sorting(HttpMonitorSortField.NAME, SortOrder.ASC)
-        private val DEFAULT_EVENT_SORTING = Sorting(EventSortField.STARTED_AT, SortOrder.DESC)
-    }
 }

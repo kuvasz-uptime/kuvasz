@@ -15,6 +15,8 @@ const {
     loadCategoryOptions,
     resetCategorySelect,
     resetCategoryMultiSelect,
+    listQuery,
+    LIST_QUERY_CHANGE_EVENT,
     monitorListItem,
     statusPageListItem,
     maintenanceWindowListItem,
@@ -3369,3 +3371,149 @@ test('refreshStatusPageIncidentsModal leaves a closed modal alone', (t) => {
     assert.deepEqual(filled, []);
 });
 
+// --------- Paged lists ---------
+
+// A listQuery the way Alpine.js sets it up. The watcher of its filters is called explicitly, as there is no Alpine.js
+// to call it on a change, and the requests of its list are recorded
+const createListQuery = (t, {filters = {}, emptyFilters = {}, navigation = {}} = {}) => {
+    const component = listQuery({
+        filters,
+        emptyFilters,
+        navigation: {page: null, size: null, sortedBy: null, sortOrder: null, ...navigation},
+    });
+    const watchers = {};
+    component.$watch = (property, callback) => watchers[property] = callback;
+    component.$refs = {list: {id: 'the-list'}};
+    const reloads = [];
+    const originalHtmx = globalThis.htmx;
+    globalThis.htmx = {trigger: (element, eventName) => reloads.push({element: element.id, eventName})};
+    t.after(() => { globalThis.htmx = originalHtmx; });
+    component.init();
+    return {component, reloads, filtersChanged: () => watchers.filters()};
+};
+
+const requestPathOf = (component, path) => {
+    const event = {detail: {path}};
+    component.configureRequest(event);
+    return event.detail.path;
+};
+
+const clickOn = (href, modifiers = {}) => {
+    let isDefaultPrevented = false;
+    const event = {
+        button: 0,
+        ctrlKey: false,
+        metaKey: false,
+        shiftKey: false,
+        altKey: false,
+        ...modifiers,
+        currentTarget: {href},
+        preventDefault: () => isDefaultPrevented = true,
+    };
+    return {event, isDefaultPrevented: () => isDefaultPrevented};
+};
+
+test('listQuery requests its list with the current filters and navigation, replacing the query of the request', (t) => {
+    const {component} = createListQuery(t, {
+        filters: {name: 'a & b', category: '', enabled: null, uptimeStatus: ['UP', 'DOWN']},
+        navigation: {page: '2', sortedBy: 'NAME', sortOrder: 'DESC'},
+    });
+
+    // The empty category stands for the monitors without a category, so unlike the null ones, it's kept
+    assert.equal(
+        requestPathOf(component, '/http-monitors/fragments/list?name=old&page=9'),
+        '/http-monitors/fragments/list?name=a+%26+b&category=&uptimeStatus=UP&uptimeStatus=DOWN' +
+        '&page=2&sortedBy=NAME&sortOrder=DESC',
+    );
+});
+
+test('listQuery requests its list on its plain path, when nothing is set', (t) => {
+    const {component} = createListQuery(t, {filters: {enabled: null, uptimeStatus: []}});
+
+    assert.equal(requestPathOf(component, '/http-monitors/fragments/list?page=3'), '/http-monitors/fragments/list');
+});
+
+test('listQuery starts over from the first page when its filters change', (t) => {
+    const {component, reloads, filtersChanged} = createListQuery(t, {
+        filters: {name: ''},
+        navigation: {page: '3', size: '50', sortedBy: 'NAME'},
+    });
+
+    component.filters.name = 'api';
+    filtersChanged();
+
+    assert.deepEqual(component.navigation, {page: null, size: '50', sortedBy: 'NAME', sortOrder: null});
+    assert.deepEqual(reloads, [{element: 'the-list', eventName: LIST_QUERY_CHANGE_EVENT}]);
+});
+
+test('listQuery takes the navigation of a clicked link, keeping its filters', (t) => {
+    const {component, reloads} = createListQuery(t, {
+        filters: {name: 'typed since the link was rendered'},
+        navigation: {page: '3', size: '50'},
+    });
+    const click = clickOn('http://localhost/http-monitors?name=old&sortedBy=UPTIME_STATUS&sortOrder=DESC&size=10');
+
+    component.followLink(click.event);
+
+    assert.equal(click.isDefaultPrevented(), true);
+    // What the link leaves out is the default, so the page is the first one again
+    assert.deepEqual(component.navigation, {page: null, size: '10', sortedBy: 'UPTIME_STATUS', sortOrder: 'DESC'});
+    assert.deepEqual(component.filters, {name: 'typed since the link was rendered'});
+    assert.deepEqual(reloads, [{element: 'the-list', eventName: LIST_QUERY_CHANGE_EVENT}]);
+});
+
+test('listQuery leaves a click with a modifier key or another button to the browser', (t) => {
+    const {component, reloads} = createListQuery(t, {navigation: {page: '3'}});
+    const clicks = [
+        {ctrlKey: true},
+        {metaKey: true},
+        {shiftKey: true},
+        {altKey: true},
+        {button: 1},
+    ].map(modifiers => clickOn('http://localhost/http-monitors?page=5', modifiers));
+
+    clicks.forEach(click => component.followLink(click.event));
+
+    assert.equal(clicks.some(click => click.isDefaultPrevented()), false);
+    assert.equal(component.navigation.page, '3');
+    assert.deepEqual(reloads, []);
+});
+
+test('listQuery starts over from the first page on a new page size', (t) => {
+    const {component, reloads} = createListQuery(t, {navigation: {page: '4', sortedBy: 'NAME'}});
+
+    component.setSize('100');
+
+    assert.deepEqual(component.navigation, {page: null, size: '100', sortedBy: 'NAME', sortOrder: null});
+    assert.equal(reloads.length, 1);
+});
+
+test('listQuery clears its filters to a copy of the empty ones', (t) => {
+    const emptyFilters = {name: '', category: null, uptimeStatus: []};
+    const {component} = createListQuery(t, {
+        filters: {name: 'api', category: '', uptimeStatus: ['DOWN']},
+        emptyFilters,
+    });
+
+    component.clearFilters();
+    component.filters.uptimeStatus.push('UP');
+    component.clearFilters();
+
+    assert.deepEqual(component.filters, {name: '', category: null, uptimeStatus: []});
+    assert.deepEqual(emptyFilters, {name: '', category: null, uptimeStatus: []});
+});
+
+test('listQuery takes the page shown by the list, which is the last one when the requested page is past the end', (t) => {
+    const {component, reloads} = createListQuery(t, {navigation: {page: '7'}});
+    const listShowing = (page) => ({
+        querySelector: (selector) => selector === '[data-list-page]' ? {dataset: {listPage: page}} : null,
+    });
+
+    component.syncFromList(listShowing('5'));
+    assert.equal(component.navigation.page, '5');
+
+    // A list without a page, e.g. an error message, changes nothing
+    component.syncFromList({querySelector: () => null});
+    assert.equal(component.navigation.page, '5');
+    assert.deepEqual(reloads, []);
+});

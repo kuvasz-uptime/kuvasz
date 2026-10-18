@@ -1,7 +1,6 @@
 package com.kuvaszuptime.kuvasz.mcp
 
 import com.kuvaszuptime.kuvasz.controllers.incident.CheckIncidentNotesWritable
-import com.kuvaszuptime.kuvasz.controllers.incident.IncidentQueryDefaults
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_INCIDENT_DETAILS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_INCIDENTS
 import com.kuvaszuptime.kuvasz.mcp.schemas.DeleteResultSchema
@@ -10,6 +9,7 @@ import com.kuvaszuptime.kuvasz.mcp.schemas.IncidentListSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.IncidentNoteCreatorSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.IncidentSchema
 import com.kuvaszuptime.kuvasz.models.IncidentType
+import com.kuvaszuptime.kuvasz.models.pagination.ListDefaults
 import com.kuvaszuptime.kuvasz.repositories.IncidentRepository
 import com.kuvaszuptime.kuvasz.services.incident.IncidentActions
 import com.kuvaszuptime.kuvasz.validation.throwIfNotEmpty
@@ -18,10 +18,7 @@ import io.micronaut.mcp.annotations.ToolArg
 import io.micronaut.validation.validator.Validator
 import jakarta.inject.Singleton
 import jakarta.validation.ValidationException
-import java.time.Duration
 
-private const val INCIDENTS_PERIOD_DAYS = 7L
-private val DEFAULT_INCIDENTS_PERIOD = Duration.ofDays(INCIDENTS_PERIOD_DAYS)
 // Has to be a constant to be used in the annotations, every IncidentType has to be listed here
 private const val INCIDENT_TYPES = "'HTTP', 'SSL', 'PUSH', 'ICMP', 'TCP', 'DNS', 'DOCKER'"
 
@@ -58,11 +55,11 @@ class IncidentTools(
     ): IncidentListSchema {
         val incidents = incidentRepository.getIncidentsPage(
             monitorId = monitorId,
-            period = period.asDuration() ?: DEFAULT_INCIDENTS_PERIOD,
-            includeResolved = includeResolved ?: true,
-            type = incidentType?.toIncidentType(),
+            period = period.asDuration() ?: ListDefaults.INCIDENT_PERIOD,
+            includeResolved = includeResolved ?: ListDefaults.INCIDENT_INCLUDE_RESOLVED,
+            type = incidentType?.ifBlank { null }?.toIncidentType(),
             name = name,
-            sorting = sortingOf(sortedBy, sortOrder, default = IncidentQueryDefaults.SORTING),
+            sorting = sortingOf(sortedBy, sortOrder, default = ListDefaults.INCIDENT_SORTING),
             pageRequest = pageRequestOf(page, size),
         )
         return IncidentListSchema(

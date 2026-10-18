@@ -1,26 +1,22 @@
 package com.kuvaszuptime.kuvasz.controllers.ui
 
 import com.kuvaszuptime.kuvasz.AppGlobals
-import com.kuvaszuptime.kuvasz.jooq.tables.DnsMonitor.DNS_MONITOR
 import com.kuvaszuptime.kuvasz.models.MonitorType
-import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.DnsResolutionSnapshotRepository
-import com.kuvaszuptime.kuvasz.repositories.IncidentRepository
 import com.kuvaszuptime.kuvasz.security.ui.WebSecured
 import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.check.dns.DnsMonitorActions
-import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.dns.*
 import com.kuvaszuptime.kuvasz.ui.pages.monitor.dns.*
 import com.kuvaszuptime.kuvasz.util.UIDefaults
-import com.kuvaszuptime.kuvasz.util.ascIgnoreCase
+import io.micronaut.http.HttpRequest
+import io.micronaut.http.HttpResponse
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.PathVariable
 import io.micronaut.http.annotation.Produces
-import io.micronaut.http.annotation.QueryValue
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.annotation.ExecuteOn
 import io.swagger.v3.oas.annotations.Hidden
@@ -33,7 +29,6 @@ class WebUIDnsMonitorController(
     private val appGlobals: AppGlobals,
     private val statCalculator: StatCalculator,
     private val monitorRepository: DnsMonitorRepository,
-    private val incidentRepository: IncidentRepository,
     private val snapshotRepository: DnsResolutionSnapshotRepository,
 ) {
 
@@ -41,10 +36,12 @@ class WebUIDnsMonitorController(
     @WebSecured
     @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
-    fun dnsMonitors(@QueryValue category: String?) = renderDnsMonitorsPage(
+    fun dnsMonitors(request: HttpRequest<*>) = renderDnsMonitorsPage(
         globals = appGlobals,
-        categoryFilter = CategoryFilter.fromQueryParam(category),
-        availableCategories = monitorRepository.fetchDistinctCategories().sortedBy { it.lowercase() },
+        query = dnsMonitorListQuery(
+            params = request.queryParams(),
+            availableCategories = monitorRepository.fetchDistinctCategories().sortedBy { it.lowercase() },
+        ),
     )
 
     @Get("/dns-monitors/{monitorId}")
@@ -69,13 +66,22 @@ class WebUIDnsMonitorController(
     @WebSecured
     @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
-    fun dnsMonitorList(@QueryValue category: String?): String {
-        val monitors = monitorActions.getMonitorsWithDetails(
-            sortedBy = DNS_MONITOR.NAME.ascIgnoreCase(),
-            categoryFilter = CategoryFilter.fromQueryParam(category),
-        )
-
-        return renderDnsMonitorList(monitors, appGlobals.editabilityState)
+    fun dnsMonitorList(request: HttpRequest<*>): HttpResponse<String> {
+        val query = dnsMonitorListQuery(request.queryParams())
+        val filters = query.filters
+        val monitors = fetchListPage(query.pageRequest) { pageRequest ->
+            monitorActions.getMonitorsPage(
+                enabled = filters.enabled.value,
+                uptimeStatus = filters.uptimeStatus.values,
+                categoryFilter = filters.category.value,
+                name = filters.name.value,
+                sorting = query.sorting,
+                pageRequest = pageRequest,
+            )
+        }
+        return pagedListFragment(query, monitors) { shownQuery ->
+            renderDnsMonitorList(monitors, shownQuery, appGlobals.editabilityState)
+        }
     }
 
     @Get("/dns-monitors/fragments/details-heading/{monitorId}")
@@ -99,20 +105,6 @@ class WebUIDnsMonitorController(
         }
     }
 
-    @Get("/dns-monitors/fragments/details-uptime-incidents/{monitorId}")
-    @WebSecured
-    @ExecuteOn(TaskExecutors.BLOCKING)
-    @Produces(MediaType.TEXT_HTML)
-    fun dnsMonitorUptimeIncidents(@PathVariable monitorId: Long) =
-        monitorRepository.findById(monitorId, null)?.let { monitor ->
-            renderIncidents(
-                incidents = incidentRepository.getDnsUptimeIncidents(
-                    monitor.id,
-                    period = Duration.ofDays(UIDefaults.INCIDENTS_PERIOD_DAYS),
-                    includeResolved = true,
-                )
-            )
-        }
 
     @Get("/dns-monitors/fragments/snapshot/{monitorId}")
     @WebSecured

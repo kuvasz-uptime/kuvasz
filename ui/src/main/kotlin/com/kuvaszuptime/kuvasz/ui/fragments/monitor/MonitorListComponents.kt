@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.ui.fragments.monitor
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
@@ -31,80 +32,95 @@ internal fun TR.monitorNameCell(
     }
 }
 
-internal fun FlowContent.monitorCountLabel(typeUiConfig: MonitorTypeUiConfig, count: Int?) =
-    listCountLabel(
-        elementId = typeUiConfig.listCountElementId,
-        labelTestId = typeUiConfig.testId("count"),
-        text = count?.let { Messages.monitorCount(it) },
-    )
-
 /**
- * The table of a monitor list page, refreshed by htmx. Every type has the name and the status columns plus the row
- * actions; [columns] are the ones describing what the type itself tracks, rendered between the two.
+ * The table of a monitor list page, a page of the monitors matching [query], refreshed by htmx. Every type has the
+ * name and the status columns plus the row actions; [columns] are the ones describing what the type itself tracks,
+ * rendered between the two.
  */
-internal fun <T : MonitorDetailsDto> renderMonitorList(
-    monitors: List<T>,
+internal fun <T : MonitorDetailsDto, F : Enum<F>> renderMonitorList(
+    monitors: PagedResult<T>,
+    query: ListQuery<F, *>,
     typeUiConfig: MonitorTypeUiConfig,
     editabilityState: AppGlobals.EditabilityState,
-    columns: List<MonitorListColumn<T>>,
+    nameSortField: F,
+    statusSortField: F,
+    columns: List<MonitorListColumn<T, F>>,
     // The tooltip of the name cell, for the types that have a target worth showing without opening the monitor
     nameTooltip: (T) -> String? = { null },
     // Rendered next to the name, for the types that have something about the monitor to flag
     nameBadge: FlowContent.(T) -> Unit = {},
 ): String =
     createHTML(prettyPrint = false, xhtmlCompatible = false).run {
-        val isReadOnlyMode = editabilityState.areMonitorsReadOnly(typeUiConfig.type)
-        if (monitors.isEmpty()) {
-            div {
-                monitorCountLabel(typeUiConfig, count = 0)
-                emptyState(
-                    icon = typeUiConfig.icon,
-                    title = Messages.noMonitorsYet(),
-                    subtitle = if (isReadOnlyMode) {
-                        Messages.noMonitorsReadOnlyDescription()
-                    } else {
-                        Messages.noMonitorsDescription()
-                    },
-                )
-            }
-        } else {
-            div {
-                classes(CARD_TABLE, TABLE_RESPONSIVE)
-                monitorCountLabel(typeUiConfig, monitors.size)
-                table {
-                    classes(TABLE, TABLE_SM, TABLE_VCENTER, CARD_TABLE)
-                    thead {
-                        tr {
-                            th { +Messages.name() }
-                            th {
-                                classes(TEXT_CENTER)
-                                +Messages.status()
-                            }
-                            columns.forEach { column ->
-                                th {
-                                    classes(column.headerClasses)
-                                    +column.header
+        div {
+            // The page shown, which is the last one if the requested page is past the end, see listQuery in kuvasz.js
+            attributes["data-list-page"] = "${monitors.page}"
+            activeFilterCount(typeUiConfig.listElementId, query.activeFilterCount, outOfBand = true)
+            if (monitors.result.isEmpty()) {
+                monitorListEmptyState(typeUiConfig, editabilityState, isFiltered = query.activeFilterCount > 0)
+            } else {
+                div {
+                    classes(TABLE_RESPONSIVE)
+                    table {
+                        classes(TABLE, TABLE_SM, TABLE_VCENTER, CARD_TABLE)
+                        thead {
+                            tr {
+                                sortableHeader(query, nameSortField, Messages.name())
+                                sortableHeader(query, statusSortField, Messages.status(), setOf(TEXT_CENTER))
+                                columns.forEach { column ->
+                                    if (column.sortField != null) {
+                                        sortableHeader(query, column.sortField, column.header, column.headerClasses)
+                                    } else {
+                                        th {
+                                            classes(column.headerClasses)
+                                            +column.header
+                                        }
+                                    }
                                 }
+                                // Actions
+                                th {}
                             }
-                            // Actions
-                            th {}
                         }
-                    }
-                    tbody {
-                        monitors.forEach { monitor ->
-                            monitorListRow(monitor, typeUiConfig, editabilityState, columns, nameTooltip, nameBadge)
+                        tbody {
+                            monitors.result.forEach { monitor ->
+                                monitorListRow(monitor, typeUiConfig, editabilityState, columns, nameTooltip, nameBadge)
+                            }
                         }
                     }
                 }
+                listPagination(monitors, query)
             }
         }
     }
 
-private fun <T : MonitorDetailsDto> TBODY.monitorListRow(
+private fun FlowContent.monitorListEmptyState(
+    typeUiConfig: MonitorTypeUiConfig,
+    editabilityState: AppGlobals.EditabilityState,
+    isFiltered: Boolean,
+) = when {
+    isFiltered -> emptyState(
+        icon = Icon.FILTER,
+        title = Messages.noMatchingMonitors(),
+        subtitle = Messages.noMatchingMonitorsDescription(),
+    )
+
+    editabilityState.areMonitorsReadOnly(typeUiConfig.type) -> emptyState(
+        icon = typeUiConfig.icon,
+        title = Messages.noMonitorsYet(),
+        subtitle = Messages.noMonitorsReadOnlyDescription(),
+    )
+
+    else -> emptyState(
+        icon = typeUiConfig.icon,
+        title = Messages.noMonitorsYet(),
+        subtitle = Messages.noMonitorsDescription(),
+    )
+}
+
+private fun <T : MonitorDetailsDto, F : Enum<F>> TBODY.monitorListRow(
     monitor: T,
     typeUiConfig: MonitorTypeUiConfig,
     editabilityState: AppGlobals.EditabilityState,
-    columns: List<MonitorListColumn<T>>,
+    columns: List<MonitorListColumn<T, F>>,
     nameTooltip: (T) -> String?,
     nameBadge: FlowContent.(T) -> Unit,
 ) {

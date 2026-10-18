@@ -6,19 +6,23 @@ import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createHttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import io.micronaut.context.annotation.Property
 import io.micronaut.http.HttpRequest
+import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
+import io.micronaut.views.htmx.http.HtmxResponseHeaders
 import kotlinx.coroutines.reactive.awaitFirst
 
 /**
  * The HTTP contract of the incident pages of the web UI: the binding of the query and path parameters, and the
- * statuses telling htmx what to do. What the pages render is covered by the UI tests.
+ * statuses and the headers telling htmx what to do. What the pages render is covered by the UI tests.
  */
 @MicronautTest
 @Property(name = "micronaut.security.enabled", value = "false")
@@ -28,6 +32,11 @@ class WebUIIncidentControllerTest(
 ) : DatabaseBehaviorSpec() {
 
     init {
+        suspend fun get(uri: String): HttpResponse<String> =
+            client.exchange(HttpRequest.GET(uri), String::class.java).awaitFirst()
+
+        suspend fun replacedUrlOf(uri: String): String? = get(uri).header(HtmxResponseHeaders.HX_REPLACE_URL)
+
         suspend fun statusOf(uri: String): Int =
             try {
                 client.exchange(HttpRequest.GET<Any>(uri), String::class.java).awaitFirst().code()
@@ -37,19 +46,87 @@ class WebUIIncidentControllerTest(
 
         given("the incident list") {
 
-            `when`("the type filter is unknown") {
+            `when`("the type filter is unknown, e.g. in a URL edited by hand") {
 
-                then("a 400 is returned, both for the page and for its list") {
-                    statusOf("/incidents?type=foo") shouldBe HttpStatus.BAD_REQUEST.code
-                    statusOf("/incidents/fragments/list?type=foo") shouldBe HttpStatus.BAD_REQUEST.code
+                then("it's ignored instead of failing the request") {
+                    statusOf("/incidents?type=foo") shouldBe HttpStatus.OK.code
+                    replacedUrlOf("/incidents/fragments/list?type=foo") shouldBe "/incidents"
                 }
             }
 
             `when`("the type is lowercase or uppercase") {
 
-                then("both of them are bound") {
+                then("both of them are bound, and put into the URL in lowercase") {
                     statusOf("/incidents?type=docker") shouldBe HttpStatus.OK.code
-                    statusOf("/incidents/fragments/list?type=DOCKER") shouldBe HttpStatus.OK.code
+                    replacedUrlOf("/incidents/fragments/list?type=DOCKER") shouldBe "/incidents?type=docker"
+                }
+            }
+
+            `when`("every filter, the sorting and the page are given") {
+
+                then("the fragment replaces the URL of the page with the one leaving out the defaults") {
+                    val query = "name=+api+&type=http&period=P30D&includeResolved=false&monitorId=3" +
+                        "&sortedBy=MONITOR_NAME&sortOrder=ASC&page=1&size=10"
+
+                    replacedUrlOf("/incidents/fragments/list?$query") shouldBe "/incidents?name=api&type=http" +
+                        "&period=PT720H&includeResolved=false&monitorId=3&sortedBy=MONITOR_NAME&size=10"
+                }
+            }
+
+            `when`("the requested page is past the end of the list") {
+                val monitorId = createHttpMonitor(httpMonitorRepository).id
+                repeat(INCIDENT_COUNT) { index ->
+                    createHttpUptimeEventRecord(
+                        dslContext,
+                        monitorId = monitorId,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusHours(index + 1L),
+                        endedAt = getCurrentTimestamp().minusHours(index + 1L).plusMinutes(1),
+                    )
+                }
+
+                then("its last page is shown, and put into the URL") {
+                    replacedUrlOf("/incidents/fragments/list?size=10&page=9") shouldBe "/incidents?page=2&size=10"
+                }
+            }
+        }
+
+        given("the incident list on the details page of a monitor") {
+
+            `when`("it's requested with a page") {
+                val monitorId = createHttpMonitor(httpMonitorRepository).id
+                repeat(INCIDENT_COUNT) { index ->
+                    createHttpUptimeEventRecord(
+                        dslContext,
+                        monitorId = monitorId,
+                        status = UptimeStatus.DOWN,
+                        startedAt = getCurrentTimestamp().minusHours(index + 1L),
+                        endedAt = getCurrentTimestamp().minusHours(index + 1L).plusMinutes(1),
+                    )
+                }
+                val response = get("/incidents/fragments/monitor/http/$monitorId?size=10&page=2")
+
+                then("the page is shown, without replacing the URL of the details page") {
+                    response.status shouldBe HttpStatus.OK
+                    response.header(HtmxResponseHeaders.HX_REPLACE_URL).shouldBeNull()
+                    response.body() shouldContain """data-list-page="2""""
+                }
+            }
+
+            `when`("the monitor doesn't exist") {
+
+                then("it has no incidents to show") {
+                    val response = get("/incidents/fragments/monitor/ssl/1234")
+
+                    response.status shouldBe HttpStatus.OK
+                    response.body() shouldContain """data-list-page="1""""
+                }
+            }
+
+            `when`("the incident type is unknown") {
+
+                then("a 400 is returned") {
+                    statusOf("/incidents/fragments/monitor/foo/1234") shouldBe HttpStatus.BAD_REQUEST.code
                 }
             }
         }
@@ -113,5 +190,6 @@ class WebUIIncidentControllerTest(
 
     private companion object {
         const val HTMX_STOP_POLLING = 286
+        const val INCIDENT_COUNT = 11
     }
 }

@@ -8,6 +8,7 @@ import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentDto
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentSortField
 import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
 import com.kuvaszuptime.kuvasz.models.dto.pagination.SortOrder
+import com.kuvaszuptime.kuvasz.models.pagination.ListDefaults
 import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
 import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.repositories.IncidentRepository
@@ -53,11 +54,11 @@ class IncidentV3Controller(
     ): PagedResult<IncidentDto> =
         incidentRepository.getIncidentsPage(
             monitorId = monitorId,
-            period = period ?: Duration.ofDays(IncidentQueryDefaults.PERIOD_DAYS),
-            includeResolved = includeResolved ?: IncidentQueryDefaults.INCLUDE_RESOLVED,
+            period = period ?: ListDefaults.INCIDENT_PERIOD,
+            includeResolved = includeResolved ?: ListDefaults.INCIDENT_INCLUDE_RESOLVED,
             type = null,
             name = name,
-            sorting = Sorting.of(sortedBy, sortOrder, default = IncidentQueryDefaults.SORTING),
+            sorting = Sorting.of(sortedBy, sortOrder, default = ListDefaults.INCIDENT_SORTING),
             pageRequest = PageRequest(page, size),
         )
 
@@ -81,11 +82,11 @@ class IncidentV3Controller(
     ): PagedResult<IncidentDto> =
         incidentRepository.getIncidentsPage(
             monitorId = monitorId,
-            period = period ?: Duration.ofDays(IncidentQueryDefaults.PERIOD_DAYS),
-            includeResolved = includeResolved ?: IncidentQueryDefaults.INCLUDE_RESOLVED,
+            period = period ?: ListDefaults.INCIDENT_PERIOD,
+            includeResolved = includeResolved ?: ListDefaults.INCIDENT_INCLUDE_RESOLVED,
             type = incidentType,
             name = name,
-            sorting = Sorting.of(sortedBy, sortOrder, default = IncidentQueryDefaults.SORTING),
+            sorting = Sorting.of(sortedBy, sortOrder, default = ListDefaults.INCIDENT_SORTING),
             pageRequest = PageRequest(page, size),
         )
 }

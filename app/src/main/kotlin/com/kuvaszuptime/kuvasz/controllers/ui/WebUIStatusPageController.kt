@@ -1,13 +1,13 @@
 package com.kuvaszuptime.kuvasz.controllers.ui
 
 import com.kuvaszuptime.kuvasz.AppGlobals
-import com.kuvaszuptime.kuvasz.jooq.tables.StatusPage.STATUS_PAGE
 import com.kuvaszuptime.kuvasz.security.ui.WebSecured
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageActions
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageDataActions
 import com.kuvaszuptime.kuvasz.ui.fragments.statuspage.*
 import com.kuvaszuptime.kuvasz.ui.pages.statuspage.*
-import com.kuvaszuptime.kuvasz.util.ascIgnoreCase
+import io.micronaut.http.HttpRequest
+import io.micronaut.http.HttpResponse
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
@@ -28,7 +28,8 @@ class WebUIStatusPageController(
     @Get("/")
     @WebSecured
     @Produces(MediaType.TEXT_HTML)
-    fun statusPages() = renderStatusPagesPage(appGlobals)
+    fun statusPages(request: HttpRequest<*>) =
+        renderStatusPagesPage(appGlobals, statusPageListQuery(request.queryParams()))
 
     @Get("/{statusPageId}")
     @WebSecured
@@ -49,12 +50,18 @@ class WebUIStatusPageController(
     @WebSecured
     @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
-    fun statusPageList(): String {
-        val statusPages = statusPageActions.getStatusPages(public = null, sortedBy = STATUS_PAGE.TITLE.ascIgnoreCase())
-
-        return renderStatusPageList(
-            statusPages = statusPages,
-            appGlobals = appGlobals,
-        )
+    fun statusPageList(request: HttpRequest<*>): HttpResponse<String> {
+        val query = statusPageListQuery(request.queryParams())
+        val statusPages = fetchListPage(query.pageRequest) { pageRequest ->
+            statusPageActions.getStatusPagesPage(
+                public = query.filters.public.value,
+                name = query.filters.name.value,
+                sorting = query.sorting,
+                pageRequest = pageRequest,
+            )
+        }
+        return pagedListFragment(query, statusPages) { shownQuery ->
+            renderStatusPageList(statusPages, shownQuery, appGlobals)
+        }
     }
 }

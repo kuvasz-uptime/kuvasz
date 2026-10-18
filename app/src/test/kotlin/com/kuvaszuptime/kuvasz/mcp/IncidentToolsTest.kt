@@ -91,6 +91,24 @@ class IncidentToolsTest(
                 }
             }
 
+            `when`("list-incidents is called with a blank type and period") {
+                val monitor = createHttpMonitor(monitorRepository)
+                val event = createHttpUptimeEventRecord(
+                    dslContext,
+                    monitorId = monitor.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = getCurrentTimestamp().minusDays(2),
+                    endedAt = null,
+                )
+                val response = callToolWithMcpClient(LIST_INCIDENTS, mapOf("incidentType" to "", "period" to " "))
+
+                then("it should ignore them, and return the incidents of every type in the last 7 days") {
+                    response.isError shouldBe false
+                    val list = response.structuredContentAs<IncidentListSchema>().shouldNotBeNull()
+                    list.incidents.map { it.incidentType to it.eventId } shouldBe listOf(IncidentType.HTTP to event.id)
+                }
+            }
+
             `when`("list-incidents is called with an ongoing incident in the DB") {
                 val monitor = createHttpMonitor(monitorRepository)
                 val event = createHttpUptimeEventRecord(

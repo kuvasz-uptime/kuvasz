@@ -8,8 +8,10 @@ import com.kuvaszuptime.kuvasz.mocks.createPushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
+import com.kuvaszuptime.kuvasz.uitest.MonitorListUiTestConfig
 import com.kuvaszuptime.kuvasz.uitest.PlaywrightSupport
 import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
+import com.kuvaszuptime.kuvasz.uitest.monitorListQueryTests
 import com.kuvaszuptime.kuvasz.uitest.pages.push.PushMonitorListPage
 import com.microsoft.playwright.assertions.LocatorAssertions
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
@@ -104,6 +106,20 @@ class PushMonitorListUiTest(private val pushMonitorRepository: PushMonitorReposi
             assertThat(list.rows).hasCount(names.size)
             list.names shouldBe listOf("alpha", "bravo", "Charlie", "Delta")
         }
+
+        monitorListQueryTests(
+            MonitorListUiTestConfig(
+                slug = "push",
+                createMonitor = { name, category, enabled ->
+                    createPushMonitor(pushMonitorRepository, monitorName = name, category = category, enabled = enabled)
+                },
+                startUptimeStatus = { name, status, startedAt ->
+                    val monitorId = checkNotNull(pushMonitorRepository.findByName(name)).id
+                    createPushUptimeEventRecord(dslContext, monitorId, status, startedAt, endedAt = null)
+                },
+                otherSortFields = listOf("LAST_HEARTBEAT"),
+            )
+        )
     }
 
     companion object {

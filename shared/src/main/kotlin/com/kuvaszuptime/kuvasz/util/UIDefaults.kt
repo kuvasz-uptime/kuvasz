@@ -11,7 +11,6 @@ object UIDefaults {
     const val DNS_MONITOR_UPTIME_STATS_PERIOD_DAYS = 7L
     const val DOCKER_MONITOR_UPTIME_STATS_PERIOD_DAYS = 7L
     const val MONITOR_METRICS_PERIOD_DAYS = 1L
-    const val INCIDENTS_PERIOD_DAYS = 7L
     const val STATUS_PAGE_PATH = "/status"
 
     private const val ONE_HOUR = 1L

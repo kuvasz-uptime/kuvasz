@@ -11,9 +11,7 @@ import com.kuvaszuptime.kuvasz.mcp.schemas.DnsMonitorSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.DnsMonitorStatsSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.DnsMonitorSummarySchema
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorSortField
-import com.kuvaszuptime.kuvasz.models.dto.pagination.SortOrder
-import com.kuvaszuptime.kuvasz.models.pagination.Sorting
+import com.kuvaszuptime.kuvasz.models.pagination.ListDefaults
 import com.kuvaszuptime.kuvasz.services.check.dns.DnsMonitorActions
 import com.kuvaszuptime.kuvasz.validation.throwIfNotEmpty
 import io.micronaut.mcp.annotations.Tool
@@ -46,7 +44,7 @@ class DnsMonitorTools(
             uptimeStatus = emptyList(),
             categoryFilter = null,
             name = name,
-            sorting = sortingOf(sortedBy, sortOrder, default = Sorting(DnsMonitorSortField.NAME, SortOrder.ASC)),
+            sorting = sortingOf(sortedBy, sortOrder, default = ListDefaults.DNS_MONITOR_SORTING),
             pageRequest = pageRequestOf(page, size),
         )
         return DnsMonitorListSchema(

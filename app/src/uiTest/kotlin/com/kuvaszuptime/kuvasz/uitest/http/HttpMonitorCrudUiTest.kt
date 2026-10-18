@@ -5,10 +5,10 @@ import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.uitest.PlaywrightSupport
 import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
-import com.kuvaszuptime.kuvasz.uitest.shouldAcceptAfterFixing
-import com.kuvaszuptime.kuvasz.uitest.shouldRejectWith
 import com.kuvaszuptime.kuvasz.uitest.pages.http.HttpMonitorDetailsPage
 import com.kuvaszuptime.kuvasz.uitest.pages.http.HttpMonitorListPage
+import com.kuvaszuptime.kuvasz.uitest.shouldAcceptAfterFixing
+import com.kuvaszuptime.kuvasz.uitest.shouldRejectWith
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.nulls.shouldBeNull
@@ -56,13 +56,12 @@ class HttpMonitorCrudUiTest(private val httpMonitorRepository: HttpMonitorReposi
 
             list.navigate()
             assertThat(list.rowByName(updatedName)).isVisible()
-            assertThat(list.count).hasText(Messages.monitorCount(1))
+            assertThat(list.pagedList.paginationSummary).hasText(Messages.listPaginationSummary(1, 1, 1))
 
             list.deleteMonitor(updatedName)
             assertThat(list.rowByName(updatedName)).hasCount(0)
             assertThat(list.emptyState).isVisible()
-            // The count follows the refreshed list, even though the toolbar it lives in is never re-rendered
-            assertThat(list.count).hasText(Messages.monitorCount(0))
+            assertThat(list.pagedList.pagination).hasCount(0)
         }
 
         "cross-origin header propagation is disabled by default, and enabling it survives the save" {

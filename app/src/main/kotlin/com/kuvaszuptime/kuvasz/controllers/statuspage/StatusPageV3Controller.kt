@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageSortField
 import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
 import com.kuvaszuptime.kuvasz.models.dto.pagination.SortOrder
+import com.kuvaszuptime.kuvasz.models.pagination.ListDefaults
 import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
 import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageActions
@@ -50,11 +51,7 @@ class StatusPageV3Controller(
         actions.getStatusPagesPage(
             public = public,
             name = name,
-            sorting = Sorting.of(sortedBy, sortOrder, default = DEFAULT_SORTING),
+            sorting = Sorting.of(sortedBy, sortOrder, default = ListDefaults.STATUS_PAGE_SORTING),
             pageRequest = PageRequest(page, size),
         )
-
-    companion object {
-        private val DEFAULT_SORTING = Sorting(StatusPageSortField.TITLE, SortOrder.ASC)
-    }
 }

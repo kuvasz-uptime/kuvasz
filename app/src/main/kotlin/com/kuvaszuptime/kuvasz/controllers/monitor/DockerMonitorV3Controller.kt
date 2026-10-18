@@ -12,6 +12,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.docker.DockerMonitorSortField
 import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
 import com.kuvaszuptime.kuvasz.models.dto.pagination.SortOrder
 import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
+import com.kuvaszuptime.kuvasz.models.pagination.ListDefaults
 import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
 import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.services.check.docker.DockerMonitorActions
@@ -61,7 +62,7 @@ class DockerMonitorV3Controller(
             uptimeStatus = uptimeStatus.orEmpty(),
             categoryFilter = CategoryFilter.fromQueryParam(category),
             name = name,
-            sorting = Sorting.of(sortedBy, sortOrder, default = DEFAULT_SORTING),
+            sorting = Sorting.of(sortedBy, sortOrder, default = ListDefaults.DOCKER_MONITOR_SORTING),
             pageRequest = PageRequest(page, size),
         )
 
@@ -86,12 +87,7 @@ class DockerMonitorV3Controller(
     ): PagedResult<DockerUptimeEventDto> =
         monitorActions.getUptimeEventsPage(
             monitorId = monitorId,
-            sorting = Sorting.of(sortedBy, sortOrder, default = DEFAULT_EVENT_SORTING),
+            sorting = Sorting.of(sortedBy, sortOrder, default = ListDefaults.EVENT_SORTING),
             pageRequest = PageRequest(page, size),
         )
-
-    companion object {
-        private val DEFAULT_SORTING = Sorting(DockerMonitorSortField.NAME, SortOrder.ASC)
-        private val DEFAULT_EVENT_SORTING = Sorting(EventSortField.STARTED_AT, SortOrder.DESC)
-    }
 }

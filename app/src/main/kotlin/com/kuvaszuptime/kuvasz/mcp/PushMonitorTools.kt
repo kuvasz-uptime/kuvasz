@@ -11,9 +11,7 @@ import com.kuvaszuptime.kuvasz.mcp.schemas.PushMonitorSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.PushMonitorStatsSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.PushMonitorSummarySchema
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorSortField
-import com.kuvaszuptime.kuvasz.models.dto.pagination.SortOrder
-import com.kuvaszuptime.kuvasz.models.pagination.Sorting
+import com.kuvaszuptime.kuvasz.models.pagination.ListDefaults
 import com.kuvaszuptime.kuvasz.services.check.push.PushMonitorActions
 import com.kuvaszuptime.kuvasz.validation.throwIfNotEmpty
 import io.micronaut.mcp.annotations.Tool
@@ -46,7 +44,7 @@ class PushMonitorTools(
             uptimeStatus = emptyList(),
             categoryFilter = null,
             name = name,
-            sorting = sortingOf(sortedBy, sortOrder, default = Sorting(PushMonitorSortField.NAME, SortOrder.ASC)),
+            sorting = sortingOf(sortedBy, sortOrder, default = ListDefaults.PUSH_MONITOR_SORTING),
             pageRequest = pageRequestOf(page, size),
         )
         return PushMonitorListSchema(

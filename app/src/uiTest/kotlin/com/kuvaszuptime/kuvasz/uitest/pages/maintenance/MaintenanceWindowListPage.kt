@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.uitest.pages.maintenance
 
+import com.kuvaszuptime.kuvasz.uitest.pages.common.PagedListView
 import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
 
@@ -9,6 +10,9 @@ class MaintenanceWindowListPage(private val page: Page) {
     val addButton: Locator get() = page.getByTestId("add-new-button")
 
     val rows: Locator get() = page.getByTestId("maintenance-window-row")
+
+    // The filters, the sorting and the pages of the list
+    val pagedList = PagedListView(page, "maintenance-window-list")
 
     // Replaces the table entirely while there isn't a single maintenance window
     val emptyState: Locator get() = page.getByTestId("empty-state")

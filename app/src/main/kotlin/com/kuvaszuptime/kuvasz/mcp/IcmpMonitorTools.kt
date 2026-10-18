@@ -11,9 +11,7 @@ import com.kuvaszuptime.kuvasz.mcp.schemas.IcmpMonitorSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.IcmpMonitorStatsSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.IcmpMonitorSummarySchema
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorSortField
-import com.kuvaszuptime.kuvasz.models.dto.pagination.SortOrder
-import com.kuvaszuptime.kuvasz.models.pagination.Sorting
+import com.kuvaszuptime.kuvasz.models.pagination.ListDefaults
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpMonitorActions
 import com.kuvaszuptime.kuvasz.validation.throwIfNotEmpty
 import io.micronaut.mcp.annotations.Tool
@@ -46,7 +44,7 @@ class IcmpMonitorTools(
             uptimeStatus = emptyList(),
             categoryFilter = null,
             name = name,
-            sorting = sortingOf(sortedBy, sortOrder, default = Sorting(IcmpMonitorSortField.NAME, SortOrder.ASC)),
+            sorting = sortingOf(sortedBy, sortOrder, default = ListDefaults.ICMP_MONITOR_SORTING),
             pageRequest = pageRequestOf(page, size),
         )
         return IcmpMonitorListSchema(

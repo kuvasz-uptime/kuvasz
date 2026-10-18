@@ -2,20 +2,20 @@ package com.kuvaszuptime.kuvasz.security
 
 import com.kuvaszuptime.kuvasz.DatabaseStringSpec
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.mocks.createDnsMonitor
+import com.kuvaszuptime.kuvasz.mocks.createDockerMonitor
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createHttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
-import com.kuvaszuptime.kuvasz.mocks.createDnsMonitor
-import com.kuvaszuptime.kuvasz.mocks.createDockerMonitor
 import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
+import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.DockerMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
-import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
-import com.kuvaszuptime.kuvasz.repositories.DockerMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.data.forAll
@@ -68,34 +68,34 @@ class DisabledWebUIAuthenticationTest(
                 row("/http-monitors/${httpMonitor.id}"),
                 row("/http-monitors/fragments/list"),
                 row("/http-monitors/fragments/details-heading/${httpMonitor.id}"),
-                row("/http-monitors/fragments/details-uptime-incidents/${httpMonitor.id}"),
-                row("/http-monitors/fragments/details-ssl-incidents/${httpMonitor.id}"),
+                row("/incidents/fragments/monitor/http/${httpMonitor.id}"),
+                row("/incidents/fragments/monitor/ssl/${httpMonitor.id}"),
                 row("/push-monitors"),
                 row("/push-monitors/${pushMonitor.id}"),
                 row("/push-monitors/fragments/list"),
                 row("/push-monitors/fragments/details-heading/${pushMonitor.id}"),
-                row("/push-monitors/fragments/details-uptime-incidents/${pushMonitor.id}"),
+                row("/incidents/fragments/monitor/push/${pushMonitor.id}"),
                 row("/icmp-monitors"),
                 row("/icmp-monitors/${icmpMonitor.id}"),
                 row("/icmp-monitors/fragments/list"),
                 row("/icmp-monitors/fragments/details-heading/${icmpMonitor.id}"),
-                row("/icmp-monitors/fragments/details-uptime-incidents/${icmpMonitor.id}"),
+                row("/incidents/fragments/monitor/icmp/${icmpMonitor.id}"),
                 row("/tcp-monitors"),
                 row("/tcp-monitors/${tcpMonitor.id}"),
                 row("/tcp-monitors/fragments/list"),
                 row("/tcp-monitors/fragments/details-heading/${tcpMonitor.id}"),
-                row("/tcp-monitors/fragments/details-uptime-incidents/${tcpMonitor.id}"),
+                row("/incidents/fragments/monitor/tcp/${tcpMonitor.id}"),
                 row("/dns-monitors"),
                 row("/dns-monitors/${dnsMonitor.id}"),
                 row("/dns-monitors/fragments/list"),
                 row("/dns-monitors/fragments/details-heading/${dnsMonitor.id}"),
-                row("/dns-monitors/fragments/details-uptime-incidents/${dnsMonitor.id}"),
+                row("/incidents/fragments/monitor/dns/${dnsMonitor.id}"),
                 row("/dns-monitors/fragments/snapshot/${dnsMonitor.id}"),
                 row("/docker-monitors"),
                 row("/docker-monitors/${dockerMonitor.id}"),
                 row("/docker-monitors/fragments/list"),
                 row("/docker-monitors/fragments/details-heading/${dockerMonitor.id}"),
-                row("/docker-monitors/fragments/details-uptime-incidents/${dockerMonitor.id}"),
+                row("/incidents/fragments/monitor/docker/${dockerMonitor.id}"),
                 row("/settings"),
                 row("/integrations"),
                 row("/incidents"),

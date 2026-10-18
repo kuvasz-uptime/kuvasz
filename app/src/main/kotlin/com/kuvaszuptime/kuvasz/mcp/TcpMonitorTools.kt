@@ -12,9 +12,7 @@ import com.kuvaszuptime.kuvasz.mcp.schemas.TcpMonitorSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.TcpMonitorStatsSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.TcpMonitorSummarySchema
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorDto
-import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorSortField
-import com.kuvaszuptime.kuvasz.models.dto.pagination.SortOrder
-import com.kuvaszuptime.kuvasz.models.pagination.Sorting
+import com.kuvaszuptime.kuvasz.models.pagination.ListDefaults
 import com.kuvaszuptime.kuvasz.services.check.tcp.TcpMonitorActions
 import com.kuvaszuptime.kuvasz.validation.throwIfNotEmpty
 import io.micronaut.mcp.annotations.Tool
@@ -47,7 +45,7 @@ class TcpMonitorTools(
             uptimeStatus = emptyList(),
             categoryFilter = null,
             name = name,
-            sorting = sortingOf(sortedBy, sortOrder, default = Sorting(TcpMonitorSortField.NAME, SortOrder.ASC)),
+            sorting = sortingOf(sortedBy, sortOrder, default = ListDefaults.TCP_MONITOR_SORTING),
             pageRequest = pageRequestOf(page, size),
         )
         return TcpMonitorListSchema(

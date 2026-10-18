@@ -8,8 +8,10 @@ import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
+import com.kuvaszuptime.kuvasz.uitest.MonitorListUiTestConfig
 import com.kuvaszuptime.kuvasz.uitest.PlaywrightSupport
 import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
+import com.kuvaszuptime.kuvasz.uitest.monitorListQueryTests
 import com.kuvaszuptime.kuvasz.uitest.pages.dns.DnsMonitorListPage
 import com.microsoft.playwright.assertions.LocatorAssertions
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
@@ -104,6 +106,19 @@ class DnsMonitorListUiTest(private val dnsMonitorRepository: DnsMonitorRepositor
             assertThat(list.rows).hasCount(names.size)
             list.names shouldBe listOf("alpha", "bravo", "Charlie", "Delta")
         }
+
+        monitorListQueryTests(
+            MonitorListUiTestConfig(
+                slug = "dns",
+                createMonitor = { name, category, enabled ->
+                    createDnsMonitor(dnsMonitorRepository, monitorName = name, category = category, enabled = enabled)
+                },
+                startUptimeStatus = { name, status, startedAt ->
+                    val monitorId = checkNotNull(dnsMonitorRepository.findByName(name)).id
+                    createDnsUptimeEventRecord(dslContext, monitorId, status, startedAt, endedAt = null)
+                },
+            )
+        )
     }
 
     companion object {

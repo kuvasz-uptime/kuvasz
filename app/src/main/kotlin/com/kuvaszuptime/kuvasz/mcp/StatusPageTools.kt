@@ -3,9 +3,7 @@ package com.kuvaszuptime.kuvasz.mcp
 import com.kuvaszuptime.kuvasz.mcp.schemas.StatusPageDetailsSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.StatusPageListSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.StatusPageSchema
-import com.kuvaszuptime.kuvasz.models.dto.pagination.SortOrder
-import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageSortField
-import com.kuvaszuptime.kuvasz.models.pagination.Sorting
+import com.kuvaszuptime.kuvasz.models.pagination.ListDefaults
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageActions
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageDataActions
 import io.micronaut.mcp.annotations.Tool
@@ -34,7 +32,7 @@ class StatusPageTools(
         val statusPages = statusPageActions.getStatusPagesPage(
             public = null,
             name = name,
-            sorting = sortingOf(sortedBy, sortOrder, default = Sorting(StatusPageSortField.TITLE, SortOrder.ASC)),
+            sorting = sortingOf(sortedBy, sortOrder, default = ListDefaults.STATUS_PAGE_SORTING),
             pageRequest = pageRequestOf(page, size),
         )
         return StatusPageListSchema(
