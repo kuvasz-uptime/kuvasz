@@ -64,7 +64,12 @@ interface DnsMonitorOperations {
     @Patch("/{monitorId}")
     fun updateMonitor(monitorId: Long, @Body updates: ObjectNode): DnsMonitorDto
 
-    @Operation(summary = "Get the uptime events of the given monitor")
+    @Operation(
+        summary = "Get the uptime events of the given monitor",
+        description = "Deprecated: use GET /api/v3/dns-monitors/{monitorId}/uptime-events instead, " +
+            "which returns the events page by page",
+        deprecated = true,
+    )
     @Get("/{monitorId}/uptime-events")
     fun getUptimeEvents(monitorId: Long): List<DnsUptimeEventDto>
 

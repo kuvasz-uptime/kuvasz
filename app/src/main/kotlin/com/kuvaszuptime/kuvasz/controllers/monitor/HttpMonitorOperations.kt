@@ -72,11 +72,21 @@ interface HttpMonitorOperations {
     @Patch("/{monitorId}")
     fun updateMonitor(monitorId: Long, @Body updates: ObjectNode): HttpMonitorDto
 
-    @Operation(summary = "Get the uptime events of the given monitor")
+    @Operation(
+        summary = "Get the uptime events of the given monitor",
+        description = "Deprecated: use GET /api/v3/http-monitors/{monitorId}/uptime-events instead, " +
+            "which returns the events page by page",
+        deprecated = true,
+    )
     @Get("/{monitorId}/uptime-events")
     fun getUptimeEvents(monitorId: Long): List<HttpUptimeEventDto>
 
-    @Operation(summary = "Get the SSL events of the given monitor")
+    @Operation(
+        summary = "Get the SSL events of the given monitor",
+        description = "Deprecated: use GET /api/v3/http-monitors/{monitorId}/ssl-events instead, " +
+            "which returns the events page by page",
+        deprecated = true,
+    )
     @Get("/{monitorId}/ssl-events")
     fun getSSLEvents(monitorId: Long): List<SSLEventDto>
 

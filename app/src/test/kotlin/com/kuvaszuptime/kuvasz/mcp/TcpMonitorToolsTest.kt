@@ -12,10 +12,10 @@ import com.kuvaszuptime.kuvasz.mcp.schemas.TcpMonitorDetailsSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.TcpMonitorListSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.TcpMonitorSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.TcpMonitorStatsSchema
-import com.kuvaszuptime.kuvasz.mocks.createTcpMetricsLogRecord
-import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
+import com.kuvaszuptime.kuvasz.mocks.createTcpMetricsLogRecord
+import com.kuvaszuptime.kuvasz.mocks.createTcpMonitor
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
@@ -43,6 +43,25 @@ class TcpMonitorToolsTest(
 
     init {
         given("the list-tcp-monitors tool") {
+
+            `when`("list-tcp-monitors is called with paging, sorting and a name filter") {
+                listOf("a-x", "b-x", "c").forEach { createTcpMonitor(tcpMonitorRepository, monitorName = it) }
+                val response = callToolWithMcpClient(
+                    LIST_TCP_MONITORS,
+                    mapOf("name" to "X", "size" to 1, "sortedBy" to "name", "sortOrder" to "desc"),
+                )
+
+                then("it should return the requested page of the matching ones, with the totals") {
+                    response.isError shouldBe false
+
+                    val list = response.structuredContentAs<TcpMonitorListSchema>().shouldNotBeNull()
+                    list.monitors.map { it.name } shouldBe listOf("b-x")
+                    list.page shouldBe 1
+                    list.size shouldBe 1
+                    list.totalCount shouldBe 2
+                    list.totalPages shouldBe 2
+                }
+            }
 
             `when`("list-tcp-monitors is called with monitors in the DB") {
                 val monitor = createTcpMonitor(tcpMonitorRepository)

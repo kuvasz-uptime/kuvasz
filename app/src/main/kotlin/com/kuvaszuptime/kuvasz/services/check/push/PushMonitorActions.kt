@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.pojos.PushMonitor
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.models.MonitorDuplicatedException
 import com.kuvaszuptime.kuvasz.models.MonitorNotFoundException
+import com.kuvaszuptime.kuvasz.models.dto.event.EventSortField
 import com.kuvaszuptime.kuvasz.models.dto.event.PushUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.PushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorId
@@ -37,11 +38,11 @@ import com.kuvaszuptime.kuvasz.util.transactionResultWithError
 import com.kuvaszuptime.kuvasz.validation.IntegrationIdValidator
 import io.micronaut.validation.validator.Validator
 import jakarta.inject.Singleton
-import java.time.Duration
-import java.time.OffsetDateTime
 import org.jooq.DSLContext
 import org.jooq.SortField
 import tools.jackson.databind.node.ObjectNode
+import java.time.Duration
+import java.time.OffsetDateTime
 
 @Singleton
 class PushMonitorActions(
@@ -176,6 +177,15 @@ class PushMonitorActions(
             .let { monitor ->
                 uptimeEventRepository.getEventsByMonitorId(monitor.id, limit)
             }
+
+    fun getUptimeEventsPage(
+        monitorId: Long,
+        sorting: Sorting<EventSortField>,
+        pageRequest: PageRequest,
+    ): PagedResult<PushUptimeEventDto> =
+        monitorRepository.findById(monitorId, null)
+            .orThrowNotFound(monitorId)
+            .let { monitor -> uptimeEventRepository.getEventsPage(monitor.id, sorting, pageRequest) }
 
     fun getMonitorStats(monitorId: Long, period: Duration): PushMonitorStatsDto =
         withUptimeHistory(monitorId, period) { monitor, uptimeHistory ->

@@ -11,6 +11,9 @@ import com.kuvaszuptime.kuvasz.mcp.schemas.DnsMonitorSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.DnsMonitorStatsSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.DnsMonitorSummarySchema
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorSortField
+import com.kuvaszuptime.kuvasz.models.dto.pagination.SortOrder
+import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.services.check.dns.DnsMonitorActions
 import com.kuvaszuptime.kuvasz.validation.throwIfNotEmpty
 import io.micronaut.mcp.annotations.Tool
@@ -26,13 +29,34 @@ class DnsMonitorTools(
 
     @Tool(
         name = ToolNames.LIST_DNS_MONITORS,
-        description = "Lists all DNS monitors configured in Kuvasz with their current uptime status",
+        description = "Lists the DNS monitors configured in Kuvasz with their current uptime status, sorted by their " +
+            "name by default." +
+            ListToolArgs.PAGINATION_NOTE,
         annotations = Tool.ToolAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true)
     )
-    fun listDnsMonitors(): DnsMonitorListSchema =
-        DnsMonitorListSchema(
-            monitors = dnsMonitorActions.getMonitorsWithDetails().map { DnsMonitorSummarySchema.fromDto(it) }
+    fun listDnsMonitors(
+        @ToolArg(description = ListToolArgs.MONITOR_NAME) name: String? = null,
+        @ToolArg(description = ListToolArgs.PAGE) page: Int? = null,
+        @ToolArg(description = ListToolArgs.SIZE) size: Int? = null,
+        @ToolArg(description = ListToolArgs.SORTED_BY) sortedBy: String? = null,
+        @ToolArg(description = ListToolArgs.SORT_ORDER) sortOrder: String? = null,
+    ): DnsMonitorListSchema {
+        val monitors = dnsMonitorActions.getMonitorsPage(
+            enabled = null,
+            uptimeStatus = emptyList(),
+            categoryFilter = null,
+            name = name,
+            sorting = sortingOf(sortedBy, sortOrder, default = Sorting(DnsMonitorSortField.NAME, SortOrder.ASC)),
+            pageRequest = pageRequestOf(page, size),
         )
+        return DnsMonitorListSchema(
+            monitors = monitors.result.map { DnsMonitorSummarySchema.fromDto(it) },
+            page = monitors.page,
+            size = monitors.size,
+            totalCount = monitors.totalCount,
+            totalPages = monitors.totalPages,
+        )
+    }
 
     @Tool(
         name = ToolNames.GET_DNS_MONITOR_DETAILS,

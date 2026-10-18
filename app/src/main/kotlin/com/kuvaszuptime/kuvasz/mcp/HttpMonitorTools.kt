@@ -12,6 +12,9 @@ import com.kuvaszuptime.kuvasz.mcp.schemas.HttpMonitorSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.HttpMonitorStatsSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.HttpMonitorSummarySchema
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorSortField
+import com.kuvaszuptime.kuvasz.models.dto.pagination.SortOrder
+import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorActions
 import com.kuvaszuptime.kuvasz.validation.throwIfNotEmpty
 import io.micronaut.mcp.annotations.Tool
@@ -27,14 +30,36 @@ class HttpMonitorTools(
 
     @Tool(
         name = ToolNames.LIST_HTTP_MONITORS,
-        description =
-            "Lists all HTTP monitors configured in Kuvasz with their current uptime, SSL status and basic details",
+        description = "Lists the HTTP monitors configured in Kuvasz with their current uptime, SSL status and basic " +
+            "details, sorted by their name by default." +
+            ListToolArgs.PAGINATION_NOTE,
         annotations = Tool.ToolAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true)
     )
-    fun listHttpMonitors(): HttpMonitorListSchema =
-        HttpMonitorListSchema(
-            httpMonitorActions.getMonitorsWithDetails().map { HttpMonitorSummarySchema.fromDto(it) }
+    fun listHttpMonitors(
+        @ToolArg(description = ListToolArgs.MONITOR_NAME) name: String? = null,
+        @ToolArg(description = ListToolArgs.PAGE) page: Int? = null,
+        @ToolArg(description = ListToolArgs.SIZE) size: Int? = null,
+        @ToolArg(description = ListToolArgs.SORTED_BY) sortedBy: String? = null,
+        @ToolArg(description = ListToolArgs.SORT_ORDER) sortOrder: String? = null,
+    ): HttpMonitorListSchema {
+        val monitors = httpMonitorActions.getMonitorsPage(
+            enabled = null,
+            uptimeStatus = emptyList(),
+            sslStatus = emptyList(),
+            sslCheckEnabled = null,
+            categoryFilter = null,
+            name = name,
+            sorting = sortingOf(sortedBy, sortOrder, default = Sorting(HttpMonitorSortField.NAME, SortOrder.ASC)),
+            pageRequest = pageRequestOf(page, size),
         )
+        return HttpMonitorListSchema(
+            monitors = monitors.result.map { HttpMonitorSummarySchema.fromDto(it) },
+            page = monitors.page,
+            size = monitors.size,
+            totalCount = monitors.totalCount,
+            totalPages = monitors.totalPages,
+        )
+    }
 
     @Tool(
         name = ToolNames.GET_HTTP_MONITOR_DETAILS,

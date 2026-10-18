@@ -2,6 +2,9 @@ package com.kuvaszuptime.kuvasz.controllers.monitor
 
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.models.dto.event.EventSortField
+import com.kuvaszuptime.kuvasz.models.dto.event.HttpUptimeEventDto
+import com.kuvaszuptime.kuvasz.models.dto.event.SSLEventDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDocs
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorSortField
@@ -53,4 +56,44 @@ interface HttpMonitorV3Operations {
         @Parameter(required = false, description = PaginationDocs.SORT_ORDER)
         sortOrder: SortOrder?,
     ): PagedResult<HttpMonitorDetailsDto>
+
+    @Operation(summary = "Get the uptime events of the given monitor, page by page")
+    @Get("/{monitorId}/uptime-events")
+    fun getUptimeEventsPage(
+        monitorId: Long,
+        @QueryValue(defaultValue = PageRequest.DEFAULT_PAGE_PARAM)
+        @Parameter(required = false, description = PaginationDocs.PAGE)
+        @Min(1)
+        page: Int,
+        @QueryValue(defaultValue = PageRequest.DEFAULT_SIZE_PARAM)
+        @Parameter(required = false, description = PaginationDocs.SIZE)
+        @Min(1)
+        size: Int,
+        @QueryValue
+        @Parameter(required = false, description = PaginationDocs.EVENT_SORTED_BY)
+        sortedBy: EventSortField?,
+        @QueryValue
+        @Parameter(required = false, description = PaginationDocs.SORT_ORDER)
+        sortOrder: SortOrder?,
+    ): PagedResult<HttpUptimeEventDto>
+
+    @Operation(summary = "Get the SSL events of the given monitor, page by page")
+    @Get("/{monitorId}/ssl-events")
+    fun getSSLEventsPage(
+        monitorId: Long,
+        @QueryValue(defaultValue = PageRequest.DEFAULT_PAGE_PARAM)
+        @Parameter(required = false, description = PaginationDocs.PAGE)
+        @Min(1)
+        page: Int,
+        @QueryValue(defaultValue = PageRequest.DEFAULT_SIZE_PARAM)
+        @Parameter(required = false, description = PaginationDocs.SIZE)
+        @Min(1)
+        size: Int,
+        @QueryValue
+        @Parameter(required = false, description = PaginationDocs.EVENT_SORTED_BY)
+        sortedBy: EventSortField?,
+        @QueryValue
+        @Parameter(required = false, description = PaginationDocs.SORT_ORDER)
+        sortOrder: SortOrder?,
+    ): PagedResult<SSLEventDto>
 }

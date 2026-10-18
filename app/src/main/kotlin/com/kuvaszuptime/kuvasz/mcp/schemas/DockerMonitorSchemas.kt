@@ -164,6 +164,10 @@ data class DockerMonitorSummarySchema(
 @Introspected
 data class DockerMonitorListSchema(
     val monitors: List<DockerMonitorSummarySchema>,
+    val page: Int,
+    val size: Int,
+    val totalCount: Long,
+    val totalPages: Int,
 )
 
 /**

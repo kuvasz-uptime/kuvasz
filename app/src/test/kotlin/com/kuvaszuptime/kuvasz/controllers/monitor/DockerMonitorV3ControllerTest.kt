@@ -7,6 +7,8 @@ import com.kuvaszuptime.kuvasz.mocks.createDockerMonitor
 import com.kuvaszuptime.kuvasz.mocks.createDockerUptimeEventRecord
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.models.MonitorType
+import com.kuvaszuptime.kuvasz.models.dto.event.DockerUptimeEventDto
+import com.kuvaszuptime.kuvasz.models.dto.event.EventSortField
 import com.kuvaszuptime.kuvasz.models.dto.monitor.DockerMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.docker.DockerMonitorSortField
 import com.kuvaszuptime.kuvasz.models.dto.pagination.SortOrder
@@ -18,6 +20,7 @@ import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
 import io.micronaut.http.HttpStatus
@@ -241,6 +244,124 @@ class DockerMonitorV3ControllerTest(
                 }
             }
 
+            `when`("the uptime events of a monitor are fetched") {
+                val monitor = createDockerMonitor(monitorRepository)
+                val otherMonitor = createDockerMonitor(monitorRepository)
+                // Every field puts these in a different order, see shouldTellTheSortFieldsApart below
+                val now = getCurrentTimestamp()
+                val seededIds = listOf(
+                    seedUptimeEvent(
+                        monitor.id,
+                        now,
+                        UptimeStatus.UP,
+                        startedMinutesAgo = 10,
+                        endedMinutesAgo = null,
+                        updatedMinutesAgo = 1,
+                    ),
+                    seedUptimeEvent(
+                        monitor.id,
+                        now,
+                        UptimeStatus.DOWN,
+                        startedMinutesAgo = 50,
+                        endedMinutesAgo = 20,
+                        updatedMinutesAgo = 30,
+                    ),
+                    seedUptimeEvent(
+                        monitor.id,
+                        now,
+                        UptimeStatus.UP,
+                        startedMinutesAgo = 30,
+                        endedMinutesAgo = 25,
+                        updatedMinutesAgo = 26,
+                    ),
+                    seedUptimeEvent(
+                        monitor.id,
+                        now,
+                        UptimeStatus.DOWN,
+                        startedMinutesAgo = 40,
+                        endedMinutesAgo = 35,
+                        updatedMinutesAgo = 36,
+                    ),
+                    seedUptimeEvent(
+                        monitor.id,
+                        now,
+                        UptimeStatus.UP,
+                        startedMinutesAgo = 20,
+                        endedMinutesAgo = 15,
+                        updatedMinutesAgo = 5,
+                    ),
+                )
+                seedUptimeEvent(
+                    otherMonitor.id,
+                    now,
+                    UptimeStatus.DOWN,
+                    startedMinutesAgo = 5,
+                    endedMinutesAgo = null,
+                    updatedMinutesAgo = 1,
+                )
+
+                val events = fetchUptimeEvents(monitor.id).result
+                val keys = mapOf<EventSortField, (DockerUptimeEventDto) -> Comparable<*>?>(
+                    EventSortField.ID to { it.id },
+                    EventSortField.STATUS to { it.status },
+                    EventSortField.STARTED_AT to { it.startedAt.toInstant() },
+                    EventSortField.ENDED_AT to { it.endedAt?.toInstant() },
+                    EventSortField.UPDATED_AT to { it.updatedAt.toInstant() },
+                )
+
+                then("it should return the events of the monitor, and only those") {
+                    events.map { it.id } shouldContainExactlyInAnyOrder seededIds
+                }
+
+                then("every field should be covered by the test") {
+                    keys.keys shouldBe EventSortField.entries.toSet()
+                }
+
+                then("the seeded events should tell every field apart") {
+                    events.shouldTellTheSortFieldsApart(keys) { it.id }
+                }
+
+                then("the newest events should come first by default") {
+                    events.map { it.id } shouldBe
+                        events.expectedIdsSortedBy(SortOrder.DESC, { it.id }) { it.startedAt }
+                }
+
+                then("they should be sorted in both orders, the ones without a value last, the same values by ID") {
+                    keys.forEach { (field, key) ->
+                        SortOrder.entries.forEach { order ->
+                            withClue("$field $order") {
+                                val page = fetchUptimeEvents(monitor.id, sortedBy = field, sortOrder = order)
+
+                                page.result.map { it.id } shouldBe events.expectedIdsSortedBy(order, { it.id }, key)
+                            }
+                        }
+                    }
+                }
+
+                then("an order without a field should sort by the start of the events") {
+                    fetchUptimeEvents(monitor.id, sortOrder = SortOrder.ASC).result.map { it.id } shouldBe
+                        events.expectedIdsSortedBy(SortOrder.ASC, { it.id }) { it.startedAt }
+                }
+
+                then("it should return the requested page with the totals") {
+                    val page = fetchUptimeEvents(monitor.id, page = 3, size = 2)
+
+                    page.result shouldHaveSize 1
+                    page.totalCount shouldBe 5
+                    page.totalPages shouldBe 3
+                }
+            }
+
+            `when`("the uptime events of a monitor that doesn't exist are fetched") {
+                val exception = shouldThrow<HttpClientResponseException> {
+                    client.exchange("/api/v3/docker-monitors/12345678/uptime-events").awaitFirst()
+                }
+
+                then("it should return 404") {
+                    exception.status shouldBe HttpStatus.NOT_FOUND
+                }
+            }
+
             `when`("the parameters are invalid") {
                 val invalidQueries = listOf("page=0", "size=0", "sortedBy=NOPE", "sortOrder=SIDEWAYS")
 
@@ -297,6 +418,30 @@ class DockerMonitorV3ControllerTest(
         )
         return monitor.id
     }
+
+    private fun seedUptimeEvent(
+        monitorId: Long,
+        now: OffsetDateTime,
+        status: UptimeStatus,
+        startedMinutesAgo: Long,
+        endedMinutesAgo: Long?,
+        updatedMinutesAgo: Long,
+    ): Long = createDockerUptimeEventRecord(
+        dslContext,
+        monitorId = monitorId,
+        status = status,
+        startedAt = now.minusMinutes(startedMinutesAgo),
+        endedAt = endedMinutesAgo?.let { now.minusMinutes(it) },
+        updatedAt = now.minusMinutes(updatedMinutesAgo),
+    ).id
+
+    private fun fetchUptimeEvents(
+        monitorId: Long,
+        page: Int = 1,
+        size: Int = 100,
+        sortedBy: EventSortField? = null,
+        sortOrder: SortOrder? = null,
+    ) = monitorClient.getUptimeEventsPage(monitorId, page, size, sortedBy, sortOrder)
 
     private fun fetchPage(
         enabled: Boolean? = null,

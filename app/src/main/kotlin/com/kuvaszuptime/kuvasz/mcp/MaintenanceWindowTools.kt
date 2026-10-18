@@ -8,6 +8,9 @@ import com.kuvaszuptime.kuvasz.mcp.schemas.MaintenanceWindowCreatorSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.MaintenanceWindowListSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.MaintenanceWindowSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.MaintenanceWindowSummarySchema
+import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowSortField
+import com.kuvaszuptime.kuvasz.models.dto.pagination.SortOrder
+import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowActions
 import com.kuvaszuptime.kuvasz.validation.throwIfNotEmpty
 import io.micronaut.mcp.annotations.Tool
@@ -23,16 +26,33 @@ class MaintenanceWindowTools(
 
     @Tool(
         name = ToolNames.LIST_MAINTENANCE_WINDOWS,
-        description = "Lists all maintenance windows configured in Kuvasz with their schedule and current state. " +
+        description = "Lists the maintenance windows configured in Kuvasz with their schedule and current state. " +
             "A window can be manual (toggled via 'enabled'), recurring (cron-based) or one-off (single 'start'). " +
-            "The 'active' flag tells whether the window is suppressing checks right now.",
+            "The 'active' flag tells whether the window is suppressing checks right now. Sorted by their name by " +
+            "default." + ListToolArgs.PAGINATION_NOTE,
         annotations = Tool.ToolAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true)
     )
-    fun listMaintenanceWindows(): MaintenanceWindowListSchema =
-        MaintenanceWindowListSchema(
-            maintenanceWindows = maintenanceWindowActions.getMaintenanceWindows()
-                .map { MaintenanceWindowSummarySchema.fromDto(it) }
+    fun listMaintenanceWindows(
+        @ToolArg(description = ListToolArgs.MAINTENANCE_WINDOW_NAME) name: String? = null,
+        @ToolArg(description = ListToolArgs.PAGE) page: Int? = null,
+        @ToolArg(description = ListToolArgs.SIZE) size: Int? = null,
+        @ToolArg(description = ListToolArgs.SORTED_BY) sortedBy: String? = null,
+        @ToolArg(description = ListToolArgs.SORT_ORDER) sortOrder: String? = null,
+    ): MaintenanceWindowListSchema {
+        val maintenanceWindows = maintenanceWindowActions.getMaintenanceWindowsPage(
+            enabled = null,
+            name = name,
+            sorting = sortingOf(sortedBy, sortOrder, default = Sorting(MaintenanceWindowSortField.NAME, SortOrder.ASC)),
+            pageRequest = pageRequestOf(page, size),
         )
+        return MaintenanceWindowListSchema(
+            maintenanceWindows = maintenanceWindows.result.map { MaintenanceWindowSummarySchema.fromDto(it) },
+            page = maintenanceWindows.page,
+            size = maintenanceWindows.size,
+            totalCount = maintenanceWindows.totalCount,
+            totalPages = maintenanceWindows.totalPages,
+        )
+    }
 
     @Tool(
         name = ToolNames.GET_MAINTENANCE_WINDOW_DETAILS,

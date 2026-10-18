@@ -4,11 +4,17 @@ import com.kuvaszuptime.kuvasz.jooq.tables.DnsMonitor.DNS_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.DnsUptimeEvent.DNS_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.event.DnsUptimeEventDto
+import com.kuvaszuptime.kuvasz.models.dto.event.EventSortField
+import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
 import com.kuvaszuptime.kuvasz.models.events.DnsMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DnsUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
+import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.services.UptimeEventCalculationContext
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
+import com.kuvaszuptime.kuvasz.util.fetchPage
+import com.kuvaszuptime.kuvasz.util.sortedIn
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import java.time.OffsetDateTime
@@ -104,7 +110,33 @@ class DnsUptimeEventRepository(private val dslContext: DSLContext) : UptimeEvent
         .execute()
 
     @Suppress("IgnoredReturnValue")
-    fun getEventsByMonitorId(monitorId: Long, limit: Int? = null): List<DnsUptimeEventDto> = dslContext
+    fun getEventsByMonitorId(monitorId: Long, limit: Int? = null): List<DnsUptimeEventDto> =
+        eventDtoSelect(monitorId)
+            .orderBy(DNS_UPTIME_EVENT.STARTED_AT.desc())
+            .apply {
+                if (limit != null) limit(limit)
+            }
+            .fetchInto(DnsUptimeEventDto::class.java)
+
+    fun getEventsPage(
+        monitorId: Long,
+        sorting: Sorting<EventSortField>,
+        pageRequest: PageRequest,
+    ): PagedResult<DnsUptimeEventDto> =
+        eventDtoSelect(monitorId).fetchPage(
+            countQuery = dslContext
+                .selectCount()
+                .from(DNS_UPTIME_EVENT)
+                .where(DNS_UPTIME_EVENT.MONITOR_ID.eq(monitorId)),
+            pageRequest = pageRequest,
+            orderBy = listOf(
+                sorting.field.toField(uptimeEventColumns).sortedIn(sorting.order),
+                DNS_UPTIME_EVENT.ID.asc(),
+            ),
+            type = DnsUptimeEventDto::class.java,
+        )
+
+    private fun eventDtoSelect(monitorId: Long) = dslContext
         .select(
             DNS_UPTIME_EVENT.ID.`as`(DnsUptimeEventDto::id.name),
             DNS_UPTIME_EVENT.STATUS.`as`(DnsUptimeEventDto::status.name),
@@ -115,11 +147,6 @@ class DnsUptimeEventRepository(private val dslContext: DSLContext) : UptimeEvent
         )
         .from(DNS_UPTIME_EVENT)
         .where(DNS_UPTIME_EVENT.MONITOR_ID.eq(monitorId))
-        .orderBy(DNS_UPTIME_EVENT.STARTED_AT.desc())
-        .apply {
-            if (limit != null) limit(limit)
-        }
-        .fetchInto(DnsUptimeEventDto::class.java)
 
     override fun fetchAllInPeriod(
         periodStart: OffsetDateTime,

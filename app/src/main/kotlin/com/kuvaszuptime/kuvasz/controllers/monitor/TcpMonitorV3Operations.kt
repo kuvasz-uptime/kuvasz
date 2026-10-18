@@ -1,8 +1,10 @@
 package com.kuvaszuptime.kuvasz.controllers.monitor
 
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
-import com.kuvaszuptime.kuvasz.models.dto.monitor.TcpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.event.EventSortField
+import com.kuvaszuptime.kuvasz.models.dto.event.TcpUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDocs
+import com.kuvaszuptime.kuvasz.models.dto.monitor.TcpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorSortField
 import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
 import com.kuvaszuptime.kuvasz.models.dto.pagination.PaginationDocs
@@ -46,4 +48,24 @@ interface TcpMonitorV3Operations {
         @Parameter(required = false, description = PaginationDocs.SORT_ORDER)
         sortOrder: SortOrder?,
     ): PagedResult<TcpMonitorDetailsDto>
+
+    @Operation(summary = "Get the uptime events of the given monitor, page by page")
+    @Get("/{monitorId}/uptime-events")
+    fun getUptimeEventsPage(
+        monitorId: Long,
+        @QueryValue(defaultValue = PageRequest.DEFAULT_PAGE_PARAM)
+        @Parameter(required = false, description = PaginationDocs.PAGE)
+        @Min(1)
+        page: Int,
+        @QueryValue(defaultValue = PageRequest.DEFAULT_SIZE_PARAM)
+        @Parameter(required = false, description = PaginationDocs.SIZE)
+        @Min(1)
+        size: Int,
+        @QueryValue
+        @Parameter(required = false, description = PaginationDocs.EVENT_SORTED_BY)
+        sortedBy: EventSortField?,
+        @QueryValue
+        @Parameter(required = false, description = PaginationDocs.SORT_ORDER)
+        sortOrder: SortOrder?,
+    ): PagedResult<TcpUptimeEventDto>
 }

@@ -64,7 +64,12 @@ interface DockerMonitorOperations {
     @Patch("/{monitorId}")
     fun updateMonitor(monitorId: Long, @Body updates: ObjectNode): DockerMonitorDto
 
-    @Operation(summary = "Get the uptime events of the given monitor")
+    @Operation(
+        summary = "Get the uptime events of the given monitor",
+        description = "Deprecated: use GET /api/v3/docker-monitors/{monitorId}/uptime-events instead, " +
+            "which returns the events page by page",
+        deprecated = true,
+    )
     @Get("/{monitorId}/uptime-events")
     fun getUptimeEvents(monitorId: Long): List<DockerUptimeEventDto>
 

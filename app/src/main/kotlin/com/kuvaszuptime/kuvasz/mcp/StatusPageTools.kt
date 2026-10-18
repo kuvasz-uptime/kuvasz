@@ -3,6 +3,9 @@ package com.kuvaszuptime.kuvasz.mcp
 import com.kuvaszuptime.kuvasz.mcp.schemas.StatusPageDetailsSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.StatusPageListSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.StatusPageSchema
+import com.kuvaszuptime.kuvasz.models.dto.pagination.SortOrder
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageSortField
+import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageActions
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageDataActions
 import io.micronaut.mcp.annotations.Tool
@@ -17,13 +20,31 @@ class StatusPageTools(
 
     @Tool(
         name = ToolNames.LIST_STATUS_PAGES,
-        description = "Lists all status pages configured in Kuvasz with their basic configuration",
+        description = "Lists the status pages configured in Kuvasz with their basic configuration, sorted by their " +
+            "title by default." + ListToolArgs.PAGINATION_NOTE,
         annotations = Tool.ToolAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true)
     )
-    fun listStatusPages(): StatusPageListSchema =
-        StatusPageListSchema(
-            statusPages = statusPageActions.getStatusPages(public = null).map { StatusPageSchema.fromDto(it) }
+    fun listStatusPages(
+        @ToolArg(description = ListToolArgs.STATUS_PAGE_TITLE) name: String? = null,
+        @ToolArg(description = ListToolArgs.PAGE) page: Int? = null,
+        @ToolArg(description = ListToolArgs.SIZE) size: Int? = null,
+        @ToolArg(description = ListToolArgs.SORTED_BY) sortedBy: String? = null,
+        @ToolArg(description = ListToolArgs.SORT_ORDER) sortOrder: String? = null,
+    ): StatusPageListSchema {
+        val statusPages = statusPageActions.getStatusPagesPage(
+            public = null,
+            name = name,
+            sorting = sortingOf(sortedBy, sortOrder, default = Sorting(StatusPageSortField.TITLE, SortOrder.ASC)),
+            pageRequest = pageRequestOf(page, size),
         )
+        return StatusPageListSchema(
+            statusPages = statusPages.result.map { StatusPageSchema.fromDto(it) },
+            page = statusPages.page,
+            size = statusPages.size,
+            totalCount = statusPages.totalCount,
+            totalPages = statusPages.totalPages,
+        )
+    }
 
     @Tool(
         name = ToolNames.GET_STATUS_PAGE_DETAILS,

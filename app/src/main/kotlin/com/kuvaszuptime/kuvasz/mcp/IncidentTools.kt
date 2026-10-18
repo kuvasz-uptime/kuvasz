@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.mcp
 
 import com.kuvaszuptime.kuvasz.controllers.incident.CheckIncidentNotesWritable
+import com.kuvaszuptime.kuvasz.controllers.incident.IncidentQueryDefaults
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_INCIDENT_DETAILS
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.LIST_INCIDENTS
 import com.kuvaszuptime.kuvasz.mcp.schemas.DeleteResultSchema
@@ -33,10 +34,11 @@ class IncidentTools(
 
     @Tool(
         name = LIST_INCIDENTS,
-        description = "Lists incidents across all monitor types (HTTP, SSL, Push, ICMP, TCP, DNS, Docker). " +
-            "Defaults to the last 7 days including resolved incidents. " +
-            "Optionally filter by monitor ID. An incident is identified by its 'incidentType' and 'eventId' " +
-            "together, use them with the $GET_INCIDENT_DETAILS tool to get its notes and notified integrations.",
+        description = "Lists incidents across all monitor types (HTTP, SSL, Push, ICMP, TCP, DNS, Docker), the " +
+            "latest started first by default. Defaults to the last 7 days including resolved incidents. " +
+            "Optionally filter by monitor ID, monitor name or incident type. An incident is identified by its " +
+            "'incidentType' and 'eventId' together, use them with the $GET_INCIDENT_DETAILS tool to get its notes " +
+            "and notified integrations." + ListToolArgs.PAGINATION_NOTE,
         annotations = Tool.ToolAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = false)
     )
     fun listIncidents(
@@ -46,14 +48,31 @@ class IncidentTools(
         period: String? = null,
         @ToolArg(description = "Whether to include resolved incidents alongside ongoing ones. Defaults to true.")
         includeResolved: Boolean? = null,
-    ): IncidentListSchema =
-        IncidentListSchema(
-            incidents = incidentRepository.getIncidents(
-                monitorId = monitorId,
-                period = period.asDuration() ?: DEFAULT_INCIDENTS_PERIOD,
-                includeResolved = includeResolved ?: true,
-            ).map { IncidentSchema.fromDto(it) }
+        @ToolArg(description = "Filter by the type of the incidents, one of: $INCIDENT_TYPES. Omit for every type.")
+        incidentType: String? = null,
+        @ToolArg(description = ListToolArgs.INCIDENT_MONITOR_NAME) name: String? = null,
+        @ToolArg(description = ListToolArgs.PAGE) page: Int? = null,
+        @ToolArg(description = ListToolArgs.SIZE) size: Int? = null,
+        @ToolArg(description = ListToolArgs.SORTED_BY) sortedBy: String? = null,
+        @ToolArg(description = ListToolArgs.SORT_ORDER) sortOrder: String? = null,
+    ): IncidentListSchema {
+        val incidents = incidentRepository.getIncidentsPage(
+            monitorId = monitorId,
+            period = period.asDuration() ?: DEFAULT_INCIDENTS_PERIOD,
+            includeResolved = includeResolved ?: true,
+            type = incidentType?.toIncidentType(),
+            name = name,
+            sorting = sortingOf(sortedBy, sortOrder, default = IncidentQueryDefaults.SORTING),
+            pageRequest = pageRequestOf(page, size),
         )
+        return IncidentListSchema(
+            incidents = incidents.result.map { IncidentSchema.fromDto(it) },
+            page = incidents.page,
+            size = incidents.size,
+            totalCount = incidents.totalCount,
+            totalPages = incidents.totalPages,
+        )
+    }
 
     @Tool(
         name = GET_INCIDENT_DETAILS,

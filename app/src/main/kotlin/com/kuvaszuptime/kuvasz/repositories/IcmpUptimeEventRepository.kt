@@ -3,12 +3,18 @@ package com.kuvaszuptime.kuvasz.repositories
 import com.kuvaszuptime.kuvasz.jooq.tables.IcmpMonitor.ICMP_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.IcmpUptimeEvent.ICMP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpUptimeEventRecord
+import com.kuvaszuptime.kuvasz.models.dto.event.EventSortField
 import com.kuvaszuptime.kuvasz.models.dto.event.IcmpUptimeEventDto
+import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
+import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.services.UptimeEventCalculationContext
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
+import com.kuvaszuptime.kuvasz.util.fetchPage
+import com.kuvaszuptime.kuvasz.util.sortedIn
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import java.time.OffsetDateTime
@@ -104,7 +110,33 @@ class IcmpUptimeEventRepository(private val dslContext: DSLContext) : UptimeEven
         .execute()
 
     @Suppress("IgnoredReturnValue")
-    fun getEventsByMonitorId(monitorId: Long, limit: Int? = null): List<IcmpUptimeEventDto> = dslContext
+    fun getEventsByMonitorId(monitorId: Long, limit: Int? = null): List<IcmpUptimeEventDto> =
+        eventDtoSelect(monitorId)
+            .orderBy(ICMP_UPTIME_EVENT.STARTED_AT.desc())
+            .apply {
+                if (limit != null) limit(limit)
+            }
+            .fetchInto(IcmpUptimeEventDto::class.java)
+
+    fun getEventsPage(
+        monitorId: Long,
+        sorting: Sorting<EventSortField>,
+        pageRequest: PageRequest,
+    ): PagedResult<IcmpUptimeEventDto> =
+        eventDtoSelect(monitorId).fetchPage(
+            countQuery = dslContext
+                .selectCount()
+                .from(ICMP_UPTIME_EVENT)
+                .where(ICMP_UPTIME_EVENT.MONITOR_ID.eq(monitorId)),
+            pageRequest = pageRequest,
+            orderBy = listOf(
+                sorting.field.toField(uptimeEventColumns).sortedIn(sorting.order),
+                ICMP_UPTIME_EVENT.ID.asc(),
+            ),
+            type = IcmpUptimeEventDto::class.java,
+        )
+
+    private fun eventDtoSelect(monitorId: Long) = dslContext
         .select(
             ICMP_UPTIME_EVENT.ID.`as`(IcmpUptimeEventDto::id.name),
             ICMP_UPTIME_EVENT.STATUS.`as`(IcmpUptimeEventDto::status.name),
@@ -115,11 +147,6 @@ class IcmpUptimeEventRepository(private val dslContext: DSLContext) : UptimeEven
         )
         .from(ICMP_UPTIME_EVENT)
         .where(ICMP_UPTIME_EVENT.MONITOR_ID.eq(monitorId))
-        .orderBy(ICMP_UPTIME_EVENT.STARTED_AT.desc())
-        .apply {
-            if (limit != null) limit(limit)
-        }
-        .fetchInto(IcmpUptimeEventDto::class.java)
 
     override fun fetchAllInPeriod(
         periodStart: OffsetDateTime,

@@ -59,8 +59,8 @@ class IncidentController(
     ): List<IncidentDto> =
         incidentRepository.getIncidents(
             monitorId = monitorId,
-            period = period ?: Duration.ofDays(INCIDENTS_PERIOD_DEFAULT_DAYS),
-            includeResolved = includeResolved ?: INCLUDE_RESOLVED_DEFAULT,
+            period = period ?: Duration.ofDays(IncidentQueryDefaults.PERIOD_DAYS),
+            includeResolved = includeResolved ?: IncidentQueryDefaults.INCLUDE_RESOLVED,
         )
 
     @ApiResponses(
@@ -157,9 +157,4 @@ class IncidentController(
     @ExecuteOn(TaskExecutors.BLOCKING)
     @CheckIncidentNotesWritable
     override fun deleteIncidentNote(incidentNoteId: Long) = incidentActions.deleteNote(incidentNoteId)
-
-    companion object {
-        private const val INCIDENTS_PERIOD_DEFAULT_DAYS = 7L
-        private const val INCLUDE_RESOLVED_DEFAULT = true
-    }
 }

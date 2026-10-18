@@ -146,6 +146,10 @@ data class PushMonitorSummarySchema(
 @Introspected
 data class PushMonitorListSchema(
     val monitors: List<PushMonitorSummarySchema>,
+    val page: Int,
+    val size: Int,
+    val totalCount: Long,
+    val totalPages: Int,
 )
 
 @JsonSchema

@@ -39,6 +39,25 @@ class MaintenanceWindowToolsTest(
     init {
         given("the list-maintenance-windows tool") {
 
+            `when`("list-maintenance-windows is called with paging, sorting and a name filter") {
+                listOf("a-x", "b-x", "c").forEach { createMaintenanceWindow(dslContext, name = it) }
+                val response = callToolWithMcpClient(
+                    LIST_MAINTENANCE_WINDOWS,
+                    mapOf("name" to "X", "size" to 1, "sortedBy" to "name", "sortOrder" to "desc"),
+                )
+
+                then("it should return the requested page of the matching ones, with the totals") {
+                    response.isError shouldBe false
+
+                    val list = response.structuredContentAs<MaintenanceWindowListSchema>().shouldNotBeNull()
+                    list.maintenanceWindows.map { it.name } shouldBe listOf("b-x")
+                    list.page shouldBe 1
+                    list.size shouldBe 1
+                    list.totalCount shouldBe 2
+                    list.totalPages shouldBe 2
+                }
+            }
+
             `when`("list-maintenance-windows is called with no windows in the DB") {
                 val response = callToolWithMcpClient(LIST_MAINTENANCE_WINDOWS)
 

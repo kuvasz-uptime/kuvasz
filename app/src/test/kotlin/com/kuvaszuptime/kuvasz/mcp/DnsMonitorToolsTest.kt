@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.mcp
 
 import com.kuvaszuptime.kuvasz.config.AppConfig
+import com.kuvaszuptime.kuvasz.jooq.enums.DnsTransport
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.CREATE_DNS_MONITOR
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.DELETE_DNS_MONITOR
 import com.kuvaszuptime.kuvasz.mcp.ToolNames.GET_DNS_MONITOR_DETAILS
@@ -16,7 +17,6 @@ import com.kuvaszuptime.kuvasz.mocks.createDnsMetricsLogRecord
 import com.kuvaszuptime.kuvasz.mocks.createDnsMonitor
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
-import com.kuvaszuptime.kuvasz.jooq.enums.DnsTransport
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
@@ -45,6 +45,25 @@ class DnsMonitorToolsTest(
 
     init {
         given("the list-dns-monitors tool") {
+
+            `when`("list-dns-monitors is called with paging, sorting and a name filter") {
+                listOf("a-x", "b-x", "c").forEach { createDnsMonitor(dnsMonitorRepository, monitorName = it) }
+                val response = callToolWithMcpClient(
+                    LIST_DNS_MONITORS,
+                    mapOf("name" to "X", "size" to 1, "sortedBy" to "name", "sortOrder" to "desc"),
+                )
+
+                then("it should return the requested page of the matching ones, with the totals") {
+                    response.isError shouldBe false
+
+                    val list = response.structuredContentAs<DnsMonitorListSchema>().shouldNotBeNull()
+                    list.monitors.map { it.name } shouldBe listOf("b-x")
+                    list.page shouldBe 1
+                    list.size shouldBe 1
+                    list.totalCount shouldBe 2
+                    list.totalPages shouldBe 2
+                }
+            }
 
             `when`("list-dns-monitors is called with monitors in the DB") {
                 val monitor = createDnsMonitor(dnsMonitorRepository)

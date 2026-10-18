@@ -5,6 +5,10 @@ import com.kuvaszuptime.kuvasz.OpenApiTags
 import com.kuvaszuptime.kuvasz.controllers.API_V3_PREFIX
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.models.ServiceError
+import com.kuvaszuptime.kuvasz.models.dto.event.EventSortField
+import com.kuvaszuptime.kuvasz.models.dto.event.HttpUptimeEventDto
+import com.kuvaszuptime.kuvasz.models.dto.event.SSLEventDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorSortField
 import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
@@ -15,10 +19,11 @@ import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.services.check.http.HttpMonitorActions
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller
-import io.micronaut.http.annotation.QueryValue
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.annotation.ExecuteOn
 import io.micronaut.validation.Validated
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
@@ -44,16 +49,16 @@ class HttpMonitorV3Controller(
     )
     @ExecuteOn(TaskExecutors.BLOCKING)
     override fun getMonitorsPage(
-        @QueryValue enabled: Boolean?,
-        @QueryValue uptimeStatus: List<UptimeStatus>?,
-        @QueryValue sslStatus: List<SslStatus>?,
-        @QueryValue sslCheckEnabled: Boolean?,
-        @QueryValue category: String?,
-        @QueryValue name: String?,
-        @QueryValue(defaultValue = PageRequest.DEFAULT_PAGE_PARAM) page: Int,
-        @QueryValue(defaultValue = PageRequest.DEFAULT_SIZE_PARAM) size: Int,
-        @QueryValue sortedBy: HttpMonitorSortField?,
-        @QueryValue sortOrder: SortOrder?,
+        enabled: Boolean?,
+        uptimeStatus: List<UptimeStatus>?,
+        sslStatus: List<SslStatus>?,
+        sslCheckEnabled: Boolean?,
+        category: String?,
+        name: String?,
+        page: Int,
+        size: Int,
+        sortedBy: HttpMonitorSortField?,
+        sortOrder: SortOrder?,
     ): PagedResult<HttpMonitorDetailsDto> =
         monitorActions.getMonitorsPage(
             enabled = enabled,
@@ -66,7 +71,58 @@ class HttpMonitorV3Controller(
             pageRequest = PageRequest(page, size),
         )
 
+    @ApiResponses(
+        ApiResponse(
+            responseCode = "200",
+            description = "Successful query",
+        ),
+        ApiResponse(
+            responseCode = "404",
+            description = "Not found",
+            content = [Content(schema = Schema(implementation = ServiceError::class))]
+        )
+    )
+    @ExecuteOn(TaskExecutors.BLOCKING)
+    override fun getUptimeEventsPage(
+        monitorId: Long,
+        page: Int,
+        size: Int,
+        sortedBy: EventSortField?,
+        sortOrder: SortOrder?,
+    ): PagedResult<HttpUptimeEventDto> =
+        monitorActions.getUptimeEventsPage(
+            monitorId = monitorId,
+            sorting = Sorting.of(sortedBy, sortOrder, default = DEFAULT_EVENT_SORTING),
+            pageRequest = PageRequest(page, size),
+        )
+
+    @ApiResponses(
+        ApiResponse(
+            responseCode = "200",
+            description = "Successful query",
+        ),
+        ApiResponse(
+            responseCode = "404",
+            description = "Not found",
+            content = [Content(schema = Schema(implementation = ServiceError::class))]
+        )
+    )
+    @ExecuteOn(TaskExecutors.BLOCKING)
+    override fun getSSLEventsPage(
+        monitorId: Long,
+        page: Int,
+        size: Int,
+        sortedBy: EventSortField?,
+        sortOrder: SortOrder?,
+    ): PagedResult<SSLEventDto> =
+        monitorActions.getSSLEventsPage(
+            monitorId = monitorId,
+            sorting = Sorting.of(sortedBy, sortOrder, default = DEFAULT_EVENT_SORTING),
+            pageRequest = PageRequest(page, size),
+        )
+
     companion object {
         private val DEFAULT_SORTING = Sorting(HttpMonitorSortField.NAME, SortOrder.ASC)
+        private val DEFAULT_EVENT_SORTING = Sorting(EventSortField.STARTED_AT, SortOrder.DESC)
     }
 }

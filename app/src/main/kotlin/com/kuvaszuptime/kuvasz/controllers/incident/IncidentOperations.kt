@@ -22,7 +22,11 @@ import java.time.Duration
 
 interface IncidentOperations {
 
-    @Operation(summary = "Get all incidents")
+    @Operation(
+        summary = "Get all incidents",
+        description = "Deprecated: use GET /api/v3/incidents instead, which returns the incidents page by page",
+        deprecated = true,
+    )
     @Get("/")
     fun getIncidents(
         @QueryValue

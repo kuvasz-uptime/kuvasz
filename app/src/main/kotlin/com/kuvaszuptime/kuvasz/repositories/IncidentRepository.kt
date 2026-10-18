@@ -18,9 +18,15 @@ import com.kuvaszuptime.kuvasz.jooq.tables.TcpMonitor.TCP_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.TcpUptimeEvent.TCP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.models.IncidentType
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentDto
+import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentSortField
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentStatus
+import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
+import com.kuvaszuptime.kuvasz.models.pagination.Sorting
+import com.kuvaszuptime.kuvasz.util.fetchPage
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import com.kuvaszuptime.kuvasz.util.sortedIn
 import jakarta.inject.Singleton
 import org.jooq.Condition
 import org.jooq.DSLContext
@@ -68,6 +74,58 @@ class IncidentRepository(private val dslContext: DSLContext) {
             .orderBy(DSL.field(orderFieldName).desc())
             .fetchInto(IncidentDto::class.java)
     }
+
+    /**
+     * Fetches a page of the incidents, the same ones [getIncidents] would return, optionally narrowed to a single
+     * [type] (selected on its own, without the UNION ALL of every type) and to the monitors whose name contains [name].
+     * The incidents with the same value are sorted by their type and the ID of their event, which identify them.
+     */
+    fun getIncidentsPage(
+        monitorId: Long?,
+        period: Duration,
+        includeResolved: Boolean,
+        type: IncidentType?,
+        name: String?,
+        sorting: Sorting<IncidentSortField>,
+        pageRequest: PageRequest,
+    ): PagedResult<IncidentDto> {
+        val incidents = incidentSelects(
+            monitorId = monitorId,
+            period = period,
+            states = includeResolved.toIncidentStates(),
+            includeSslIncidents = true,
+            types = type?.let { setOf(it) },
+        ).unionAll().asTable("incident")
+        val condition = containsIgnoreCaseCondition(incidents.incidentField(IncidentDto::monitorName.name), name)
+
+        return dslContext
+            .selectFrom(incidents)
+            .where(condition)
+            .fetchPage(
+                countQuery = dslContext.selectCount().from(incidents).where(condition),
+                pageRequest = pageRequest,
+                orderBy = listOf(
+                    sorting.field.toField(incidents).sortedIn(sorting.order),
+                    incidents.incidentField(IncidentDto::incidentType.name).asc(),
+                    checkNotNull(incidents.field(IncidentDto::eventId.name)).asc(),
+                ),
+                type = IncidentDto::class.java,
+            )
+    }
+
+    private fun Table<*>.incidentField(name: String): Field<String> = checkNotNull(field(name, String::class.java))
+
+    private fun IncidentSortField.toField(incidents: Table<*>): Field<*> = checkNotNull(
+        when (this) {
+            IncidentSortField.ID -> incidents.field(IncidentDto::eventId.name)
+            IncidentSortField.MONITOR_NAME -> incidents.field(IncidentDto::monitorName.name)
+            IncidentSortField.INCIDENT_TYPE -> incidents.field(IncidentDto::incidentType.name)
+            IncidentSortField.STATUS -> incidents.field(IncidentDto::status.name)
+            IncidentSortField.STARTED_AT -> incidents.field(IncidentDto::startedAt.name)
+            IncidentSortField.ENDED_AT -> incidents.field(IncidentDto::endedAt.name)
+            IncidentSortField.UPDATED_AT -> incidents.field(IncidentDto::updatedAt.name)
+        }
+    )
 
     /**
      * Fetches the incidents of every monitor that were resolved during the given [period], the latest resolved one

@@ -23,7 +23,13 @@ import java.time.OffsetDateTime
 
 @JsonSchema
 @Introspected
-data class StatusPageListSchema(val statusPages: List<StatusPageSchema>)
+data class StatusPageListSchema(
+    val statusPages: List<StatusPageSchema>,
+    val page: Int,
+    val size: Int,
+    val totalCount: Long,
+    val totalPages: Int,
+)
 
 @Introspected
 @JsonInclude(JsonInclude.Include.NON_NULL)

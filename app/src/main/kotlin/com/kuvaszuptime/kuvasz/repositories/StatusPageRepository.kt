@@ -6,14 +6,22 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.StatusPageRecord
 import com.kuvaszuptime.kuvasz.models.DuplicationException
 import com.kuvaszuptime.kuvasz.models.PersistenceException
 import com.kuvaszuptime.kuvasz.models.StatusPageDuplicatedException
+import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageSortField
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
+import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
+import com.kuvaszuptime.kuvasz.util.fetchPage
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import com.kuvaszuptime.kuvasz.util.sortedIn
 import com.kuvaszuptime.kuvasz.util.toPersistenceException
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
+import org.jooq.Field
 import org.jooq.SortField
 import org.jooq.exception.DataAccessException
+import org.jooq.impl.DSL
 
 @Singleton
 class StatusPageRepository(private val dslContext: DSLContext) {
@@ -41,6 +49,38 @@ class StatusPageRepository(private val dslContext: DSLContext) {
             sortedBy?.let { orderBy(it, STATUS_PAGE.ID.asc()) }
         }
         .fetch()
+
+    fun fetchPage(
+        public: Boolean?,
+        name: String?,
+        sorting: Sorting<StatusPageSortField>,
+        pageRequest: PageRequest,
+    ): PagedResult<StatusPageRecord> {
+        val condition = DSL.and(
+            listOfNotNull(
+                public?.let { STATUS_PAGE.PUBLIC.eq(it) },
+                containsIgnoreCaseCondition(STATUS_PAGE.TITLE, name),
+            )
+        )
+        return dslContext
+            .selectFrom(STATUS_PAGE)
+            .where(condition)
+            .fetchPage(
+                countQuery = dslContext.selectCount().from(STATUS_PAGE).where(condition),
+                pageRequest = pageRequest,
+                orderBy = listOf(sorting.field.toField().sortedIn(sorting.order), STATUS_PAGE.ID.asc()),
+                type = StatusPageRecord::class.java,
+            )
+    }
+
+    private fun StatusPageSortField.toField(): Field<*> = when (this) {
+        StatusPageSortField.ID -> STATUS_PAGE.ID
+        StatusPageSortField.TITLE -> STATUS_PAGE.TITLE
+        StatusPageSortField.SLUG -> STATUS_PAGE.SLUG
+        StatusPageSortField.PUBLIC -> STATUS_PAGE.PUBLIC
+        StatusPageSortField.CREATED_AT -> STATUS_PAGE.CREATED_AT
+        StatusPageSortField.UPDATED_AT -> STATUS_PAGE.UPDATED_AT
+    }
 
     fun fetchDistinctCategories(): List<String> = dslContext
         .select(STATUS_PAGE.CATEGORIES)

@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.pojos.DnsMonitor
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
 import com.kuvaszuptime.kuvasz.models.MonitorNotFoundException
 import com.kuvaszuptime.kuvasz.models.dto.event.DnsUptimeEventDto
+import com.kuvaszuptime.kuvasz.models.dto.event.EventSortField
 import com.kuvaszuptime.kuvasz.models.dto.monitor.DnsMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorSortField
@@ -33,10 +34,10 @@ import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageMonitorDataProvider
 import com.kuvaszuptime.kuvasz.validation.IntegrationIdValidator
 import io.micronaut.validation.validator.Validator
 import jakarta.inject.Singleton
-import java.time.Duration
 import org.jooq.DSLContext
 import org.jooq.SortField
 import tools.jackson.databind.node.ObjectNode
+import java.time.Duration
 
 @Singleton
 class DnsMonitorActions(
@@ -155,6 +156,15 @@ class DnsMonitorActions(
             .let { monitor ->
                 uptimeEventRepository.getEventsByMonitorId(monitor.id, limit)
             }
+
+    fun getUptimeEventsPage(
+        monitorId: Long,
+        sorting: Sorting<EventSortField>,
+        pageRequest: PageRequest,
+    ): PagedResult<DnsUptimeEventDto> =
+        monitorRepository.findById(monitorId, null)
+            .orThrowNotFound(monitorId)
+            .let { monitor -> uptimeEventRepository.getEventsPage(monitor.id, sorting, pageRequest) }
 
     fun getMonitorStats(monitorId: Long, period: Duration): DnsMonitorStatsDto =
         withUptimeHistory(monitorId, period) { monitor, uptimeHistory ->

@@ -1,8 +1,10 @@
 package com.kuvaszuptime.kuvasz.repositories
 
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.models.dto.event.EventSortField
 import com.kuvaszuptime.kuvasz.services.UptimeEventCalculationContext
 import org.jooq.DSLContext
+import org.jooq.Field
 import org.jooq.Table
 import org.jooq.TableField
 import org.jooq.impl.DSL
@@ -116,3 +118,22 @@ internal fun DSLContext.fetchLatestUptimeIncidentTimestamp(columns: UptimeEventC
             .fetchOne()
             ?.value1()
     }
+
+/** The column of an event table that [field] sorts by, shared by the uptime and the SSL events. */
+internal fun eventSortColumn(
+    field: EventSortField,
+    id: Field<Long>,
+    status: Field<*>,
+    startedAt: Field<OffsetDateTime>,
+    endedAt: Field<OffsetDateTime>,
+    updatedAt: Field<OffsetDateTime>,
+): Field<*> = when (field) {
+    EventSortField.ID -> id
+    EventSortField.STATUS -> status
+    EventSortField.STARTED_AT -> startedAt
+    EventSortField.ENDED_AT -> endedAt
+    EventSortField.UPDATED_AT -> updatedAt
+}
+
+internal fun EventSortField.toField(columns: UptimeEventColumns): Field<*> =
+    eventSortColumn(this, columns.eventId, columns.status, columns.startedAt, columns.endedAt, columns.updatedAt)

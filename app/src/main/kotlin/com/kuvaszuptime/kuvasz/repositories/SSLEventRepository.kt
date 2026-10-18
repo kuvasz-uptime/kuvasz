@@ -2,12 +2,18 @@ package com.kuvaszuptime.kuvasz.repositories
 
 import com.kuvaszuptime.kuvasz.jooq.tables.SslEvent.SSL_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.SslEventRecord
+import com.kuvaszuptime.kuvasz.models.dto.event.EventSortField
 import com.kuvaszuptime.kuvasz.models.dto.event.SSLEventDto
+import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
 import com.kuvaszuptime.kuvasz.models.events.SSLInvalidEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.WithCertInfo
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
+import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
+import com.kuvaszuptime.kuvasz.util.fetchPage
+import com.kuvaszuptime.kuvasz.util.sortedIn
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import java.time.OffsetDateTime
@@ -78,7 +84,41 @@ class SSLEventRepository(private val dslContext: DSLContext) {
         .fetch()
 
     @Suppress("IgnoredReturnValue")
-    fun getEventsByMonitorId(monitorId: Long, limit: Int? = null): List<SSLEventDto> = dslContext
+    fun getEventsByMonitorId(monitorId: Long, limit: Int? = null): List<SSLEventDto> =
+        eventDtoSelect(monitorId)
+            .orderBy(SSL_EVENT.STARTED_AT.desc())
+            .apply {
+                if (limit != null) {
+                    limit(limit)
+                }
+            }
+            .fetchInto(SSLEventDto::class.java)
+
+    fun getEventsPage(
+        monitorId: Long,
+        sorting: Sorting<EventSortField>,
+        pageRequest: PageRequest,
+    ): PagedResult<SSLEventDto> {
+        val sortColumn = eventSortColumn(
+            field = sorting.field,
+            id = SSL_EVENT.ID,
+            status = SSL_EVENT.STATUS,
+            startedAt = SSL_EVENT.STARTED_AT,
+            endedAt = SSL_EVENT.ENDED_AT,
+            updatedAt = SSL_EVENT.UPDATED_AT,
+        )
+        return eventDtoSelect(monitorId).fetchPage(
+            countQuery = dslContext
+                .selectCount()
+                .from(SSL_EVENT)
+                .where(SSL_EVENT.MONITOR_ID.eq(monitorId)),
+            pageRequest = pageRequest,
+            orderBy = listOf(sortColumn.sortedIn(sorting.order), SSL_EVENT.ID.asc()),
+            type = SSLEventDto::class.java,
+        )
+    }
+
+    private fun eventDtoSelect(monitorId: Long) = dslContext
         .select(
             SSL_EVENT.ID.`as`(SSLEventDto::id.name),
             SSL_EVENT.STATUS.`as`(SSLEventDto::status.name),
@@ -90,11 +130,4 @@ class SSLEventRepository(private val dslContext: DSLContext) {
         )
         .from(SSL_EVENT)
         .where(SSL_EVENT.MONITOR_ID.eq(monitorId))
-        .orderBy(SSL_EVENT.STARTED_AT.desc())
-        .apply {
-            if (limit != null) {
-                limit(limit)
-            }
-        }
-        .fetchInto(SSLEventDto::class.java)
 }

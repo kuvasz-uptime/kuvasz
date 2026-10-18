@@ -64,7 +64,12 @@ interface PushMonitorOperations {
     @Patch("/{monitorId}")
     fun updateMonitor(monitorId: Long, @Body updates: ObjectNode): PushMonitorDto
 
-    @Operation(summary = "Get the uptime events of the given monitor")
+    @Operation(
+        summary = "Get the uptime events of the given monitor",
+        description = "Deprecated: use GET /api/v3/push-monitors/{monitorId}/uptime-events instead, " +
+            "which returns the events page by page",
+        deprecated = true,
+    )
     @Get("/{monitorId}/uptime-events")
     fun getUptimeEvents(monitorId: Long): List<PushUptimeEventDto>
 

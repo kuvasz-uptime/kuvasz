@@ -3,9 +3,13 @@ package com.kuvaszuptime.kuvasz.services.statuspage
 import com.kuvaszuptime.kuvasz.jooq.tables.pojos.StatusPage
 import com.kuvaszuptime.kuvasz.jooq.tables.records.StatusPageRecord
 import com.kuvaszuptime.kuvasz.models.StatusPageNotFoundException
+import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageSortField
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageUpdateDto
+import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
+import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.models.statuspage.toStatusPageRecord
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageDataActions.Companion.STATUS_PAGES_CACHE_NAME
@@ -36,6 +40,16 @@ class StatusPageActions(
     ): List<StatusPageDto> =
         statusPageRepository.fetchAll(public, sortedBy)
             .map { StatusPageDto.fromStatusPageRecord(it) }
+
+    fun getStatusPagesPage(
+        public: Boolean?,
+        name: String?,
+        sorting: Sorting<StatusPageSortField>,
+        pageRequest: PageRequest,
+    ): PagedResult<StatusPageDto> {
+        val page = statusPageRepository.fetchPage(public, name, sorting, pageRequest)
+        return page.withResult(page.result.map { StatusPageDto.fromStatusPageRecord(it) })
+    }
 
     fun getStatusPageById(statusPageId: Long): StatusPageDto =
         statusPageRepository.findById(statusPageId).orThrowNotFound(statusPageId.toString())

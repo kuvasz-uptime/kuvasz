@@ -158,6 +158,10 @@ data class TcpMonitorSummarySchema(
 @Introspected
 data class TcpMonitorListSchema(
     val monitors: List<TcpMonitorSummarySchema>,
+    val page: Int,
+    val size: Int,
+    val totalCount: Long,
+    val totalPages: Int,
 )
 
 @JsonSchema

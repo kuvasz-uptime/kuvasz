@@ -4,11 +4,17 @@ import com.kuvaszuptime.kuvasz.jooq.tables.DockerMonitor.DOCKER_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.DockerUptimeEvent.DOCKER_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DockerUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.event.DockerUptimeEventDto
+import com.kuvaszuptime.kuvasz.models.dto.event.EventSortField
+import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
 import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
+import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
+import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.services.UptimeEventCalculationContext
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
+import com.kuvaszuptime.kuvasz.util.fetchPage
+import com.kuvaszuptime.kuvasz.util.sortedIn
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import java.time.OffsetDateTime
@@ -132,7 +138,33 @@ class DockerUptimeEventRepository(private val dslContext: DSLContext) : UptimeEv
         .execute()
 
     @Suppress("IgnoredReturnValue")
-    fun getEventsByMonitorId(monitorId: Long, limit: Int? = null): List<DockerUptimeEventDto> = dslContext
+    fun getEventsByMonitorId(monitorId: Long, limit: Int? = null): List<DockerUptimeEventDto> =
+        eventDtoSelect(monitorId)
+            .orderBy(DOCKER_UPTIME_EVENT.STARTED_AT.desc())
+            .apply {
+                if (limit != null) limit(limit)
+            }
+            .fetchInto(DockerUptimeEventDto::class.java)
+
+    fun getEventsPage(
+        monitorId: Long,
+        sorting: Sorting<EventSortField>,
+        pageRequest: PageRequest,
+    ): PagedResult<DockerUptimeEventDto> =
+        eventDtoSelect(monitorId).fetchPage(
+            countQuery = dslContext
+                .selectCount()
+                .from(DOCKER_UPTIME_EVENT)
+                .where(DOCKER_UPTIME_EVENT.MONITOR_ID.eq(monitorId)),
+            pageRequest = pageRequest,
+            orderBy = listOf(
+                sorting.field.toField(uptimeEventColumns).sortedIn(sorting.order),
+                DOCKER_UPTIME_EVENT.ID.asc(),
+            ),
+            type = DockerUptimeEventDto::class.java,
+        )
+
+    private fun eventDtoSelect(monitorId: Long) = dslContext
         .select(
             DOCKER_UPTIME_EVENT.ID.`as`(DockerUptimeEventDto::id.name),
             DOCKER_UPTIME_EVENT.STATUS.`as`(DockerUptimeEventDto::status.name),
@@ -146,11 +178,6 @@ class DockerUptimeEventRepository(private val dslContext: DSLContext) : UptimeEv
         )
         .from(DOCKER_UPTIME_EVENT)
         .where(DOCKER_UPTIME_EVENT.MONITOR_ID.eq(monitorId))
-        .orderBy(DOCKER_UPTIME_EVENT.STARTED_AT.desc())
-        .apply {
-            if (limit != null) limit(limit)
-        }
-        .fetchInto(DockerUptimeEventDto::class.java)
 
     override fun fetchAllInPeriod(
         periodStart: OffsetDateTime,
