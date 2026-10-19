@@ -636,8 +636,11 @@ const formatChartTimestamp = (date) =>
     `${date.getFullYear()}/${padToTwoDigits(date.getMonth() + 1)}/${padToTwoDigits(date.getDate())} ` +
     `${padToTwoDigits(date.getHours())}:${padToTwoDigits(date.getMinutes())}:${padToTwoDigits(date.getSeconds())}`;
 
-// SSL incidents are returned for the HTTP monitors too, but they have nothing to do with the metrics of a monitor
-const NON_METRICS_INCIDENT_TYPES = ['SSL'];
+/*
+ The chart marks every incident of the selected period, so they are fetched in a single page that is big enough for
+ the longest period (30 days) even if a monitor is checked every 5 seconds and changes its status on every check.
+*/
+const CHART_INCIDENTS_PAGE_SIZE = 300000;
 
 // Adds a chart marker: a vertical line and a point on the zero line, the latter carrying the details in a tooltip. The
 // details can be anything (e.g. the error message of a check), so they have to be escaped.
@@ -672,20 +675,18 @@ const buildIncidentAnnotations = (incidents, rangeStart, rangeEnd, labels, color
     const annotations = {xaxis: [], points: []};
     const isInRange = (timestamp) => timestamp >= rangeStart && timestamp <= rangeEnd;
 
-    incidents
-        .filter(incident => !NON_METRICS_INCIDENT_TYPES.includes(incident.incidentType))
-        .forEach(incident => {
-            const startedAt = new Date(incident.startedAt).getTime();
-            if (isInRange(startedAt)) {
-                addChartMarker(annotations, startedAt, colors.started, labels.incidentStarted, incident.details);
+    incidents.forEach(incident => {
+        const startedAt = new Date(incident.startedAt).getTime();
+        if (isInRange(startedAt)) {
+            addChartMarker(annotations, startedAt, colors.started, labels.incidentStarted, incident.details);
+        }
+        if (incident.endedAt) {
+            const endedAt = new Date(incident.endedAt).getTime();
+            if (isInRange(endedAt)) {
+                addChartMarker(annotations, endedAt, colors.resolved, labels.incidentResolved, incident.details);
             }
-            if (incident.endedAt) {
-                const endedAt = new Date(incident.endedAt).getTime();
-                if (isInRange(endedAt)) {
-                    addChartMarker(annotations, endedAt, colors.resolved, labels.incidentResolved, incident.details);
-                }
-            }
-        });
+        }
+    });
     return annotations;
 };
 
@@ -762,6 +763,7 @@ const metricsBlock = ({
     chartLabels,
     period,
     statsPath,
+    incidentType,
     chartElementId,
     buildChartOptions,
     logsOf,
@@ -821,7 +823,8 @@ const metricsBlock = ({
         },
 
         incidentsUrl() {
-            return `/api/v2/incidents?monitorId=${monitorId}&period=${this.period}&includeResolved=true`;
+            return `/api/v3/incidents/${incidentType}?monitorId=${monitorId}&period=${this.period}` +
+                `&includeResolved=true&page=1&size=${CHART_INCIDENTS_PAGE_SIZE}`;
         },
 
         startPolling() {
@@ -860,7 +863,11 @@ const metricsBlock = ({
                     console.error('Error fetching incidents:', response.status);
                     return [];
                 }
-                return await response.json();
+                const page = await response.json();
+                if (page.totalPages > 1) {
+                    console.warn(`Only the first ${page.result.length} of the ${page.totalCount} incidents are marked`);
+                }
+                return page.result;
             } catch (error) {
                 console.error('Error fetching incidents:', error);
                 return [];
@@ -947,6 +954,7 @@ const httpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, char
     chartLabels,
     period,
     statsPath: 'http-monitors',
+    incidentType: 'HTTP',
     chartElementId: 'monitor-details-latency-chart',
     buildChartOptions: latencyChartOptions,
     logsOf: (rawData) => rawData.latencyLogs,
@@ -997,6 +1005,7 @@ const icmpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, char
     chartLabels,
     period,
     statsPath: 'icmp-monitors',
+    incidentType: 'ICMP',
     chartElementId: 'icmp-monitor-details-metrics-chart',
     buildChartOptions: icmpChartOptions,
     logsOf: (rawData) => rawData.metricsLogs,
@@ -1020,6 +1029,7 @@ const tcpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, chart
     chartLabels,
     period,
     statsPath: 'tcp-monitors',
+    incidentType: 'TCP',
     chartElementId: 'tcp-monitor-details-latency-chart',
     buildChartOptions: latencyChartOptions,
     logsOf: (rawData) => rawData.metricsLogs,
@@ -1033,6 +1043,7 @@ const dnsMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, chart
     chartLabels,
     period,
     statsPath: 'dns-monitors',
+    incidentType: 'DNS',
     chartElementId: 'dns-monitor-details-latency-chart',
     buildChartOptions: latencyChartOptions,
     logsOf: (rawData) => rawData.metricsLogs,
@@ -1115,6 +1126,7 @@ const dockerMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, ch
     chartLabels,
     period,
     statsPath: 'docker-monitors',
+    incidentType: 'DOCKER',
     chartElementId: 'docker-monitor-details-metrics-chart',
     buildChartOptions: dockerResourceChartOptions,
     logsOf: (rawData) => rawData.metricsLogs,
@@ -3220,6 +3232,7 @@ if (typeof module !== 'undefined' && module.exports) {
         anchorPopupToModal,
         formatChartTimestamp,
         buildIncidentAnnotations,
+        CHART_INCIDENTS_PAGE_SIZE,
         buildRestartAnnotations,
         isValidUrl,
         isValidSlug,

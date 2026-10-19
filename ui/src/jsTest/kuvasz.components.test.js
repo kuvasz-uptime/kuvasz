@@ -43,6 +43,7 @@ const {
     dnsMetricsBlock,
     dockerMetricsBlock,
     buildIncidentAnnotations,
+    CHART_INCIDENTS_PAGE_SIZE,
     buildRestartAnnotations,
     formatChartTimestamp,
     toDateTimeLocalValue,
@@ -583,6 +584,10 @@ const metricsBlockAt = (factory, now) => {
 
 const jsonResponse = (body) => ({ok: true, json: async () => body});
 
+// The incidents of a metrics chart, as the v3 API returns them
+const incidentPage = (incidents) =>
+    ({result: incidents, page: 1, size: CHART_INCIDENTS_PAGE_SIZE, totalCount: incidents.length, totalPages: 1});
+
 // Replaces the global fetch for the duration of a single test
 const stubFetch = (t, implementation) => {
     const originalFetch = globalThis.fetch;
@@ -918,10 +923,6 @@ test('buildIncidentAnnotations ignores the incidents outside of the range', () =
     assert.deepEqual(result, {xaxis: [], points: []});
 });
 
-test('buildIncidentAnnotations ignores SSL incidents', () => {
-    assert.deepEqual(buildAnnotations([anIncident({incidentType: 'SSL'})]), {xaxis: [], points: []});
-});
-
 test('buildIncidentAnnotations escapes the details of an incident in the tooltip', () => {
     const [start] = buildAnnotations([anIncident({details: '<img src=x onerror=alert(1)>'})]).points;
     assert.ok(!start.tooltip.text.includes('<img'));
@@ -937,22 +938,46 @@ test('formatChartTimestamp pads every part of the date to two digits', () => {
     assert.equal(formatChartTimestamp(new Date(2024, 0, 2, 3, 4, 5)), '2024/01/02 03:04:05');
 });
 
-test('the metrics blocks fetch their stats and incidents for the selected period', () => {
+test('the metrics blocks fetch their stats and every uptime incident of their type for the selected period', () => {
     const cases = [
-        [httpMetricsBlock, 'http-monitors'],
-        [icmpMetricsBlock, 'icmp-monitors'],
-        [tcpMetricsBlock, 'tcp-monitors'],
-        [dnsMetricsBlock, 'dns-monitors'],
+        [httpMetricsBlock, 'http-monitors', 'HTTP'],
+        [icmpMetricsBlock, 'icmp-monitors', 'ICMP'],
+        [tcpMetricsBlock, 'tcp-monitors', 'TCP'],
+        [dnsMetricsBlock, 'dns-monitors', 'DNS'],
+        [dockerMetricsBlock, 'docker-monitors', 'DOCKER'],
     ];
-    for (const [factory, statsPath] of cases) {
+    const incidentsUrl = (type, period) => `/api/v3/incidents/${type}?monitorId=42&period=${period}` +
+        `&includeResolved=true&page=1&size=${CHART_INCIDENTS_PAGE_SIZE}`;
+    for (const [factory, statsPath, incidentType] of cases) {
         const block = factory(42, true, 60, CHART_LABELS, 'PT24H');
         assert.equal(block.statsUrl(), `/api/v2/${statsPath}/42/stats?period=PT24H`);
-        assert.equal(block.incidentsUrl(), '/api/v2/incidents?monitorId=42&period=PT24H&includeResolved=true');
+        assert.equal(block.incidentsUrl(), incidentsUrl(incidentType, 'PT24H'));
 
         block.period = 'PT168H';
         assert.equal(block.statsUrl(), `/api/v2/${statsPath}/42/stats?period=PT168H`);
-        assert.equal(block.incidentsUrl(), '/api/v2/incidents?monitorId=42&period=PT168H&includeResolved=true');
+        assert.equal(block.incidentsUrl(), incidentsUrl(incidentType, 'PT168H'));
     }
+});
+
+test('the incidents of the chart are read from the single page they are fetched in', async (t) => {
+    const warn = t.mock.method(console, 'warn', () => {});
+    const incident = {incidentType: 'TCP', startedAt: '2024-01-01T00:30:00Z', endedAt: null, details: null};
+    const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
+    stubFetch(t, async () => jsonResponse({result: [incident], page: 1, size: 1, totalCount: 1, totalPages: 1}));
+
+    assert.deepEqual(await block.fetchIncidents(), [incident]);
+    assert.equal(warn.mock.callCount(), 0);
+});
+
+test('a warning is logged when the incidents of the chart do not fit into a single page', async (t) => {
+    const warn = t.mock.method(console, 'warn', () => {});
+    const incident = {incidentType: 'TCP', startedAt: '2024-01-01T00:30:00Z', endedAt: null, details: null};
+    const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
+    stubFetch(t, async () => jsonResponse({result: [incident], page: 1, size: 1, totalCount: 3, totalPages: 3}));
+
+    assert.deepEqual(await block.fetchIncidents(), [incident]);
+    assert.equal(warn.mock.callCount(), 1);
+    assert.match(warn.mock.calls[0].arguments[0], /first 1 of the 3 incidents/);
 });
 
 test('changing the period drops the previous data and polls the metrics right away', (t) => {
@@ -990,8 +1015,8 @@ test('pollEndpoint renders the fetched metrics along with the incidents, but onl
     const rendered = [];
     block.updateChart = (data) => rendered.push(data);
     const stats = {metricsLogs: METRICS_LOGS_OF_AN_HOUR};
-    stubFetch(t, async (url) => url.startsWith('/api/v2/incidents')
-        ? jsonResponse([{incidentType: 'TCP', startedAt: '2024-01-01T00:30:00Z', endedAt: null, details: null}])
+    stubFetch(t, async (url) => url.startsWith('/api/v3/incidents')
+        ? jsonResponse(incidentPage([{incidentType: 'TCP', startedAt: '2024-01-01T00:30:00Z', endedAt: null, details: null}]))
         : jsonResponse(stats));
 
     await block.pollEndpoint();
@@ -1018,7 +1043,7 @@ test('pollEndpoint still renders the metrics when the incidents cannot be fetche
         const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
         const rendered = [];
         block.updateChart = (data) => rendered.push(data);
-        stubFetch(t, async (url) => url.startsWith('/api/v2/incidents') ? failure() : jsonResponse(stats));
+        stubFetch(t, async (url) => url.startsWith('/api/v3/incidents') ? failure() : jsonResponse(stats));
 
         await block.pollEndpoint();
 
@@ -1033,7 +1058,7 @@ test('pollEndpoint renders nothing when the stats cannot be fetched', async (t) 
     const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
     const rendered = [];
     block.updateChart = (data) => rendered.push(data);
-    stubFetch(t, async (url) => url.startsWith('/api/v2/incidents') ? jsonResponse([]) : {ok: false, status: 500});
+    stubFetch(t, async (url) => url.startsWith('/api/v3/incidents') ? jsonResponse(incidentPage([])) : {ok: false, status: 500});
 
     await block.pollEndpoint();
 
@@ -1046,8 +1071,8 @@ test('pollEndpoint discards the response of a period that has been changed in th
     const rendered = [];
     block.updateChart = (data) => rendered.push(data);
     let resolveStats;
-    stubFetch(t, (url) => url.startsWith('/api/v2/incidents')
-        ? Promise.resolve(jsonResponse([]))
+    stubFetch(t, (url) => url.startsWith('/api/v3/incidents')
+        ? Promise.resolve(jsonResponse(incidentPage([])))
         : new Promise(resolve => {
             resolveStats = resolve;
         }));
@@ -1078,8 +1103,8 @@ test('changing the period shows the loading state until the response of the new 
         const rendered = [];
         block.updateChart = (data) => rendered.push(data);
         let resolveStats;
-        stubFetch(t, (url) => url.startsWith('/api/v2/incidents')
-            ? Promise.resolve(jsonResponse([]))
+        stubFetch(t, (url) => url.startsWith('/api/v3/incidents')
+            ? Promise.resolve(jsonResponse(incidentPage([])))
             : new Promise(resolve => {
                 resolveStats = resolve;
             }));
@@ -1102,8 +1127,8 @@ test('the auto-refresh never shows the loading state', async (t) => {
     const loadingStatesDuringRequests = [];
     stubFetch(t, async (url) => {
         loadingStatesDuringRequests.push(block.isPeriodLoading);
-        return url.startsWith('/api/v2/incidents')
-            ? jsonResponse([])
+        return url.startsWith('/api/v3/incidents')
+            ? jsonResponse(incidentPage([]))
             : jsonResponse({metricsLogs: METRICS_LOGS_OF_AN_HOUR});
     });
 
