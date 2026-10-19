@@ -177,7 +177,8 @@ private fun FlowContent.categorySelector(
         xModel("category")
         xBindErrorClass("category")
         xInitNextTick(
-            "{ initCategorySelect('#$categorySelectId', ${Messages.monitorCategoryAddNew().asJsonString()}) }"
+            "{ initCategorySelect('#$categorySelectId', ${Messages.monitorCategoryAddNew().asJsonString()}, " +
+                "${Messages.selectSearchHint().asJsonString()}) }"
         )
         if (isReadOnlyMode) disabled = true
         // The empty option is what Alpine binds to for a monitor without a category. TomSelect keeps it out of the

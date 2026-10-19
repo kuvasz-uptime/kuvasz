@@ -253,6 +253,44 @@ class AuthenticationTest(
             }
         }
 
+        // Only the web UI calls the internal endpoints, so the API key is not accepted there
+        given("an internal API endpoint") {
+
+            `when`("an anonymous user calls it") {
+                val exception = shouldThrow<HttpClientResponseException> {
+                    client.exchange("/api/internal/monitors").awaitFirst()
+                }
+                then("it should return 401") {
+                    exception.status shouldBe HttpStatus.UNAUTHORIZED
+                }
+            }
+
+            `when`("a user provides the right API key in the X-API-KEY header") {
+                val request = HttpRequest.GET<Any>("/api/internal/monitors").header("X-API-KEY", TEST_API_KEY)
+                val exception = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request).awaitFirst()
+                }
+
+                then("it should return 401") {
+                    exception.status shouldBe HttpStatus.UNAUTHORIZED
+                }
+            }
+
+            `when`("a user is authenticated via a JWT cookie") {
+                val jwt = getValidJWT(client, authConfig)
+
+                val request = HttpRequest
+                    .GET<Any>("/api/internal/monitors")
+                    .header(HttpHeaders.COOKIE, "JWT=$jwt")
+
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+        }
+
         given("the /prometheus API endpoint") {
 
             `when`("an anonymous user calls it") {

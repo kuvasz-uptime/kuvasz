@@ -14,7 +14,10 @@ const {
     fetchCategories,
     loadCategoryOptions,
     resetCategorySelect,
-    resetCategoryMultiSelect,
+    resetMultiSelect,
+    fetchMonitors,
+    loadMonitorOptions,
+    addSearchHint,
     listQuery,
     LIST_QUERY_CHANGE_EVENT,
     monitorListItem,
@@ -78,7 +81,7 @@ test('isValidHttpHeaderName', () => {
 // --------- #2: buildRequestBody type -> field mapping (maintenance windows) ---------
 
 test('buildRequestBody nulls out non-MANUAL fields for a MANUAL window', () => {
-    const form = upsertMaintenanceWindowForm(null, {}, 'select', []);
+    const form = upsertMaintenanceWindowForm(null, {}, 'select');
     Object.assign(form, {
         type: MAINTENANCE_WINDOW_TYPES.MANUAL,
         name: 'MW', description: 'desc', enabled: true, global: false, showOnStatusPages: true,
@@ -98,7 +101,7 @@ test('buildRequestBody nulls out non-MANUAL fields for a MANUAL window', () => {
 });
 
 test('buildRequestBody keeps cron and duration but drops start for a CRON window', () => {
-    const form = upsertMaintenanceWindowForm(null, {}, 'select', []);
+    const form = upsertMaintenanceWindowForm(null, {}, 'select');
     Object.assign(form, {
         type: MAINTENANCE_WINDOW_TYPES.CRON,
         name: 'MW', cron: '0 0 * * *', pickedDate: '2024-01-01', pickedTime: '10:00', duration: 'PT2H',
@@ -111,7 +114,7 @@ test('buildRequestBody keeps cron and duration but drops start for a CRON window
 });
 
 test('buildRequestBody converts start to ISO and drops cron for a SINGLE window', () => {
-    const form = upsertMaintenanceWindowForm(null, {}, 'select', []);
+    const form = upsertMaintenanceWindowForm(null, {}, 'select');
     Object.assign(form, {
         type: MAINTENANCE_WINDOW_TYPES.SINGLE,
         name: 'MW', cron: '0 0 * * *', pickedDate: '2024-01-01', pickedTime: '10:00', duration: 'PT30M',
@@ -125,7 +128,7 @@ test('buildRequestBody converts start to ISO and drops cron for a SINGLE window'
 });
 
 test('buildRequestBody leaves start null for a SINGLE window without a date or a time', () => {
-    const form = upsertMaintenanceWindowForm(null, {}, 'select', []);
+    const form = upsertMaintenanceWindowForm(null, {}, 'select');
     Object.assign(form, {
         type: MAINTENANCE_WINDOW_TYPES.SINGLE, name: 'MW', pickedDate: '', pickedTime: '10:00', duration: 'PT30M',
         selectedMonitors: [], integrations: [],
@@ -137,7 +140,7 @@ test('buildRequestBody leaves start null for a SINGLE window without a date or a
 });
 
 test('validateDateTime requires a valid date and time, only for a SINGLE window', () => {
-    const form = upsertMaintenanceWindowForm(null, {startRequired: 'REQUIRED', startInvalid: 'INVALID'}, 'select', []);
+    const form = upsertMaintenanceWindowForm(null, {startRequired: 'REQUIRED', startInvalid: 'INVALID'}, 'select');
     Object.assign(form, {type: MAINTENANCE_WINDOW_TYPES.SINGLE, pickedDate: '', pickedTime: '', errors: {}});
 
     form.validateDateTime();
@@ -166,7 +169,7 @@ test('validateDateTime requires a valid date and time, only for a SINGLE window'
 });
 
 test('onTypeChange clears the start date and time when leaving a SINGLE window', () => {
-    const form = upsertMaintenanceWindowForm(null, {}, 'select', []);
+    const form = upsertMaintenanceWindowForm(null, {}, 'select');
     Object.assign(form, {
         type: MAINTENANCE_WINDOW_TYPES.CRON, name: 'MW', cron: '0 0 * * *', pickedDate: '2030-01-01',
         pickedTime: '10:00', duration: 'PT1H', errors: {},
@@ -177,7 +180,7 @@ test('onTypeChange clears the start date and time when leaving a SINGLE window',
 });
 
 test('populateFrom splits the start of a SINGLE window into a local date and time', () => {
-    const form = upsertMaintenanceWindowForm(null, {}, 'monitor-select', [], 'categories-select');
+    const form = upsertMaintenanceWindowForm(null, {}, 'monitor-select', 'categories-select');
     const start = '2030-01-01T10:30:00Z';
     form.populateFrom({name: 'MW', start, duration: 'PT1H'});
 
@@ -267,7 +270,7 @@ test('anchorPopupToModal moves the datepicker popup into the modal, translating 
 });
 
 test('onDateTimeTyped splits the typed start into a date and a time, and validates them', () => {
-    const form = upsertMaintenanceWindowForm(null, {startRequired: 'REQUIRED', startInvalid: 'INVALID'}, 'select', []);
+    const form = upsertMaintenanceWindowForm(null, {startRequired: 'REQUIRED', startInvalid: 'INVALID'}, 'select');
     Object.assign(form, {type: MAINTENANCE_WINDOW_TYPES.SINGLE, pickedDate: '', pickedTime: '', errors: {}});
 
     form.onDateTimeTyped(' 2030-01-05 10:30 ');
@@ -325,7 +328,7 @@ test('initDateTimePicker keeps the Tabler datepicker and the start in sync', asy
     const listeners = {};
     const element = {addEventListener: (name, listener) => listeners[name] = listener, closest: () => modal};
     const watchers = {};
-    const form = upsertMaintenanceWindowForm(null, {startRequired: 'REQUIRED'}, 'select', []);
+    const form = upsertMaintenanceWindowForm(null, {startRequired: 'REQUIRED'}, 'select');
     Object.assign(form, {
         type: MAINTENANCE_WINDOW_TYPES.SINGLE, pickedDate: '', pickedTime: '', errors: {},
         $watch: (property, callback) => watchers[property] = callback,
@@ -489,7 +492,7 @@ const stubDatepicker = (t, parsedDates) => {
 // A maintenance window form with a loaded start, and the watchers it registered
 const startFormOf = (pickedDate, pickedTime) => {
     const watchers = {};
-    const form = upsertMaintenanceWindowForm(null, {}, 'select', []);
+    const form = upsertMaintenanceWindowForm(null, {}, 'select');
     Object.assign(form, {
         type: MAINTENANCE_WINDOW_TYPES.SINGLE, pickedDate, pickedTime, errors: {},
         $watch: (property, callback) => watchers[property] = callback,
@@ -2032,11 +2035,11 @@ test('resetCategorySelect no-ops before TomSelect is initialized', () => {
     assert.doesNotThrow(() => resetCategorySelect('category-select', 'Drive storage'));
 });
 
-test('resetCategoryMultiSelect re-adds and selects every category of the form', () => {
+test('resetMultiSelect re-adds and selects every value of the form', () => {
     const tomSelect = fakeTomSelect();
-    withCategorySelect(tomSelect, () => resetCategoryMultiSelect('categories-select', ['Payments', 'Search']));
+    withCategorySelect(tomSelect, () => resetMultiSelect('categories-select', ['Payments', 'Search']));
     assert.equal(tomSelect.cleared, 1);
-    // Same reason as above: an option the endpoint does not offer is dropped when the selection is cleared
+    // Same reason as above: an option the endpoint does not offer (yet) is dropped when the selection is cleared
     assert.deepEqual(tomSelect.options, [
         {value: 'Payments', text: 'Payments'},
         {value: 'Search', text: 'Search'},
@@ -2044,19 +2047,37 @@ test('resetCategoryMultiSelect re-adds and selects every category of the form', 
     assert.deepEqual(tomSelect.items, ['Payments', 'Search']);
 });
 
-test('resetCategoryMultiSelect only clears when the form has no categories', () => {
+test('resetMultiSelect only clears when the form has no values', () => {
     const tomSelect = fakeTomSelect();
-    withCategorySelect(tomSelect, () => resetCategoryMultiSelect('categories-select', []));
+    withCategorySelect(tomSelect, () => resetMultiSelect('categories-select', []));
     assert.equal(tomSelect.cleared, 1);
     assert.deepEqual(tomSelect.options, []);
     assert.deepEqual(tomSelect.items, []);
 });
 
-test('resetCategoryMultiSelect tolerates a missing category list', () => {
+test('resetMultiSelect tolerates a missing list of values', () => {
     const tomSelect = fakeTomSelect();
-    withCategorySelect(tomSelect, () => resetCategoryMultiSelect('categories-select', undefined));
+    withCategorySelect(tomSelect, () => resetMultiSelect('categories-select', undefined));
     assert.equal(tomSelect.cleared, 1);
     assert.deepEqual(tomSelect.items, []);
+});
+
+const statusPageWithMonitors = {id: 2, title: 'Status', slug: 'status', monitors: ['http:Site', 'tcp:DB']};
+const maintenanceWindowWithMonitors = {id: 2, name: 'Window', monitors: ['http:Site', 'tcp:DB']};
+
+[
+    ['status page', () => upsertStatusPageForm(statusPageWithMonitors, {}, 'monitor-select', 'categories-select')],
+    ['maintenance window', () => upsertMaintenanceWindowForm(maintenanceWindowWithMonitors, {}, 'monitor-select', 'categories-select')],
+].forEach(([entity, createForm]) => {
+    test(`the ${entity} form renders only its own monitors as options, and offers them even before the rest arrive`, () => {
+        const form = createForm();
+        assert.deepEqual(form.initialMonitors, ['http:Site', 'tcp:DB']);
+
+        const tomSelect = fakeTomSelect();
+        withCategorySelect(tomSelect, () => form.resetState());
+        assert.deepEqual(tomSelect.options.map(option => option.value), ['http:Site', 'tcp:DB']);
+        assert.deepEqual(tomSelect.items, ['http:Site', 'tcp:DB']);
+    });
 });
 
 // Runs [body] with a stubbed global `fetch`, restoring the original afterwards.
@@ -2138,6 +2159,83 @@ test('loadCategoryOptions refreshes a field that was opened before the categorie
 
     assert.deepEqual(tomSelect.options, [{value: 'alerting', text: 'alerting'}]);
     assert.equal(tomSelect.refreshed, 1);
+});
+
+test('loadMonitorOptions offers the monitors once the modal is shown', async () => {
+    const tomSelect = fakeTomSelect();
+    const listeners = {};
+    Object.assign(tomSelect, {
+        input: {closest: () => ({addEventListener: (event, listener) => listeners[event] = listener})},
+        addOptions: (options) => options.forEach(tomSelect.addOption),
+    });
+    loadMonitorOptions(tomSelect);
+    assert.deepEqual(tomSelect.options, []);
+
+    const requestedUrls = [];
+    await withFetch(async (url) => {
+        requestedUrls.push(url);
+        return {ok: true, json: async () => ['tcp:Alpha', 'http:Bravo']};
+    }, listeners['show.bs.modal']);
+
+    assert.deepEqual(requestedUrls, ['/api/internal/monitors']);
+    assert.deepEqual(tomSelect.options, [
+        {value: 'tcp:Alpha', text: 'tcp:Alpha'},
+        {value: 'http:Bravo', text: 'http:Bravo'},
+    ]);
+});
+
+test('fetchMonitors fails open', async (t) => {
+    t.mock.method(console, 'error', () => {});
+    const failures = [
+        async () => ({ok: false, json: async () => ['http:Site']}),
+        async () => {
+            throw new Error('network down');
+        },
+    ];
+    for (const failure of failures) {
+        assert.deepEqual(await withFetch(failure, () => fetchMonitors()), []);
+    }
+});
+
+// A TomSelect stub with a dropdown and the hooks of its methods, and the hint added to it
+const tomSelectWithSearchHint = (t, maxOptions) => {
+    const originalCreateElement = globalThis.document.createElement;
+    globalThis.document.createElement = () => ({dataset: {}});
+    t.after(() => {
+        globalThis.document.createElement = originalCreateElement;
+    });
+    const appended = [];
+    const hooks = [];
+    const tomSelect = {
+        settings: {maxOptions},
+        currentResults: null,
+        dropdown: {append: (element) => appended.push(element)},
+        hook: (when, method, callback) => hooks.push({when, method, callback}),
+        refreshOptions() {
+            hooks.filter(hook => hook.method === 'refreshOptions').forEach(hook => hook.callback());
+        },
+    };
+    addSearchHint(tomSelect, 'Type to search');
+    return {tomSelect, hint: appended[0], hooks};
+};
+
+test('the search hint is shown only while more options match than the dropdown shows', (t) => {
+    const {tomSelect, hint, hooks} = tomSelectWithSearchHint(t, 2);
+    assert.equal(hint.textContent, 'Type to search');
+    assert.equal(hint.dataset.testid, 'select-search-hint');
+    assert.equal(hint.hidden, true);
+    assert.deepEqual(hooks.map(({when, method}) => [when, method]), [['after', 'refreshOptions']]);
+
+    const cases = [
+        [[1, 2, 3], false],
+        [[1, 2], true],
+        [[], true],
+    ];
+    for (const [matches, isHidden] of cases) {
+        tomSelect.currentResults = {items: matches};
+        tomSelect.refreshOptions();
+        assert.equal(hint.hidden, isHidden, `${matches.length} matches`);
+    }
 });
 
 // --------- Upsert forms ---------
@@ -2231,7 +2329,7 @@ test('upsert flags the conflicting fields of each entity', async (t) => {
     };
     const dnsForm = upsertDnsMonitorForm(null, messages, 'category-select', false, 0);
     const pushForm = upsertPushMonitorForm(null, messages, 'category-select', false, 0);
-    const statusPageForm = upsertStatusPageForm(null, messages, 'monitor-select', [], 'categories-select');
+    const statusPageForm = upsertStatusPageForm(null, messages, 'monitor-select', 'categories-select');
 
     for (const form of [dnsForm, pushForm, statusPageForm]) {
         form.resetState();
@@ -2254,7 +2352,7 @@ test('upsert shows the rejected name change of a monitor on its field, every oth
     );
     const messages = {nameCannotBeChanged: 'IMMUTABLE'};
     const monitorForm = upsertHttpMonitorForm({id: 1, name: 'site'}, messages, 'category-select', false, 'select', [], 'proxy-select', [], '(not configured)', 0);
-    const maintenanceWindowForm = upsertMaintenanceWindowForm(null, messages, 'select', []);
+    const maintenanceWindowForm = upsertMaintenanceWindowForm(null, messages, 'select');
 
     monitorForm.resetState();
     await monitorForm.upsert();
@@ -2275,7 +2373,7 @@ test('upsert shows the rejected name change of a monitor on its field, every oth
 test('upsert alerts on an unexpected response and on a failed request', async (t) => {
     const browser = stubBrowser(t);
     stubRequests(t, errorResponse(500), new Error('network down'));
-    const form = upsertStatusPageForm({id: 2, title: 'Status', slug: 'status'}, {}, 'monitor-select', [], 'categories-select');
+    const form = upsertStatusPageForm({id: 2, title: 'Status', slug: 'status'}, {}, 'monitor-select', 'categories-select');
     form.resetState();
 
     await form.upsert();
@@ -2292,7 +2390,7 @@ test('submitForm only sends a valid form', async (t) => {
     stubBrowser(t);
     const requests = stubRequests(t, jsonResponse({id: 3}), jsonResponse({id: 4}));
     const monitorForm = upsertIcmpMonitorForm(null, {nameRequired: 'NAME', hostRequired: 'HOST'}, 'category-select', false, 0);
-    const maintenanceWindowForm = upsertMaintenanceWindowForm(null, {nameRequired: 'NAME'}, 'select', []);
+    const maintenanceWindowForm = upsertMaintenanceWindowForm(null, {nameRequired: 'NAME'}, 'select');
 
     monitorForm.resetState();
     monitorForm.submitForm();
@@ -2548,7 +2646,7 @@ test('the status page form sends the picked gray palette', (t) => {
     stubBrowser(t);
     const form = upsertStatusPageForm(
         {id: 2, title: 'Status', slug: 'status', themeBase: 'SLATE'},
-        {}, 'monitor-select', [], 'categories-select', 'GRAY',
+        {}, 'monitor-select', 'categories-select', 'GRAY',
     );
     form.resetState();
     assert.equal(form.buildRequestBody().themeBase, 'SLATE');
@@ -2563,7 +2661,7 @@ test('the status page form sends the picked gray palette', (t) => {
 const listEditedEntities = {
     'status-pages': {
         createForm: (entity = null) => upsertStatusPageForm(
-            entity, {}, 'monitor-select', [], 'categories-select', 'GRAY',
+            entity, {}, 'monitor-select', 'categories-select', 'GRAY',
         ),
         clonedFields: {title: 'Copy of Source', slug: 'source-copy', public: false},
         source: {
@@ -2595,7 +2693,7 @@ const listEditedEntities = {
         assertRendered: (form) => assert.equal(form.title, 'Rendered'),
     },
     'maintenance-windows': {
-        createForm: (entity = null) => upsertMaintenanceWindowForm(entity, {}, 'monitor-select', [], 'categories-select'),
+        createForm: (entity = null) => upsertMaintenanceWindowForm(entity, {}, 'monitor-select', 'categories-select'),
         clonedFields: {name: 'Copy of Source', enabled: false},
         source: {
             id: 7,

@@ -10,6 +10,7 @@ import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
 import org.jooq.DSLContext
 import org.jooq.Field
 import org.jooq.InsertResultStep
+import org.jooq.Record
 import org.jooq.Record1
 import org.jooq.Select
 import org.jooq.SelectOrderByStep
@@ -66,6 +67,8 @@ fun <T> SelectOrderByStep<*>.fetchPage(
     }
     return PagedResult.of(result, pageRequest, totalCount)
 }
+
+fun <R : Record> List<Select<R>>.unionAll(): Select<R> = reduce { union, select -> union.unionAll(select) }
 
 fun <R : TableRecord<R>> InsertResultStep<R>.fetchOneOrThrow(): R =
     fetchOne() ?: throw NoDataFoundException()

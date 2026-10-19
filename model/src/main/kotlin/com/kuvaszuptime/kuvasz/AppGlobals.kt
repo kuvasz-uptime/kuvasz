@@ -4,7 +4,6 @@ import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationMap
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
-import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.settings.ConnectivityStatus
 import com.kuvaszuptime.kuvasz.models.settings.VersionInfo
 import de.comahe.i18n4k.Locale
@@ -28,7 +27,6 @@ data class AppGlobals(
     val versionInfo: () -> VersionInfo,
     val connectivityStatus: () -> ConnectivityStatus?,
     val defaultStatusPageSettings: DefaultStatusPageSettings,
-    val configuredMonitors: () -> List<MonitorID>,
 ) {
     init {
         // Setting up the locale for i18n messages

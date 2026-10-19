@@ -101,9 +101,10 @@ class IcmpMonitorDetailsUiTest(private val icmpMonitorRepository: IcmpMonitorRep
             page.evaluate("window.notReloaded = true")
 
             val statsUrl = "/api/v2/icmp-monitors/${monitor.id}/stats?period=$SEVEN_DAYS_PERIOD"
-            val incidentsUrl =
-                "/api/v2/incidents?monitorId=${monitor.id}&period=$SEVEN_DAYS_PERIOD&includeResolved=true"
-            page.waitForRequest({ it.url().endsWith(incidentsUrl) }) {
+            // Every incident of the period, in a single page
+            val incidentsUrl = "/api/v3/incidents/ICMP?monitorId=${monitor.id}&period=$SEVEN_DAYS_PERIOD" +
+                "&includeResolved=true&page=1&size="
+            page.waitForRequest({ incidentsUrl in it.url() }) {
                 page.waitForRequest({ it.url().endsWith(statsUrl) }) {
                     details.metricsPeriodSelector.selectOption(SEVEN_DAYS_PERIOD)
                 }

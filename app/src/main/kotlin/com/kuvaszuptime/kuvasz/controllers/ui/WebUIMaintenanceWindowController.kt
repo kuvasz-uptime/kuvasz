@@ -1,9 +1,9 @@
 package com.kuvaszuptime.kuvasz.controllers.ui
 
 import com.kuvaszuptime.kuvasz.AppGlobals
+import com.kuvaszuptime.kuvasz.repositories.SharedMonitorRepository
 import com.kuvaszuptime.kuvasz.security.ui.WebSecured
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowActions
-import com.kuvaszuptime.kuvasz.services.monitor.SharedMonitorActions
 import com.kuvaszuptime.kuvasz.ui.fragments.maintenance.*
 import com.kuvaszuptime.kuvasz.ui.pages.maintenance.*
 import io.micronaut.http.HttpRequest
@@ -21,7 +21,7 @@ import io.swagger.v3.oas.annotations.Hidden
 @Hidden
 class WebUIMaintenanceWindowController(
     private val maintenanceWindowActions: MaintenanceWindowActions,
-    private val sharedMonitorActions: SharedMonitorActions,
+    private val sharedMonitorRepository: SharedMonitorRepository,
     private val appGlobals: AppGlobals,
 ) {
 
@@ -41,7 +41,7 @@ class WebUIMaintenanceWindowController(
         return renderMaintenanceWindowDetailsPage(
             globals = appGlobals,
             maintenanceWindow = maintenanceWindow,
-            monitorIds = sharedMonitorActions.getConfiguredMonitorIds(),
+            monitorIds = sharedMonitorRepository.fetchNumericIds(maintenanceWindow.monitors),
         )
     }
 

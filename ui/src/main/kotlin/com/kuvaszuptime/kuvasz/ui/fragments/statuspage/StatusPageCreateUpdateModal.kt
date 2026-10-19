@@ -23,8 +23,6 @@ internal fun FlowContent.statusPageCreateUpdateModal(
         "slugInvalid" to Messages.errorSlugInvalid(),
         "slugAlreadyExists" to Messages.errorSlugAlreadyExists(),
     ).asJsonString()
-    val configuredMonitors = globals.configuredMonitors()
-    val serializedMonitors = configuredMonitors.asJsonString()
     val modalClosedEvent = "status-page-upsert-modal-closed"
     val monitorsSelectId = "status-page-monitors-select"
     val categoriesSelectId = "status-page-categories-select"
@@ -36,8 +34,7 @@ internal fun FlowContent.statusPageCreateUpdateModal(
             """upsertStatusPageForm(
                 |$serializedStatusPage, 
                 |$serializedErrorMessages, 
-                |'$monitorsSelectId', 
-                |$serializedMonitors, 
+                |'$monitorsSelectId',
                 |'$categoriesSelectId',
                 |'${ThemeBase.DEFAULT.name}')
             """.trimMargin()
@@ -212,6 +209,11 @@ internal fun FlowContent.statusPageCreateUpdateModal(
     handleFormResetOnModalClose(modalId = modalId, eventName = modalClosedEvent)
 }
 
+/**
+ * The multi value monitor picker of the status page and maintenance window forms. Its options are loaded from the
+ * internal endpoint when the modal opens. Only the already selected ones are rendered here, so that TomSelect finds
+ * them in the DOM when it takes the select over.
+ */
 fun FlowContent.monitorSelector(
     xModelName: String,
     monitorsSelectId: String,
@@ -222,43 +224,21 @@ fun FlowContent.monitorSelector(
         id = monitorsSelectId
         multiple = true
         xModel(xModelName)
-        xInitNextTick(
-            """{ new TomSelect(
-                    '#$monitorsSelectId', { 
-                        maxOptions: null,
-                        valueField: 'value',
-                        searchField: 'text',
-                        plugins: ['clear_button', 'remove_button'],
-                        render: {
-                            option: renderMonitorOption,
-                            item: renderMonitorOption,
-                        },
-                        onItemAdd: function(data, item) {
-                            this.setTextboxValue('');
-                        }
-                    }
-                    )}
-            """.trimMargin()
-        )
+        xInitNextTick("{ initMonitorMultiSelect('#$monitorsSelectId', ${Messages.selectSearchHint().asJsonString()}) }")
         if (isReadOnly) disabled = true
         templateTag {
-            xFor("monitor in selectableMonitors")
+            xFor("monitor in initialMonitors")
             xBindKey("monitor")
             optionTag {
                 xBindValue("monitor")
                 xText("monitor")
-                xBindSelected("selectedMonitors.includes(monitor)")
+                selected = true
             }
         }
     }
 }
 
-/**
- * The multi value category picker of the status page and maintenance window forms. In contrast to
- * [monitorSelector], the selectable options are not known server-side: they are loaded from the internal endpoint
- * when the modal opens. Only the already selected ones are rendered here, so that TomSelect finds them in the DOM
- * when it takes the select over.
- */
+/** The multi value category picker of the status page and maintenance window forms, loaded like [monitorSelector]. */
 fun FlowContent.categorySelector(
     categoriesSelectId: String,
     isReadOnly: Boolean,
@@ -269,7 +249,8 @@ fun FlowContent.categorySelector(
         multiple = true
         xModel("selectedCategories")
         xInitNextTick(
-            "{ initCategoryMultiSelect('#$categoriesSelectId', ${Messages.monitorCategoryAddNew().asJsonString()}) }"
+            "{ initCategoryMultiSelect('#$categoriesSelectId', ${Messages.monitorCategoryAddNew().asJsonString()}, " +
+                "${Messages.selectSearchHint().asJsonString()}) }"
         )
         if (isReadOnly) disabled = true
         templateTag {

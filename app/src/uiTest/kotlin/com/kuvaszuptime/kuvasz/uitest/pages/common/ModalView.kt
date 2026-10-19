@@ -39,11 +39,31 @@ abstract class ModalView(protected val page: Page) {
     // The selected chips of the (single) TomSelect multi-select in this modal.
     val selectedOptions: Locator get() = multiSelectField.locator(".ts-control .item")
 
-    // The options of the monitor multi-select, in the order the app offers them. TomSelect hides the `select` it is
-    // built on, so their labels are read from the DOM instead of through the visibility-aware `allInnerTexts()`.
-    val monitorOptions: Locator get() = multiSelectField.locator("select[multiple] option")
+    // The options the opened dropdown of the monitor multi-select shows
+    val shownMonitorOptions: Locator get() = multiSelectField.locator(".ts-dropdown .option")
 
-    val monitorOptionNames: List<String> get() = monitorOptions.allTextContents().map { it.trim() }
+    // The hint telling that the dropdown of the monitor multi-select doesn't show every match
+    val monitorSearchHint: Locator get() = multiSelectField.getByTestId("select-search-hint")
+
+    /**
+     * Opens the dropdown of the monitor multi-select and reads the monitors it offers, as `type:name`, in the order
+     * the app lists them. The value is read instead of the label, because the label is the type badge and the name.
+     */
+    val offeredMonitors: List<String>
+        get() {
+            multiSelectField.locator(".ts-control").click()
+            shownMonitorOptions.first().waitFor()
+            val values = shownMonitorOptions.evaluateAll("options => options.map(option => option.dataset.value)")
+            return (values as List<*>).map { it as String }
+        }
+
+    // Types [text] into the monitor multi-select, and waits until the dropdown shows what matches it
+    fun searchMonitors(text: String) {
+        multiSelectField.locator(".ts-control").click()
+        multiSelectField.locator(".ts-control input").fill(text)
+        val select = multiSelectField.locator("select").elementHandle()
+        page.waitForFunction("select => !select.tomselect.refreshTimeout", select)
+    }
 
     // The checkboxes of the integrations accordion, which stays collapsed (but rendered) until it is opened.
     val integrationCheckboxes: Locator get() = modal.getByTestId("integration-checkbox")

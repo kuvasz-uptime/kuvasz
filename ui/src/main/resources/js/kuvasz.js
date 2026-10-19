@@ -2107,7 +2107,6 @@ const upsertStatusPageForm = (
     statusPage,
     errorMessages,
     monitorSelectId,
-    selectableMonitors,
     categorySelectId,
     defaultThemeBase = null,
 ) => ({
@@ -2118,11 +2117,11 @@ const upsertStatusPageForm = (
         pagePath: '/status-pages',
         entityLabel: 'status page',
     }),
-    selectableMonitors: selectableMonitors || [],
     /*
-     The persisted categories have to be in the DOM as options before TomSelect takes the select over, because
-     the rest of them only arrives when the fetch resolves. Never reassigned, so it cannot loop with x-model.
+     The persisted monitors and categories have to be in the DOM as options before TomSelect takes the selects over,
+     because the rest of them only arrives when the fetch resolves. Never reassigned, so they cannot loop with x-model.
     */
+    initialMonitors: statusPage?.monitors || [],
     initialCategories: statusPage?.categories || [],
     imagePreviewState: {},
 
@@ -2146,10 +2145,8 @@ const upsertStatusPageForm = (
         this.errors = {};
         this.formError = null;
 
-        resetTomSelectState(monitorSelectId, (ts) => {
-            this.selectedMonitors.forEach(monitor => ts.addItem(monitor, true));
-        });
-        resetCategoryMultiSelect(categorySelectId, this.selectedCategories);
+        resetMultiSelect(monitorSelectId, this.selectedMonitors);
+        resetMultiSelect(categorySelectId, this.selectedCategories);
     },
 
     validate() {
@@ -2243,19 +2240,44 @@ const resetTomSelectState = (elementId, afterReset = (tomSelectInstance) => {
     }
 };
 
-/*
- Loads every category the instance knows about: the ones in use by a monitor, plus the ones that are only referenced
- by a status page or a maintenance window. Fails open with an empty list: the selects take a brand new category
- anyway, so an unreachable endpoint must not block the form.
-*/
-const fetchCategories = async () => {
+// Fails open with an empty list, because the options of a select must not block the form
+const fetchSelectOptions = async (url, label) => {
     try {
-        const response = await fetch('/api/internal/categories');
+        const response = await fetch(url);
         return response.ok ? await response.json() : [];
     } catch (error) {
-        console.error('Error fetching the categories:', error);
+        console.error(`Error fetching the ${label}:`, error);
         return [];
     }
+};
+
+/*
+ Loads every category the instance knows about: the ones in use by a monitor, plus the ones that are only referenced
+ by a status page or a maintenance window. The selects take a brand new category anyway, so an unreachable endpoint
+ only means that the existing ones are not offered.
+*/
+const fetchCategories = () => fetchSelectOptions('/api/internal/categories', 'categories');
+
+// The type and the name of every monitor, as "type:name", the same way as the forms send them
+const fetchMonitors = () => fetchSelectOptions('/api/internal/monitors', 'monitors');
+
+// A select shows this many options at most, the rest are found by typing, because the search covers all of them
+const MAX_SHOWN_SELECT_OPTIONS = 100;
+
+/*
+ Tells that the dropdown doesn't show every match, so the list doesn't look cut off. It's updated after every refresh
+ of the options, i.e. on opening the dropdown, typing and picking an option.
+*/
+const addSearchHint = (tomSelect, hint) => {
+    const hintElement = document.createElement('div');
+    hintElement.className = 'text-secondary small px-3 py-2 border-top';
+    hintElement.dataset.testid = 'select-search-hint';
+    hintElement.textContent = hint;
+    hintElement.hidden = true;
+    tomSelect.dropdown.append(hintElement);
+    tomSelect.hook('after', 'refreshOptions', () => {
+        hintElement.hidden = (tomSelect.currentResults?.items.length ?? 0) <= tomSelect.settings.maxOptions;
+    });
 };
 
 // The "add a brand new one" row of a category select, shared by the single and the multi value variants
@@ -2264,13 +2286,13 @@ const categoryCreateRenderer = (addLabel) => ({
 });
 
 /*
- The options are loaded when the modal opens, not when it's rendered. The dashboard renders the create modal of all
- five monitor types at once, and a form nobody opens shouldn't cost a request.
+ The options are loaded when the modal opens, not when it's rendered. The dashboard renders the create modal of every
+ monitor type at once, and a form nobody opens shouldn't cost a request.
 */
-const loadCategoryOptions = (tomSelect) => {
-    const loadOptions = () => fetchCategories().then(categories => {
+const loadOptionsOnModalOpen = (tomSelect, fetchOptions) => {
+    const loadOptions = () => fetchOptions().then(values => {
         // Already known options are ignored by TomSelect, so re-opening the modal just picks up the new ones
-        tomSelect.addOptions(categories.map(category => ({value: category, text: category})));
+        tomSelect.addOptions(values.map(value => ({value, text: value})));
         // A field opened before the categories arrived would not offer them until it's reopened. Only the focused
         // one is refreshed, because the refresh opens the dropdown, which would take the focus from another field.
         if (tomSelect.isFocused) {
@@ -2284,6 +2306,10 @@ const loadCategoryOptions = (tomSelect) => {
         loadOptions();
     }
 };
+
+const loadCategoryOptions = (tomSelect) => loadOptionsOnModalOpen(tomSelect, fetchCategories);
+
+const loadMonitorOptions = (tomSelect) => loadOptionsOnModalOpen(tomSelect, fetchMonitors);
 
 /*
  Loads the containers of a host. A listing that could not be produced at all comes back with `available: false`,
@@ -2354,11 +2380,12 @@ const initProxySelect = (selector) => {
  The container select. Unlike the host it does accept a typed in value, because the listing is best effort and a
  container may simply not exist yet when the monitor is set up.
 */
-const initDockerContainerSelect = (selector, loadingLabel, noResultsLabel) => {
-    new TomSelect(selector, {
+const initDockerContainerSelect = (selector, loadingLabel, noResultsLabel, searchHint) => {
+    const tomSelect = new TomSelect(selector, {
         create: true,
         persist: false,
         maxItems: 1,
+        maxOptions: MAX_SHOWN_SELECT_OPTIONS,
         plugins: ['clear_button'],
         loadingClass: 'loading',
         render: {
@@ -2368,20 +2395,23 @@ const initDockerContainerSelect = (selector, loadingLabel, noResultsLabel) => {
             no_results: () => `<div class="no-results">${noResultsLabel}</div>`,
         },
     });
+    addSearchHint(tomSelect, searchHint);
 };
 
 /*
  The single value category select of the monitor forms: it offers the already existing categories with an
  autocomplete, but a brand new one can be typed in as well.
 */
-const initCategorySelect = (selector, addLabel) => {
+const initCategorySelect = (selector, addLabel, searchHint) => {
     const tomSelect = new TomSelect(selector, {
         create: true,
         persist: false,
         maxItems: 1,
+        maxOptions: MAX_SHOWN_SELECT_OPTIONS,
         plugins: ['clear_button'],
         render: categoryCreateRenderer(addLabel)
     });
+    addSearchHint(tomSelect, searchHint);
     loadCategoryOptions(tomSelect);
 };
 
@@ -2390,18 +2420,36 @@ const initCategorySelect = (selector, addLabel) => {
  covered monitors in addition to the ones picked explicitly. A category that is not in use by any monitor yet is
  accepted here too, it simply covers nothing until a monitor is tagged with it.
 */
-const initCategoryMultiSelect = (selector, addLabel) => {
+const initCategoryMultiSelect = (selector, addLabel, searchHint) => {
     const tomSelect = new TomSelect(selector, {
         create: true,
         persist: false,
-        maxOptions: null,
+        maxOptions: MAX_SHOWN_SELECT_OPTIONS,
         plugins: ['clear_button', 'remove_button'],
         render: categoryCreateRenderer(addLabel),
         onItemAdd: function () {
             this.setTextboxValue('');
         }
     });
+    addSearchHint(tomSelect, searchHint);
     loadCategoryOptions(tomSelect);
+};
+
+// The monitor select of the status page and maintenance window forms, offering every monitor
+const initMonitorMultiSelect = (selector, searchHint) => {
+    const tomSelect = new TomSelect(selector, {
+        maxOptions: MAX_SHOWN_SELECT_OPTIONS,
+        plugins: ['clear_button', 'remove_button'],
+        render: {
+            option: renderMonitorOption,
+            item: renderMonitorOption,
+        },
+        onItemAdd: function () {
+            this.setTextboxValue('');
+        }
+    });
+    addSearchHint(tomSelect, searchHint);
+    loadMonitorOptions(tomSelect);
 };
 
 /*
@@ -2418,14 +2466,15 @@ const resetCategorySelect = (elementId, category) => {
 };
 
 /*
- The multi value counterpart of resetCategorySelect. The options have to be re-added for the same reason: a category
- that the endpoint does not offer (yet) is dropped by TomSelect as soon as the selection is cleared.
+ Restores the values of a multi value select after a reset (edit, clone). The options have to be re-added, because
+ the ones the endpoint does not offer (yet), e.g. a new category, are dropped by TomSelect as soon as the selection
+ is cleared, and the edited entity may arrive before the options do.
 */
-const resetCategoryMultiSelect = (elementId, categories) => {
+const resetMultiSelect = (elementId, values) => {
     resetTomSelectState(elementId, (ts) => {
-        (categories || []).forEach(category => {
-            ts.addOption({value: category, text: category});
-            ts.addItem(category, true);
+        (values || []).forEach(value => {
+            ts.addOption({value, text: value});
+            ts.addItem(value, true);
         });
     });
 };
@@ -2853,7 +2902,6 @@ const upsertMaintenanceWindowForm = (
     maintenanceWindow,
     errorMessages,
     monitorSelectId,
-    selectableMonitors,
     categorySelectId,
 ) => ({
     ...upsertForm({
@@ -2864,8 +2912,8 @@ const upsertMaintenanceWindowForm = (
         entityLabel: 'maintenance window',
     }),
     ...dateTimePickerField(),
-    selectableMonitors: selectableMonitors || [],
-    // See the same field on upsertStatusPageForm
+    // See the same fields on upsertStatusPageForm
+    initialMonitors: maintenanceWindow?.monitors || [],
     initialCategories: maintenanceWindow?.categories || [],
     // The integrations accordion expects this; maintenance windows never auto-apply global integrations
     globalIntegrationCount: 0,
@@ -2892,10 +2940,8 @@ const upsertMaintenanceWindowForm = (
         this.errors = {};
         this.formError = null;
 
-        resetTomSelectState(monitorSelectId, (ts) => {
-            this.selectedMonitors.forEach(monitor => ts.addItem(monitor, true));
-        });
-        resetCategoryMultiSelect(categorySelectId, this.selectedCategories);
+        resetMultiSelect(monitorSelectId, this.selectedMonitors);
+        resetMultiSelect(categorySelectId, this.selectedCategories);
     },
 
     validate() {
@@ -3247,9 +3293,12 @@ if (typeof module !== 'undefined' && module.exports) {
         createRandomSecret,
         // Helpers of the category select
         fetchCategories,
+        fetchMonitors,
         loadCategoryOptions,
+        loadMonitorOptions,
+        addSearchHint,
         resetCategorySelect,
-        resetCategoryMultiSelect,
+        resetMultiSelect,
         // DOM helpers run after the HTMX swaps
         reInitTooltips,
         initSparklines,

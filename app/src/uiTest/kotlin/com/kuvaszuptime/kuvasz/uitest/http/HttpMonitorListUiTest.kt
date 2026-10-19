@@ -35,7 +35,7 @@ class HttpMonitorListUiTest(private val httpMonitorRepository: HttpMonitorReposi
             // Add a monitor straight into the DB *after* the page has rendered — no navigation, no manual refresh.
             createHttpMonitor(httpMonitorRepository, monitorName = "Auto Refreshed")
 
-            // The list polls its fragment every 15s, so the row appears on the next poll.
+            // The list polls its fragment every 30s, so the row appears on the next poll.
             assertThat(list.rowByName("Auto Refreshed"))
                 .isVisible(LocatorAssertions.IsVisibleOptions().setTimeout(AUTO_REFRESH_TIMEOUT_MS))
         }
@@ -279,7 +279,7 @@ class HttpMonitorListUiTest(private val httpMonitorRepository: HttpMonitorReposi
     }
 
     companion object {
-        private const val AUTO_REFRESH_TIMEOUT_MS = 20_000.0
+        private const val AUTO_REFRESH_TIMEOUT_MS = 35_000.0
         private const val ONE_MORE_THAN_A_PAGE = PageRequest.DEFAULT_SIZE + 1
     }
 }

@@ -6,19 +6,16 @@ import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.config.DefaultStatusPageConfig
 import com.kuvaszuptime.kuvasz.config.DockerHostConfig
 import com.kuvaszuptime.kuvasz.config.ProxyConfig
-import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationMap
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.type
-import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.settings.ConnectivityState
 import com.kuvaszuptime.kuvasz.models.settings.ConnectivityStatus
 import com.kuvaszuptime.kuvasz.models.settings.VersionInfo
 import com.kuvaszuptime.kuvasz.services.VersionChecker
 import com.kuvaszuptime.kuvasz.services.docker.DockerHostRegistry
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
-import com.kuvaszuptime.kuvasz.services.monitor.SharedMonitorActions
 import com.kuvaszuptime.kuvasz.services.proxy.ProxyRegistry
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageDataActions
 import com.kuvaszuptime.kuvasz.util.toUri
@@ -49,13 +46,6 @@ class AppGlobalsFactoryTest : BehaviorSpec({
         every { title } returns "My Status Page"
         every { public } returns true
     }
-    val mockkMonitorActions = mockk<SharedMonitorActions> {
-        every { getConfiguredMonitors() } returns listOf(
-            MonitorID(MonitorType.HTTP_SSL, "something"),
-            MonitorID(MonitorType.PUSH, "abcd"),
-        )
-    }
-
     val mockStatusPageDataActions = mockk<StatusPageDataActions> {
         every { isDefaultStatusPageAvailable() } returns false
     }
@@ -72,7 +62,6 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 emptyIntegrationRepository,
                 mockVersionChecker,
                 mockDefaultPageSettings,
-                mockkMonitorActions,
                 mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = null,
@@ -103,7 +92,6 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 emptyIntegrationRepository,
                 mockVersionChecker,
                 mockDefaultPageSettings,
-                mockkMonitorActions,
                 mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = null,
@@ -134,7 +122,6 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 emptyIntegrationRepository,
                 mockVersionChecker,
                 mockDefaultPageSettings,
-                mockkMonitorActions,
                 mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = null,
@@ -168,7 +155,6 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 emptyIntegrationRepository,
                 mockVersionChecker,
                 mockDefaultPageSettings,
-                mockkMonitorActions,
                 mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = null,
@@ -194,7 +180,6 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 emptyIntegrationRepository,
                 mockVersionChecker,
                 mockDefaultPageSettings,
-                mockkMonitorActions,
                 mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = null,
@@ -217,7 +202,6 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 emptyIntegrationRepository,
                 mockVersionChecker,
                 mockDefaultPageSettings,
-                mockkMonitorActions,
                 mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = null,
@@ -252,7 +236,6 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockIntegrationRepository,
                 mockVersionChecker,
                 mockDefaultPageSettings,
-                mockkMonitorActions,
                 mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = null,
@@ -282,7 +265,6 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                     emptyIntegrationRepository,
                     mockVersionChecker,
                     mockDefaultPageSettings,
-                    mockkMonitorActions,
                     mockStatusPageDataActions,
                     oidcClient = null,
                     apiKeyConfig = null,
@@ -305,7 +287,6 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 emptyIntegrationRepository,
                 mockVersionChecker,
                 mockDefaultPageSettings,
-                mockkMonitorActions,
                 mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = null,
@@ -321,30 +302,6 @@ class AppGlobalsFactoryTest : BehaviorSpec({
             }
         }
 
-        `when`("there are enabled monitors") {
-            val globals = AppGlobalsFactory().appGlobals(
-                null,
-                AppConfig(),
-                emptyIntegrationRepository,
-                mockVersionChecker,
-                mockDefaultPageSettings,
-                mockkMonitorActions,
-                mockStatusPageDataActions,
-                oidcClient = null,
-                apiKeyConfig = null,
-                connectivityChecker = null,
-                dockerHostRegistry = null,
-                proxyRegistry = emptyProxyRegistry,
-            )
-
-            then("it should return the correct list of enabled monitors") {
-                globals.configuredMonitors() shouldBe listOf(
-                    MonitorID(MonitorType.PUSH, "abcd"),
-                    MonitorID(MonitorType.HTTP_SSL, "something")
-                )
-            }
-        }
-
         `when`("OIDC is disabled") {
             val globals = AppGlobalsFactory().appGlobals(
                 null,
@@ -352,7 +309,6 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 emptyIntegrationRepository,
                 mockVersionChecker,
                 mockDefaultPageSettings,
-                mockkMonitorActions,
                 mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = null,
@@ -377,7 +333,6 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 emptyIntegrationRepository,
                 mockVersionChecker,
                 mockDefaultPageSettings,
-                mockkMonitorActions,
                 mockStatusPageDataActions,
                 oidcClient = oidcClient,
                 apiKeyConfig = null,
@@ -402,7 +357,6 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 emptyIntegrationRepository,
                 mockVersionChecker,
                 mockDefaultPageSettings,
-                mockkMonitorActions,
                 mockStatusPageDataActions,
                 oidcClient = oidcClient,
                 apiKeyConfig = null,
@@ -424,7 +378,6 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 emptyIntegrationRepository,
                 mockVersionChecker,
                 mockDefaultPageSettings,
-                mockkMonitorActions,
                 mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = null,
@@ -445,7 +398,6 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 emptyIntegrationRepository,
                 mockVersionChecker,
                 mockDefaultPageSettings,
-                mockkMonitorActions,
                 mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = null,
@@ -476,7 +428,6 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 emptyIntegrationRepository,
                 mockVersionChecker,
                 mockDefaultPageSettings,
-                mockkMonitorActions,
                 mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = null,
@@ -497,7 +448,6 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 emptyIntegrationRepository,
                 mockVersionChecker,
                 mockDefaultPageSettings,
-                mockkMonitorActions,
                 mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = ApiKeyConfig().apply { apiKey = "some-non-blank-api-key" },
@@ -518,7 +468,6 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 emptyIntegrationRepository,
                 mockVersionChecker,
                 mockDefaultPageSettings,
-                mockkMonitorActions,
                 mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = ApiKeyConfig().apply { apiKey = null },
@@ -532,7 +481,6 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 emptyIntegrationRepository,
                 mockVersionChecker,
                 mockDefaultPageSettings,
-                mockkMonitorActions,
                 mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = ApiKeyConfig().apply { apiKey = "   " },
@@ -555,7 +503,6 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 emptyIntegrationRepository,
                 mockVersionChecker,
                 mockDefaultPageSettings,
-                mockkMonitorActions,
                 mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = null,
@@ -590,7 +537,6 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 emptyIntegrationRepository,
                 mockVersionChecker,
                 mockDefaultPageSettings,
-                mockkMonitorActions,
                 mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = null,

@@ -235,8 +235,6 @@ class IncidentRepository(private val dslContext: DSLContext) {
         .filter { type -> includeSslIncidents || type != IncidentType.SSL }
         .map { type -> dslContext.incidentSelect(type, monitorId, period, states) }
 
-    private fun <R : Record> List<Select<R>>.unionAll(): Select<R> = reduce { union, select -> union.unionAll(select) }
-
     @Suppress("IgnoredReturnValue")
     private fun DSLContext.httpUptimeIncidentSelect(
         monitorId: Long? = null,

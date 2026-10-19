@@ -12,7 +12,6 @@ import com.kuvaszuptime.kuvasz.services.connectivity.ConnectivityChecker
 import com.kuvaszuptime.kuvasz.services.docker.DockerHostRegistry
 import com.kuvaszuptime.kuvasz.services.proxy.ProxyRegistry
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
-import com.kuvaszuptime.kuvasz.services.monitor.SharedMonitorActions
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageDataActions
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Factory
@@ -31,7 +30,6 @@ class AppGlobalsFactory {
         integrationRepository: IntegrationRepository,
         versionChecker: VersionChecker,
         defaultStatusPageConfig: DefaultStatusPageConfig,
-        monitorActions: SharedMonitorActions,
         statusPageDataActions: StatusPageDataActions,
         // Relying on the conditionally provisioned Micronaut OIDC client bean:
         // it is only present when OIDC is actually enabled, and its supportsEndSession() flag reflects whether
@@ -79,8 +77,5 @@ class AppGlobalsFactory {
             public = defaultStatusPageConfig.public,
             isAvailable = { statusPageDataActions.isDefaultStatusPageAvailable() },
         ),
-        configuredMonitors = {
-            monitorActions.getConfiguredMonitors().sortedBy { it.name.lowercase() }
-        },
     )
 }
