@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.ui.fragments.statuspage
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDefaults
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageSortField
 import com.kuvaszuptime.kuvasz.models.pagination.ListDefaults
@@ -118,6 +119,7 @@ fun renderStatusPageList(
     }
 
 private fun TBODY.defaultStatusPageRow(settings: AppGlobals.DefaultStatusPageSettings) {
+    val isAvailable = settings.isAvailable()
     tr {
         testId("default-status-page-row")
         // ID
@@ -140,6 +142,19 @@ private fun TBODY.defaultStatusPageRow(settings: AppGlobals.DefaultStatusPageSet
                 text = Messages.default(),
                 tooltip = Messages.defaultStatusPageDescription(),
             )
+            if (!isAvailable) {
+                span {
+                    classes(MS_1)
+                    testId("default-status-page-unavailable-badge")
+                    inlineBadge(
+                        text = Messages.unavailable(),
+                        color = Color.ORANGE_LT,
+                        tooltip = Messages.defaultStatusPageUnavailableDescription(
+                            StatusPageDefaults.DEFAULT_PAGE_MAX_MONITORS,
+                        ),
+                    )
+                }
+            }
         }
         // Slug
         td {
@@ -151,8 +166,14 @@ private fun TBODY.defaultStatusPageRow(settings: AppGlobals.DefaultStatusPageSet
         // Preview
         td {
             classes(TEXT_CENTER)
-            // Preview button
-            statusPagePreviewButton(slug = "")
+            if (isAvailable) {
+                statusPagePreviewButton(slug = "")
+            } else {
+                compactIconButton(Icon.EXTERNAL_LINK, classes = setOf(BTN_SM)) {
+                    testId("default-status-page-preview-unavailable")
+                    attributes["disabled"] = "disabled"
+                }
+            }
         }
         // Visibility
         td {

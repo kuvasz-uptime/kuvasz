@@ -13,6 +13,7 @@ import com.kuvaszuptime.kuvasz.services.docker.DockerHostRegistry
 import com.kuvaszuptime.kuvasz.services.proxy.ProxyRegistry
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.monitor.SharedMonitorActions
+import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageDataActions
 import io.micronaut.context.annotation.Context
 import io.micronaut.context.annotation.Factory
 import io.micronaut.security.oauth2.client.OpenIdClient
@@ -31,6 +32,7 @@ class AppGlobalsFactory {
         versionChecker: VersionChecker,
         defaultStatusPageConfig: DefaultStatusPageConfig,
         monitorActions: SharedMonitorActions,
+        statusPageDataActions: StatusPageDataActions,
         // Relying on the conditionally provisioned Micronaut OIDC client bean:
         // it is only present when OIDC is actually enabled, and its supportsEndSession() flag reflects whether
         // Micronaut could resolve an end-session endpoint (i.e. whether the /oauth/logout route really exists),
@@ -75,6 +77,7 @@ class AppGlobalsFactory {
         defaultStatusPageSettings = AppGlobals.DefaultStatusPageSettings(
             title = defaultStatusPageConfig.title,
             public = defaultStatusPageConfig.public,
+            isAvailable = { statusPageDataActions.isDefaultStatusPageAvailable() },
         ),
         configuredMonitors = {
             monitorActions.getConfiguredMonitors().sortedBy { it.name.lowercase() }

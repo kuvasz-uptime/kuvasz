@@ -20,6 +20,7 @@ import com.kuvaszuptime.kuvasz.services.docker.DockerHostRegistry
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.monitor.SharedMonitorActions
 import com.kuvaszuptime.kuvasz.services.proxy.ProxyRegistry
+import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageDataActions
 import com.kuvaszuptime.kuvasz.util.toUri
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -55,6 +56,10 @@ class AppGlobalsFactoryTest : BehaviorSpec({
         )
     }
 
+    val mockStatusPageDataActions = mockk<StatusPageDataActions> {
+        every { isDefaultStatusPageAvailable() } returns false
+    }
+
     val emptyProxyRegistry = ProxyRegistry(emptyList())
 
     given("the AppGlobalsFactory") {
@@ -68,6 +73,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockVersionChecker,
                 mockDefaultPageSettings,
                 mockkMonitorActions,
+                mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = null,
                 connectivityChecker = null,
@@ -98,6 +104,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockVersionChecker,
                 mockDefaultPageSettings,
                 mockkMonitorActions,
+                mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = null,
                 connectivityChecker = null,
@@ -128,6 +135,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockVersionChecker,
                 mockDefaultPageSettings,
                 mockkMonitorActions,
+                mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = null,
                 connectivityChecker = null,
@@ -161,6 +169,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockVersionChecker,
                 mockDefaultPageSettings,
                 mockkMonitorActions,
+                mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = null,
                 connectivityChecker = null,
@@ -186,6 +195,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockVersionChecker,
                 mockDefaultPageSettings,
                 mockkMonitorActions,
+                mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = null,
                 connectivityChecker = null,
@@ -208,6 +218,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockVersionChecker,
                 mockDefaultPageSettings,
                 mockkMonitorActions,
+                mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = null,
                 connectivityChecker = null,
@@ -242,6 +253,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockVersionChecker,
                 mockDefaultPageSettings,
                 mockkMonitorActions,
+                mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = null,
                 connectivityChecker = null,
@@ -271,6 +283,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                     mockVersionChecker,
                     mockDefaultPageSettings,
                     mockkMonitorActions,
+                    mockStatusPageDataActions,
                     oidcClient = null,
                     apiKeyConfig = null,
                     connectivityChecker = null,
@@ -293,6 +306,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockVersionChecker,
                 mockDefaultPageSettings,
                 mockkMonitorActions,
+                mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = null,
                 connectivityChecker = null,
@@ -303,6 +317,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
             then("it should return the correct default status page settings") {
                 globals.defaultStatusPageSettings.title shouldBe "My Status Page"
                 globals.defaultStatusPageSettings.public shouldBe true
+                globals.defaultStatusPageSettings.isAvailable() shouldBe false
             }
         }
 
@@ -314,6 +329,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockVersionChecker,
                 mockDefaultPageSettings,
                 mockkMonitorActions,
+                mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = null,
                 connectivityChecker = null,
@@ -337,6 +353,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockVersionChecker,
                 mockDefaultPageSettings,
                 mockkMonitorActions,
+                mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = null,
                 connectivityChecker = null,
@@ -361,6 +378,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockVersionChecker,
                 mockDefaultPageSettings,
                 mockkMonitorActions,
+                mockStatusPageDataActions,
                 oidcClient = oidcClient,
                 apiKeyConfig = null,
                 connectivityChecker = null,
@@ -385,6 +403,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockVersionChecker,
                 mockDefaultPageSettings,
                 mockkMonitorActions,
+                mockStatusPageDataActions,
                 oidcClient = oidcClient,
                 apiKeyConfig = null,
                 connectivityChecker = null,
@@ -406,6 +425,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockVersionChecker,
                 mockDefaultPageSettings,
                 mockkMonitorActions,
+                mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = null,
                 connectivityChecker = null,
@@ -426,6 +446,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockVersionChecker,
                 mockDefaultPageSettings,
                 mockkMonitorActions,
+                mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = null,
                 connectivityChecker = null,
@@ -456,6 +477,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockVersionChecker,
                 mockDefaultPageSettings,
                 mockkMonitorActions,
+                mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = null,
                 connectivityChecker = mockk { every { getStatus() } returns status },
@@ -476,6 +498,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockVersionChecker,
                 mockDefaultPageSettings,
                 mockkMonitorActions,
+                mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = ApiKeyConfig().apply { apiKey = "some-non-blank-api-key" },
                 connectivityChecker = null,
@@ -496,6 +519,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockVersionChecker,
                 mockDefaultPageSettings,
                 mockkMonitorActions,
+                mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = ApiKeyConfig().apply { apiKey = null },
                 connectivityChecker = null,
@@ -509,6 +533,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockVersionChecker,
                 mockDefaultPageSettings,
                 mockkMonitorActions,
+                mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = ApiKeyConfig().apply { apiKey = "   " },
                 connectivityChecker = null,
@@ -531,6 +556,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockVersionChecker,
                 mockDefaultPageSettings,
                 mockkMonitorActions,
+                mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = null,
                 connectivityChecker = null,
@@ -565,6 +591,7 @@ class AppGlobalsFactoryTest : BehaviorSpec({
                 mockVersionChecker,
                 mockDefaultPageSettings,
                 mockkMonitorActions,
+                mockStatusPageDataActions,
                 oidcClient = null,
                 apiKeyConfig = null,
                 connectivityChecker = null,

@@ -41,6 +41,7 @@ class ExternalStatusPageControllerTest(
 
             then("it should return 200 and fetch the data from the underlying service") {
                 val mockDataService = getMock(statusPageDataActions)
+                every { mockDataService.isDefaultStatusPageAvailable() } returns true
                 every { mockDataService.getCachedDefaultStatusPageData() } returns mockk(relaxed = true)
 
                 val response = client.exchange("/status").awaitFirst()
@@ -54,6 +55,7 @@ class ExternalStatusPageControllerTest(
 
             then("only the refreshed part of the page is returned, and both variants vary by the htmx header") {
                 val mockDataService = getMock(statusPageDataActions)
+                every { mockDataService.isDefaultStatusPageAvailable() } returns true
                 every { mockDataService.getCachedDefaultStatusPageData() } returns mockk(relaxed = true)
 
                 val fullPage = client.exchange("/status", String::class.java).awaitFirst()
@@ -66,6 +68,21 @@ class ExternalStatusPageControllerTest(
                 fragment.body().shouldNotBeNull() shouldStartWith "<div id=\"status-page-content\">"
                 fullPage.header(HttpHeaders.VARY) shouldBe "HX-Request"
                 fragment.header(HttpHeaders.VARY) shouldBe "HX-Request"
+            }
+        }
+
+        `when`("it is not available, because there are too many enabled monitors") {
+
+            then("it should return 404 without serving the cached page, even though it could be seen otherwise") {
+                val mockDataService = getMock(statusPageDataActions)
+                every { mockDataService.isDefaultStatusPageAvailable() } returns false
+
+                val ex = shouldThrow<HttpClientResponseException> {
+                    client.exchange("/status").awaitFirst()
+                }
+
+                ex.status shouldBe HttpStatus.NOT_FOUND
+                verify(exactly = 0) { mockDataService.getCachedDefaultStatusPageData() }
             }
         }
     }

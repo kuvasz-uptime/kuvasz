@@ -14,6 +14,13 @@ class StatusPageListPage(private val page: Page) {
     // The row of the default status page, which is pinned to the top of the first page
     val defaultRow: Locator get() = page.getByTestId("default-status-page-row")
 
+    // Shown instead of its preview link when it's not available, because there are too many enabled monitors
+    val defaultRowUnavailableBadge: Locator get() = defaultRow.getByTestId("default-status-page-unavailable-badge")
+
+    val defaultRowUnavailablePreview: Locator get() = defaultRow.getByTestId("default-status-page-preview-unavailable")
+
+    val defaultRowPreviewLink: Locator get() = defaultRow.locator("a[href='/status/']")
+
     // The filters, the sorting and the pages of the list
     val pagedList = PagedListView(page, "status-page-list")
 

@@ -41,6 +41,9 @@ class ExternalStatusPageController(
         if (!defaultStatusPageConfig.public && missesWebRole()) {
             throw NotFoundException()
         }
+        if (!statusPageDataActions.isDefaultStatusPageAvailable()) {
+            throw NotFoundException()
+        }
         return render(statusPageDataActions.getCachedDefaultStatusPageData(), hxRequest)
     }
 

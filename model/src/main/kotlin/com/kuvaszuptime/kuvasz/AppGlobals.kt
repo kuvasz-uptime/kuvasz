@@ -63,5 +63,6 @@ data class AppGlobals(
     data class DefaultStatusPageSettings(
         val title: String,
         val public: Boolean,
+        val isAvailable: () -> Boolean,
     )
 }

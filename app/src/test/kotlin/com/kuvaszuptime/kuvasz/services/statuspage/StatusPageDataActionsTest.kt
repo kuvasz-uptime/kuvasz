@@ -15,7 +15,9 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.statuspage.SystemStatus
 import com.kuvaszuptime.kuvasz.models.theme.ThemeBase
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDefaults
 import com.kuvaszuptime.kuvasz.repositories.MaintenanceWindowRepository
+import com.kuvaszuptime.kuvasz.repositories.SharedMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.services.check.dns.DnsMonitorActions
 import com.kuvaszuptime.kuvasz.services.check.docker.DockerMonitorActions
@@ -48,6 +50,7 @@ class StatusPageDataActionsTest(
     private val tcpMonitorActions: TcpMonitorActions,
     private val statusPageRepository: StatusPageRepository,
     private val maintenanceWindowRepository: MaintenanceWindowRepository,
+    private val sharedMonitorRepository: SharedMonitorRepository,
 ) : BehaviorSpec({
 
     fun maintenanceWindowRecord(
@@ -74,6 +77,31 @@ class StatusPageDataActionsTest(
         this.integrations = emptyArray<IntegrationID>()
         this.createdAt = getCurrentTimestamp()
         this.updatedAt = getCurrentTimestamp()
+    }
+
+    given("the isDefaultStatusPageAvailable() method") {
+
+        `when`("there are as many enabled monitors as the limit of the default status page") {
+
+            then("it should be available") {
+                every {
+                    getMock(sharedMonitorRepository).countEnabled()
+                } returns StatusPageDefaults.DEFAULT_PAGE_MAX_MONITORS
+
+                statusPageActions.isDefaultStatusPageAvailable() shouldBe true
+            }
+        }
+
+        `when`("there are more enabled monitors than the limit of the default status page") {
+
+            then("it should not be available") {
+                every {
+                    getMock(sharedMonitorRepository).countEnabled()
+                } returns StatusPageDefaults.DEFAULT_PAGE_MAX_MONITORS + 1
+
+                statusPageActions.isDefaultStatusPageAvailable() shouldBe false
+            }
+        }
     }
 
     given("the getDefaultStatusPageData() method") {
@@ -1523,6 +1551,9 @@ class StatusPageDataActionsTest(
 
     @MockBean(StatusPageRepository::class)
     fun statusPageRepository(): StatusPageRepository = mockk()
+
+    @MockBean(SharedMonitorRepository::class)
+    fun sharedMonitorRepository(): SharedMonitorRepository = mockk()
 
     @MockBean(MaintenanceWindowRepository::class)
     fun maintenanceWindowRepository(): MaintenanceWindowRepository = mockk {

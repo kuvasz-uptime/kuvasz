@@ -36,7 +36,11 @@ class StatusPageListTest : BehaviorSpec({
     }
 
     given("the default status page in the status page list") {
-        val defaultPage = AppGlobals.DefaultStatusPageSettings(title = "Acme Status", public = true)
+        val defaultPage = AppGlobals.DefaultStatusPageSettings(
+            title = "Acme Status",
+            public = true,
+            isAvailable = { true },
+        )
 
         `when`("the list is on its first page without filters") {
 

@@ -2,16 +2,24 @@ package com.kuvaszuptime.kuvasz.uitest.statuspage
 
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
+import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDefaults
 import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
+import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
 import com.kuvaszuptime.kuvasz.uitest.PlaywrightSupport
 import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
+import com.kuvaszuptime.kuvasz.uitest.pages.common.tooltipText
 import com.kuvaszuptime.kuvasz.uitest.pages.statuspage.StatusPageListPage
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
+import io.kotest.matchers.shouldBe
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 
 @MicronautTest(environments = [PlaywrightSupport.UI_TEST_ENV])
-class StatusPageListUiTest(private val appGlobals: AppGlobals) : UiTestSpec() {
+class StatusPageListUiTest(
+    private val appGlobals: AppGlobals,
+    private val pushMonitorRepository: PushMonitorRepository,
+) : UiTestSpec() {
     init {
         val defaultPage = appGlobals.defaultStatusPageSettings
 
@@ -90,6 +98,25 @@ class StatusPageListUiTest(private val appGlobals: AppGlobals) : UiTestSpec() {
             list.pagedList.expectQuery("/status-pages", "page=2")
             assertThat(list.rows).hasCount(PAGE_COUNT - PageRequest.DEFAULT_SIZE)
             assertThat(list.defaultRow).hasCount(0)
+        }
+
+        "the default status page is shown as unavailable above the limit of its monitors" {
+            val page = newPage()
+            val list = StatusPageListPage(page)
+            list.navigate()
+            assertThat(list.defaultRowPreviewLink).isVisible()
+            assertThat(list.defaultRowUnavailableBadge).hasCount(0)
+
+            repeat(StatusPageDefaults.DEFAULT_PAGE_MAX_MONITORS + 1) {
+                createPushMonitor(pushMonitorRepository)
+            }
+            list.navigate()
+
+            assertThat(list.defaultRowUnavailableBadge).hasText(Messages.unavailable())
+            list.defaultRowUnavailableBadge.locator(".badge").tooltipText() shouldBe
+                Messages.defaultStatusPageUnavailableDescription(StatusPageDefaults.DEFAULT_PAGE_MAX_MONITORS)
+            assertThat(list.defaultRowUnavailablePreview).isDisabled()
+            assertThat(list.defaultRowPreviewLink).hasCount(0)
         }
     }
 
