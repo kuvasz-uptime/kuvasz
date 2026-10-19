@@ -77,6 +77,7 @@ sealed interface StatusPageMonitorDetailsDto {
     val uptimeRatio: Double?
     val uptimeStatus: UptimeStatus?
     val uptimeStatusHistory: List<StatusHistoryDto>
+    val incidentCount: Int
     val inMaintenance: Boolean
     val category: String?
 }
@@ -92,6 +93,8 @@ data class StatusPagePushMonitorDetailsDto(
     override val uptimeRatio: Double?,
     override val uptimeStatus: UptimeStatus?,
     override val uptimeStatusHistory: List<StatusHistoryDto>,
+    @param:Schema(description = StatusPageDocs.INCIDENT_COUNT, required = true)
+    override val incidentCount: Int,
     override val inMaintenance: Boolean = false,
     override val category: String? = null,
     val lastHeartbeat: OffsetDateTime?,
@@ -104,6 +107,8 @@ data class StatusPageHttpMonitorDetailsDto(
     override val uptimeRatio: Double?,
     override val uptimeStatus: UptimeStatus?,
     override val uptimeStatusHistory: List<StatusHistoryDto>,
+    @param:Schema(description = StatusPageDocs.INCIDENT_COUNT, required = true)
+    override val incidentCount: Int,
     override val averageLatencyInMs: Int?,
     override val inMaintenance: Boolean = false,
     override val category: String? = null,
@@ -116,6 +121,8 @@ data class StatusPageIcmpMonitorDetailsDto(
     override val uptimeRatio: Double?,
     override val uptimeStatus: UptimeStatus?,
     override val uptimeStatusHistory: List<StatusHistoryDto>,
+    @param:Schema(description = StatusPageDocs.INCIDENT_COUNT, required = true)
+    override val incidentCount: Int,
     override val averageLatencyInMs: Int?,
     val lastPacketLossPercentage: Int?,
     override val inMaintenance: Boolean = false,
@@ -129,6 +136,8 @@ data class StatusPageTcpMonitorDetailsDto(
     override val uptimeRatio: Double?,
     override val uptimeStatus: UptimeStatus?,
     override val uptimeStatusHistory: List<StatusHistoryDto>,
+    @param:Schema(description = StatusPageDocs.INCIDENT_COUNT, required = true)
+    override val incidentCount: Int,
     override val averageLatencyInMs: Int?,
     override val inMaintenance: Boolean = false,
     override val category: String? = null,
@@ -141,6 +150,8 @@ data class StatusPageDnsMonitorDetailsDto(
     override val uptimeRatio: Double?,
     override val uptimeStatus: UptimeStatus?,
     override val uptimeStatusHistory: List<StatusHistoryDto>,
+    @param:Schema(description = StatusPageDocs.INCIDENT_COUNT, required = true)
+    override val incidentCount: Int,
     override val averageLatencyInMs: Int?,
     override val inMaintenance: Boolean = false,
     override val category: String? = null,
@@ -201,6 +212,8 @@ data class StatusPageDockerMonitorDetailsDto(
     override val uptimeRatio: Double?,
     override val uptimeStatus: UptimeStatus?,
     override val uptimeStatusHistory: List<StatusHistoryDto>,
+    @param:Schema(description = StatusPageDocs.INCIDENT_COUNT, required = true)
+    override val incidentCount: Int,
     override val inMaintenance: Boolean = false,
     override val category: String? = null,
 ) : StatusPageMonitorDetailsDto

@@ -492,6 +492,7 @@ class StatusPageControllerTest(
                             lastCheck = getCurrentTimestamp().minusMinutes(5),
                             uptimeRatio = 0.97,
                             uptimeStatus = UptimeStatus.UP,
+                            incidentCount = 0,
                             uptimeStatusHistory = listOf(
                                 StatusHistoryDto(
                                     date = getCurrentTimestamp().toLocalDate(),
@@ -612,6 +613,7 @@ class StatusPageControllerTest(
                             lastCheck = getCurrentTimestamp().minusMinutes(5),
                             uptimeRatio = 0.97,
                             uptimeStatus = UptimeStatus.UP,
+                            incidentCount = 0,
                             uptimeStatusHistory = emptyList(),
                             averageLatencyInMs = 123,
                             category = "Mock category",

@@ -28,6 +28,9 @@ import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.ZoneId
 
+// The tooltip of a day only lists its latest incidents, the rest is just counted
+private const val TOOLTIP_MAX_INCIDENTS = 5
+
 fun FlowContent.systemStatusMonitorList(pageData: StatusPageDataDto) {
     // The page can opt out of the grouping even when its monitors are categorized: the categories still select them
     // and their aggregated statuses are still calculated, they are just not revealed to the visitors here
@@ -197,7 +200,7 @@ private fun FlowContent.monitorCard(monitor: StatusPageMonitorDetailsDto, histor
             div {
                 classes(D_FLEX, FLEX_WRAP, ALIGN_ITEMS_CENTER, GAP_2, MB_3)
                 testId("monitor-badges")
-                monitorIncidentsBadge(monitor, incidents)
+                monitorIncidentsBadge(monitor)
                 lastCheckBadge(monitor)
                 if (monitor is WithLatency) {
                     monitor.averageLatencyInMs?.let { avgLatency ->
@@ -267,7 +270,7 @@ internal fun StatusPageIncidentDto.spanOnDay(day: LocalDate): String {
     return "${start.toDateTimeStringWithZone()} - $endText"
 }
 
-private fun StatusHistoryDto.tooltipHtml(): String =
+internal fun StatusHistoryDto.tooltipHtml(): String =
     createHTML(prettyPrint = false, xhtmlCompatible = false).div {
         classes(TEXT_START)
         div {
@@ -282,14 +285,23 @@ private fun StatusHistoryDto.tooltipHtml(): String =
                 else -> Messages.statusPageDayDowntime(downtime.formatAsInterval())
             }
         }
-        if (incidents.isNotEmpty()) {
+        val listedIncidents = incidents.sortedBy { it.startedAt }.takeLast(TOOLTIP_MAX_INCIDENTS)
+        if (listedIncidents.isNotEmpty()) {
             ul {
                 classes(LIST_UNSTYLED, MB_0, MT_1)
-                incidents.forEach { incident ->
+                listedIncidents.forEach { incident ->
                     li {
                         +incident.spanOnDay(date)
                     }
                 }
+            }
+        }
+        // Not even every incident of the day may have been listed in the history, see StatusHistoryDto.incidents
+        val notListed = (outageCnt ?: 0) - listedIncidents.size
+        if (notListed > 0) {
+            div {
+                classes(MT_1)
+                +Messages.statusPageDayMoreIncidents(notListed.toString())
             }
         }
     }

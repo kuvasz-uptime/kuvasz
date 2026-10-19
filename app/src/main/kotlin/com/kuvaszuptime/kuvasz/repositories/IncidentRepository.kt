@@ -27,12 +27,11 @@ import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.util.fetchPage
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.kuvaszuptime.kuvasz.util.sortedIn
+import com.kuvaszuptime.kuvasz.util.unionAll
 import jakarta.inject.Singleton
 import org.jooq.Condition
 import org.jooq.DSLContext
 import org.jooq.Field
-import org.jooq.Record
-import org.jooq.Select
 import org.jooq.Table
 import org.jooq.TableField
 import org.jooq.impl.DSL

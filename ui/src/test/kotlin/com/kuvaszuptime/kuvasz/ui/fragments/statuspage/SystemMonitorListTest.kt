@@ -1,10 +1,13 @@
 package com.kuvaszuptime.kuvasz.ui.fragments.statuspage
 
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentStatus
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIncidentDto
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import java.time.LocalDate
 import java.time.OffsetDateTime
 
@@ -80,6 +83,30 @@ class SystemMonitorListTest : BehaviorSpec({
             then("its midnights are in different offsets") {
                 incident.spanOnDay(LocalDate.parse("2026-10-25")) shouldBe
                     "2026/10/25 00:00:00 +0200 - 2026/10/26 00:00:00 +0100"
+            }
+        }
+    }
+
+    given("the tooltip of a day of the history") {
+        val day = LocalDate.parse("2026-07-10")
+
+        `when`("the day has more incidents than the tooltip lists, in no particular order") {
+            val sevenIncidents = (0..6).map { index ->
+                val start = OffsetDateTime.parse("2026-07-10T00:00:00Z").plusHours(index.toLong())
+                incident(start, start.plusMinutes(10))
+            }
+            val history = StatusHistoryDto(
+                date = day,
+                outageCnt = sevenIncidents.size,
+                downtimeSeconds = 4200,
+                incidents = listOf(4, 0, 6, 2, 5, 1, 3).map { sevenIncidents[it] },
+            )
+            val tooltip = history.tooltipHtml()
+
+            then("it lists only the latest ones, by the time they started") {
+                tooltip.split("<li>").size - 1 shouldBe 5
+                sevenIncidents.drop(2).forEach { tooltip shouldContain it.spanOnDay(day) }
+                sevenIncidents.take(2).forEach { tooltip shouldNotContain it.spanOnDay(day) }
             }
         }
     }

@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.mcp
 import com.kuvaszuptime.kuvasz.mcp.schemas.StatusPageDetailsSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.StatusPageListSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.StatusPageSchema
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDefaults
 import com.kuvaszuptime.kuvasz.models.pagination.ListDefaults
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageActions
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageDataActions
@@ -48,8 +49,10 @@ class StatusPageTools(
         name = ToolNames.GET_STATUS_PAGE_DETAILS,
         description = "Get the full details of a specific status page by its ID, including per-monitor " +
             "uptime status, uptime ratio, and the daily uptime history of the last 'historyDays' days (30, or less " +
-            "if the event data retention is shorter). Every day of the history carries its downtime, and the " +
-            "incidents that were open on that day, with their public notes only.",
+            "if the event data retention is shorter). Every day of the history carries its number of incidents and " +
+            "its downtime, counting every incident, and the incidents that were open on that day, with their public " +
+            "notes only. Only the latest " + StatusPageDefaults.MAX_INCIDENTS_PER_MONITOR + " incidents of each " +
+            "monitor are listed in its history, 'incidentCount' tells how many incidents it had in total.",
         annotations = Tool.ToolAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = false)
     )
     fun getStatusPageDetails(

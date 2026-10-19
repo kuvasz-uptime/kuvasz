@@ -37,6 +37,7 @@ private fun monitor(name: String, vararg days: List<StatusPageIncidentDto>) = St
     lastCheck = null,
     uptimeRatio = null,
     uptimeStatus = null,
+    incidentCount = days.flatMap { it }.distinctBy { it.id }.size,
     uptimeStatusHistory = days.mapIndexed { index, incidents ->
         StatusHistoryDto(
             date = BASE.toLocalDate().plusDays(index.toLong()),

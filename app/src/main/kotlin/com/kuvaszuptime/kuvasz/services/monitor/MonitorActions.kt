@@ -206,6 +206,7 @@ abstract class MonitorActions<R, D : MonitorDetailsDto>(
             val uptimeData = StatusPageUptimeData(
                 uptimeRatio = overview.uptimeRatio,
                 uptimeStatusHistory = overview.statusHistory,
+                incidentCount = overview.incidentCount,
                 inMaintenance = windowsByMonitor[monitor.monitorId()].orEmpty().any { it.active },
             )
             buildDetails(monitor, uptimeData, prefetched)
@@ -217,6 +218,7 @@ abstract class MonitorActions<R, D : MonitorDetailsDto>(
     protected data class StatusPageUptimeData(
         val uptimeRatio: Double?,
         val uptimeStatusHistory: List<StatusHistoryDto>,
+        val incidentCount: Int,
         val inMaintenance: Boolean,
     )
 }

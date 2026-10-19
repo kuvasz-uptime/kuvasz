@@ -209,6 +209,7 @@ class DnsMonitorActions(
                 uptimeRatio = uptime.uptimeRatio,
                 uptimeStatus = monitor.uptimeStatus,
                 uptimeStatusHistory = uptime.uptimeStatusHistory,
+                incidentCount = uptime.incidentCount,
                 inMaintenance = uptime.inMaintenance,
                 category = monitor.category,
             )

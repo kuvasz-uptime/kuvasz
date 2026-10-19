@@ -34,6 +34,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.PushMonitorSummary
 import com.kuvaszuptime.kuvasz.models.dto.monitor.TcpMonitorSummary
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDefaults
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIncidentDto
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.NumericMonitorID
@@ -3216,6 +3217,36 @@ class StatCalculatorTest(
                 }
             }
 
+            `when`("a monitor has more incidents than the ones listed") {
+
+                val monitor = createPushMonitor(pushMonitorRepository, enabled = true)
+                val yesterday = startOfDaysAgo(1)
+                val incidentCount = StatusPageDefaults.MAX_INCIDENTS_PER_MONITOR + 2
+                val incidents = (0 until incidentCount).map { index ->
+                    val startedAt = yesterday.plusMinutes(index * 30L)
+                    createTestEvent(
+                        monitorId = monitor.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = startedAt,
+                        endedAt = startedAt.plusMinutes(1),
+                        updatedAt = startedAt.plusMinutes(1),
+                    )
+                }
+
+                then("only the latest ones should be listed, but every one of them should be counted") {
+
+                    val overview = statCalculator
+                        .calculateUptimeOverviews(MonitorType.PUSH, Duration.ofDays(7), listOf(monitor.id))
+                        .getValue(monitor.id)
+                    val yesterdayEntry = overview.statusHistory.takeLast(2).first()
+
+                    overview.incidentCount shouldBe incidentCount
+                    yesterdayEntry.outageCnt shouldBe incidentCount
+                    yesterdayEntry.downtimeSeconds shouldBe Duration.ofMinutes(incidentCount.toLong()).seconds
+                    yesterdayEntry.incidents.map { it.id } shouldBe incidents.drop(2).map { it.id }
+                }
+            }
+
             `when`("an incident has notes") {
 
                 val monitor = createPushMonitor(pushMonitorRepository, enabled = true)
@@ -4440,17 +4471,30 @@ private class ReferenceUptimeCalculation(
             )
             .take(StatCalculator.LEAST_RELIABLE_MONITORS_LIMIT)
 
-    /** The uptime ratio and the daily status history of a status page, every timestamp in UTC. */
+    /**
+     * The uptime ratio and the daily status history of a status page, every timestamp in UTC. Only the latest
+     * incidents of the history are listed on the days, but every one of them is counted.
+     */
     fun overview(): UptimeOverview {
         val zone = ZoneId.systemDefault()
         val days = generateSequence(periodStart.toLocalDate().plusDays(1)) { it.plusDays(1) }
             .takeWhile { !it.isAfter(now.toLocalDate()) }
+            .toList()
+        fun startOf(date: LocalDate) = date.atStartOfDay(zone).toOffsetDateTime()
+        fun GeneratedEvent.wasEffectiveOn(date: LocalDate) =
+            startedAt.isBefore(startOf(date.plusDays(1))) && !(endedAt ?: updatedAt).isBefore(startOf(date))
+        val incidentsOfHistory = eventsOfPeriod.filter { event ->
+            event.status == UptimeStatus.DOWN && days.any { date -> event.wasEffectiveOn(date) }
+        }
+        val listedIncidentIds = incidentsOfHistory
+            .sortedWith(compareByDescending<GeneratedEvent> { it.startedAt }.thenByDescending { it.id })
+            .take(StatusPageDefaults.MAX_INCIDENTS_PER_MONITOR)
+            .map { it.id }
+            .toSet()
         val statusHistory = days.map { date ->
-            val dayStart = date.atStartOfDay(zone).toOffsetDateTime()
-            val dayEnd = date.plusDays(1).atStartOfDay(zone).toOffsetDateTime()
-            val effectiveEvents = eventsOfPeriod.filter { event ->
-                event.startedAt.isBefore(dayEnd) && !(event.endedAt ?: event.updatedAt).isBefore(dayStart)
-            }
+            val dayStart = startOf(date)
+            val dayEnd = startOf(date.plusDays(1))
+            val effectiveEvents = eventsOfPeriod.filter { event -> event.wasEffectiveOn(date) }
             if (effectiveEvents.isEmpty()) {
                 StatusHistoryDto(date = date, outageCnt = null)
             } else {
@@ -4469,7 +4513,7 @@ private class ReferenceUptimeCalculation(
                         val end = minOf(effectiveEnd, dayEnd)
                         if (end.isAfter(start)) Duration.between(start, end).seconds else 0
                     },
-                    incidents = outages.map { outage ->
+                    incidents = outages.filter { it.id in listedIncidentIds }.map { outage ->
                         StatusPageIncidentDto(
                             id = checkNotNull(outage.id),
                             startedAt = outage.startedAt,
@@ -4479,8 +4523,12 @@ private class ReferenceUptimeCalculation(
                     },
                 )
             }
-        }.toList()
-        return UptimeOverview(uptimeRatio = historyOf(eventsOfPeriod).uptimeRatio, statusHistory.inUtc())
+        }
+        return UptimeOverview(
+            uptimeRatio = historyOf(eventsOfPeriod).uptimeRatio,
+            statusHistory = statusHistory.inUtc(),
+            incidentCount = incidentsOfHistory.size,
+        )
     }
 
     private fun historyOf(events: List<GeneratedEvent>): HistoricalUptimeStatsDto {

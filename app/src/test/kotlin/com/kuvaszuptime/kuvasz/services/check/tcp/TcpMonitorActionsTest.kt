@@ -86,10 +86,12 @@ class TcpMonitorActionsTest(
                     enabledMonitor.id to UptimeOverview(
                         uptimeRatio = 0.2312,
                         statusHistory = listOf(StatusHistoryDto(LocalDate.now(), 12)),
+                        incidentCount = 12,
                     ),
                     enabledMonitor2.id to UptimeOverview(
                         uptimeRatio = 0.0123,
                         statusHistory = listOf(StatusHistoryDto(LocalDate.now(), 34)),
+                        incidentCount = 34,
                     ),
                 )
 
@@ -112,6 +114,7 @@ class TcpMonitorActionsTest(
                         upMonitor.uptimeStatusHistory shouldBe listOf(
                             StatusHistoryDto(LocalDate.now(), 12)
                         )
+                        upMonitor.incidentCount shouldBe 12
                         upMonitor.inMaintenance shouldBe true
                     }
                     result.forOne { downMonitor ->
@@ -123,6 +126,7 @@ class TcpMonitorActionsTest(
                         downMonitor.uptimeStatusHistory shouldBe listOf(
                             StatusHistoryDto(LocalDate.now(), 34)
                         )
+                        downMonitor.incidentCount shouldBe 34
                         downMonitor.inMaintenance shouldBe true
                     }
                 }
@@ -178,6 +182,7 @@ class TcpMonitorActionsTest(
                     enabledMonitor.id to UptimeOverview(
                         uptimeRatio = 0.2312,
                         statusHistory = listOf(StatusHistoryDto(LocalDate.now(), 12)),
+                        incidentCount = 12,
                     ),
                 )
 
@@ -200,6 +205,7 @@ class TcpMonitorActionsTest(
                         upMonitor.uptimeStatusHistory shouldBe listOf(
                             StatusHistoryDto(LocalDate.now(), 12)
                         )
+                        upMonitor.incidentCount shouldBe 12
                         upMonitor.inMaintenance shouldBe false
                     }
                 }

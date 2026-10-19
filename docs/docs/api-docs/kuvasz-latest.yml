@@ -9771,7 +9771,10 @@ components:
         incidents:
           type: array
           description: "The incidents that were open on the given date, an incident\
-            \ spanning multiple days is listed on each of them"
+            \ spanning multiple days is listed on each of them. Only the latest 20\
+            \ incidents of the monitor are listed in its whole history, see incidentCount\
+            \ for the number of every one of them. outageCnt always counts every incident\
+            \ of the date."
           items:
             $ref: "#/components/schemas/StatusPageIncidentDto"
     StatusPageCreateDto:
@@ -9930,6 +9933,7 @@ components:
     StatusPageDockerMonitorDetailsDto:
       required:
       - inMaintenance
+      - incidentCount
       - name
       - type
       - uptimeStatusHistory
@@ -9955,6 +9959,12 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/StatusHistoryDto"
+        incidentCount:
+          type: integer
+          description: "The number of incidents of the monitor in its whole uptime\
+            \ status history. It can be more than the number of the incidents listed\
+            \ on its dates, as only the latest 20 of them are listed."
+          format: int32
         inMaintenance:
           type: boolean
         category:
@@ -10035,6 +10045,7 @@ components:
     StatusPageHttpMonitorDetailsDto:
       required:
       - inMaintenance
+      - incidentCount
       - name
       - type
       - uptimeStatusHistory
@@ -10060,6 +10071,12 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/StatusHistoryDto"
+        incidentCount:
+          type: integer
+          description: "The number of incidents of the monitor in its whole uptime\
+            \ status history. It can be more than the number of the incidents listed\
+            \ on its dates, as only the latest 20 of them are listed."
+          format: int32
         averageLatencyInMs:
           type: integer
           format: int32
@@ -10072,6 +10089,7 @@ components:
     StatusPageIcmpMonitorDetailsDto:
       required:
       - inMaintenance
+      - incidentCount
       - name
       - type
       - uptimeStatusHistory
@@ -10097,6 +10115,12 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/StatusHistoryDto"
+        incidentCount:
+          type: integer
+          description: "The number of incidents of the monitor in its whole uptime\
+            \ status history. It can be more than the number of the incidents listed\
+            \ on its dates, as only the latest 20 of them are listed."
+          format: int32
         averageLatencyInMs:
           type: integer
           format: int32
@@ -10241,6 +10265,9 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/StatusHistoryDto"
+        incidentCount:
+          type: integer
+          format: int32
         inMaintenance:
           type: boolean
         category:
@@ -10255,6 +10282,7 @@ components:
     StatusPagePushMonitorDetailsDto:
       required:
       - inMaintenance
+      - incidentCount
       - name
       - type
       - uptimeStatusHistory
@@ -10280,6 +10308,12 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/StatusHistoryDto"
+        incidentCount:
+          type: integer
+          description: "The number of incidents of the monitor in its whole uptime\
+            \ status history. It can be more than the number of the incidents listed\
+            \ on its dates, as only the latest 20 of them are listed."
+          format: int32
         inMaintenance:
           type: boolean
         category:
@@ -10301,6 +10335,7 @@ components:
     StatusPageTcpMonitorDetailsDto:
       required:
       - inMaintenance
+      - incidentCount
       - name
       - type
       - uptimeStatusHistory
@@ -10326,6 +10361,12 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/StatusHistoryDto"
+        incidentCount:
+          type: integer
+          description: "The number of incidents of the monitor in its whole uptime\
+            \ status history. It can be more than the number of the incidents listed\
+            \ on its dates, as only the latest 20 of them are listed."
+          format: int32
         averageLatencyInMs:
           type: integer
           format: int32

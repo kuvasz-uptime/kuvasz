@@ -11,10 +11,6 @@ import com.kuvaszuptime.kuvasz.models.events.DnsUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
 import com.kuvaszuptime.kuvasz.models.pagination.Sorting
-import com.kuvaszuptime.kuvasz.services.MonitorUptimeAggregate
-import com.kuvaszuptime.kuvasz.services.UptimeAggregate
-import com.kuvaszuptime.kuvasz.services.UptimeEventCalculationContext
-import com.kuvaszuptime.kuvasz.services.UptimeTimelineAggregate
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.fetchPage
 import com.kuvaszuptime.kuvasz.util.sortedIn
@@ -24,9 +20,9 @@ import java.time.OffsetDateTime
 
 @Suppress("TooManyFunctions")
 @Singleton
-class DnsUptimeEventRepository(private val dslContext: DSLContext) : UptimeEventRepository {
+class DnsUptimeEventRepository(dslContext: DSLContext) : UptimeEventRepository(dslContext) {
 
-    private val uptimeEventColumns = UptimeEventColumns(
+    override val uptimeEventColumns = UptimeEventColumns(
         eventId = DNS_UPTIME_EVENT.ID,
         eventMonitorId = DNS_UPTIME_EVENT.MONITOR_ID,
         status = DNS_UPTIME_EVENT.STATUS,
@@ -150,66 +146,4 @@ class DnsUptimeEventRepository(private val dslContext: DSLContext) : UptimeEvent
         )
         .from(DNS_UPTIME_EVENT)
         .where(DNS_UPTIME_EVENT.MONITOR_ID.eq(monitorId))
-
-    override fun fetchIncidentsInPeriod(
-        periodStart: OffsetDateTime,
-        periodEnd: OffsetDateTime,
-        monitorIds: List<Long>,
-    ): List<UptimeEventCalculationContext> =
-        dslContext.fetchUptimeIncidentsInPeriod(uptimeEventColumns, periodStart, periodEnd, monitorIds)
-
-    override fun fetchLatestIncidentTimestamp(): OffsetDateTime? =
-        dslContext.fetchLatestUptimeIncidentTimestamp(uptimeEventColumns)
-
-    override fun aggregateInPeriod(
-        periodStart: OffsetDateTime,
-        periodEnd: OffsetDateTime,
-        monitorIds: List<Long>?,
-        onlyEnabledMonitors: Boolean,
-        monitorIdsInMaintenance: Collection<Long>,
-    ): UptimeAggregate = dslContext.aggregateUptimeInPeriod(
-        uptimeEventColumns,
-        periodStart,
-        periodEnd,
-        monitorIds,
-        onlyEnabledMonitors,
-        monitorIdsInMaintenance,
-    )
-
-    override fun aggregateTimeline(
-        slotStarts: List<OffsetDateTime>,
-        periodEnd: OffsetDateTime,
-        onlyEnabledMonitors: Boolean,
-    ): List<UptimeTimelineAggregate> =
-        dslContext.aggregateUptimeTimeline(uptimeEventColumns, slotStarts, periodEnd, onlyEnabledMonitors)
-
-    override fun fetchLeastReliableMonitors(
-        periodStart: OffsetDateTime,
-        periodEnd: OffsetDateTime,
-        limit: Int,
-        onlyEnabledMonitors: Boolean,
-    ): List<MonitorUptimeAggregate> =
-        dslContext.fetchLeastReliableMonitors(uptimeEventColumns, periodStart, periodEnd, limit, onlyEnabledMonitors)
-
-    override fun aggregateByMonitor(
-        periodStart: OffsetDateTime,
-        periodEnd: OffsetDateTime,
-        monitorIds: List<Long>,
-    ): List<MonitorUptimeAggregate> =
-        dslContext.aggregateUptimeByMonitor(uptimeEventColumns, periodStart, periodEnd, monitorIds)
-
-    override fun fetchDaysWithEvents(
-        periodStart: OffsetDateTime,
-        periodEnd: OffsetDateTime,
-        monitorIds: List<Long>,
-        dayStarts: List<OffsetDateTime>,
-        lastDayEnd: OffsetDateTime,
-    ): Map<Long, Set<Int>> = dslContext.fetchUptimeDaysWithEvents(
-        uptimeEventColumns,
-        periodStart,
-        periodEnd,
-        monitorIds,
-        dayStarts,
-        lastDayEnd,
-    )
 }

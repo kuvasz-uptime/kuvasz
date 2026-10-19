@@ -40,7 +40,12 @@ object StatusPageDocs {
     const val HISTORY_DOWNTIME_SECONDS = "The total downtime on the given date in seconds, null if there is no data " +
         "for that date"
     const val HISTORY_INCIDENTS = "The incidents that were open on the given date, an incident spanning multiple " +
-        "days is listed on each of them"
+        "days is listed on each of them. Only the latest " + StatusPageDefaults.MAX_INCIDENTS_PER_MONITOR +
+        " incidents of the monitor are listed in its whole history, see incidentCount for the number of every one " +
+        "of them. outageCnt always counts every incident of the date."
+    const val INCIDENT_COUNT = "The number of incidents of the monitor in its whole uptime status history. It can " +
+        "be more than the number of the incidents listed on its dates, as only the latest " +
+        StatusPageDefaults.MAX_INCIDENTS_PER_MONITOR + " of them are listed."
     const val INCIDENT_ID = "The ID of the incident, the same on every day the incident spans. It's only unique " +
         "among the incidents of the monitors of the same type, so it identifies an incident together with the " +
         "`type` of its monitor"

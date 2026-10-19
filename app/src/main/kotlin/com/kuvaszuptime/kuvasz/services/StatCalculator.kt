@@ -23,6 +23,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIncidentDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDefaults
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIncidentNoteDto
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.NumericMonitorID
@@ -34,7 +35,6 @@ import com.kuvaszuptime.kuvasz.repositories.monitorType
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowService
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.kuvaszuptime.kuvasz.util.getDurationOfEvent
-import com.kuvaszuptime.kuvasz.util.getEffectiveEndOfEvent
 import jakarta.inject.Singleton
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.async
@@ -524,7 +524,9 @@ class StatCalculator(
 
     /**
      * Calculates the uptime ratio and the daily status history of the given monitors over the given period. Only the
-     * figures and the incidents leave the database, not every event of the period. The incidents of the history carry
+     * figures and the latest incidents leave the database, not every event of the period. The figures of the days
+     * cover every incident, but only the latest [StatusPageDefaults.MAX_INCIDENTS_PER_MONITOR] incidents of each
+     * monitor are listed on them, so a flapping monitor can't blow up the status pages. The listed incidents carry
      * their public notes, as the overviews are made for the status pages.
      */
     fun calculateUptimeOverviews(
@@ -549,10 +551,10 @@ class StatCalculator(
         val uptimeByMonitor = uptimeEventRepository.aggregateByMonitor(periodStart, now, monitorIds)
             .associateBy { it.monitorId }
         val days = statusHistoryDays(period, now)
-        val daysWithEvents = if (days.isEmpty()) {
-            emptyMap()
+        val dayFigures = if (days.isEmpty()) {
+            emptyList()
         } else {
-            uptimeEventRepository.fetchDaysWithEvents(
+            uptimeEventRepository.aggregateDays(
                 periodStart = periodStart,
                 periodEnd = now,
                 monitorIds = monitorIds,
@@ -560,23 +562,37 @@ class StatCalculator(
                 lastDayEnd = days.last().end,
             )
         }
-        val incidents = uptimeEventRepository.fetchIncidentsInPeriod(periodStart, now, monitorIds)
+        val dayFiguresByMonitor = dayFigures
+            .groupBy { it.monitorId }
+            .mapValues { (_, figures) -> figures.associateBy { it.dayIndex } }
+        val latestIncidents = if (days.isEmpty()) {
+            emptyMap()
+        } else {
+            uptimeEventRepository.fetchLatestIncidents(
+                periodStart = periodStart,
+                periodEnd = now,
+                monitorIds = monitorIds,
+                effectiveFrom = days.first().start,
+                effectiveTo = days.last().end,
+                limitPerMonitor = StatusPageDefaults.MAX_INCIDENTS_PER_MONITOR,
+            )
+        }
         val publicNotesByEvent = incidentNoteRepository.fetchPublicByEvents(
             incidentType = monitorType.uptimeIncidentType,
-            eventIds = incidents.map { it.id },
+            eventIds = latestIncidents.values.flatMap { it.incidents }.map { it.id },
         )
-        val incidentsByMonitor = incidents.groupBy { it.monitorId }
 
         return monitorIds.associateWith { monitorId ->
+            val incidentsOfMonitor = latestIncidents[monitorId]
             UptimeOverview(
                 uptimeRatio = uptimeByMonitor[monitorId]?.let { uptimeRatioOf(it.uptimeSeconds, it.downtimeSeconds) },
                 statusHistory = generateUptimeHistoryOverview(
                     days = days,
-                    daysWithEvents = daysWithEvents[monitorId].orEmpty(),
-                    incidents = incidentsByMonitor[monitorId].orEmpty(),
+                    dayFigures = dayFiguresByMonitor[monitorId].orEmpty(),
+                    incidents = incidentsOfMonitor?.incidents.orEmpty(),
                     publicNotesByEvent = publicNotesByEvent,
-                    now = now,
                 ),
+                incidentCount = incidentsOfMonitor?.total ?: 0,
             )
         }
     }
@@ -601,34 +617,34 @@ class StatCalculator(
 
     /**
      * Summarizes the outages (incidents) of a monitor day by day: their number, the downtime they caused on that day,
-     * and the incidents themselves. A day without any event in effect has no figures at all.
+     * and the listed incidents in effect on it. A day without any event in effect has no figures at all.
      */
     private fun generateUptimeHistoryOverview(
         days: List<StatusHistoryDay>,
-        daysWithEvents: Set<Int>,
+        dayFigures: Map<Int, UptimeDayAggregate>,
         incidents: List<UptimeEventCalculationContext>,
         publicNotesByEvent: Map<Long, List<StatusPageIncidentNoteDto>>,
-        now: OffsetDateTime,
     ): List<StatusHistoryDto> = days.mapIndexed { dayIndex, day ->
-        if (dayIndex !in daysWithEvents) {
+        val figures = dayFigures[dayIndex]
+        if (figures == null) {
             StatusHistoryDto(date = day.date, outageCnt = null)
         } else {
-            val outages = incidents
-                .filter { it.wasEffectiveBetween(day.start, day.end) }
-                .sortedBy { it.startedAt }
             StatusHistoryDto(
                 date = day.date,
-                outageCnt = outages.size,
-                downtimeSeconds = outages.sumOf { it.secondsEffectiveBetween(day.start, day.end, now) },
-                incidents = outages.map { outage ->
-                    StatusPageIncidentDto(
-                        id = outage.id,
-                        startedAt = outage.startedAt,
-                        endedAt = outage.endedAt,
-                        status = if (outage.endedAt == null) IncidentStatus.ONGOING else IncidentStatus.RESOLVED,
-                        notes = publicNotesByEvent[outage.id].orEmpty(),
-                    )
-                },
+                outageCnt = figures.incidents,
+                downtimeSeconds = figures.downtimeSeconds,
+                incidents = incidents
+                    .filter { it.wasEffectiveBetween(day.start, day.end) }
+                    .sortedBy { it.startedAt }
+                    .map { incident ->
+                        StatusPageIncidentDto(
+                            id = incident.id,
+                            startedAt = incident.startedAt,
+                            endedAt = incident.endedAt,
+                            status = if (incident.endedAt == null) IncidentStatus.ONGOING else IncidentStatus.RESOLVED,
+                            notes = publicNotesByEvent[incident.id].orEmpty(),
+                        )
+                    },
             )
         }
     }
@@ -658,6 +674,8 @@ class StatCalculator(
 data class UptimeOverview(
     val uptimeRatio: Double?,
     val statusHistory: List<StatusHistoryDto>,
+    // Every incident of the history, even if only the latest ones are listed on the days
+    val incidentCount: Int,
 )
 
 /**
@@ -693,6 +711,25 @@ data class UptimeTimelineAggregate(
     val uptimeSeconds: Long,
     val downtimeSeconds: Long,
     val incidents: Int,
+)
+
+/**
+ * The incidents of a monitor in effect on a day of a status history (see
+ * [UptimeEventCalculationContext.wasEffectiveBetween]): how many of them, and how many whole seconds of the day they
+ * covered, each one until its effective end (see [com.kuvaszuptime.kuvasz.util.getEffectiveEndOfEvent]). [dayIndex] is
+ * the index of the day in the history.
+ */
+data class UptimeDayAggregate(
+    val monitorId: Long,
+    val dayIndex: Int,
+    val incidents: Int,
+    val downtimeSeconds: Long,
+)
+
+/** The latest incidents of a monitor, and the number of every incident they were picked from. */
+data class LatestUptimeIncidents(
+    val incidents: List<UptimeEventCalculationContext>,
+    val total: Int,
 )
 
 /** The uptime events of a single monitor added up, the same way as the ones of [UptimeAggregate]. */
@@ -731,22 +768,12 @@ data class UptimeEventCalculationContext(
     val endedAt: OffsetDateTime?,
     val updatedAt: OffsetDateTime,
 ) {
-    fun effectiveEndDate(now: OffsetDateTime): OffsetDateTime =
-        getEffectiveEndOfEvent(isMonitorEnabled, endedAt, updatedAt, now)
-
     /**
      * Whether the event was effective at any point in the `[from, to)` interval. An open event is only known to be
      * effective until its last update, and an event ending right at [from] still counts.
      */
     fun wasEffectiveBetween(from: OffsetDateTime, to: OffsetDateTime): Boolean =
         startedAt.isBefore(to) && !(endedAt ?: updatedAt).isBefore(from)
-
-    /** How many seconds of the event fall into the `[from, to)` interval, see [effectiveEndDate]. */
-    fun secondsEffectiveBetween(from: OffsetDateTime, to: OffsetDateTime, now: OffsetDateTime): Long {
-        val start = maxOf(startedAt, from)
-        val end = minOf(effectiveEndDate(now), to)
-        return if (end.isAfter(start)) Duration.between(start, end).seconds else 0
-    }
 }
 
 // The same rules as the ones resolving the windows of the monitors on the database side

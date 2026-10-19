@@ -15,6 +15,7 @@ class SystemStatusTest : BehaviorSpec({
         lastCheck = null,
         uptimeRatio = null,
         uptimeStatus = uptimeStatus,
+        incidentCount = 0,
         uptimeStatusHistory = emptyList(),
         averageLatencyInMs = null,
         inMaintenance = inMaintenance,
