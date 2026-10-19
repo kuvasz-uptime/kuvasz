@@ -11,6 +11,7 @@ import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.monitor.NumericMonitorID
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
+import org.jooq.impl.DSL
 
 @Singleton
 class SharedMonitorRepository(private val dslContext: DSLContext) {
@@ -57,4 +58,18 @@ class SharedMonitorRepository(private val dslContext: DSLContext) {
                     .fetchOne()
             }
         } as R?
+
+    /** The number of the enabled monitors of every type together. */
+    fun countEnabled(): Int {
+        val countsByType = listOf(
+            HTTP_MONITOR to HTTP_MONITOR.ENABLED,
+            PUSH_MONITOR to PUSH_MONITOR.ENABLED,
+            ICMP_MONITOR to ICMP_MONITOR.ENABLED,
+            TCP_MONITOR to TCP_MONITOR.ENABLED,
+            DNS_MONITOR to DNS_MONITOR.ENABLED,
+            DOCKER_MONITOR to DOCKER_MONITOR.ENABLED,
+        ).map { (table, enabled) -> DSL.field(DSL.selectCount().from(table).where(enabled.isTrue)) }
+
+        return dslContext.select(countsByType.reduce { total, count -> total.plus(count) }).fetchSingle().value1()
+    }
 }

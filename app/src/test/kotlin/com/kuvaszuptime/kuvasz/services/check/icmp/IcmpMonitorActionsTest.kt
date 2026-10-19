@@ -10,8 +10,6 @@ import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
 import com.kuvaszuptime.kuvasz.models.monitor.icmp.monitorId
 import com.kuvaszuptime.kuvasz.repositories.IcmpMetricsLogRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
-import com.kuvaszuptime.kuvasz.repositories.LatencyMetricResult
-import com.kuvaszuptime.kuvasz.repositories.PacketLossMetricResult
 import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.UptimeOverview
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
@@ -57,27 +55,11 @@ class IcmpMonitorActionsTest(
                 val statCalculatorMock = getMock(statCalculator)
                 val metricsLogRepositoryMock = getMock(metricsLogRepository)
                 every {
-                    metricsLogRepositoryMock.getLatencyMetrics(enabledMonitor.id, testPeriod)
-                } returns LatencyMetricResult(
-                    monitorId = enabledMonitor.id,
-                    avg = 123,
-                    min = 6982,
-                    max = 2814,
-                    p90 = 9114,
-                    p95 = 8989,
-                    p99 = 3129,
-                )
+                    metricsLogRepositoryMock.getAverageLatencies(listOf(enabledMonitor.id), testPeriod)
+                } returns mapOf(enabledMonitor.id to 123)
                 every {
-                    metricsLogRepositoryMock.getPacketLossMetrics(enabledMonitor.id, testPeriod)
-                } returns PacketLossMetricResult(
-                    monitorId = enabledMonitor.id,
-                    avg = 5,
-                    min = 0,
-                    max = 100,
-                    p90 = 10,
-                    p95 = 15,
-                    p99 = 20,
-                )
+                    metricsLogRepositoryMock.getAveragePacketLosses(listOf(enabledMonitor.id), testPeriod)
+                } returns mapOf(enabledMonitor.id to 5)
 
                 createIcmpMonitor(icmpMonitorRepository, enabled = false, monitorName = "disabled-monitor")
                 createMaintenanceWindow(dslContext, global = true)
@@ -171,27 +153,11 @@ class IcmpMonitorActionsTest(
                 val statCalculatorMock = getMock(statCalculator)
                 val metricsLogRepositoryMock = getMock(metricsLogRepository)
                 every {
-                    metricsLogRepositoryMock.getLatencyMetrics(enabledMonitor.id, testPeriod)
-                } returns LatencyMetricResult(
-                    monitorId = enabledMonitor.id,
-                    avg = 123,
-                    min = 6982,
-                    max = 2814,
-                    p90 = 9114,
-                    p95 = 8989,
-                    p99 = 3129,
-                )
+                    metricsLogRepositoryMock.getAverageLatencies(listOf(enabledMonitor.id), testPeriod)
+                } returns mapOf(enabledMonitor.id to 123)
                 every {
-                    metricsLogRepositoryMock.getPacketLossMetrics(enabledMonitor.id, testPeriod)
-                } returns PacketLossMetricResult(
-                    monitorId = enabledMonitor.id,
-                    avg = 5,
-                    min = 0,
-                    max = 100,
-                    p90 = 10,
-                    p95 = 15,
-                    p99 = 20,
-                )
+                    metricsLogRepositoryMock.getAveragePacketLosses(listOf(enabledMonitor.id), testPeriod)
+                } returns mapOf(enabledMonitor.id to 5)
 
                 createIcmpMonitor(icmpMonitorRepository, enabled = false, monitorName = "disabled-monitor")
                 val enabledMonitorsUptimeEvent = createIcmpUptimeEventRecord(

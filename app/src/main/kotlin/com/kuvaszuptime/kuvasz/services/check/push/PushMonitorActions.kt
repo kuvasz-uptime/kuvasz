@@ -206,7 +206,8 @@ class PushMonitorActions(
             period = period,
             monitorIds = monitorIds,
             categories = categories,
-        ) { monitor, uptime ->
+            prefetch = {},
+        ) { monitor, uptime, _ ->
             StatusPagePushMonitorDetailsDto(
                 name = monitor.name,
                 lastCheck = monitor.lastUptimeCheck,

@@ -189,6 +189,39 @@ class DockerMetricsLogRepositoryTest(
             }
         }
 
+        given("the inherited getAverageLatencies() method") {
+
+            `when`("there are logs of several monitors, some of them older than the period") {
+                val monitor = createDockerMonitor(monitorRepository)
+                val otherMonitor = createDockerMonitor(monitorRepository)
+                val monitorWithOldLogsOnly = createDockerMonitor(monitorRepository)
+                val monitorOutsideTheQuery = createDockerMonitor(monitorRepository)
+                insertLogAt(monitor.id, createdAt = minutesAgo(10), latencyMs = 10)
+                insertLogAt(monitor.id, createdAt = minutesAgo(20), latencyMs = 15)
+                insertLogAt(monitor.id, createdAt = minutesAgo(120), latencyMs = 1_000)
+                insertLogAt(otherMonitor.id, createdAt = minutesAgo(5), latencyMs = 40)
+                insertLogAt(monitorWithOldLogsOnly.id, createdAt = minutesAgo(120), latencyMs = 50)
+                insertLogAt(monitorOutsideTheQuery.id, createdAt = minutesAgo(5), latencyMs = 60)
+
+                val result = metricsLogRepository.getAverageLatencies(
+                    monitorIds = listOf(monitor.id, otherMonitor.id, monitorWithOldLogsOnly.id),
+                    period = PERIOD,
+                )
+
+                then("it should average the latencies of the given monitors within the period, in whole milliseconds") {
+                    // 12.5 is rounded half up by Postgres for the numeric average
+                    result shouldBe mapOf(monitor.id to 13, otherMonitor.id to 40)
+                }
+            }
+
+            `when`("no monitor is given") {
+
+                then("it should return an empty map without querying anything") {
+                    metricsLogRepository.getAverageLatencies(emptyList(), PERIOD) shouldBe emptyMap()
+                }
+            }
+        }
+
         given("the inherited fetchLatestByMonitorId() method") {
 
             `when`("there are logs of other monitors and logs older than the period too") {

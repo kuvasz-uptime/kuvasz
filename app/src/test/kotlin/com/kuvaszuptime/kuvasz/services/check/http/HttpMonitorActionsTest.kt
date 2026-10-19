@@ -10,7 +10,6 @@ import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
 import com.kuvaszuptime.kuvasz.models.monitor.http.monitorId
 import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
-import com.kuvaszuptime.kuvasz.repositories.LatencyMetricResult
 import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.UptimeOverview
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
@@ -56,16 +55,8 @@ class HttpMonitorActionsTest(
                 val statCalculatorMock = getMock(statCalculator)
                 val latencyLogRepositoryMock = getMock(latencyLogRepository)
                 every {
-                    latencyLogRepositoryMock.getLatencyMetrics(enabledMonitor.id, testPeriod)
-                } returns LatencyMetricResult(
-                    monitorId = enabledMonitor.id,
-                    avg = 123,
-                    min = 6982,
-                    max = 2814,
-                    p90 = 9114,
-                    p95 = 8989,
-                    p99 = 3129,
-                )
+                    latencyLogRepositoryMock.getAverageLatencies(listOf(enabledMonitor.id), testPeriod)
+                } returns mapOf(enabledMonitor.id to 123)
 
                 createHttpMonitor(httpMonitorRepository, enabled = false, monitorName = "disabled-monitor")
                 createMaintenanceWindow(dslContext, global = true)
@@ -157,16 +148,8 @@ class HttpMonitorActionsTest(
                 val statCalculatorMock = getMock(statCalculator)
                 val latencyLogRepositoryMock = getMock(latencyLogRepository)
                 every {
-                    latencyLogRepositoryMock.getLatencyMetrics(enabledMonitor.id, testPeriod)
-                } returns LatencyMetricResult(
-                    monitorId = enabledMonitor.id,
-                    avg = 123,
-                    min = 6982,
-                    max = 2814,
-                    p90 = 9114,
-                    p95 = 8989,
-                    p99 = 3129,
-                )
+                    latencyLogRepositoryMock.getAverageLatencies(listOf(enabledMonitor.id), testPeriod)
+                } returns mapOf(enabledMonitor.id to 123)
 
                 createHttpMonitor(httpMonitorRepository, enabled = false, monitorName = "disabled-monitor")
                 val enabledMonitorsUptimeEvent = createHttpUptimeEventRecord(

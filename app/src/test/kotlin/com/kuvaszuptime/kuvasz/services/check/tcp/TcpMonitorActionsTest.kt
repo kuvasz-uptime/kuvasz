@@ -8,7 +8,6 @@ import com.kuvaszuptime.kuvasz.mocks.createTcpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
 import com.kuvaszuptime.kuvasz.models.monitor.tcp.monitorId
-import com.kuvaszuptime.kuvasz.repositories.LatencyMetricResult
 import com.kuvaszuptime.kuvasz.repositories.TcpMetricsLogRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.services.StatCalculator
@@ -55,16 +54,8 @@ class TcpMonitorActionsTest(
                 val statCalculatorMock = getMock(statCalculator)
                 val metricsLogRepositoryMock = getMock(metricsLogRepository)
                 every {
-                    metricsLogRepositoryMock.getLatencyMetrics(enabledMonitor.id, testPeriod)
-                } returns LatencyMetricResult(
-                    monitorId = enabledMonitor.id,
-                    avg = 123,
-                    min = 6982,
-                    max = 2814,
-                    p90 = 9114,
-                    p95 = 8989,
-                    p99 = 3129,
-                )
+                    metricsLogRepositoryMock.getAverageLatencies(listOf(enabledMonitor.id), testPeriod)
+                } returns mapOf(enabledMonitor.id to 123)
 
                 createTcpMonitor(tcpMonitorRepository, enabled = false, monitorName = "disabled-monitor")
                 createMaintenanceWindow(dslContext, global = true)
@@ -156,16 +147,8 @@ class TcpMonitorActionsTest(
                 val statCalculatorMock = getMock(statCalculator)
                 val metricsLogRepositoryMock = getMock(metricsLogRepository)
                 every {
-                    metricsLogRepositoryMock.getLatencyMetrics(enabledMonitor.id, testPeriod)
-                } returns LatencyMetricResult(
-                    monitorId = enabledMonitor.id,
-                    avg = 123,
-                    min = 6982,
-                    max = 2814,
-                    p90 = 9114,
-                    p95 = 8989,
-                    p99 = 3129,
-                )
+                    metricsLogRepositoryMock.getAverageLatencies(listOf(enabledMonitor.id), testPeriod)
+                } returns mapOf(enabledMonitor.id to 123)
 
                 createTcpMonitor(tcpMonitorRepository, enabled = false, monitorName = "disabled-monitor")
                 val enabledMonitorsUptimeEvent = createTcpUptimeEventRecord(

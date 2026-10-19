@@ -234,16 +234,17 @@ class HttpMonitorActions(
             period = period,
             monitorIds = monitorIds,
             categories = categories,
-        ) { monitor, uptime ->
-            val latencyMetrics = if (monitor.latencyHistoryEnabled) {
-                latencyLogRepository.getLatencyMetrics(monitor.id, period)
-            } else {
-                null
-            }
+            prefetch = { monitors ->
+                latencyLogRepository.getAverageLatencies(
+                    monitorIds = monitors.filter { it.latencyHistoryEnabled }.map { it.id },
+                    period = period,
+                )
+            },
+        ) { monitor, uptime, averageLatencies ->
             StatusPageHttpMonitorDetailsDto(
                 name = monitor.name,
                 lastCheck = monitor.lastUptimeCheck,
-                averageLatencyInMs = latencyMetrics?.avg,
+                averageLatencyInMs = averageLatencies[monitor.id],
                 uptimeRatio = uptime.uptimeRatio,
                 uptimeStatus = monitor.uptimeStatus,
                 uptimeStatusHistory = uptime.uptimeStatusHistory,

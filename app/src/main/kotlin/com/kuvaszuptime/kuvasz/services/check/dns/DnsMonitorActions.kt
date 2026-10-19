@@ -195,14 +195,17 @@ class DnsMonitorActions(
             period = period,
             monitorIds = monitorIds,
             categories = categories,
-        ) { monitor, uptime ->
-            val latencyMetrics = monitor.metricsHistoryEnabled.takeIf { it }
-                ?.let { metricsLogRepository.getLatencyMetrics(monitor.id, period) }
-
+            prefetch = { monitors ->
+                metricsLogRepository.getAverageLatencies(
+                    monitorIds = monitors.filter { it.metricsHistoryEnabled }.map { it.id },
+                    period = period,
+                )
+            },
+        ) { monitor, uptime, averageLatencies ->
             StatusPageDnsMonitorDetailsDto(
                 name = monitor.name,
                 lastCheck = monitor.lastUptimeCheck,
-                averageLatencyInMs = latencyMetrics?.avg,
+                averageLatencyInMs = averageLatencies[monitor.id],
                 uptimeRatio = uptime.uptimeRatio,
                 uptimeStatus = monitor.uptimeStatus,
                 uptimeStatusHistory = uptime.uptimeStatusHistory,

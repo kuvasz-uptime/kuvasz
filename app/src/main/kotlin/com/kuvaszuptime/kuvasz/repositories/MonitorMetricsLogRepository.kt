@@ -76,6 +76,32 @@ abstract class MonitorMetricsLogRepository<R : Record, D : Any>(
         aggregateWithPercentiles(logTable.latency, monitorId, period, LatencyMetricResult::class.java)
 
     /**
+     * The average latency of each of the given monitors over the period, in a single query, leaving out the ones
+     * without any latency in it. Unlike [getLatencyMetrics], it doesn't sort the logs for the percentiles, so it's
+     * cheap enough for a whole status page.
+     */
+    open fun getAverageLatencies(monitorIds: Collection<Long>, period: Duration): Map<Long, Int> =
+        averagesByMonitor(logTable.latency, monitorIds, period)
+
+    /** The average of a measurement of each of the given monitors over the period, see [getAverageLatencies]. */
+    protected fun <N : Number> averagesByMonitor(
+        measurement: TableField<R, N>,
+        monitorIds: Collection<Long>,
+        period: Duration,
+    ): Map<Long, N> {
+        if (monitorIds.isEmpty()) return emptyMap()
+        val average = avg(measurement).asMeasurementOf(measurement).`as`(MetricResult<*>::avg.name)
+        return dslContext
+            .select(logTable.monitorId, average)
+            .from(logTable.table)
+            .where(logTable.monitorId.`in`(monitorIds))
+            .and(logTable.createdAt.greaterOrEqual(getCurrentTimestamp().minusSeconds(period.toSeconds())))
+            .and(measurement.isNotNull)
+            .groupBy(logTable.monitorId)
+            .fetchMap(logTable.monitorId, average)
+    }
+
+    /**
      * Aggregates a measurement of a monitor's logs over the given period. Rows where the measurement is null are left
      * out, they carry no reading at all - a container that was not sampled has no CPU reading, for example.
      *

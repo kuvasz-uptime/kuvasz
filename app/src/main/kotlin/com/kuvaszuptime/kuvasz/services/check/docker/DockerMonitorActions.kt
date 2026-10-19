@@ -206,7 +206,8 @@ class DockerMonitorActions(
             period = period,
             monitorIds = monitorIds,
             categories = categories,
-        ) { monitor, uptime ->
+            prefetch = {},
+        ) { monitor, uptime, _ ->
             StatusPageDockerMonitorDetailsDto(
                 name = monitor.name,
                 lastCheck = monitor.lastUptimeCheck,

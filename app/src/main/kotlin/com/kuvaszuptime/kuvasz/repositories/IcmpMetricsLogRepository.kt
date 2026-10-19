@@ -42,6 +42,9 @@ class IcmpMetricsLogRepository(dslContext: DSLContext) :
             PacketLossMetricResult::class.java,
         )
 
+    fun getAveragePacketLosses(monitorIds: Collection<Long>, period: Duration): Map<Long, Int> =
+        averagesByMonitor(ICMP_METRICS_LOG.PACKET_LOSS_PERCENTAGE, monitorIds, period)
+
     override fun DSLContext.logDtoSelect(monitorId: Long) =
         select(
             ICMP_METRICS_LOG.ID.`as`(IcmpMetricsLogDto::id.name),

@@ -196,17 +196,19 @@ class IcmpMonitorActions(
             period = period,
             monitorIds = monitorIds,
             categories = categories,
-        ) { monitor, uptime ->
-            val latencyMetrics = monitor.metricsHistoryEnabled.takeIf { it }
-                ?.let { metricsLogRepository.getLatencyMetrics(monitor.id, period) }
-            val packetLossMetrics = monitor.metricsHistoryEnabled.takeIf { it }
-                ?.let { metricsLogRepository.getPacketLossMetrics(monitor.id, period) }
-
+            prefetch = { monitors ->
+                val monitorIdsWithHistory = monitors.filter { it.metricsHistoryEnabled }.map { it.id }
+                IcmpAverages(
+                    latencies = metricsLogRepository.getAverageLatencies(monitorIdsWithHistory, period),
+                    packetLosses = metricsLogRepository.getAveragePacketLosses(monitorIdsWithHistory, period),
+                )
+            },
+        ) { monitor, uptime, averages ->
             StatusPageIcmpMonitorDetailsDto(
                 name = monitor.name,
                 lastCheck = monitor.lastUptimeCheck,
-                averageLatencyInMs = latencyMetrics?.avg,
-                lastPacketLossPercentage = packetLossMetrics?.avg,
+                averageLatencyInMs = averages.latencies[monitor.id],
+                lastPacketLossPercentage = averages.packetLosses[monitor.id],
                 uptimeRatio = uptime.uptimeRatio,
                 uptimeStatus = monitor.uptimeStatus,
                 uptimeStatusHistory = uptime.uptimeStatusHistory,
@@ -230,3 +232,5 @@ class IcmpMonitorActions(
         }
     }
 }
+
+private data class IcmpAverages(val latencies: Map<Long, Int>, val packetLosses: Map<Long, Int>)

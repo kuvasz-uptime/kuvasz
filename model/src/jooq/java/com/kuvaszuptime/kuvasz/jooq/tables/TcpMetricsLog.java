@@ -150,7 +150,7 @@ public class TcpMetricsLog extends TableImpl<TcpMetricsLogRecord> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.asList(Indexes.TCP_METRICS_LOG_CREATED_AT_IDX, Indexes.TCP_METRICS_LOG_MONITOR_ID_CREATED_AT_IDX);
+        return Arrays.asList(Indexes.TCP_METRICS_LOG_CREATED_AT_IDX);
     }
 
     @Override
