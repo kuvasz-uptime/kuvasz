@@ -63,9 +63,10 @@ class WebUIController(
     @Get(LOGIN_PATH)
     @UnauthenticatedOnly
     @Produces(MediaType.TEXT_HTML)
-    fun login(@QueryValue error: Boolean?): String = renderLoginPage(
+    fun login(@QueryValue error: Boolean?, @QueryValue oidcUnavailable: Boolean?): String = renderLoginPage(
         appGlobals,
         loginErrorMessage = if (error == true) Messages.invalidCredentials() else null,
+        oidcErrorMessage = if (oidcUnavailable == true) Messages.oidcProviderUnavailable() else null,
     )
 
     @Get("/settings")

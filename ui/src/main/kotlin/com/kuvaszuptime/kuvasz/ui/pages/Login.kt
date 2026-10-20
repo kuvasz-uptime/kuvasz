@@ -10,17 +10,21 @@ import kotlinx.html.*
 
 private const val OIDC_LOGIN_PATH = "/oauth/login/oidc"
 
-fun renderLoginPage(appGlobals: AppGlobals, loginErrorMessage: String? = null): String {
+fun renderLoginPage(
+    appGlobals: AppGlobals,
+    loginErrorMessage: String? = null,
+    oidcErrorMessage: String? = null,
+): String {
     return withLayout(appGlobals, "Login") {
         if (appGlobals.isOidcEnabled) {
-            oidcLoginButton()
+            oidcLoginButton(oidcErrorMessage)
         } else {
             loginForm(loginErrorMessage)
         }
     }
 }
 
-internal fun FlowContent.oidcLoginButton() {
+internal fun FlowContent.oidcLoginButton(oidcErrorMessage: String?) {
     div {
         classes(CONTAINER)
         div {
@@ -36,6 +40,9 @@ internal fun FlowContent.oidcLoginButton() {
                             h2 {
                                 classes(CARD_TITLE, TEXT_CENTER, MB_4)
                                 +Messages.signIn()
+                            }
+                            if (!oidcErrorMessage.isNullOrEmpty()) {
+                                loginErrorAlert(oidcErrorMessage)
                             }
                             div {
                                 classes(FORM_FOOTER)
@@ -71,25 +78,7 @@ internal fun FlowContent.loginForm(loginErrorMessage: String?) {
                             }
                             // Display error message if login fails
                             if (!loginErrorMessage.isNullOrEmpty()) {
-                                div {
-                                    classes(ALERT, ALERT_DANGER, ALERT_DISMISSIBLE)
-                                    role = "alert"
-                                    testId("login-error")
-                                    div {
-                                        classes(ALERT_ICON)
-                                        icon(Icon.CIRCLE_EXCLAMATION)
-                                    }
-                                    div {
-                                        h4 {
-                                            classes(ALERT_HEADING)
-                                            +loginErrorMessage
-                                        }
-                                    }
-                                    a {
-                                        classes(BTN_CLOSE)
-                                        alertCloser()
-                                    }
-                                }
+                                loginErrorAlert(loginErrorMessage)
                             }
                             // Login form
                             form(action = "/auth/login", method = FormMethod.post) {
@@ -134,6 +123,28 @@ internal fun FlowContent.loginForm(loginErrorMessage: String?) {
                     }
                 }
             }
+        }
+    }
+}
+
+private fun FlowContent.loginErrorAlert(message: String) {
+    div {
+        classes(ALERT, ALERT_DANGER, ALERT_DISMISSIBLE)
+        role = "alert"
+        testId("login-error")
+        div {
+            classes(ALERT_ICON)
+            icon(Icon.CIRCLE_EXCLAMATION)
+        }
+        div {
+            h4 {
+                classes(ALERT_HEADING)
+                +message
+            }
+        }
+        a {
+            classes(BTN_CLOSE)
+            alertCloser()
         }
     }
 }

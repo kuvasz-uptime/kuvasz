@@ -18,7 +18,7 @@ class WebUILoginControllerTest(controller: WebUIController) : DatabaseBehaviorSp
 
         `when`("it is called without ?error") {
 
-            val html = controller.login(null)
+            val html = controller.login(null, null)
 
             then("it should not add the error message to the model") {
                 html shouldNotContain Messages.invalidCredentials()
@@ -27,7 +27,7 @@ class WebUILoginControllerTest(controller: WebUIController) : DatabaseBehaviorSp
 
         `when`("it is called with ?error=false") {
 
-            val html = controller.login(false)
+            val html = controller.login(false, null)
 
             then("it should not add the error message to the model") {
                 html shouldNotContain Messages.invalidCredentials()
@@ -36,7 +36,7 @@ class WebUILoginControllerTest(controller: WebUIController) : DatabaseBehaviorSp
 
         `when`("it is called with ?error=true") {
 
-            val html = controller.login(true)
+            val html = controller.login(true, null)
 
             then("it should add the error message to the model") {
                 html shouldContain Messages.invalidCredentials()
@@ -45,7 +45,7 @@ class WebUILoginControllerTest(controller: WebUIController) : DatabaseBehaviorSp
 
         `when`("it is called without ?error") {
 
-            val html = controller.login(null)
+            val html = controller.login(null, null)
 
             then("it should render the username/password form, not the OIDC button") {
                 html shouldContain "/auth/login"
@@ -70,7 +70,7 @@ class WebUILoginControllerOidcTest(controller: WebUIController) : DatabaseBehavi
 
         `when`("it is called") {
 
-            val html = controller.login(null)
+            val html = controller.login(null, null)
 
             then("it should render the OIDC sign-in button") {
                 html shouldContain "/oauth/login/oidc"
@@ -79,6 +79,32 @@ class WebUILoginControllerOidcTest(controller: WebUIController) : DatabaseBehavi
 
             then("it should not render the username/password form") {
                 html shouldNotContain "/auth/login"
+            }
+
+            then("it should not render any error message") {
+                html shouldNotContain "data-testid=\"login-error\""
+            }
+        }
+
+        `when`("it is called with ?oidcUnavailable=true") {
+
+            val html = controller.login(null, true)
+
+            then("it should explain that the OIDC provider is unavailable") {
+                html shouldContain Messages.oidcProviderUnavailable()
+            }
+
+            then("it should still render the OIDC sign-in button, so the user can retry") {
+                html shouldContain "/oauth/login/oidc"
+            }
+        }
+
+        `when`("it is called with ?error=true (e.g. a rejected OIDC login)") {
+
+            val html = controller.login(true, null)
+
+            then("it should not show the username/password specific error message") {
+                html shouldNotContain Messages.invalidCredentials()
             }
         }
     }
