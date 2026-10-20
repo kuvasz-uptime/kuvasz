@@ -12,13 +12,15 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from kbench import analyze, generate
+from kbench import analyze, backfill, generate, uiload
 from kbench.analyze import Window
 from kbench.collect import Collector
 from kbench.stack import (KUVASZ_CONTAINER, ROOT, Stack, StackSettings, container_running, container_state, db,
                           load_profiles)
 
 RESULTS_DIR = ROOT / "results"
+# How many monitors of each type the UI users open the details of
+MONITORS_OPENED_PER_TYPE = 20
 GENERATED_DIR = ROOT / "generated"
 
 
@@ -32,6 +34,9 @@ class Block:
     virtual_threads: bool
     scales: tuple[int, ...]
     ui_users: int = 0  # emulated UI/API users during the measurement (uiload blocks)
+    history_days: int = 0  # days of uptime events and metrics loaded before the step (knee and uiload blocks)
+    ui_period: str | None = None  # the period the UI users pick on the dashboard and the charts (uiload blocks)
+    db_pool_size: int = 10  # the database connections of Kuvasz
 
     @classmethod
     def from_config(cls, config: dict, defaults: dict, scales: tuple[int, ...]) -> "Block":
@@ -44,6 +49,9 @@ class Block:
             virtual_threads=config.get("virtual_threads", defaults["virtual_threads"]),
             scales=scales,
             ui_users=config.get("users", 0),
+            history_days=config.get("history_days", 0),
+            ui_period=config.get("ui_period"),
+            db_pool_size=config.get("db_pool_size", 10),
         )
 
 
@@ -74,11 +82,27 @@ def wait_until(deadline: float) -> str | None:
     return None
 
 
-def first_monitor_id(conn, behavior: str = "healthy") -> int | None:
+def first_monitor_id(conn, monitor_type: str = "http", behavior: str = "healthy") -> int | None:
     row = conn.execute(
-        "SELECT id FROM http_monitor WHERE name LIKE %s ORDER BY id LIMIT 1", (f"http-%-{behavior}",)
+        f"SELECT id FROM {monitor_type}_monitor WHERE name LIKE %s ORDER BY id LIMIT 1",
+        (f"{monitor_type}-%-{behavior}",),
     ).fetchone()
     return row[0] if row else None
+
+
+def monitor_ids_of(conn, per_type: int = MONITORS_OPENED_PER_TYPE) -> dict[str, list[int]]:
+    """Monitors of every type for the UI users to open, spread evenly over all of them, whatever their behavior."""
+    ids = {}
+    for monitor_type in uiload.MONITOR_TYPES:
+        all_ids = [row[0] for row in conn.execute(f"SELECT id FROM {monitor_type}_monitor ORDER BY id").fetchall()]
+        if all_ids:
+            step = max(1, len(all_ids) // per_type)
+            ids[monitor_type] = all_ids[::step][:per_type]
+    return ids
+
+
+def first_status_page(conn) -> tuple[int, str] | None:
+    return conn.execute("SELECT id, slug FROM status_page ORDER BY id LIMIT 1").fetchone()
 
 
 class StepRun:
@@ -93,6 +117,8 @@ class StepRun:
         self.pusher: subprocess.Popen | None = None
         self.ui_load: subprocess.Popen | None = None
         self.http_monitor_id: int | None = None
+        self.monitor_ids: dict[str, list[int]] = {}
+        self.status_page: tuple[int, str] | None = None
         self.step_start = 0.0
         self.startup_seconds: float | None = None
         self.checks_start: float | None = None  # when Kuvasz became healthy
@@ -107,6 +133,8 @@ class StepRun:
         self.step_start = self.checks_start - self.startup_seconds
         with db() as conn:
             self.http_monitor_id = first_monitor_id(conn)
+            self.monitor_ids = monitor_ids_of(conn)
+            self.status_page = first_status_page(conn)
         self.pusher = subprocess.Popen(
             [sys.executable, "-m", "kbench.pusher", "--pushers", str(self.pushers_file),
              "--out", str(self.step_dir / "push.jsonl")],
@@ -116,11 +144,17 @@ class StepRun:
         self.collector.start()
         return None
 
-    def start_ui_load(self, users: int):
+    def start_ui_load(self, users: int, period: str | None):
         command = [sys.executable, "-m", "kbench.uiload", "--users", str(users),
                    "--out", str(self.step_dir / "uiload.jsonl")]
-        if self.http_monitor_id is not None:
-            command += ["--http-monitor-id", str(self.http_monitor_id)]
+        command += ["--monitors", str(len(self.expectations))]
+        if self.monitor_ids:
+            command += ["--monitor-ids",
+                        ",".join(f"{t}={':'.join(map(str, ids))}" for t, ids in self.monitor_ids.items())]
+        if self.status_page is not None:
+            command += ["--status-page-id", str(self.status_page[0]), "--status-page-slug", self.status_page[1]]
+        if period:
+            command += ["--period", period]
         self.ui_load = subprocess.Popen(command, cwd=ROOT)
 
     def stop(self) -> tuple[list[dict], list[dict]]:
@@ -164,15 +198,18 @@ def analyze_window(conn, window: Window, step_dir: Path, expectations: dict, sam
 
 
 class Runner:
-    def __init__(self, campaign_dir: Path, profiles: dict, timeline: Timeline, bisect_steps: int):
+    def __init__(self, campaign_dir: Path, profiles: dict, timeline: Timeline, bisect_steps: int, kuvasz_tag: str):
         self.campaign_dir = campaign_dir
         self.profiles = profiles
         self.timeline = timeline
         self.bisect_steps = bisect_steps
+        self.kuvasz_tag = kuvasz_tag
 
     def settings(self, block: Block, gc_dir: Path) -> StackSettings:
-        return StackSettings(block.profile, block.heap, block.virtual_threads,
-                             self.profiles["defaults"]["kuvasz_tag"], gc_dir)
+        # A loaded history longer than the default retention must survive the nightly cleanup during the run
+        retention = max(7, block.history_days + 1)
+        return StackSettings(block.profile, block.heap, block.virtual_threads, self.kuvasz_tag, gc_dir, retention,
+                             block.db_pool_size)
 
     def prepare_step(self, block: Block, block_dir: Path, scale: int) -> tuple[Path, dict, list, dict]:
         step_dir = block_dir / f"n{scale:03d}"
@@ -224,7 +261,7 @@ class Runner:
                     # After the snapshot, so that its own queries don't show up among the slowest ones
                     analyze.reset_statement_stats(conn)
                 if block.ui_users:
-                    run.start_ui_load(block.ui_users)
+                    run.start_ui_load(block.ui_users, block.ui_period)
                     log(f"  {block.ui_users} UI/API users started")
                 window_start = time.time()
                 log("  measuring")
@@ -267,9 +304,31 @@ class Runner:
         stack.stop_kuvasz()
         return self.block_result(block, steps)
 
+    def load_history(self, block: Block, block_dir: Path, stack: Stack, scale: int):
+        """Imports the monitor set with a short start of Kuvasz, then loads the history of the monitors into the
+        database. The database gets more resources for the load, then it's restarted with the ones of the profile."""
+        generate.write_step(GENERATED_DIR, block.mix, scale)
+        expectations = json.loads((GENERATED_DIR / "expectations.json").read_text())
+        log(f"{block.name}: importing the monitors to load {block.history_days} days of history")
+        stack.start_kuvasz()
+        stack.stop_kuvasz()
+        docker_cpus = int(subprocess.run(["docker", "info", "--format", "{{.NCPU}}"], capture_output=True, text=True,
+                                         check=True).stdout.strip())
+        stack.resize_postgres(cpus=min(6, docker_cpus), mem="3g")
+        try:
+            result = backfill.run(expectations, block.history_days, log)
+        finally:
+            postgres = self.profiles["profiles"][block.profile]["postgres"]
+            stack.resize_postgres(cpus=postgres["cpus"], mem=postgres["mem"])
+        (block_dir / "history.json").write_text(json.dumps(result, indent=1))
+        log(f"  history loaded in {result['seconds']}s: {result['database_mb']:,} MB, "
+            f"{result['uptime_events']:,} uptime events")
+
     def run_knee(self, block: Block) -> dict:
         block_dir = self.campaign_dir / block.name
         stack = self.start_block(block, block_dir)
+        if block.history_days:
+            self.load_history(block, block_dir, stack, block.scales[0])
         metrics = self.run_step(block, block_dir, stack, block.scales[0])
         stack.stop_kuvasz()
         return self.block_result(block, [{"scale": block.scales[0], "passed": metrics["passed"],
@@ -424,6 +483,8 @@ def main():
                         help="results/<name>; reuse it to resume a campaign")
     parser.add_argument("--warmup", type=int, default=defaults["warmup_seconds"])
     parser.add_argument("--measure", type=int, default=defaults["measure_seconds"])
+    parser.add_argument("--kuvasz-tag", default=defaults["kuvasz_tag"],
+                        help="the image under test (kuvaszmonitoring/kuvasz:<tag>), pulled or built locally")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("campaign", help="everything in the campaign section of config/profiles.yml")
     for kind in ("ramp", "knee", "storm", "uiload"):
@@ -436,21 +497,28 @@ def main():
         p.add_argument("--heap", default=defaults["heap"], choices=sorted(profiles["heap_modes"]))
         p.add_argument("--virtual-threads", action=argparse.BooleanOptionalAction,
                        default=defaults["virtual_threads"])
+        p.add_argument("--db-pool-size", type=int, default=10, help="the database connections of Kuvasz")
         if kind == "ramp":
             p.add_argument("--ladder", default=",".join(map(str, defaults["ladder"])))
         else:
             p.add_argument("--scale", type=int, required=True)
         if kind == "uiload":
             p.add_argument("--users", type=int, default=5, help="emulated UI/API users during the measurement")
+            p.add_argument("--ui-period", help="the period (ISO-8601, e.g. P30D) the users pick on the dashboard and "
+                                               "the charts, instead of the defaults of the UI")
+        if kind in ("knee", "uiload"):
+            p.add_argument("--history-days", type=int, default=0,
+                           help="days of uptime events and metrics to load before the step, as if the monitors had "
+                                "been running that long (see kbench/backfill.py)")
     args = parser.parse_args()
 
     keep_awake()
     campaign_dir = RESULTS_DIR / args.name
     campaign_dir.mkdir(parents=True, exist_ok=True)
     timeline = Timeline(args.warmup, args.measure, profiles["storm"])
-    runner = Runner(campaign_dir, profiles, timeline, defaults["bisect_steps"])
+    runner = Runner(campaign_dir, profiles, timeline, defaults["bisect_steps"], args.kuvasz_tag)
     if not (campaign_dir / "environment.json").exists():
-        write_environment(campaign_dir, defaults["kuvasz_tag"])
+        write_environment(campaign_dir, args.kuvasz_tag)
     log(f"Results: {campaign_dir}")
     if args.command == "campaign":
         run_campaign(runner, profiles)
@@ -459,7 +527,8 @@ def main():
         name = args.block_name or (
             f"{args.command}-{args.profile}" + ("" if args.virtual_threads else "-pool") + f"-{args.heap}")
         block = Block(name, args.command, args.profile, args.mix, args.heap, args.virtual_threads, scales,
-                      getattr(args, "users", 0))
+                      getattr(args, "users", 0), getattr(args, "history_days", 0), getattr(args, "ui_period", None),
+                      args.db_pool_size)
         result = runner.run_block(block)
         log(f"{block.name}: last pass N={result['last_pass']}, first fail N={result['first_fail']}")
 

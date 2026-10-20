@@ -38,10 +38,20 @@ def schedule(behavior: str, interval: int, grace: int, rng: random.Random):
         skip = not skip
 
 
+def send_times(delays, start: float):
+    """The moments of the heartbeats: like a cron job, a client keeps its schedule, however long its previous heartbeat
+    took to answer."""
+    at = start
+    for delay in delays:
+        at += delay
+        yield at
+
+
 async def run_client(client: httpx.AsyncClient, pusher: dict, records: list, rng: random.Random):
     url = f"{KUVASZ_URL}/api/v2/push-monitors/heartbeats/{pusher['secret']}"
-    for delay in schedule(pusher["behavior"], pusher["interval"], pusher["grace"], rng):
-        await asyncio.sleep(max(delay, 0))
+    delays = schedule(pusher["behavior"], pusher["interval"], pusher["grace"], rng)
+    for at in send_times(delays, time.monotonic()):
+        await asyncio.sleep(max(at - time.monotonic(), 0))
         sent_at = time.time()
         started = time.perf_counter()
         try:

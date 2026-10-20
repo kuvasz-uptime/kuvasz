@@ -13,6 +13,13 @@ profiles:
   S1536:
     kuvasz: { cpus: 1, mem: 1536m }
     postgres: { cpus: 1, mem: 1g, shared_buffers: 256MB, effective_cache_size: 768MB }
+  # Bigger databases for long histories (PG4 needs Docker with 8 CPUs and 10 GB)
+  S-PG2:
+    kuvasz: { cpus: 1, mem: 1g }
+    postgres: { cpus: 2, mem: 2g, shared_buffers: 512MB, effective_cache_size: 1536MB }
+  S1536-PG4:
+    kuvasz: { cpus: 1, mem: 1536m }
+    postgres: { cpus: 4, mem: 4g, shared_buffers: 1GB, effective_cache_size: 3GB }
   M:
     kuvasz: { cpus: 2, mem: 2g }
     postgres: { cpus: 1, mem: 2g, shared_buffers: 512MB, effective_cache_size: 1536MB }
@@ -61,6 +68,17 @@ gates:
   push_errors: 0
   probe_p95_ms: 2000 # UI and API requests
   probe_max_ms: 10000
+  # Reports add up the history of many monitors for the whole period, so they get looser limits than the other requests
+  report_p95_ms: 5000
+  report_max_ms: 15000
+  report_requests:
+    - ui_dashboard_fragment
+    - api_*_monitors_stats
+    - ui_status_page_details
+    - ui_status_page_public
+    - ui_default_status_page
+    - api_status_page
+    - api_default_status_page
   hikari_timeouts: 0
 # A target above this CPU usage (% of a core) may have been the bottleneck instead of Kuvasz: the step gets a warning
 max_target_cpu_percent: 80

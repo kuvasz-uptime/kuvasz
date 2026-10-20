@@ -30,6 +30,10 @@ UNUSED_IPS = [f"172.31.89.{i}" for i in range(200, 210)]
 DOCKER_HOST_NAME = "local"
 WEBHOOK_INTEGRATION = "webhook:bench-sink"
 KEYWORD = "kuvasz-bench-ok"
+# The status page of the run, as big as a big real one: the first 50 monitors of the set, so every type and behavior is
+# on it in its usual share, and it doesn't grow with the set
+STATUS_PAGE = {"title": "Bench status", "slug": "bench-status", "public": True}
+STATUS_PAGE_MONITORS = 50
 PUSH_SECRET_NAMESPACE = uuid.UUID("5d6c3f0e-6f0b-4b8e-9a51-6b6e0c1d2a7f")
 
 EXPECTED_STATUS = {"healthy": "UP", "slow": "UP", "flapping": None, "down": "DOWN", "timeout": "DOWN"}
@@ -288,7 +292,12 @@ def build_kuvasz_config(monitors: list[Monitor], real_slice: dict | None) -> dic
         entries += (real_slice or {}).get(key) or []
         # An explicit list (even an empty one) makes the YAML the source of truth of that type
         config[key] = entries
+    config["status-pages"] = [build_status_page(monitors)]
     return config
+
+
+def build_status_page(monitors: list[Monitor]) -> dict:
+    return {**STATUS_PAGE, "monitors": [f"{m.type}:{m.name}" for m in monitors[:STATUS_PAGE_MONITORS]]}
 
 
 def build_expectations(monitors: list[Monitor], real_slice: dict | None) -> dict:

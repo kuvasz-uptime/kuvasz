@@ -13,6 +13,9 @@ GATES = {
     "push_errors": 0,
     "probe_p95_ms": 2000,
     "probe_max_ms": 10000,
+    "report_p95_ms": 5000,
+    "report_max_ms": 15000,
+    "report_requests": ["ui_dashboard_fragment", "api_*_monitors_stats"],
     "hikari_timeouts": 0,
 }
 WINDOW = Window(step_start=1000.0, start=1200.0, end=1500.0)
@@ -258,8 +261,8 @@ def test_probe_and_push_metrics():
 
 
 def snapshot(rows: int, bytes_: int, commits: int):
-    tables = {t: {"rows": 0, "bytes": 0} for t in a.LOG_AND_EVENT_TABLES}
-    tables["http_latency_log"] = {"rows": rows, "bytes": bytes_}
+    tables = {t: {"rows": 0, "inserted": 0, "bytes": 0} for t in a.LOG_AND_EVENT_TABLES}
+    tables["http_latency_log"] = {"rows": rows, "inserted": rows, "bytes": bytes_}
     return {"xact_commit": commits, "xact_rollback": 0, "tup_inserted": rows, "tup_updated": 0, "tup_deleted": 0,
             "blks_read": 10, "blks_hit": 990, "temp_bytes": 0, "deadlocks": 0, "database_bytes": 50 * 2**20,
             "tables": tables}
@@ -344,6 +347,13 @@ def test_ui_load_metrics():
     assert result["endpoints"]["api_http_monitors"]["errors"] == 1
 
 
+def test_ui_load_metrics_count_only_the_unexpected_statuses_as_errors():
+    records = [{"ts": 1250, "user": 0, "name": "ui_default_status_page", "latency_ms": 5.0, "status": status,
+                "expected_status": 404, "bytes": 10, "error": None} for status in (404, 404, 200)]
+    result = a.ui_load_metrics(records, WINDOW)
+    assert result["endpoints"]["ui_default_status_page"]["errors"] == 1
+
+
 GC_LOG = """\
 [2026-10-16T12:00:00.000+0000][1.000s][info][gc,start    ] GC(1) Pause Young (Normal) (G1 Evacuation Pause)
 [2026-10-16T12:00:00.010+0000][1.010s][info][gc          ] GC(1) Pause Young (Normal) (G1 Evacuation Pause) 100M->40M(192M) 10.500ms
@@ -390,6 +400,21 @@ def test_evaluate_gates_checks_the_ui_load():
         "UI load: ui_http_monitors_list p95 2500.0ms",
         "UI load: ui_http_monitors_list max 11000.0ms",
         "UI load: ui_http_monitors_list: 2 failed requests",
+    ]
+
+
+def test_evaluate_gates_gives_reports_looser_limits():
+    m = passing_metrics()
+    m["probes"] = {"ui_dashboard_fragment": {"p95_ms": 4900.0, "max_ms": 14000.0, "errors": 0}}
+    m["ui_load"] = {"endpoints": {
+        "ui_dashboard_fragment": {"p95_ms": 5100.0, "max_ms": 16000.0, "errors": 0},
+        "api_http_monitors_stats": {"p95_ms": 3000.0, "max_ms": 9000.0, "errors": 0},
+        "api_http_monitors": {"p95_ms": 3000.0, "max_ms": 9000.0, "errors": 0},
+    }}
+    assert a.evaluate_gates(m, GATES) == [
+        "UI load: ui_dashboard_fragment p95 5100.0ms",
+        "UI load: ui_dashboard_fragment max 16000.0ms",
+        "UI load: api_http_monitors p95 3000.0ms",
     ]
 
 

@@ -128,6 +128,7 @@ def test_write_step(tmp_path: Path):
     assert config["micronaut"]["metrics"]["binders"]["jvm"]["enabled"] is True
     assert config["docker-hosts"][0]["name"] == g.DOCKER_HOST_NAME
     assert expectations["real-github"]["behavior"] == "real"
+    assert config["status-pages"] == [g.build_status_page(g.generate(g.load_mix("balanced"), 2))]
     assert summary["checks_per_second"] > 0
 
 
@@ -136,3 +137,15 @@ def test_write_step_without_the_real_slice(tmp_path: Path):
     config = yaml.safe_load((tmp_path / "kuvasz.yml").read_text())
     assert summary["real_slice_monitors"] == 0
     assert sum(len(config[g.YAML_KEYS[t]]) for t in g.TYPES) == 100
+
+
+def test_the_status_page_has_the_same_50_monitors_of_every_type_at_any_scale():
+    monitors = g.generate(g.load_mix("balanced"), 50)
+    page = g.build_status_page(monitors)
+    assert "categories" not in page
+    assert len(page["monitors"]) == g.STATUS_PAGE_MONITORS
+    assert page == g.build_status_page(g.generate(g.load_mix("balanced"), 1))
+    assert {ref.split(":", 1)[0] for ref in page["monitors"]} == set(g.TYPES)
+    names = {m.name for m in monitors}
+    assert all(ref.split(":", 1)[1] in names for ref in page["monitors"])
+
