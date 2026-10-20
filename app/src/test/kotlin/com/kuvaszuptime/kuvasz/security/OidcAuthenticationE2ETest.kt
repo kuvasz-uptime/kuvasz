@@ -1,23 +1,25 @@
 package com.kuvaszuptime.kuvasz.security
 
+import ch.qos.logback.classic.spi.ILoggingEvent
 import com.kuvaszuptime.kuvasz.security.oidc.OIDC_PROVIDER_NAME
+import com.kuvaszuptime.kuvasz.security.oidc.OidcLazyJwksSignature
+import com.kuvaszuptime.kuvasz.security.oidc.OidcProviderStartupNotice
 import com.kuvaszuptime.kuvasz.testutils.KeycloakTestRealm
 import io.kotest.core.spec.style.BehaviorSpec
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainAll
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.micronaut.context.ApplicationContext
 import io.micronaut.runtime.server.EmbeddedServer
-import tools.jackson.module.kotlin.jacksonObjectMapper
-import tools.jackson.module.kotlin.readValue
+import io.micronaut.security.token.jwt.nimbus.ReactiveJwksSignature
+import io.micronaut.security.token.jwt.signature.ReactiveSignatureConfiguration
 import java.net.URI
-import java.net.URLEncoder
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
-import java.nio.charset.StandardCharsets
-import java.util.Base64
 
 /**
  * End-to-end test of the OIDC authorization-code flow against a real Keycloak instance
@@ -44,6 +46,7 @@ class OidcAuthenticationE2ETest : BehaviorSpec({
 
     var server: EmbeddedServer? = null
     lateinit var baseUrl: String
+    var startupNotices = emptyList<ILoggingEvent>()
 
     // A second instance that restricts logins to an email allowlist (with the default verified-email requirement)
     var allowlistServer: EmbeddedServer? = null
@@ -66,7 +69,10 @@ class OidcAuthenticationE2ETest : BehaviorSpec({
             // for the end-session endpoint (and thus the /oauth/logout route) to be resolved.
             "micronaut.security.oauth2.clients.oidc.authorization-server" to "keycloak",
         )
-        val embeddedServer = ApplicationContext.run(EmbeddedServer::class.java, baseProperties, "test")
+        val (embeddedServer, notices) = captureLogs(OidcProviderStartupNotice::class.java) {
+            ApplicationContext.run(EmbeddedServer::class.java, baseProperties, "test")
+        }
+        startupNotices = notices
         server = embeddedServer
         baseUrl = "http://localhost:${embeddedServer.port}"
 
@@ -165,6 +171,23 @@ class OidcAuthenticationE2ETest : BehaviorSpec({
             }
         }
 
+        `when`("the startup has finished while the provider was reachable") {
+
+            then("no notice about an unreachable provider should be logged") {
+                startupNotices.shouldBeEmpty()
+            }
+        }
+
+        `when`("the JWT signatures are collected while the provider was reachable at startup") {
+            val signatures = server.shouldNotBeNull().applicationContext
+                .getBeansOfType(ReactiveSignatureConfiguration::class.java)
+
+            then("the provider's JWKS is only verified by the OidcLazyJwksSignature, not by Micronaut's own as well") {
+                signatures.filterIsInstance<OidcLazyJwksSignature>() shouldHaveSize 1
+                signatures.filterIsInstance<ReactiveJwksSignature>().shouldBeEmpty()
+            }
+        }
+
         `when`("an anonymous user requests a secured API endpoint") {
             val response = HttpClient.newHttpClient().send(
                 HttpRequest.newBuilder(URI.create("$baseUrl/api/v2/http-monitors")).GET().build(),
@@ -229,96 +252,3 @@ class OidcAuthenticationE2ETest : BehaviorSpec({
         }
     }
 })
-
-/**
- * Drives the full OIDC authorization-code flow: hits the OIDC login endpoint, submits the Keycloak login form with the
- * given credentials, and returns the [TestBrowser] holding whatever cookies ended up being set (a JWT on success,
- * none on a rejected login).
- */
-private fun oidcLogin(baseUrl: String, username: String, password: String): TestBrowser {
-    val browser = TestBrowser()
-    val loginPage = browser.get("$baseUrl/oauth/login/oidc")
-    val formAction = extractLoginFormAction(loginPage.body())
-    val formBody = "username=${username.urlEncoded()}&password=${password.urlEncoded()}&credentialId="
-    browser.postForm(formAction, formBody)
-    return browser
-}
-
-/**
- * A minimal stateful HTTP "browser" that keeps a single cookie jar and follows redirects manually, replaying every
- * stored cookie on every request regardless of its path/domain attributes. Good enough for a same-host E2E flow.
- */
-private class TestBrowser {
-    private val client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NEVER).build()
-    private val cookies = mutableMapOf<String, String>()
-
-    fun cookie(name: String): String? = cookies[name]
-
-    fun get(url: String): HttpResponse<String> =
-        send(requestBuilder(url).GET().build())
-
-    fun postForm(url: String, body: String): HttpResponse<String> =
-        send(
-            requestBuilder(url)
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .POST(HttpRequest.BodyPublishers.ofString(body))
-                .build()
-        )
-
-    private fun requestBuilder(url: String): HttpRequest.Builder =
-        HttpRequest.newBuilder(URI.create(url)).apply {
-            if (cookies.isNotEmpty()) {
-                header("Cookie", cookies.entries.joinToString("; ") { "${it.key}=${it.value}" })
-            }
-        }
-
-    private fun send(request: HttpRequest): HttpResponse<String> {
-        var response = client.send(request, HttpResponse.BodyHandlers.ofString())
-        harvestCookies(response)
-
-        var hops = 0
-        while (response.statusCode() in 300..399 && hops < MAX_REDIRECTS) {
-            val location = response.headers().firstValue("location").orElseThrow {
-                IllegalStateException("Redirect response without a Location header")
-            }
-            val next = response.uri().resolve(location)
-            response = client.send(requestBuilder(next.toString()).GET().build(), HttpResponse.BodyHandlers.ofString())
-            harvestCookies(response)
-            hops++
-        }
-        return response
-    }
-
-    private fun harvestCookies(response: HttpResponse<*>) {
-        response.headers().allValues("set-cookie").forEach { setCookie ->
-            val pair = setCookie.substringBefore(";")
-            val name = pair.substringBefore("=").trim()
-            val value = pair.substringAfter("=", "")
-            if (value.isEmpty()) cookies.remove(name) else cookies[name] = value
-        }
-    }
-
-    companion object {
-        private const val MAX_REDIRECTS = 10
-    }
-}
-
-private val objectMapper = jacksonObjectMapper()
-
-private fun String.urlEncoded(): String = URLEncoder.encode(this, StandardCharsets.UTF_8)
-
-private fun rolesFromJwt(jwt: String): List<String> {
-    val payload = jwt.split(".")[1]
-    val decoded = String(Base64.getUrlDecoder().decode(payload), StandardCharsets.UTF_8)
-    val claims = objectMapper.readValue<Map<String, Any>>(decoded)
-    @Suppress("UNCHECKED_CAST")
-    return (claims["roles"] as? List<String>).orEmpty()
-}
-
-private val LOGIN_FORM_ACTION_REGEX = Regex("""<form[^>]*id="kc-form-login"[^>]*action="([^"]+)"""")
-
-private fun extractLoginFormAction(html: String): String {
-    val rawAction = LOGIN_FORM_ACTION_REGEX.find(html)?.groupValues?.get(1)
-        ?: error("Could not find the Keycloak login form action in the returned HTML")
-    return rawAction.replace("&amp;", "&")
-}

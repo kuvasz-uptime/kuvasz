@@ -4,15 +4,20 @@ import com.kuvaszuptime.kuvasz.config.AdminAuthConfig
 import com.kuvaszuptime.kuvasz.config.ApiKeyConfig
 import com.kuvaszuptime.kuvasz.config.OidcConfig
 import com.kuvaszuptime.kuvasz.security.oidc.OidcAuthenticationMapper
+import com.kuvaszuptime.kuvasz.security.oidc.OidcLazyJwksSignature
+import com.kuvaszuptime.kuvasz.security.oidc.OidcProviderMetadataFilter
+import com.kuvaszuptime.kuvasz.security.oidc.OidcProviderStartupNotice
 import com.kuvaszuptime.kuvasz.security.ui.WebAuthProvider
 import com.kuvaszuptime.kuvasz.testAppContext
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotest.matchers.ints.shouldBeLessThan
 import io.kotest.matchers.shouldBe
 import io.micronaut.context.env.PropertySource
 import io.micronaut.context.exceptions.NoSuchBeanException
+import io.micronaut.http.filter.ServerFilterPhase
 
 class OidcBeanWiringTest : BehaviorSpec({
 
@@ -47,6 +52,18 @@ class OidcBeanWiringTest : BehaviorSpec({
                 shouldThrow<NoSuchBeanException> { ctx.getBean(OidcConfig::class.java) }
             }
 
+            then("the OidcProviderMetadataFilter should NOT be present") {
+                shouldThrow<NoSuchBeanException> { ctx.getBean(OidcProviderMetadataFilter::class.java) }
+            }
+
+            then("the OidcLazyJwksSignature should NOT be present") {
+                shouldThrow<NoSuchBeanException> { ctx.getBean(OidcLazyJwksSignature::class.java) }
+            }
+
+            then("the OidcProviderStartupNotice should NOT be present") {
+                shouldThrow<NoSuchBeanException> { ctx.getBean(OidcProviderStartupNotice::class.java) }
+            }
+
             then("the AdminAuthConfig should be present, holding the username/password credentials") {
                 shouldNotThrowAny { ctx.getBean(AdminAuthConfig::class.java) }
             }
@@ -66,6 +83,19 @@ class OidcBeanWiringTest : BehaviorSpec({
 
             then("the OidcConfig should be present") {
                 shouldNotThrowAny { ctx.getBean(OidcConfig::class.java) }
+            }
+
+            then("the OidcProviderMetadataFilter should be present, running before the SecurityFilter") {
+                val filter = shouldNotThrowAny { ctx.getBean(OidcProviderMetadataFilter::class.java) }
+                filter.order shouldBeLessThan ServerFilterPhase.SECURITY.order()
+            }
+
+            then("the OidcLazyJwksSignature should be present") {
+                shouldNotThrowAny { ctx.getBean(OidcLazyJwksSignature::class.java) }
+            }
+
+            then("the OidcProviderStartupNotice should be present") {
+                shouldNotThrowAny { ctx.getBean(OidcProviderStartupNotice::class.java) }
             }
 
             then("the WebAuthProvider should NOT be present, disabling the username/password login") {
