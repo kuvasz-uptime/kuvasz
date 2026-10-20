@@ -700,7 +700,8 @@ class StatusPageControllerTest(
 
                 then("it should return a 404 without serving the cached page") {
                     response.status shouldBe HttpStatus.NOT_FOUND
-                    response.response.getBody(String::class.java).get() shouldContain "more than 500 enabled monitors"
+                    response.response.getBody(String::class.java).get() shouldContain
+                        "more than ${StatusPageDefaults.DEFAULT_PAGE_MAX_MONITORS} enabled monitors"
                     verify(exactly = 0) { dataMock.getCachedDefaultStatusPageData() }
                 }
             }
