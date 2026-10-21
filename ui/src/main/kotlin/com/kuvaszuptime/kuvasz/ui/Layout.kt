@@ -91,7 +91,7 @@ internal fun withLayout(
                     script(src = "/public/ext/js/vanilla-calendar-pro.3.4.0.min.js") {}
                     commonScripts(globals.appVersion)
                     script(src = "/public/ext/js/htmx.2.0.10.min.js") {}
-                    script(src = "/public/ext/js/alpine.3.17.4.min.js") {}
+                    script(src = "/public/ext/js/alpine.3.17.5.min.js") {}
                     script(src = "/public/ext/js/masonry.4.2.2.min.js") {}
                 }
             }
