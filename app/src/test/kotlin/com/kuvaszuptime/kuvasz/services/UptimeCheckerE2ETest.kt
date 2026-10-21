@@ -26,6 +26,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldBeEmpty
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
 import io.kotest.matchers.string.shouldStartWith
@@ -1188,6 +1189,200 @@ class UptimeCheckerE2ETest(
                     mockServer.verifyRequest(request1)
                     mockServer.verifyRequest(request2)
                     mockServer.verifyRequest(request3)
+                }
+            }
+
+            `when`("it checks a monitor that is redirected to the same URL to set a cookie") {
+                val monitor = createHttpMonitor(
+                    repository = monitorRepository,
+                    url = "$mockServerUrl/cookie-gate",
+                    requestMethod = HttpMethod.GET,
+                    followRedirects = true,
+                )
+                val upSubscriber = TestSubscriber<HttpMonitorUpEvent>()
+                val downSubscriber = TestSubscriber<HttpMonitorDownEvent>()
+                eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
+                eventDispatcher.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
+
+                val requestWithCookie = getRequest("/cookie-gate").withCookie("PHPSESSID", "abc")
+                // The expectations are matched in the order of their creation, so the one with the cookie comes first
+                mockServer.`when`(requestWithCookie).respond(
+                    response().withStatusCode(HttpStatus.OK.code)
+                )
+                mockServer.`when`(getRequest("/cookie-gate")).respond(
+                    response()
+                        .withStatusCode(HttpStatus.FOUND.code)
+                        .withHeader(HttpHeaders.LOCATION, "$mockServerUrl/cookie-gate")
+                        .withHeader(HttpHeaders.SET_COOKIE, "PHPSESSID=abc; Path=/; HttpOnly")
+                )
+
+                uptimeChecker.check(monitor)
+
+                then("it should follow the redirect once more with the cookie, instead of reporting a loop") {
+                    val expectedUpEvent = upSubscriber.awaitCount(1).values().first()
+
+                    expectedUpEvent.status shouldBe HttpStatus.OK
+                    expectedUpEvent.monitor.id shouldBe monitor.id
+                    downSubscriber.assertNoValues()
+
+                    mockServer.verifyRequest(getRequest("/cookie-gate"), exactly = 2)
+                    mockServer.verifyRequest(requestWithCookie)
+                }
+            }
+
+            `when`("it checks a monitor that is redirected to the same URL to set a non-RFC 6265 compliant cookie") {
+                val monitor = createHttpMonitor(
+                    repository = monitorRepository,
+                    url = "$mockServerUrl/consent-gate",
+                    requestMethod = HttpMethod.GET,
+                    followRedirects = true,
+                )
+                val upSubscriber = TestSubscriber<HttpMonitorUpEvent>()
+                eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
+
+                // A JSON value contains quotes and commas, which a strict parser would refuse
+                val consentValue = """{"v":1,"all":true}"""
+                val requestWithCookie = getRequest("/consent-gate")
+                    .withHeader(HttpHeaders.COOKIE, Regex.escape("consent=$consentValue"))
+                mockServer.`when`(requestWithCookie).respond(
+                    response().withStatusCode(HttpStatus.OK.code)
+                )
+                mockServer.`when`(getRequest("/consent-gate")).respond(
+                    response()
+                        .withStatusCode(HttpStatus.FOUND.code)
+                        .withHeader(HttpHeaders.LOCATION, "$mockServerUrl/consent-gate")
+                        .withHeader(HttpHeaders.SET_COOKIE, "consent=$consentValue; Path=/")
+                )
+
+                uptimeChecker.check(monitor)
+
+                then("it should send the cookie back as it was set") {
+                    val expectedUpEvent = upSubscriber.awaitCount(1).values().first()
+
+                    expectedUpEvent.status shouldBe HttpStatus.OK
+                    mockServer.verifyRequest(requestWithCookie)
+                }
+            }
+
+            `when`("it checks a monitor that sets a cookie, then bounces back through another URL") {
+                val monitor = createHttpMonitor(
+                    repository = monitorRepository,
+                    url = "$mockServerUrl/challenge-gate",
+                    requestMethod = HttpMethod.GET,
+                    followRedirects = true,
+                )
+                val upSubscriber = TestSubscriber<HttpMonitorUpEvent>()
+                val downSubscriber = TestSubscriber<HttpMonitorDownEvent>()
+                eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
+                eventDispatcher.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
+
+                val gateWithCookie = getRequest("/challenge-gate").withCookie("cf", "1")
+                val challengeRequest = getRequest("/challenge")
+                mockServer.`when`(gateWithCookie).respond(
+                    response().withStatusCode(HttpStatus.OK.code)
+                )
+                mockServer.`when`(getRequest("/challenge-gate")).respond(
+                    response()
+                        .withStatusCode(HttpStatus.FOUND.code)
+                        .withHeader(HttpHeaders.LOCATION, "$mockServerUrl/challenge")
+                        .withHeader(HttpHeaders.SET_COOKIE, "cf=1; Path=/")
+                )
+                // The redirect back to the gate doesn't set any cookie itself
+                mockServer.`when`(challengeRequest).respond(
+                    response()
+                        .withStatusCode(HttpStatus.FOUND.code)
+                        .withHeader(HttpHeaders.LOCATION, "$mockServerUrl/challenge-gate")
+                )
+
+                uptimeChecker.check(monitor)
+
+                then("it should revisit the gate with the cookie, instead of reporting a loop") {
+                    val expectedUpEvent = upSubscriber.awaitCount(1).values().first()
+
+                    expectedUpEvent.status shouldBe HttpStatus.OK
+                    downSubscriber.assertNoValues()
+
+                    mockServer.verifyRequest(getRequest("/challenge-gate"), exactly = 2)
+                    mockServer.verifyRequest(challengeRequest)
+                    mockServer.verifyRequest(gateWithCookie)
+                }
+            }
+
+            `when`("it checks a monitor that is redirected to the same URL, setting a cookie every time") {
+                val monitor = createHttpMonitor(
+                    repository = monitorRepository,
+                    url = "$mockServerUrl/cookie-loop",
+                    requestMethod = HttpMethod.GET,
+                    followRedirects = true,
+                )
+                val upSubscriber = TestSubscriber<HttpMonitorUpEvent>()
+                val downSubscriber = TestSubscriber<HttpMonitorDownEvent>()
+                eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
+                eventDispatcher.subscribeToHttpMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
+
+                val request = getRequest("/cookie-loop")
+                mockServer.`when`(request).respond(
+                    response()
+                        .withStatusCode(HttpStatus.FOUND.code)
+                        .withHeader(HttpHeaders.LOCATION, "$mockServerUrl/cookie-loop")
+                        .withHeader(HttpHeaders.SET_COOKIE, "PHPSESSID=abc; Path=/")
+                )
+
+                uptimeChecker.check(monitor)
+
+                then("it should retry with the cookie only once, then report the redirect loop") {
+                    val expectedDownEvent = downSubscriber.awaitCount(1).values().first()
+
+                    upSubscriber.assertNoValues()
+                    expectedDownEvent.monitor.id shouldBe monitor.id
+                    expectedDownEvent.error.message shouldBe "Redirect loop detected"
+
+                    mockServer.verifyRequest(request, exactly = 2)
+                }
+            }
+
+            `when`("it checks a monitor that sets a cookie in the middle of a redirect chain") {
+                val monitor = createHttpMonitor(
+                    repository = monitorRepository,
+                    url = "$mockServerUrl/cookie-hop-1",
+                    requestMethod = HttpMethod.GET,
+                    followRedirects = true,
+                )
+                val upSubscriber = TestSubscriber<HttpMonitorUpEvent>()
+                eventDispatcher.subscribeToHttpMonitorUpEvents { it.forwardToSubscriber(upSubscriber) }
+
+                val firstRequest = getRequest("/cookie-hop-1")
+                val sameHostRequest = getRequest("/cookie-hop-2").withCookie("session", "xyz")
+                val otherHostRequest = getRequest("/cookie-hop-3")
+
+                mockServer.`when`(firstRequest).respond(
+                    response()
+                        .withStatusCode(HttpStatus.FOUND.code)
+                        .withHeader(HttpHeaders.LOCATION, "$mockServerUrl/cookie-hop-2")
+                        .withHeader(HttpHeaders.SET_COOKIE, "session=xyz; Path=/")
+                )
+                mockServer.`when`(sameHostRequest).respond(
+                    response()
+                        .withStatusCode(HttpStatus.FOUND.code)
+                        .withHeader(HttpHeaders.LOCATION, "$otherHostMockServerUrl/cookie-hop-3")
+                )
+                mockServer.`when`(otherHostRequest).respond(
+                    response().withStatusCode(HttpStatus.OK.code)
+                )
+
+                uptimeChecker.check(monitor)
+
+                then("it should send the cookie to the later hops on the same host only") {
+                    val expectedUpEvent = upSubscriber.awaitCount(1).values().first()
+
+                    expectedUpEvent.status shouldBe HttpStatus.OK
+                    expectedUpEvent.monitor.id shouldBe monitor.id
+
+                    mockServer.verifyRequest(firstRequest)
+                    mockServer.verifyRequest(sameHostRequest)
+                    mockServer.verifyRequest(otherHostRequest)
+                    mockServer.retrieveRecordedRequests(otherHostRequest).single()
+                        .getFirstHeader(HttpHeaders.COOKIE).shouldBeEmpty()
                 }
             }
 

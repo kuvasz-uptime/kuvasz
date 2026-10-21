@@ -2,6 +2,8 @@ package com.kuvaszuptime.kuvasz.services.check.http
 
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.UptimeCheckException
+import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResponse
+import com.kuvaszuptime.kuvasz.models.checks.RawHttpResponse
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
@@ -14,9 +16,14 @@ import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldStartWith
 import io.kotest.matchers.types.shouldBeInstanceOf
+import io.micronaut.core.io.buffer.ByteBuffer
+import io.micronaut.http.HttpHeaders
+import io.micronaut.http.HttpStatus
+import io.micronaut.http.simple.SimpleHttpResponseFactory
 import io.mockk.every
 import io.mockk.mockk
 import io.reactivex.rxjava3.subscribers.TestSubscriber
+import java.net.URI
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -26,6 +33,18 @@ import kotlin.time.Duration.Companion.seconds
 fun mockUptimeEventRepository(): HttpUptimeEventRepository = mockk(relaxed = true) {
     every { getPreviousEventByMonitorId(any()) } returns null
 }
+
+fun responseCheckContext(
+    monitor: HttpMonitorRecord,
+    response: HttpCheckResponse,
+    visitedUrls: MutableList<URI>,
+    cookieJar: HttpCheckCookieJar = HttpCheckCookieJar(),
+) = HttpResponseCheckContext(monitor, response, visitedUrls, cookieJar)
+
+fun responseSettingCookies(vararg setCookies: String): RawHttpResponse =
+    SimpleHttpResponseFactory()
+        .status<ByteBuffer<*>>(HttpStatus.FOUND)
+        .headers { headers -> setCookies.forEach { headers.add(HttpHeaders.SET_COOKIE, it) } }
 
 fun EventDispatcher.upSubscriber(): TestSubscriber<HttpMonitorUpEvent> {
     val subscriber = TestSubscriber<HttpMonitorUpEvent>()

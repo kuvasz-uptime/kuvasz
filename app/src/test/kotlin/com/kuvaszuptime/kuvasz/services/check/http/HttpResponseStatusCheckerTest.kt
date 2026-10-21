@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.models.TooManyRedirectsException
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResponse
 import com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
+import com.kuvaszuptime.kuvasz.models.monitor.http.toJsonNode
 import com.kuvaszuptime.kuvasz.repositories.PendingFailureRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.util.toUri
@@ -17,6 +18,8 @@ import io.kotest.data.forAll
 import io.kotest.data.headers
 import io.kotest.data.row
 import io.kotest.data.table
+import io.kotest.matchers.booleans.shouldBeFalse
+import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
 import io.micronaut.core.io.buffer.ByteBuffer
 import io.micronaut.http.HttpHeaders
@@ -33,8 +36,14 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
     val mockDbEventHandler = mockk<DatabaseEventHandler>(relaxed = true)
     val mockPendingFailureRepo = mockk<PendingFailureRepository>()
     val dispatcher = EventDispatcher()
-    val checker =
-        HttpResponseStatusChecker(dispatcher, mockUptimeRepo, mockDbEventHandler, mockPendingFailureRepo, AppConfig())
+    val checker = HttpResponseStatusChecker(
+        dispatcher,
+        mockUptimeRepo,
+        mockDbEventHandler,
+        mockPendingFailureRepo,
+        AppConfig(),
+        HttpCheckRequestConfigurator(),
+    )
 
     fun checkerWithMaxRedirects(maxRedirects: Int) = HttpResponseStatusChecker(
         dispatcher,
@@ -42,6 +51,7 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
         mockDbEventHandler,
         mockPendingFailureRepo,
         AppConfig().apply { httpCheckMaxRedirects = maxRedirects },
+        HttpCheckRequestConfigurator(),
     )
 
     fun mockResponse(mockStatus: HttpStatus, redirectLocation: String? = null): HttpCheckResponse {
@@ -82,7 +92,7 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
                 val mockMonitor = mockMonitor()
                 val response = mockResponse(httpStatus)
 
-                val result = checker.evaluate(HttpResponseCheckContext(mockMonitor, response, mutableListOf()))
+                val result = checker.evaluate(responseCheckContext(mockMonitor, response, mutableListOf()))
 
                 result shouldBe HttpCheckResult.Continue
                 upSubscriber.assertNoValues()
@@ -100,7 +110,7 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
             val mockMonitor = mockMonitor()
             val response = mockResponse(HttpStatus.NOT_FOUND)
 
-            val result = checker.evaluate(HttpResponseCheckContext(mockMonitor, response, mutableListOf()))
+            val result = checker.evaluate(responseCheckContext(mockMonitor, response, mutableListOf()))
 
             result shouldBe HttpCheckResult.Finished
             upSubscriber.assertNoValues()
@@ -119,7 +129,7 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
             val mockMonitor = mockMonitor(followRedirects = false)
             val response = mockResponse(HttpStatus.MOVED_PERMANENTLY)
 
-            val result = checker.evaluate(HttpResponseCheckContext(mockMonitor, response, mutableListOf()))
+            val result = checker.evaluate(responseCheckContext(mockMonitor, response, mutableListOf()))
 
             result shouldBe HttpCheckResult.Finished
             upSubscriber.assertNoValues()
@@ -148,7 +158,7 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
                 val response = mockResponse(httpStatus, "https://else.com/redirect")
 
                 val result = checker.evaluate(
-                    HttpResponseCheckContext(
+                    responseCheckContext(
                         monitor = mockMonitor,
                         response = response,
                         visitedUrls = mutableListOf("/something".toUri())
@@ -174,7 +184,7 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
             val mockMonitor = mockMonitor(followRedirects = true)
             val response = mockResponse(HttpStatus.MOVED_PERMANENTLY)
 
-            val result = checker.evaluate(HttpResponseCheckContext(mockMonitor, response, mutableListOf()))
+            val result = checker.evaluate(responseCheckContext(mockMonitor, response, mutableListOf()))
 
             result shouldBe HttpCheckResult.Finished
             upSubscriber.assertNoValues()
@@ -194,7 +204,7 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
             val response = mockResponse(HttpStatus.MOVED_PERMANENTLY, "/redirect")
 
             val result = checker.evaluate(
-                HttpResponseCheckContext(
+                responseCheckContext(
                     monitor = mockMonitor,
                     response = response,
                     visitedUrls = mutableListOf("http://example.com/redirect".toUri())
@@ -206,6 +216,149 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
             upSubscriber.assertNoValues()
             result shouldBe HttpCheckResult.Finished
             verify { mockDbEventHandler.handleUptimeMonitorEvent(any<HttpMonitorDownEvent>()) }
+        }
+
+        should("return Redirected for a revisit if its Cookie header would change, but only once per check") {
+            val gateUri = "http://example.com/gate".toUri()
+            table(
+                headers("visitedUrls", "prepareCookieJar"),
+                // Redirect to the very same URL, after setting a cookie
+                row(
+                    listOf("http://example.com/gate"),
+                    { jar: HttpCheckCookieJar ->
+                        jar.recordRequestTo(gateUri, null)
+                        jar.storeFrom(responseSettingCookies("PHPSESSID=abc; Path=/"), gateUri)
+                    },
+                ),
+                // The cookie was set by an earlier hop of the chain, not by the redirect that leads back
+                row(
+                    listOf("http://example.com/gate", "http://example.com/challenge"),
+                    { jar: HttpCheckCookieJar ->
+                        jar.recordRequestTo(gateUri, null)
+                        jar.storeFrom(responseSettingCookies("cf=1; Path=/"), gateUri)
+                        jar.recordRequestTo("http://example.com/challenge".toUri(), "cf=1")
+                    },
+                ),
+                // The value of a cookie that was already sent has changed
+                row(
+                    listOf("http://example.com/gate"),
+                    { jar: HttpCheckCookieJar ->
+                        jar.recordRequestTo(gateUri, "session=1")
+                        jar.storeFrom(responseSettingCookies("session=2; Path=/"), gateUri)
+                    },
+                ),
+            ).forAll { visitedUrls, prepareCookieJar ->
+                val downSubscriber = dispatcher.downSubscriber()
+                val redirectSubscriber = dispatcher.redirectSubscriber()
+
+                val mockMonitor = mockMonitor(followRedirects = true)
+                val visited = visitedUrls.map { it.toUri() }.toMutableList()
+                val cookieJar = HttpCheckCookieJar().also(prepareCookieJar)
+                val response = mockResponse(HttpStatus.FOUND, "/gate")
+
+                val result = checker.evaluate(responseCheckContext(mockMonitor, response, visited, cookieJar))
+
+                redirectSubscriber.assertSingleValue(mockMonitor.id, "http://example.com/gate")
+                result shouldBe HttpCheckResult.Redirected(
+                    redirectionUri = "http://example.com/gate".toUri(),
+                    visitedUrls = visited,
+                )
+                cookieJar.isRevisitUsed.shouldBeTrue()
+                downSubscriber.assertNoValues()
+                verify(inverse = true) { mockDbEventHandler.handleUptimeMonitorEvent(any()) }
+            }
+        }
+
+        should("return Finished and dispatch a DOWN event for a revisit if its Cookie header wouldn't change") {
+            val gateUri = "http://example.com/gate".toUri()
+            table(
+                headers("customCookieHeader", "prepareCookieJar"),
+                // The revisit was already used up by an earlier hop of the same check
+                row(
+                    null,
+                    { jar: HttpCheckCookieJar ->
+                        jar.recordRequestTo(gateUri, null)
+                        jar.storeFrom(responseSettingCookies("PHPSESSID=abc"), gateUri)
+                        jar.useRevisit()
+                    },
+                ),
+                // The same value is set again, e.g. by a sticky load balancer
+                row(
+                    null,
+                    { jar: HttpCheckCookieJar ->
+                        jar.storeFrom(responseSettingCookies("lb=1"), gateUri)
+                        jar.recordRequestTo(gateUri, "lb=1")
+                        jar.storeFrom(responseSettingCookies("lb=1"), gateUri)
+                    },
+                ),
+                // A cookie is expired and set again with the same value, which only changes the order of the cookies
+                row(
+                    null,
+                    { jar: HttpCheckCookieJar ->
+                        jar.storeFrom(responseSettingCookies("a=1", "b=2"), gateUri)
+                        jar.recordRequestTo(gateUri, "a=1; b=2")
+                        jar.storeFrom(responseSettingCookies("a=; Max-Age=0"), gateUri)
+                        jar.storeFrom(responseSettingCookies("a=1"), gateUri)
+                    },
+                ),
+                // The server sets the very same cookie that the custom Cookie header already sent
+                row(
+                    "sid=1",
+                    { jar: HttpCheckCookieJar ->
+                        jar.recordRequestTo(gateUri, "sid=1")
+                        jar.storeFrom(responseSettingCookies("sid=1"), gateUri)
+                    },
+                ),
+                // The cookie is not sent to the redirection URI
+                row(
+                    null,
+                    { jar: HttpCheckCookieJar ->
+                        jar.recordRequestTo(gateUri, null)
+                        jar.storeFrom(responseSettingCookies("PHPSESSID=abc; Path=/other"), gateUri)
+                    },
+                ),
+                // No cookies at all
+                row(null, { jar: HttpCheckCookieJar -> jar.recordRequestTo(gateUri, null) }),
+            ).forAll { customCookieHeader, prepareCookieJar ->
+                val upSubscriber = dispatcher.upSubscriber()
+                val downSubscriber = dispatcher.downSubscriber()
+
+                val mockMonitor = mockMonitor(followRedirects = true).apply {
+                    crossOriginHeaderPropagation = false
+                    requestHeaders = customCookieHeader
+                        ?.let { mapOf(HttpHeaders.COOKIE to it).toJsonNode() }
+                }
+                val cookieJar = HttpCheckCookieJar()
+                prepareCookieJar(cookieJar)
+                val wasRevisitUsed = cookieJar.isRevisitUsed
+                val response = mockResponse(HttpStatus.FOUND, "/gate")
+
+                val result = checker.evaluate(
+                    responseCheckContext(mockMonitor, response, mutableListOf(gateUri), cookieJar)
+                )
+
+                result shouldBe HttpCheckResult.Finished
+                downSubscriber.assertSingleError<RedirectLoopException>("Redirect loop detected")
+                upSubscriber.assertNoValues()
+                cookieJar.isRevisitUsed shouldBe wasRevisitUsed
+            }
+        }
+
+        should("not use up the revisit when following a redirect to a new URL") {
+            val mockMonitor = mockMonitor(followRedirects = true)
+            val response = mockResponse(HttpStatus.FOUND, "/next")
+            val cookieJar = HttpCheckCookieJar()
+            cookieJar.storeFrom(responseSettingCookies("session=abc"), "http://example.com/".toUri())
+
+            val result = checker.evaluate(
+                responseCheckContext(mockMonitor, response, mutableListOf("http://example.com/".toUri()), cookieJar)
+            )
+
+            result shouldBe HttpCheckResult.Redirected(
+                redirectionUri = "http://example.com/next".toUri(),
+                visitedUrls = mutableListOf("http://example.com/".toUri()),
+            )
+            cookieJar.isRevisitUsed.shouldBeFalse()
         }
 
         should("resolve a relative Location header against the most recently visited hop") {
@@ -220,7 +373,7 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
                 "http://intermediate.test/deep/path".toUri(),
             )
 
-            val result = checker.evaluate(HttpResponseCheckContext(mockMonitor, response, visited))
+            val result = checker.evaluate(responseCheckContext(mockMonitor, response, visited))
 
             // It must NOT be resolved against the monitor's own URL (http://example.com), otherwise the check would
             // be sent back to the monitor's own host instead of the resource the hop pointed at
@@ -245,7 +398,7 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
                 "http://intermediate.test/a/b".toUri(),
             )
 
-            val result = checker.evaluate(HttpResponseCheckContext(mockMonitor, response, visited))
+            val result = checker.evaluate(responseCheckContext(mockMonitor, response, visited))
 
             redirectSubscriber.assertSingleValue(mockMonitor.id, "http://intermediate.test/a/sibling")
             result shouldBe HttpCheckResult.Redirected(
@@ -267,7 +420,7 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
                 "http://intermediate.test/a/b".toUri(),
             )
 
-            val result = checker.evaluate(HttpResponseCheckContext(mockMonitor, response, visited))
+            val result = checker.evaluate(responseCheckContext(mockMonitor, response, visited))
 
             redirectSubscriber.assertSingleValue(mockMonitor.id, "http://intermediate.test/a/httpdocs/index.html")
             result shouldBe HttpCheckResult.Redirected(
@@ -285,7 +438,7 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
             val response = mockResponse(HttpStatus.FOUND, "HTTP://else.com/redirect")
             val visited = mutableListOf("http://example.com".toUri())
 
-            val result = checker.evaluate(HttpResponseCheckContext(mockMonitor, response, visited))
+            val result = checker.evaluate(responseCheckContext(mockMonitor, response, visited))
 
             redirectSubscriber.assertSingleValue(mockMonitor.id, "HTTP://else.com/redirect")
             result shouldBe HttpCheckResult.Redirected(
@@ -302,7 +455,7 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
             val mockMonitor = mockMonitor(followRedirects = true)
             val response = mockResponse(HttpStatus.MOVED_PERMANENTLY, "/redirect")
 
-            val result = checker.evaluate(HttpResponseCheckContext(mockMonitor, response, mutableListOf()))
+            val result = checker.evaluate(responseCheckContext(mockMonitor, response, mutableListOf()))
 
             redirectSubscriber.assertSingleValue(mockMonitor.id, "http://example.com/redirect")
             result shouldBe HttpCheckResult.Redirected(
@@ -327,7 +480,7 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
             )
 
             val result = checkerWithMaxRedirects(2)
-                .evaluate(HttpResponseCheckContext(mockMonitor, response, visited))
+                .evaluate(responseCheckContext(mockMonitor, response, visited))
 
             result shouldBe HttpCheckResult.Finished
             upSubscriber.assertNoValues()
@@ -350,7 +503,7 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
             )
 
             val result = checkerWithMaxRedirects(2)
-                .evaluate(HttpResponseCheckContext(mockMonitor, response, visited))
+                .evaluate(responseCheckContext(mockMonitor, response, visited))
 
             redirectSubscriber.assertSingleValue(mockMonitor.id, "http://attacker.test/2")
             result shouldBe HttpCheckResult.Redirected(
@@ -369,7 +522,7 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
             val response = mockResponse(HttpStatus.MOVED_PERMANENTLY, "http://attacker.test/1")
 
             val result = checkerWithMaxRedirects(0).evaluate(
-                HttpResponseCheckContext(mockMonitor, response, mutableListOf("http://example.com".toUri()))
+                responseCheckContext(mockMonitor, response, mutableListOf("http://example.com".toUri()))
             )
 
             result shouldBe HttpCheckResult.Finished
@@ -396,7 +549,7 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
                 val mockMonitor = mockMonitor(expectedStatusCodes = expectedStatuses.map { it.code }.toSet())
                 val response = mockResponse(expectedStatuses.random())
 
-                val result = checker.evaluate(HttpResponseCheckContext(mockMonitor, response, mutableListOf()))
+                val result = checker.evaluate(responseCheckContext(mockMonitor, response, mutableListOf()))
 
                 result shouldBe HttpCheckResult.Continue
                 upSubscriber.assertNoValues()
@@ -414,7 +567,7 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
             val mockMonitor = mockMonitor(expectedStatusCodes = setOf(HttpStatus.OK.code))
             val response = mockResponse(HttpStatus.NO_CONTENT)
 
-            val result = checker.evaluate(HttpResponseCheckContext(mockMonitor, response, mutableListOf()))
+            val result = checker.evaluate(responseCheckContext(mockMonitor, response, mutableListOf()))
 
             result shouldBe HttpCheckResult.Finished
             upSubscriber.assertNoValues()
@@ -433,7 +586,7 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
             val mockMonitor = mockMonitor(expectedStatusCodes = setOf(HttpStatus.OK.code), followRedirects = true)
             val response = mockResponse(HttpStatus.MOVED_PERMANENTLY)
 
-            val result = checker.evaluate(HttpResponseCheckContext(mockMonitor, response, mutableListOf()))
+            val result = checker.evaluate(responseCheckContext(mockMonitor, response, mutableListOf()))
 
             result shouldBe HttpCheckResult.Finished
             upSubscriber.assertNoValues()
@@ -465,7 +618,7 @@ class HttpResponseStatusCheckerTest : ShouldSpec({
                 val response = mockResponse(httpStatus, "/redirect")
 
                 val result = checker.evaluate(
-                    HttpResponseCheckContext(
+                    responseCheckContext(
                         monitor = mockMonitor,
                         response = response,
                         visitedUrls = mutableListOf("http://example.com".toUri())

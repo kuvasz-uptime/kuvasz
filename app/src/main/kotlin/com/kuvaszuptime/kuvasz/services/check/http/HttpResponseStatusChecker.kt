@@ -28,6 +28,7 @@ class HttpResponseStatusChecker(
     databaseEventHandler: DatabaseEventHandler,
     pendingFailureRepository: PendingFailureRepository,
     private val appConfig: AppConfig,
+    private val checkRequestConfigurator: HttpCheckRequestConfigurator,
 ) : HttpResponseChecker(eventDispatcher, uptimeEventRepository, databaseEventHandler, pendingFailureRepository) {
 
     companion object {
@@ -96,7 +97,7 @@ class HttpResponseStatusChecker(
                     redirectLocation = redirectionUri
                 )
             )
-            if (ctx.visitedUrls.contains(redirectionUri)) {
+            if (ctx.visitedUrls.contains(redirectionUri) && !ctx.tryRevisitWithNewCookies(redirectionUri)) {
                 // If the redirection URI has already been visited, we have a redirect loop
                 dispatchDownEvent(ctx, error = RedirectLoopException())
             } else {
@@ -106,6 +107,25 @@ class HttpResponseStatusChecker(
             // If the response is a redirect but does not contain a Location header, we cannot follow it
             dispatchDownEvent(ctx, InvalidRedirectionException("Invalid redirection without a Location header"))
         }
+    }
+
+    /**
+     * Some sites (typically behind a CDN) redirect a client without a cookie to the very same URL (or back to an
+     * already visited one), after setting the cookie that they expect from the next request. Such a revisit is not a
+     * loop if it would send different cookies than the previous request to the same URL did, but it's only tolerated
+     * once per check.
+     */
+    private fun HttpResponseCheckContext.tryRevisitWithNewCookies(redirectionUri: URI): Boolean {
+        val nextCookieHeader = checkRequestConfigurator.cookieHeaderFor(monitor, redirectionUri, cookieJar)
+        val isTolerated = !cookieJar.isRevisitUsed && !cookieJar.wasSentTo(redirectionUri, nextCookieHeader)
+        if (isTolerated) {
+            cookieJar.useRevisit()
+            logger.debug(
+                "The redirect of monitor with ID: ${monitor.id} points to an already visited URL, but it is followed " +
+                    "once more, because the request would send new cookies"
+            )
+        }
+        return isTolerated
     }
 
     private fun HttpResponse<*>.getRedirectionUri(currentUri: URI): URI? =

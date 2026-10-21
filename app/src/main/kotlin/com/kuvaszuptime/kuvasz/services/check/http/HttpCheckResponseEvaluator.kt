@@ -35,6 +35,7 @@ class HttpCheckResponseEvaluator(
      * @param monitor The monitor record to evaluate the response for
      * @param response The HTTP response along with the latency data to evaluate
      * @param visitedUrls A list of the already visited URLs to track redirection loops
+     * @param cookieJar The cookies set by the previous responses of the same check
      *
      * @return An instance of [com.kuvaszuptime.kuvasz.models.checks.HttpCheckResult] indicating the result of the
      * evaluation.
@@ -43,11 +44,13 @@ class HttpCheckResponseEvaluator(
         monitor: HttpMonitorRecord,
         response: HttpCheckResponse,
         visitedUrls: MutableList<URI>,
+        cookieJar: HttpCheckCookieJar,
     ): HttpCheckResult {
         val ctx = HttpResponseCheckContext(
             monitor = monitor,
             response = response,
             visitedUrls = visitedUrls,
+            cookieJar = cookieJar,
         )
 
         fun HttpCheckResult.finishOrContinueWith(checker: HttpResponseChecker): HttpCheckResult =

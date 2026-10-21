@@ -21,6 +21,32 @@ fun URI.lenientHostAndPort(): Pair<String?, Int> {
         ?: (null to -1)
 }
 
+private const val DEFAULT_HTTP_PORT = 80
+private const val DEFAULT_HTTPS_PORT = 443
+
+/**
+ * Returns the origin (scheme, host and port) of the URI in a normalized form, where a missing port means the default
+ * port of the scheme, or null if the URI has no scheme or authority.
+ */
+fun URI.origin(): String? {
+    // URI.host is null for hosts that can't be parsed (e.g. the ones containing an underscore), so the raw authority
+    // is used for them instead, otherwise two different unparsable hosts would be treated as the same origin
+    val originAuthority = host?.let { "$it:${effectivePort()}" } ?: authority
+    return if (scheme != null && originAuthority != null) {
+        "${scheme.lowercase()}://${originAuthority.lowercase()}"
+    } else {
+        null
+    }
+}
+
+fun URI.hasSameOriginAs(other: URI): Boolean = origin()?.let { it == other.origin() } ?: false
+
+private fun URI.effectivePort(): Int = when {
+    port != -1 -> port
+    scheme.equals("https", ignoreCase = true) -> DEFAULT_HTTPS_PORT
+    else -> DEFAULT_HTTP_PORT
+}
+
 inline fun <reified T : Any> HttpResponse<*>.getBodyAs(): T? = getBody(T::class.java).getOrNull()
 
 @Suppress("MagicNumber")

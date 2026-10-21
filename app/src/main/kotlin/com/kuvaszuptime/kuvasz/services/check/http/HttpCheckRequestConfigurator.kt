@@ -3,11 +3,13 @@ package com.kuvaszuptime.kuvasz.services.check.http
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.monitor.http.requestHeadersAsMap
+import com.kuvaszuptime.kuvasz.util.hasSameOriginAs
 import com.kuvaszuptime.kuvasz.util.loggerFor
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.MediaType
 import io.micronaut.http.MutableHttpRequest
+import io.netty.handler.codec.http.cookie.ClientCookieEncoder
 import jakarta.inject.Singleton
 import java.net.URI
 
@@ -21,12 +23,50 @@ class HttpCheckRequestConfigurator {
      * @param monitor The monitor record containing request details.
      * @param uri The URI to which the request will be sent. Because of possible redirects,
      * this URI may differ from the one stored in the monitor.
+     * @param cookieJar The cookies set by the previous responses of the same check. The Cookie header of the request
+     * is recorded in it as well.
      * @return A configured [io.micronaut.http.MutableHttpRequest].
      */
-    fun fromMonitor(monitor: HttpMonitorRecord, uri: URI): MutableHttpRequest<*> =
-        provisionRequestWithMethodAndBody(monitor.requestMethod, uri, monitor.requestBody)
+    fun fromMonitor(monitor: HttpMonitorRecord, uri: URI, cookieJar: HttpCheckCookieJar): MutableHttpRequest<*> {
+        val cookieHeader = cookieHeaderFor(monitor, uri, cookieJar)
+        cookieJar.recordRequestTo(uri, cookieHeader)
+        return provisionRequestWithMethodAndBody(monitor.requestMethod, uri, monitor.requestBody)
             .initializeHeaders()
             .decorateWithHeaders(monitor, uri)
+            .apply {
+                if (cookieHeader != null) {
+                    headers.set(HttpHeaders.COOKIE, cookieHeader)
+                }
+            }
+    }
+
+    /**
+     * Builds the Cookie header of a request to [uri]: the cookies that were set during the same check are merged into
+     * the Cookie header of the custom request headers (if it's sent to [uri] at all). If a cookie with the same name is
+     * in both, the jar's one wins, because that's the most recent value set by the server. The rest of the custom
+     * cookies are kept as they were configured, without parsing and re-encoding them, so even the ones that don't
+     * follow RFC 6265 are sent unchanged.
+     *
+     * @return The value of the Cookie header, or null if there is nothing to send
+     */
+    fun cookieHeaderFor(monitor: HttpMonitorRecord, uri: URI, cookieJar: HttpCheckCookieJar): String? {
+        val customCookieHeader = monitor.requestHeadersAsMap()
+            .entries
+            .firstOrNull { it.key.equals(HttpHeaders.COOKIE, ignoreCase = true) }
+            ?.value
+            ?.takeIf { monitor.isRequestHeaderPropagationAllowed(uri) }
+        val jarCookies = cookieJar.cookiesFor(uri)
+        if (jarCookies.isEmpty()) {
+            return customCookieHeader
+        }
+        val jarCookieNames = jarCookies.map { it.name() }.toSet()
+        val customCookies = customCookieHeader.orEmpty()
+            .split(";")
+            .map { it.trim() }
+            .filter { it.isNotEmpty() && it.substringBefore("=").trim() !in jarCookieNames }
+        val encodedJarCookies = jarCookies.map { ClientCookieEncoder.LAX.encode(it) }
+        return (customCookies + encodedJarCookies).joinToString("; ")
+    }
 
     private fun provisionRequestWithMethodAndBody(
         method: HttpMethod,
@@ -91,27 +131,9 @@ class HttpCheckRequestConfigurator {
     private fun HttpMonitorRecord.isRequestHeaderPropagationAllowed(uri: URI): Boolean =
         crossOriginHeaderPropagation || uri.hasSameOriginAs(URI(url))
 
-    private fun URI.hasSameOriginAs(other: URI): Boolean =
-        scheme.equals(other.scheme, ignoreCase = true) &&
-            originAuthority?.equals(other.originAuthority, ignoreCase = true) == true
-
-    // URI.host is null for hosts that can't be parsed (e.g. the ones containing an underscore), so the raw authority
-    // is compared for them instead, otherwise two different unparsable hosts would be treated as the same origin
-    private val URI.originAuthority: String?
-        get() = host?.let { "$it:$effectivePort" } ?: authority
-
-    private val URI.effectivePort: Int
-        get() = when {
-            port != -1 -> port
-            scheme.equals("https", ignoreCase = true) -> DEFAULT_HTTPS_PORT
-            else -> DEFAULT_HTTP_PORT
-        }
-
     companion object {
         private val logger = loggerFor<HttpCheckRequestConfigurator>()
         const val USER_AGENT = "Kuvasz Uptime Checker/2 https://github.com/kuvasz-uptime/kuvasz"
         private const val FALLBACK_EMPTY_BODY = "{}"
-        private const val DEFAULT_HTTP_PORT = 80
-        private const val DEFAULT_HTTPS_PORT = 443
     }
 }

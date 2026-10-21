@@ -207,6 +207,16 @@ A **relative** `Location` header is resolved against the URL of the hop that ret
 
 Your [**custom request headers**](#request-headers) are only sent to a redirect target on a different origin if [**cross-origin header propagation**](#cross-origin-header-propagation) is enabled.
 
+#### Cookies along the redirect chain
+
+The **cookies set by the responses** of a check (via `Set-Cookie` headers) are sent back on the **later hops of the same redirect chain**, like a browser would do it. Some sites (typically behind a CDN) redirect a client without a cookie to the **very same URL**, setting e.g. a session cookie on the way, and only serve the actual page to the requests that send it back.
+
+- If a redirect points to an **already visited URL**, but the request would send **different cookies** than the previous request to the same URL did (e.g. because a hop of the chain set a cookie in the meantime), it's **not treated as a redirect loop**, and the URL is requested once more with the new cookies. This is tolerated **only once per check**, a second revisit is reported as a redirect loop.
+- The cookies are only sent back to the **origin (scheme, host and port) that set them**, even if they have a `Domain` attribute, the same way as your [**custom request headers**](#cross-origin-header-propagation) are kept on the origin of the monitored URL. So a cookie set on `https://example.com` is never sent to `http://example.com` (in cleartext), to `https://example.com:8443`, or to `https://www.example.com`, and a cookie set over plain `http` can't override the ones of the `https` origin either.
+- Their `Path` and `Secure` attributes, and the `__Secure-` and `__Host-` name prefixes are respected like in browsers, and the expired cookies (e.g. `Max-Age=0`) are removed.
+- The cookies are **never kept between the checks**, every check starts without any.
+- If your [**custom request headers**](#request-headers) contain a `Cookie` header, the cookies set by the server are merged into it, and the server's value wins if a cookie with the same name is in both. Your other cookies are sent as you configured them.
+
 ### Cross-origin header propagation
 
 <!-- md:version 4.4.0 -->

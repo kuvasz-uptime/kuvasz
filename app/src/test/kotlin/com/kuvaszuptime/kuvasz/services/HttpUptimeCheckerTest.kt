@@ -12,6 +12,7 @@ import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.repositories.HttpLatencyLogRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
+import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckCookieJar
 import com.kuvaszuptime.kuvasz.services.check.http.HttpUptimeChecker
 import com.kuvaszuptime.kuvasz.testutils.forwardToSubscriber
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
@@ -131,7 +132,7 @@ class HttpUptimeCheckerTest(
                 val monitor = createHttpMonitor(monitorRepository)
                 val doAfterCalled = AtomicBoolean(false)
                 coEvery {
-                    uptimeCheckerSpy.sendHttpRequest(any<HttpMonitorRecord>(), any<URI>())
+                    uptimeCheckerSpy.sendHttpRequest(any<HttpMonitorRecord>(), any<URI>(), any<HttpCheckCookieJar>())
                 } throws CancellationException("The task was rejected")
 
                 then("it should propagate the cancellation, instead of recording it as a failed check") {
@@ -288,7 +289,7 @@ class HttpUptimeCheckerTest(
                 }
             }
         coEvery {
-            uptimeChecker.sendHttpRequest(any<HttpMonitorRecord>(), requestUri ?: any<URI>())
+            uptimeChecker.sendHttpRequest(any<HttpMonitorRecord>(), requestUri ?: any<URI>(), any<HttpCheckCookieJar>())
         } returns HttpCheckResponse(httpResponse = response, latency = 100)
     }
 }

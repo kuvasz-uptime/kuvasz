@@ -38,7 +38,7 @@ class HttpResponseTimeCheckerTest : ShouldSpec({
             val mockMonitor = mockMonitor(responseTimeThreshold = null)
             val response = mockResponse(mockLatency = 1000000)
 
-            val result = checker.evaluate(HttpResponseCheckContext(mockMonitor, response, mutableListOf()))
+            val result = checker.evaluate(responseCheckContext(mockMonitor, response, mutableListOf()))
 
             result shouldBe HttpCheckResult.Continue
             upSubscriber.assertNoValues()
@@ -55,7 +55,7 @@ class HttpResponseTimeCheckerTest : ShouldSpec({
             val mockMonitor = mockMonitor(responseTimeThreshold = 2000)
             val response = mockResponse(mockLatency = 1000)
 
-            val result = checker.evaluate(HttpResponseCheckContext(mockMonitor, response, mutableListOf()))
+            val result = checker.evaluate(responseCheckContext(mockMonitor, response, mutableListOf()))
 
             result shouldBe HttpCheckResult.Continue
             upSubscriber.assertNoValues()
@@ -72,7 +72,7 @@ class HttpResponseTimeCheckerTest : ShouldSpec({
             val mockMonitor = mockMonitor(responseTimeThreshold = 2000)
             val response = mockResponse(mockLatency = 3000)
 
-            val result = checker.evaluate(HttpResponseCheckContext(mockMonitor, response, mutableListOf()))
+            val result = checker.evaluate(responseCheckContext(mockMonitor, response, mutableListOf()))
 
             result shouldBe HttpCheckResult.Finished
             upSubscriber.assertNoValues()
