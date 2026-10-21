@@ -41,6 +41,7 @@ import org.mockserver.model.Delay
 import org.mockserver.model.HttpRequest
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
+import org.mockserver.version.Version
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.Network
 import org.testcontainers.containers.wait.strategy.Wait
@@ -52,7 +53,8 @@ import java.net.ServerSocket
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
 
-private const val MOCKSERVER_IMAGE = "mockserver/mockserver:8.0.0"
+// The client refuses to talk to a server with a different major.minor version, so the image follows the dependency
+private val MOCKSERVER_IMAGE = "mockserver/mockserver:${Version.getVersion()}"
 private const val NGINX_IMAGE = "nginx:1.30.4-alpine"
 private const val SQUID_IMAGE = "ubuntu/squid:6.6-24.04_edge"
 private const val THREE_PROXY_IMAGE = "ghcr.io/tarampampam/3proxy:2.3.0"
