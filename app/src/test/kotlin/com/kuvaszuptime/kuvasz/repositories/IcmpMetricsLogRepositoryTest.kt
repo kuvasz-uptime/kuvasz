@@ -9,6 +9,7 @@ import io.kotest.matchers.shouldBe
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import java.time.Duration
 import java.time.OffsetDateTime
+import java.time.temporal.ChronoUnit
 
 private val PERIOD = Duration.ofHours(1)
 
@@ -53,6 +54,47 @@ class IcmpMetricsLogRepositoryTest(
             }
         }
 
+        given("the fetchIcmpChartPoints() method") {
+
+            `when`("it's called with a resolution") {
+                val monitor = createIcmpMonitor(monitorRepository)
+                val quarter = getCurrentTimestamp().truncatedTo(ChronoUnit.HOURS).minusHours(1)
+                insertLogAt(monitor.id, createdAt = quarter.plusMinutes(1), packetLoss = 0, latencyMs = 20)
+                insertLogAt(monitor.id, createdAt = quarter.plusMinutes(2), packetLoss = 100, latencyMs = null)
+                insertLogAt(monitor.id, createdAt = quarter.plusMinutes(3), packetLoss = 50, latencyMs = 40)
+
+                val points = metricsLogRepository.fetchIcmpChartPoints(
+                    monitor.id,
+                    Duration.ofDays(7),
+                    Duration.ofMinutes(15),
+                )
+
+                then("both the latency and the packet loss get their average and their highest reading") {
+                    val point = points.single()
+                    point.createdAt.toInstant() shouldBe quarter.toInstant()
+                    point.latencyInMs shouldBe 30
+                    point.maxLatencyInMs shouldBe 40
+                    point.packetLossPercentage shouldBe 50
+                    point.maxPacketLossPercentage shouldBe 100
+                }
+            }
+
+            `when`("it's called without a resolution") {
+                val monitor = createIcmpMonitor(monitorRepository)
+                insertLogAt(monitor.id, createdAt = minutesAgo(20), packetLoss = 100, latencyMs = null)
+                insertLogAt(monitor.id, createdAt = minutesAgo(10), packetLoss = 0, latencyMs = 15)
+
+                val points = metricsLogRepository.fetchIcmpChartPoints(monitor.id, PERIOD, resolution = null)
+
+                then("every log is a point, the newest first, without the highest readings") {
+                    points.map { listOf(it.latencyInMs, it.packetLossPercentage) } shouldBe
+                        listOf(listOf(15, 0), listOf(null, 100))
+                    points.map { listOf(it.maxLatencyInMs, it.maxPacketLossPercentage) } shouldBe
+                        listOf(listOf(null, null), listOf(null, null))
+                }
+            }
+        }
+
         given("the inherited getAverageLatencies() method") {
 
             `when`("a monitor has logs without a latency, because none of its packets came back") {
@@ -72,12 +114,12 @@ class IcmpMetricsLogRepositoryTest(
 
     private fun minutesAgo(minutes: Long): OffsetDateTime = getCurrentTimestamp().minusMinutes(minutes)
 
-    private fun insertLogAt(monitorId: Long, createdAt: OffsetDateTime, packetLoss: Int) {
+    private fun insertLogAt(monitorId: Long, createdAt: OffsetDateTime, packetLoss: Int, latencyMs: Int? = 10) {
         dslContext.insertInto(ICMP_METRICS_LOG)
             .set(
                 IcmpMetricsLogRecord()
                     .setMonitorId(monitorId)
-                    .setLatencyMs(10)
+                    .setLatencyMs(latencyMs)
                     .setPacketLossPercentage(packetLoss)
                     .setCreatedAt(createdAt)
             )

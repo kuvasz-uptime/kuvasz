@@ -218,6 +218,10 @@ internal fun FlowContent.monitorMetricsBlock(
             |memoryLimit: "${Messages.dockerMemoryLimit()}",
             |containerRestarted: "${Messages.dockerContainerHasRestarted()}",
             |containerRestartedDetails: "${Messages.dockerContainerRestartedDetails("{delta}", "{total}")}",
+            |latencyHighest: "${Messages.chartHighestOf(Messages.latencyBlockTitle())}",
+            |packetLossHighest: "${Messages.chartHighestOf(Messages.packetLossBlockTitle())}",
+            |cpuUsageHighest: "${Messages.chartHighestOf(Messages.dockerCpuUsageBlockTitle())}",
+            |memoryUsageHighest: "${Messages.chartHighestOf(Messages.dockerMemoryUsageBlockTitle())}",
             |},
             |"$DEFAULT_METRICS_PERIOD"
             |)

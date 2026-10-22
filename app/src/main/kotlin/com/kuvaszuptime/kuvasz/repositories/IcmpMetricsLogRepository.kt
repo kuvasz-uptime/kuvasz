@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.repositories
 
 import com.kuvaszuptime.kuvasz.jooq.Tables.ICMP_METRICS_LOG
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMetricsLogRecord
+import com.kuvaszuptime.kuvasz.models.dto.monitor.chart.IcmpChartPointDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMetricsLogDto
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
@@ -44,6 +45,27 @@ class IcmpMetricsLogRepository(dslContext: DSLContext) :
 
     fun getAveragePacketLosses(monitorIds: Collection<Long>, period: Duration): Map<Long, Int> =
         averagesByMonitor(ICMP_METRICS_LOG.PACKET_LOSS_PERCENTAGE, monitorIds, period)
+
+    fun fetchIcmpChartPoints(monitorId: Long, period: Duration, resolution: Duration?): List<IcmpChartPointDto> =
+        chartQueries.fetchPoints(
+            monitorId = monitorId,
+            period = period,
+            resolution = resolution,
+            createdAtAlias = IcmpChartPointDto::createdAt.name,
+            measurements = listOf(
+                chartQueries.measurement(
+                    ICMP_METRICS_LOG.LATENCY_MS,
+                    IcmpChartPointDto::latencyInMs.name,
+                    IcmpChartPointDto::maxLatencyInMs.name,
+                ),
+                chartQueries.measurement(
+                    ICMP_METRICS_LOG.PACKET_LOSS_PERCENTAGE,
+                    IcmpChartPointDto::packetLossPercentage.name,
+                    IcmpChartPointDto::maxPacketLossPercentage.name,
+                ),
+            ),
+            pointType = IcmpChartPointDto::class.java,
+        )
 
     override fun DSLContext.logDtoSelect(monitorId: Long) =
         select(

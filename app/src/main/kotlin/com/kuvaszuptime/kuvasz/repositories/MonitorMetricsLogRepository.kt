@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.repositories
 
+import com.kuvaszuptime.kuvasz.models.dto.monitor.chart.LatencyChartPointDto
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import org.jooq.DSLContext
 import org.jooq.Field
@@ -7,11 +8,15 @@ import org.jooq.Record
 import org.jooq.SelectConditionStep
 import org.jooq.Table
 import org.jooq.TableField
+import org.jooq.impl.DSL
 import org.jooq.impl.DSL.avg
+import org.jooq.impl.DSL.castNull
+import org.jooq.impl.DSL.inline
 import org.jooq.impl.DSL.max
 import org.jooq.impl.DSL.min
 import org.jooq.impl.DSL.percentileCont
 import org.jooq.impl.DSL.round
+import org.jooq.impl.SQLDataType
 import java.math.BigDecimal
 import java.time.Duration
 import java.time.OffsetDateTime
@@ -39,6 +44,8 @@ abstract class MonitorMetricsLogRepository<R : Record, D : Any>(
     private val logTable: MetricsLogTable<R>,
     private val dtoType: Class<D>,
 ) {
+
+    protected val chartQueries = MetricsLogChartQueries(dslContext, logTable)
 
     /**
      * The type specific projection of a monitor's log rows onto its own DTO.
@@ -102,6 +109,26 @@ abstract class MonitorMetricsLogRepository<R : Record, D : Any>(
     }
 
     /**
+     * The points of the latency chart of a monitor, for the types whose chart shows their latency, see
+     * [MetricsLogChartQueries.fetchPoints].
+     */
+    fun fetchLatencyChartPoints(monitorId: Long, period: Duration, resolution: Duration?): List<LatencyChartPointDto> =
+        chartQueries.fetchPoints(
+            monitorId = monitorId,
+            period = period,
+            resolution = resolution,
+            createdAtAlias = LatencyChartPointDto::createdAt.name,
+            measurements = listOf(
+                chartQueries.measurement(
+                    logTable.latency,
+                    LatencyChartPointDto::latencyInMs.name,
+                    LatencyChartPointDto::maxLatencyInMs.name,
+                ),
+            ),
+            pointType = LatencyChartPointDto::class.java,
+        )
+
+    /**
      * Aggregates a measurement of a monitor's logs over the given period. Rows where the measurement is null are left
      * out, they carry no reading at all - a container that was not sampled has no CPU reading, for example.
      *
@@ -159,15 +186,84 @@ abstract class MonitorMetricsLogRepository<R : Record, D : Any>(
         .groupBy(logTable.monitorId)
         .fetchOneInto(resultType)
 
-    /**
-     * Brings a computed decimal back to the type of the column it was computed from: an integral measurement is
-     * rounded to a whole unit, a fractional one only has its scale trimmed, because rounding it to a whole unit
-     * would throw away everything the column keeps decimals for.
-     */
-    private fun <N : Number> Field<BigDecimal>.asMeasurementOf(measurement: TableField<R, N>): Field<N> =
-        if (measurement.type == BigDecimal::class.java) {
-            round(this, measurement.dataType.scale()).coerce(measurement.dataType)
-        } else {
-            round(this).cast(measurement.dataType)
-        }
 }
+
+class MetricsLogChartQueries<R : Record>(
+    private val dslContext: DSLContext,
+    private val logTable: MetricsLogTable<R>,
+) {
+
+    /**
+     * The points of a monitor's chart in the given period, newest first. Without a [resolution], every log is a point.
+     * With one, the logs are grouped into buckets of that length (aligned to the epoch, so to whole hours, quarters,
+     * etc.), and a point holds the average of each measurement in its bucket, plus the highest reading of the ones
+     * that have a max alias. A null reading (e.g. a failed check) is left out of both, so a bucket of only null
+     * readings is a gap on the chart, like a single null reading is.
+     */
+    fun <P : Any> fetchPoints(
+        monitorId: Long,
+        period: Duration,
+        resolution: Duration?,
+        createdAtAlias: String,
+        measurements: List<Measurement>,
+        pointType: Class<P>,
+    ): List<P> {
+        val since = getCurrentTimestamp().minusSeconds(period.toSeconds())
+
+        return if (resolution == null) {
+            dslContext
+                .select(listOf(logTable.createdAt.`as`(createdAtAlias)) + measurements.flatMap { it.ofLog })
+                .from(logTable.table)
+                .where(logTable.monitorId.eq(monitorId))
+                .and(logTable.createdAt.greaterOrEqual(since))
+                .orderBy(logTable.createdAt.desc(), logTable.id.desc())
+                .fetchInto(pointType)
+        } else {
+            val bucketStart = bucketStart(logTable.createdAt, resolution)
+            dslContext
+                .select(listOf(bucketStart.`as`(createdAtAlias)) + measurements.flatMap { it.ofBucket })
+                .from(logTable.table)
+                .where(logTable.monitorId.eq(monitorId))
+                .and(logTable.createdAt.greaterOrEqual(since))
+                .groupBy(bucketStart)
+                .orderBy(bucketStart.desc())
+                .fetchInto(pointType)
+        }
+    }
+
+    fun <N : Number> measurement(measurement: TableField<R, N>, alias: String, maxAlias: String? = null) = Measurement(
+        ofLog = listOfNotNull(measurement.`as`(alias), maxAlias?.let { castNull(measurement.dataType).`as`(it) }),
+        ofBucket = listOfNotNull(
+            avg(measurement).asMeasurementOf(measurement).`as`(alias),
+            maxAlias?.let { max(measurement).`as`(it) },
+        ),
+    )
+
+    /**
+     * The start of the bucket of the given length that the timestamp falls into, counted from the epoch
+     * */
+    private fun bucketStart(timestamp: Field<OffsetDateTime>, length: Duration): Field<OffsetDateTime> = DSL.field(
+        "to_timestamp(floor(extract(epoch from {0}) / {1}) * {1})",
+        SQLDataType.TIMESTAMPWITHTIMEZONE,
+        timestamp,
+        inline(length.toSeconds()),
+    )
+
+    /**
+     * The columns of a measurement on a chart: [ofLog] when every log is a point, [ofBucket] when a point is a bucket
+     * of logs. A log has no highest reading of its own, so its max column is null.
+     */
+    class Measurement(val ofLog: List<Field<*>>, val ofBucket: List<Field<*>>)
+}
+
+/**
+ * Brings a computed decimal back to the type of the column it was computed from: an integral measurement is
+ * rounded to a whole unit, a fractional one only has its scale trimmed, because rounding it to a whole unit
+ * would throw away everything the column keeps decimals for.
+ */
+private fun <R : Record, N : Number> Field<BigDecimal>.asMeasurementOf(measurement: TableField<R, N>): Field<N> =
+    if (measurement.type == BigDecimal::class.java) {
+        round(this, measurement.dataType.scale()).coerce(measurement.dataType)
+    } else {
+        round(this).cast(measurement.dataType)
+    }

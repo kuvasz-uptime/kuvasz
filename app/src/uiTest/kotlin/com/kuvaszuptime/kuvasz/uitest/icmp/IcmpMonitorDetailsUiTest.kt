@@ -100,12 +100,12 @@ class IcmpMonitorDetailsUiTest(private val icmpMonitorRepository: IcmpMonitorRep
             // A reload would drop this flag of the current document
             page.evaluate("window.notReloaded = true")
 
-            val statsUrl = "/api/v2/icmp-monitors/${monitor.id}/stats?period=$SEVEN_DAYS_PERIOD"
+            val chartUrl = "/api/internal/monitor-charts/icmp/${monitor.id}?period=$SEVEN_DAYS_PERIOD"
             // Every incident of the period, in a single page
             val incidentsUrl = "/api/v3/incidents/ICMP?monitorId=${monitor.id}&period=$SEVEN_DAYS_PERIOD" +
                 "&includeResolved=true&page=1&size="
             page.waitForRequest({ incidentsUrl in it.url() }) {
-                page.waitForRequest({ it.url().endsWith(statsUrl) }) {
+                page.waitForRequest({ it.url().endsWith(chartUrl) }) {
                     details.metricsPeriodSelector.selectOption(SEVEN_DAYS_PERIOD)
                 }
             }
@@ -122,14 +122,14 @@ class IcmpMonitorDetailsUiTest(private val icmpMonitorRepository: IcmpMonitorRep
             assertThat(details.metricsChartSvg).isVisible()
 
             // Turning the auto-refresh on polls the metrics right away, while the stale ones are kept on the screen
-            val pendingAutoRefresh = holdStatsRequests(page, monitor.id, DEFAULT_PERIOD)
+            val pendingAutoRefresh = holdChartRequests(page, monitor.id, DEFAULT_PERIOD)
             details.autoRefreshToggle.check()
             page.waitForCondition { pendingAutoRefresh.get() != null }
             assertThat(details.metricsLoadingOverlay).isHidden()
             pendingAutoRefresh.get().shouldNotBeNull().resume()
             details.autoRefreshToggle.uncheck()
 
-            val pendingPeriodChange = holdStatsRequests(page, monitor.id, SEVEN_DAYS_PERIOD)
+            val pendingPeriodChange = holdChartRequests(page, monitor.id, SEVEN_DAYS_PERIOD)
             details.metricsPeriodSelector.selectOption(SEVEN_DAYS_PERIOD)
             page.waitForCondition { pendingPeriodChange.get() != null }
             assertThat(details.metricsLoadingOverlay).isVisible()
@@ -186,12 +186,12 @@ class IcmpMonitorDetailsUiTest(private val icmpMonitorRepository: IcmpMonitorRep
         private const val INVERTED_ACCENT_IN_LIGHT_MODE = "#1f2937"
 
         /**
-         * Holds back the stats requests of the monitor for the given [period]: the last one of them is kept in the
+         * Holds back the chart requests of the monitor for the given [period]: the last one of them is kept in the
          * returned reference, and it's only answered once it's resumed.
          */
-        private fun holdStatsRequests(page: Page, monitorId: Long, period: String): AtomicReference<Route?> {
+        private fun holdChartRequests(page: Page, monitorId: Long, period: String): AtomicReference<Route?> {
             val pendingRoute = AtomicReference<Route?>()
-            page.route({ it.endsWith("/api/v2/icmp-monitors/$monitorId/stats?period=$period") }) {
+            page.route({ it.endsWith("/api/internal/monitor-charts/icmp/$monitorId?period=$period") }) {
                 pendingRoute.set(it)
             }
             return pendingRoute

@@ -48,6 +48,7 @@ const {
     buildIncidentAnnotations,
     CHART_INCIDENTS_PAGE_SIZE,
     buildRestartAnnotations,
+    metricsChartTooltip,
     formatChartTimestamp,
     toDateTimeLocalValue,
     anchorPopupToModal,
@@ -568,6 +569,10 @@ const CHART_LABELS = {
     memoryLimit: 'Memory limit',
     containerRestarted: 'The container has been restarted',
     containerRestartedDetails: 'Restarts since the last check: {delta} (total: {total})',
+    latencyHighest: 'Latency (highest)',
+    packetLossHighest: 'Packet loss (highest)',
+    cpuUsageHighest: 'CPU (highest)',
+    memoryUsageHighest: 'Memory (highest)',
 };
 const MARKER_COLORS = {started: 'red', resolved: 'green', restarted: 'yellow'};
 const METRICS_LOGS_OF_AN_HOUR = [
@@ -600,56 +605,98 @@ const stubFetch = (t, implementation) => {
     });
 };
 
-test('httpMetricsBlock.transformData maps latency logs to a single series', () => {
+// The values of a chart series, without the times of the points
+const valuesOf = (series) => series.data.map(point => point.y);
+
+test('httpMetricsBlock.transformData maps the checks to a single series, without a band', () => {
     const block = httpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
     const result = block.transformData({
-        latencyLogs: [
-            {createdAt: '2024-01-01T00:00:00Z', latencyInMs: '123'},
-            {createdAt: '2024-01-01T00:01:00Z', latencyInMs: 200},
+        points: [
+            {createdAt: '2024-01-01T00:00:00Z', latencyInMs: 123, maxLatencyInMs: null},
+            {createdAt: '2024-01-01T00:01:00Z', latencyInMs: 200, maxLatencyInMs: null},
         ],
     }, []);
-    assert.equal(result.labels.length, 2);
     assert.equal(result.series.length, 1);
     assert.equal(result.series[0].name, 'Latency');
-    assert.deepEqual(result.series[0].data, [123, 200]);
+    assert.equal(result.series[0].type, 'area');
+    assert.deepEqual(result.series[0].data, [
+        {x: Date.parse('2024-01-01T00:00:00Z'), y: 123},
+        {x: Date.parse('2024-01-01T00:01:00Z'), y: 200},
+    ]);
     assert.deepEqual(result.annotations, {xaxis: [], points: []});
+});
+
+test('httpMetricsBlock.transformData adds the band of the highest latencies of the buckets of a long period', () => {
+    const block = httpMetricsBlock(1, true, 60, CHART_LABELS, 'PT720H');
+    const result = block.transformData({
+        points: [
+            {createdAt: '2024-01-01T01:00:00Z', latencyInMs: 40, maxLatencyInMs: 900},
+            // A bucket of only failed checks is a gap in both
+            {createdAt: '2024-01-01T00:00:00Z', latencyInMs: null, maxLatencyInMs: null},
+        ],
+    }, []);
+    assert.deepEqual(result.series.map(series => [series.name, series.type]), [
+        ['Latency', 'area'],
+        ['Latency (highest)', 'rangeArea'],
+    ]);
+    assert.deepEqual(valuesOf(result.series[0]), [40, null]);
+    assert.deepEqual(result.series[1].data, [
+        {x: Date.parse('2024-01-01T01:00:00Z'), y: [40, 900]},
+        {x: Date.parse('2024-01-01T00:00:00Z'), y: null},
+    ]);
 });
 
 test('icmpMetricsBlock.transformData merges latency and packet loss into a single chart', () => {
     const block = icmpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
     const result = block.transformData({
-        metricsLogs: [
-            {createdAt: '2024-01-01T00:00:00Z', latencyInMs: null, packetLossPercentage: '50'},
-            {createdAt: '2024-01-01T00:01:00Z', latencyInMs: '80', packetLossPercentage: 0},
+        points: [
+            {createdAt: '2024-01-01T00:00:00Z', latencyInMs: null, packetLossPercentage: 50},
+            {createdAt: '2024-01-01T00:01:00Z', latencyInMs: 80, packetLossPercentage: 0},
         ],
     }, []);
-    assert.equal(result.labels.length, 2);
-    // Both series share the same labels, but are rendered differently, on an axis of their own
+    // Both series are rendered differently, on an axis of their own
     assert.deepEqual(result.series.map(series => series.name), ['Latency', 'Packet loss']);
     assert.deepEqual(result.series.map(series => series.type), ['area', 'line']);
     // Null latency must stay null (a gap in the chart), not become NaN
-    assert.deepEqual(result.series[0].data, [null, 80]);
-    assert.deepEqual(result.series[1].data, [50, 0]);
+    assert.deepEqual(valuesOf(result.series[0]), [null, 80]);
+    assert.deepEqual(valuesOf(result.series[1]), [50, 0]);
+});
+
+test('icmpMetricsBlock.transformData adds a band to both the latency and the packet loss of a long period', () => {
+    const block = icmpMetricsBlock(1, true, 60, CHART_LABELS, 'PT168H');
+    const result = block.transformData({
+        points: [{
+            createdAt: '2024-01-01T00:00:00Z',
+            latencyInMs: 80,
+            maxLatencyInMs: 300,
+            packetLossPercentage: 2,
+            maxPacketLossPercentage: 100,
+        }],
+    }, []);
+    // The bands come last, so the colors and the axes of the other series keep their places
+    assert.deepEqual(result.series.map(series => series.name),
+        ['Latency', 'Packet loss', 'Latency (highest)', 'Packet loss (highest)']);
+    assert.deepEqual(result.series[2].data[0].y, [80, 300]);
+    assert.deepEqual(result.series[3].data[0].y, [2, 100]);
 });
 
 test('tcpMetricsBlock.transformData preserves null latency and has no packet-loss series', () => {
     const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
     const result = block.transformData({
-        metricsLogs: [
+        points: [
             {createdAt: '2024-01-01T00:00:00Z', latencyInMs: null},
-            {createdAt: '2024-01-01T00:01:00Z', latencyInMs: '80'},
+            {createdAt: '2024-01-01T00:01:00Z', latencyInMs: 80},
         ],
     }, []);
     // Null latency must stay null (a gap in the chart), not become NaN
-    assert.deepEqual(result.series[0].data, [null, 80]);
-    assert.equal(result.labels.length, 2);
+    assert.deepEqual(valuesOf(result.series[0]), [null, 80]);
     // TCP monitors track latency only - there is no packet-loss series
     assert.equal(result.series.length, 1);
 });
 
 test('transformData marks the incidents of the whole selected period, not only of the range of the logs', () => {
     const block = metricsBlockAt(tcpMetricsBlock, NOW);
-    const result = block.transformData({metricsLogs: METRICS_LOGS_OF_AN_HOUR}, [
+    const result = block.transformData({points: METRICS_LOGS_OF_AN_HOUR}, [
         {incidentType: 'TCP', startedAt: '2024-01-01T00:10:00Z', endedAt: '2024-01-01T00:20:00Z', details: null},
         // Resolved before the first log
         {incidentType: 'TCP', startedAt: '2023-12-31T23:00:00Z', endedAt: '2023-12-31T23:30:00Z', details: null},
@@ -675,7 +722,7 @@ test('transformData marks the incidents of the whole selected period, not only o
 test('transformData marks the incidents of an HTTP monitor without any latency logs in the selected period', () => {
     // An HTTP monitor only logs the latency of its successful checks, so there are no logs while it's down
     const block = metricsBlockAt(httpMetricsBlock, NOW);
-    const result = block.transformData({latencyLogs: []}, [
+    const result = block.transformData({points: []}, [
         {incidentType: 'HTTP', startedAt: '2023-12-31T12:00:00Z', endedAt: null, details: 'Connection refused'},
     ]);
     assert.deepEqual(result.series[0].data, []);
@@ -685,7 +732,7 @@ test('transformData marks the incidents of an HTTP monitor without any latency l
 
 test('transformData extends the range to the data newer than the local clock', () => {
     const block = metricsBlockAt(dnsMetricsBlock, NOW);
-    const result = block.transformData({metricsLogs: [{createdAt: '2024-01-01T02:00:01Z', latencyInMs: 5}]}, [
+    const result = block.transformData({points: [{createdAt: '2024-01-01T02:00:01Z', latencyInMs: 5}]}, [
         {incidentType: 'DNS', startedAt: '2024-01-01T02:00:01.004Z', endedAt: '2024-01-01T02:00:02Z', details: null},
     ]);
     assert.deepEqual(result.range, {start: NOW - ONE_DAY_IN_MILLIS, end: Date.parse('2024-01-01T02:00:02Z')});
@@ -695,7 +742,7 @@ test('transformData extends the range to the data newer than the local clock', (
 test('transformData displays the selected period up to the current time', () => {
     const block = metricsBlockAt(icmpMetricsBlock, NOW);
     block.period = 'PT720H';
-    const result = block.transformData({metricsLogs: []}, []);
+    const result = block.transformData({points: []}, []);
     assert.deepEqual(result.range, {start: NOW - 30 * ONE_DAY_IN_MILLIS, end: NOW});
 });
 
@@ -754,23 +801,26 @@ test('a metrics chart takes the colors of the theme again, when it is switched b
     block.$watch = () => {};
     block.init();
     const [chart] = charts;
-    assert.deepEqual(chart.options.colors, ['#1f2937', '#f76707']);
+    // The bands of the highest readings take the colors of their series
+    assert.deepEqual(chart.options.colors, ['#1f2937', '#f76707', '#1f2937', '#f76707']);
 
     colors['--tblr-primary'] = '#fafafa';
     setTheme('dark');
-    assert.deepEqual(chart.updates, [{colors: ['#fafafa', '#f76707'], fill: {type: 'solid', opacity: [0.16, 1]}}]);
+    assert.deepEqual(chart.updates, [{
+        colors: ['#fafafa', '#f76707', '#fafafa', '#f76707'],
+        fill: {type: 'solid', opacity: [0.16, 1, 0.3, 0.3]},
+    }]);
 });
 
 test('updateChart spans the time axis over the displayed range', () => {
     const block = metricsBlockAt(tcpMetricsBlock, NOW);
     const updates = [];
     block.chart = {updateOptions: (options) => updates.push(options)};
-    const data = block.transformData({metricsLogs: METRICS_LOGS_OF_AN_HOUR}, []);
+    const data = block.transformData({points: METRICS_LOGS_OF_AN_HOUR}, []);
 
     block.updateChart(data);
 
     assert.deepEqual(updates, [{
-        labels: data.labels,
         series: data.series,
         annotations: data.annotations,
         xaxis: {min: NOW - ONE_DAY_IN_MILLIS, max: NOW},
@@ -877,10 +927,33 @@ test('buildRestartAnnotations only marks the restarts within the range, but comp
 test('dockerMetricsBlock.transformData shows the restart markers alongside the incident markers', () => {
     const block = metricsBlockAt(dockerMetricsBlock, NOW);
     const result = block.transformData({
-        metricsLogs: [aDockerLog('2024-01-01T01:30:00Z', 2), aDockerLog('2024-01-01T01:00:00Z', 1)],
+        points: [],
+        restarts: [aDockerLog('2024-01-01T01:30:00Z', 2), aDockerLog('2024-01-01T01:00:00Z', 1)],
     }, [anIncident({startedAt: '2024-01-01T01:10:00Z', endedAt: null})]);
 
     assert.deepEqual(result.annotations.points.map(point => point.marker.fillColor), ['red', 'yellow']);
+});
+
+test('dockerMetricsBlock.transformData adds a band to the CPU and the memory usage of a long period, not to the limit', () => {
+    const block = metricsBlockAt(dockerMetricsBlock, NOW);
+    block.period = 'PT720H';
+    const result = block.transformData({
+        points: [{
+            createdAt: '2024-01-01T00:00:00Z',
+            cpuUsagePercent: 1.5,
+            maxCpuUsagePercent: 42.25,
+            memoryUsageBytes: 1048576,
+            maxMemoryUsageBytes: 3145728,
+            memoryLimitBytes: 8388608,
+        }],
+        restarts: [],
+    }, []);
+    assert.deepEqual(result.series.map(series => series.name),
+        ['CPU', 'Memory', 'Memory limit', 'CPU (highest)', 'Memory (highest)']);
+    assert.deepEqual(result.series[3].data[0].y, [1.5, 42.25]);
+    // In MiB, like the memory usage itself
+    assert.deepEqual(result.series[4].data[0].y, [1, 3]);
+    assert.deepEqual(valuesOf(result.series[2]), [8]);
 });
 
 test('buildIncidentAnnotations marks both ends of an incident within the range', () => {
@@ -937,27 +1010,73 @@ test('buildIncidentAnnotations leaves the details out of the tooltip of an incid
     assert.equal(start.tooltip.text.split('<div>').length - 1, 1);
 });
 
+// The parts of a tooltip of a metrics chart that are read: the title and the label and the value of every row
+const withUnit = (unit) => (value) => value === null ? '-' : `${value}${unit}`;
+const tooltipTextOf = (html) => [...html.matchAll(/apexcharts-tooltip-(?:title|text-y-label|text-y-value)">([^<]*)</g)]
+    .map(match => match[1]);
+
+test('metricsChartTooltip shows the highest reading of a band, and the value of every other visible series', () => {
+    const x = new Date(2024, 0, 2, 3, 4, 5).getTime();
+    const tooltip = metricsChartTooltip([withUnit(' ms'), withUnit('%'), withUnit(' ms')]);
+    const html = tooltip({
+        dataPointIndex: 1,
+        w: {
+            config: {
+                series: [
+                    {name: 'Latency', data: [{x: 0, y: 1}, {x, y: 40}]},
+                    {name: 'Packet loss', data: [{x: 0, y: 0}, {x, y: 5}]},
+                    {name: 'Latency <highest>', data: [{x: 0, y: [1, 2]}, {x, y: [40, 900]}]},
+                ],
+            },
+            globals: {collapsedSeriesIndices: [1], colors: ['blue', 'orange', 'blue']},
+        },
+    });
+
+    // The collapsed packet loss is left out, and the names are escaped
+    assert.deepEqual(tooltipTextOf(html),
+        ['2024/01/02 03:04:05', 'Latency: ', '40 ms', 'Latency &lt;highest&gt;: ', '900 ms']);
+    assert.match(html, /color: blue/);
+});
+
+test('metricsChartTooltip formats a missing reading too, and leaves out the series without a point there', () => {
+    const tooltip = metricsChartTooltip([withUnit(' ms'), withUnit(' ms')]);
+    const html = tooltip({
+        dataPointIndex: 0,
+        w: {
+            config: {
+                series: [
+                    {name: 'Latency', data: [{x: 1000, y: null}]},
+                    {name: 'Latency (highest)', data: []},
+                ],
+            },
+            globals: {collapsedSeriesIndices: [], colors: ['blue', 'blue']},
+        },
+    });
+
+    assert.deepEqual(tooltipTextOf(html).slice(1), ['Latency: ', '-']);
+});
+
 test('formatChartTimestamp pads every part of the date to two digits', () => {
     assert.equal(formatChartTimestamp(new Date(2024, 0, 2, 3, 4, 5)), '2024/01/02 03:04:05');
 });
 
-test('the metrics blocks fetch their stats and every uptime incident of their type for the selected period', () => {
+test('the metrics blocks fetch their chart and every uptime incident of their type for the selected period', () => {
     const cases = [
-        [httpMetricsBlock, 'http-monitors', 'HTTP'],
-        [icmpMetricsBlock, 'icmp-monitors', 'ICMP'],
-        [tcpMetricsBlock, 'tcp-monitors', 'TCP'],
-        [dnsMetricsBlock, 'dns-monitors', 'DNS'],
-        [dockerMetricsBlock, 'docker-monitors', 'DOCKER'],
+        [httpMetricsBlock, 'http', 'HTTP'],
+        [icmpMetricsBlock, 'icmp', 'ICMP'],
+        [tcpMetricsBlock, 'tcp', 'TCP'],
+        [dnsMetricsBlock, 'dns', 'DNS'],
+        [dockerMetricsBlock, 'docker', 'DOCKER'],
     ];
     const incidentsUrl = (type, period) => `/api/v3/incidents/${type}?monitorId=42&period=${period}` +
         `&includeResolved=true&page=1&size=${CHART_INCIDENTS_PAGE_SIZE}`;
-    for (const [factory, statsPath, incidentType] of cases) {
+    for (const [factory, chartPath, incidentType] of cases) {
         const block = factory(42, true, 60, CHART_LABELS, 'PT24H');
-        assert.equal(block.statsUrl(), `/api/v2/${statsPath}/42/stats?period=PT24H`);
+        assert.equal(block.chartUrl(), `/api/internal/monitor-charts/${chartPath}/42?period=PT24H`);
         assert.equal(block.incidentsUrl(), incidentsUrl(incidentType, 'PT24H'));
 
         block.period = 'PT168H';
-        assert.equal(block.statsUrl(), `/api/v2/${statsPath}/42/stats?period=PT168H`);
+        assert.equal(block.chartUrl(), `/api/internal/monitor-charts/${chartPath}/42?period=PT168H`);
         assert.equal(block.incidentsUrl(), incidentsUrl(incidentType, 'PT168H'));
     }
 });
@@ -1017,7 +1136,7 @@ test('pollEndpoint renders the fetched metrics along with the incidents, but onl
     block.now = () => now;
     const rendered = [];
     block.updateChart = (data) => rendered.push(data);
-    const stats = {metricsLogs: METRICS_LOGS_OF_AN_HOUR};
+    const stats = {points: METRICS_LOGS_OF_AN_HOUR};
     stubFetch(t, async (url) => url.startsWith('/api/v3/incidents')
         ? jsonResponse(incidentPage([{incidentType: 'TCP', startedAt: '2024-01-01T00:30:00Z', endedAt: null, details: null}]))
         : jsonResponse(stats));
@@ -1035,7 +1154,7 @@ test('pollEndpoint renders the fetched metrics along with the incidents, but onl
 
 test('pollEndpoint still renders the metrics when the incidents cannot be fetched', async (t) => {
     t.mock.method(console, 'error', () => {});
-    const stats = {metricsLogs: METRICS_LOGS_OF_AN_HOUR};
+    const stats = {points: METRICS_LOGS_OF_AN_HOUR};
     const failures = [
         async () => ({ok: false, status: 500}),
         async () => {
@@ -1084,7 +1203,7 @@ test('pollEndpoint discards the response of a period that has been changed in th
     // What the watcher of the period does
     block.period = 'PT168H';
     block.isPeriodLoading = true;
-    resolveStats(jsonResponse({metricsLogs: METRICS_LOGS_OF_AN_HOUR}));
+    resolveStats(jsonResponse({points: METRICS_LOGS_OF_AN_HOUR}));
     await polling;
 
     // The loading of the newly selected period is still in progress
@@ -1097,7 +1216,7 @@ test('pollEndpoint discards the response of a period that has been changed in th
 test('changing the period shows the loading state until the response of the new period is handled', async (t) => {
     t.mock.method(console, 'error', () => {});
     const cases = [
-        [jsonResponse({metricsLogs: METRICS_LOGS_OF_AN_HOUR}), 1],
+        [jsonResponse({points: METRICS_LOGS_OF_AN_HOUR}), 1],
         // A failed request must not leave the block loading forever
         [{ok: false, status: 500}, 0],
     ];
@@ -1132,7 +1251,7 @@ test('the auto-refresh never shows the loading state', async (t) => {
         loadingStatesDuringRequests.push(block.isPeriodLoading);
         return url.startsWith('/api/v3/incidents')
             ? jsonResponse(incidentPage([]))
-            : jsonResponse({metricsLogs: METRICS_LOGS_OF_AN_HOUR});
+            : jsonResponse({points: METRICS_LOGS_OF_AN_HOUR});
     });
 
     await block.pollEndpoint();
@@ -1705,14 +1824,13 @@ test('TCP populateFrom copies a source and falls back to defaults', () => {
 test('dnsMetricsBlock.transformData preserves null latency and has no packet-loss series', () => {
     const block = dnsMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
     const result = block.transformData({
-        metricsLogs: [
+        points: [
             {createdAt: '2024-01-01T00:00:00Z', latencyInMs: null},
-            {createdAt: '2024-01-01T00:01:00Z', latencyInMs: '42'},
+            {createdAt: '2024-01-01T00:01:00Z', latencyInMs: 42},
         ],
     }, []);
     // Null latency must stay null (a gap in the chart), not become NaN
-    assert.deepEqual(result.series[0].data, [null, 42]);
-    assert.equal(result.labels.length, 2);
+    assert.deepEqual(valuesOf(result.series[0]), [null, 42]);
     // DNS monitors track latency only - there is no packet-loss series
     assert.equal(result.series.length, 1);
 });

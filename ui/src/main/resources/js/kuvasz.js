@@ -745,14 +745,89 @@ const metricsChartRange = (period, now, logs, incidents) => {
     return {start: now - isoDurationToMillis(period), end};
 };
 
-const nullableLatencyOf = (item) => item.latencyInMs !== null ? parseInt(item.latencyInMs) : null;
+const nullableNumberOf = (value) => value === null || value === undefined ? null : Number(value);
 
-const toLatencyChartData = (logs, labels, latencyOf) => ({
-    labels: logs.map(item => new Date(item.createdAt).toString()),
-    series: [{name: labels.latency, data: logs.map(latencyOf)}],
+const nullableLatencyOf = (item) => nullableNumberOf(item.latencyInMs);
+
+// A point of a chart series: the time of the check (or the start of a bucket of checks) and the value of the series
+const chartSeries = (name, type, points, valueOf) => ({
+    name,
+    type,
+    data: points.map(item => ({x: new Date(item.createdAt).getTime(), y: valueOf(item)})),
 });
 
-const latencyChartOptions = (chartLabels) => baseAreaChartOptions(chartLabels.noData, formatWithUnit(" ms"));
+/*
+ The band from the average up to the highest reading of each bucket of checks, drawn along the average. The points of a
+ short period are single checks, which have no highest reading, so they have no band at all (null). The bands come
+ after the other series of a chart, so the colors and the axes of those keep their places with or without them.
+*/
+const highestBandSeries = (name, points, averageOf, highestOf) => {
+    if (!points.some(item => highestOf(item) !== null)) {
+        return null;
+    }
+    return {
+        name,
+        type: 'rangeArea',
+        data: points.map(item => {
+            const average = averageOf(item);
+            const highest = highestOf(item);
+            return {
+                x: new Date(item.createdAt).getTime(),
+                y: average === null || highest === null ? null : [average, highest],
+            };
+        }),
+    };
+};
+
+const toLatencyChartData = (points, labels) => ({
+    series: [
+        chartSeries(labels.latency, 'area', points, nullableLatencyOf),
+        highestBandSeries(
+            labels.latencyHighest, points, nullableLatencyOf, item => nullableNumberOf(item.maxLatencyInMs),
+        ),
+    ].filter(Boolean),
+});
+
+// The opacity of the bands of the highest readings, drawn in the color of the series they belong to
+const HIGHEST_BAND_OPACITY = 0.3;
+
+/*
+ The shared tooltip of the metrics charts, with the value of every visible series at the hovered point, formatted by the
+ formatter of the same index. It's built here, because once a chart has a band (a range series), ApexCharts shows every
+ series of it as a range, the ones with a single value too. A band shows its highest reading, as its name says.
+*/
+const metricsChartTooltip = (formatters) => ({dataPointIndex, w}) => {
+    const rows = w.config.series.map((series, index) => {
+        const point = series.data[dataPointIndex];
+        if (!point || w.globals.collapsedSeriesIndices.includes(index)) {
+            return '';
+        }
+        const value = Array.isArray(point.y) ? point.y[1] : point.y;
+        return `<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: ${index + 1}; display: flex;">` +
+            `<span class="apexcharts-tooltip-marker" style="color: ${w.globals.colors[index]}">` +
+            '<svg viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="5" fill="currentColor"></circle></svg>' +
+            '</span><div class="apexcharts-tooltip-text"><div class="apexcharts-tooltip-y-group">' +
+            `<span class="apexcharts-tooltip-text-y-label">${escapeHtml(series.name)}: </span>` +
+            `<span class="apexcharts-tooltip-text-y-value">${escapeHtml(formatters[index](value))}</span>` +
+            '</div></div></div>';
+    });
+    const hovered = w.config.series.map(series => series.data[dataPointIndex]).find(Boolean);
+    const title = hovered ? formatChartTimestamp(new Date(hovered.x)) : '';
+    return `<div class="apexcharts-tooltip-title">${title}</div>${rows.join('')}`;
+};
+
+const latencyChartOptions = (chartLabels) => {
+    const latencyFormatter = formatWithUnit(" ms");
+    const options = baseAreaChartOptions(chartLabels.noData, latencyFormatter);
+    const latencyColor = themeColor("primary");
+    return {
+        ...options,
+        colors: [latencyColor, latencyColor],
+        fill: {type: "solid", opacity: [0.16, HIGHEST_BAND_OPACITY]},
+        stroke: {...options.stroke, width: [2, 0]},
+        tooltip: {...options.tooltip, shared: true, custom: metricsChartTooltip([latencyFormatter, latencyFormatter])},
+    };
+};
 
 // The shared lifecycle of the metrics blocks on the monitor detail pages: polls the stats and the incidents of the
 // monitor in the selected period, and renders them with the type specific chart options and data transformation
@@ -762,15 +837,14 @@ const metricsBlock = ({
     uptimeCheckInterval,
     chartLabels,
     period,
-    statsPath,
+    chartPath,
     incidentType,
     chartElementId,
     buildChartOptions,
-    logsOf,
     toChartData,
     // Series that start collapsed, still listed in the legend so they can be toggled on
     initiallyHiddenSeries = [],
-    // Markers of a monitor type's own, derived from its logs, shown alongside the incident markers
+    // Markers of a monitor type's own, derived from its chart data, shown alongside the incident markers
     buildLogAnnotations = null,
 }) => {
     return {
@@ -818,8 +892,8 @@ const metricsBlock = ({
             return this.pollEndpoint();
         },
 
-        statsUrl() {
-            return `/api/v2/${statsPath}/${monitorId}/stats?period=${this.period}`;
+        chartUrl() {
+            return `/api/internal/monitor-charts/${chartPath}/${monitorId}?period=${this.period}`;
         },
 
         incidentsUrl() {
@@ -877,7 +951,7 @@ const metricsBlock = ({
         async pollEndpoint() {
             const requestedPeriod = this.period;
             try {
-                const [response, incidents] = await Promise.all([fetch(this.statsUrl()), this.fetchIncidents()]);
+                const [response, incidents] = await Promise.all([fetch(this.chartUrl()), this.fetchIncidents()]);
                 if (!response.ok) {
                     console.error('Error fetching data:', response.status);
                     return;
@@ -907,20 +981,20 @@ const metricsBlock = ({
         },
 
         transformData(rawData, incidents) {
-            const logs = logsOf(rawData);
-            const range = metricsChartRange(this.period, this.now(), logs, incidents);
+            const points = rawData.points;
+            const range = metricsChartRange(this.period, this.now(), points, incidents);
             const annotations = buildIncidentAnnotations(
                 incidents, range.start, range.end, this.chartLabels, this.markerColors,
             );
             if (buildLogAnnotations) {
                 const logAnnotations = buildLogAnnotations(
-                    logs, range.start, range.end, this.chartLabels, this.markerColors,
+                    rawData, range.start, range.end, this.chartLabels, this.markerColors,
                 );
                 annotations.xaxis.push(...logAnnotations.xaxis);
                 annotations.points.push(...logAnnotations.points);
             }
             return {
-                ...toChartData(logs, this.chartLabels),
+                ...toChartData(points, this.chartLabels),
                 annotations,
                 range,
             };
@@ -929,7 +1003,6 @@ const metricsBlock = ({
         updateChart(newData) {
             // ApexCharts replaces (instead of merging) the arrays of the options, so the outdated markers are dropped
             this.chart.updateOptions({
-                labels: newData.labels,
                 series: newData.series,
                 annotations: newData.annotations,
                 // The axis spans the whole range, otherwise it would only fit the logs and cut off the newest markers
@@ -953,39 +1026,43 @@ const httpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, char
     uptimeCheckInterval,
     chartLabels,
     period,
-    statsPath: 'http-monitors',
+    chartPath: 'http',
     incidentType: 'HTTP',
     chartElementId: 'monitor-details-latency-chart',
     buildChartOptions: latencyChartOptions,
-    logsOf: (rawData) => rawData.latencyLogs,
-    toChartData: (logs, labels) => toLatencyChartData(logs, labels, (item) => parseInt(item.latencyInMs)),
+    toChartData: toLatencyChartData,
 });
 
 // Latency and packet loss share a single chart, each of them with an axis of its own
 const icmpChartOptions = (chartLabels) => {
     const options = baseAreaChartOptions(chartLabels.noData, null);
     const latencyColor = themeColor("primary");
+    const packetLossColor = distinctSeriesColor([latencyColor], [themeColor("orange"), themeColor("purple")]);
+    const latencyFormatter = formatWithUnit(" ms");
+    const packetLossFormatter = formatWithUnit("%");
     return {
         ...options,
         chart: {...options.chart, type: "line"},
-        colors: [latencyColor, distinctSeriesColor([latencyColor], [themeColor("orange"), themeColor("purple")])],
+        colors: [latencyColor, packetLossColor, latencyColor, packetLossColor],
         fill: {
             type: "solid",
-            opacity: [0.16, 1],
+            opacity: [0.16, 1, HIGHEST_BAND_OPACITY, HIGHEST_BAND_OPACITY],
         },
+        stroke: {...options.stroke, width: [2, 2, 0, 0]},
         tooltip: {
             ...options.tooltip,
             shared: true,
-            y: [{formatter: formatWithUnit(" ms")}, {formatter: formatWithUnit("%")}],
+            custom: metricsChartTooltip([latencyFormatter, packetLossFormatter, latencyFormatter, packetLossFormatter]),
         },
+        // Each band is drawn on the axis of the series it belongs to
         yaxis: [
             {
-                seriesName: chartLabels.latency,
+                seriesName: [chartLabels.latency, chartLabels.latencyHighest],
                 min: 0,
                 labels: {padding: 4, formatter: (val) => Math.round(val) + " ms"},
             },
             {
-                seriesName: chartLabels.packetLoss,
+                seriesName: [chartLabels.packetLoss, chartLabels.packetLossHighest],
                 opposite: true,
                 min: 0,
                 max: 100,
@@ -1004,22 +1081,28 @@ const icmpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, char
     uptimeCheckInterval,
     chartLabels,
     period,
-    statsPath: 'icmp-monitors',
+    chartPath: 'icmp',
     incidentType: 'ICMP',
     chartElementId: 'icmp-monitor-details-metrics-chart',
     buildChartOptions: icmpChartOptions,
-    logsOf: (rawData) => rawData.metricsLogs,
-    toChartData: (logs, labels) => ({
-        labels: logs.map(item => new Date(item.createdAt).toString()),
-        series: [
-            {name: labels.latency, type: 'area', data: logs.map(nullableLatencyOf)},
-            {
-                name: labels.packetLoss,
-                type: 'line',
-                data: logs.map(item => parseInt(item.packetLossPercentage)),
-            },
-        ],
-    }),
+    toChartData: (points, labels) => {
+        const packetLossOf = item => nullableNumberOf(item.packetLossPercentage);
+        return {
+            series: [
+                chartSeries(labels.latency, 'area', points, nullableLatencyOf),
+                chartSeries(labels.packetLoss, 'line', points, packetLossOf),
+                highestBandSeries(
+                    labels.latencyHighest, points, nullableLatencyOf, item => nullableNumberOf(item.maxLatencyInMs),
+                ),
+                highestBandSeries(
+                    labels.packetLossHighest,
+                    points,
+                    packetLossOf,
+                    item => nullableNumberOf(item.maxPacketLossPercentage),
+                ),
+            ].filter(Boolean),
+        };
+    },
 });
 
 const tcpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, chartLabels, period) => metricsBlock({
@@ -1028,12 +1111,11 @@ const tcpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, chart
     uptimeCheckInterval,
     chartLabels,
     period,
-    statsPath: 'tcp-monitors',
+    chartPath: 'tcp',
     incidentType: 'TCP',
     chartElementId: 'tcp-monitor-details-latency-chart',
     buildChartOptions: latencyChartOptions,
-    logsOf: (rawData) => rawData.metricsLogs,
-    toChartData: (logs, labels) => toLatencyChartData(logs, labels, nullableLatencyOf),
+    toChartData: toLatencyChartData,
 });
 
 const dnsMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, chartLabels, period) => metricsBlock({
@@ -1042,17 +1124,16 @@ const dnsMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, chart
     uptimeCheckInterval,
     chartLabels,
     period,
-    statsPath: 'dns-monitors',
+    chartPath: 'dns',
     incidentType: 'DNS',
     chartElementId: 'dns-monitor-details-latency-chart',
     buildChartOptions: latencyChartOptions,
-    logsOf: (rawData) => rawData.metricsLogs,
-    toChartData: (logs, labels) => toLatencyChartData(logs, labels, nullableLatencyOf),
+    toChartData: toLatencyChartData,
 });
 
 const BYTES_IN_MIB = 1048576;
 
-const nullableCpuOf = (item) => item.cpuUsagePercent !== null ? parseFloat(item.cpuUsagePercent) : null;
+const nullableCpuOf = (item) => nullableNumberOf(item.cpuUsagePercent);
 // Shared by the chart and the stat cards (called from their Alpine expressions), so both show the same figure
 const bytesToMib = (bytes) => bytes != null ? parseFloat((bytes / BYTES_IN_MIB).toFixed(1)) : null;
 
@@ -1071,46 +1152,35 @@ const dockerResourceChartOptions = (chartLabels) => {
         [cpuUsageColor, memoryUsageColor],
         [themeColor("red"), themeColor("gray-500")],
     );
+    const cpuFormatter = formatWithUnit("%");
+    const memoryFormatter = formatWithUnit(" MiB");
     return {
         ...options,
         chart: {...options.chart, type: "line"},
-        colors: [cpuUsageColor, memoryUsageColor, memoryLimitColor],
+        colors: [cpuUsageColor, memoryUsageColor, memoryLimitColor, cpuUsageColor, memoryUsageColor],
         fill: {
             type: "solid",
-            opacity: [0.16, 1, 1],
+            opacity: [0.16, 1, 1, HIGHEST_BAND_OPACITY, HIGHEST_BAND_OPACITY],
         },
         // The ceiling is a boundary rather than a measurement, so it is dashed instead of drawn like the readings
-        stroke: {...options.stroke, width: [2, 2, 1], dashArray: [0, 0, 4]},
+        stroke: {...options.stroke, width: [2, 2, 1, 0, 0], dashArray: [0, 0, 4, 0, 0]},
         tooltip: {
             ...options.tooltip,
             shared: true,
-            y: [
-                {formatter: formatWithUnit("%")},
-                {formatter: formatWithUnit(" MiB")},
-                {formatter: formatWithUnit(" MiB")},
-            ],
+            custom: metricsChartTooltip([cpuFormatter, memoryFormatter, memoryFormatter, cpuFormatter, memoryFormatter]),
         },
-        /*
-         Three series on two scales: naming the memory axis again for the limit makes it share the usage's scale
-         instead of getting one of its own, and the duplicate is hidden so only two axes are drawn.
-        */
+        // Two scales: the memory limit and the band of the highest memory usage share the scale of the memory usage
         yaxis: [
             {
-                seriesName: chartLabels.cpuUsage,
+                seriesName: [chartLabels.cpuUsage, chartLabels.cpuUsageHighest],
                 min: 0,
                 labels: {padding: 4, formatter: (val) => Math.round(val) + "%"},
             },
             {
-                seriesName: chartLabels.memoryUsage,
+                seriesName: [chartLabels.memoryUsage, chartLabels.memoryLimit, chartLabels.memoryUsageHighest],
                 opposite: true,
                 min: 0,
                 labels: {padding: 4, formatter: (val) => Math.round(val) + " MiB"},
-            },
-            {
-                seriesName: chartLabels.memoryUsage,
-                opposite: true,
-                min: 0,
-                show: false,
             },
         ],
         legend: {
@@ -1125,25 +1195,32 @@ const dockerMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, ch
     uptimeCheckInterval,
     chartLabels,
     period,
-    statsPath: 'docker-monitors',
+    chartPath: 'docker',
     incidentType: 'DOCKER',
     chartElementId: 'docker-monitor-details-metrics-chart',
     buildChartOptions: dockerResourceChartOptions,
-    logsOf: (rawData) => rawData.metricsLogs,
-    toChartData: (logs, labels) => ({
-        labels: logs.map(item => new Date(item.createdAt).toString()),
-        series: [
-            {name: labels.cpuUsage, type: 'area', data: logs.map(nullableCpuOf)},
-            {name: labels.memoryUsage, type: 'line', data: logs.map(item => bytesToMib(item.memoryUsageBytes))},
-            {name: labels.memoryLimit, type: 'line', data: logs.map(item => bytesToMib(item.memoryLimitBytes))},
-        ],
-    }),
+    toChartData: (points, labels) => {
+        const memoryUsageOf = item => bytesToMib(item.memoryUsageBytes);
+        return {
+            series: [
+                chartSeries(labels.cpuUsage, 'area', points, nullableCpuOf),
+                chartSeries(labels.memoryUsage, 'line', points, memoryUsageOf),
+                chartSeries(labels.memoryLimit, 'line', points, item => bytesToMib(item.memoryLimitBytes)),
+                highestBandSeries(
+                    labels.cpuUsageHighest, points, nullableCpuOf, item => nullableNumberOf(item.maxCpuUsagePercent),
+                ),
+                highestBandSeries(
+                    labels.memoryUsageHighest, points, memoryUsageOf, item => bytesToMib(item.maxMemoryUsageBytes),
+                ),
+            ].filter(Boolean),
+        };
+    },
     /*
      A container started without a memory limit reports the host's whole RAM as one, which would dwarf the usage
      and flatten it against the bottom of the scale. So the ceiling stays off until it is asked for.
     */
     initiallyHiddenSeries: [chartLabels.memoryLimit],
-    buildLogAnnotations: buildRestartAnnotations,
+    buildLogAnnotations: (rawData, ...rest) => buildRestartAnnotations(rawData.restarts, ...rest),
 });
 
 const hasNonNullValue = (obj) => Object.values(obj).some(value => value !== null);
@@ -3280,6 +3357,7 @@ if (typeof module !== 'undefined' && module.exports) {
         buildIncidentAnnotations,
         CHART_INCIDENTS_PAGE_SIZE,
         buildRestartAnnotations,
+        metricsChartTooltip,
         isValidUrl,
         isValidSlug,
         isValidIsoDuration,
