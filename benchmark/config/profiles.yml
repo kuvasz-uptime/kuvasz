@@ -7,6 +7,13 @@ profiles:
   XS768:
     kuvasz: { cpus: 0.5, mem: 768m }
     postgres: { cpus: 0.5, mem: 512m, shared_buffers: 128MB, effective_cache_size: 384MB }
+  # The memory and the database of XS768, with a whole CPU for Kuvasz
+  S768-PG05:
+    kuvasz: { cpus: 1, mem: 768m }
+    postgres: { cpus: 0.5, mem: 512m, shared_buffers: 128MB, effective_cache_size: 384MB }
+  S-PG05:
+    kuvasz: { cpus: 1, mem: 1g }
+    postgres: { cpus: 0.5, mem: 512m, shared_buffers: 128MB, effective_cache_size: 384MB }
   S:
     kuvasz: { cpus: 1, mem: 1g }
     postgres: { cpus: 1, mem: 1g, shared_buffers: 256MB, effective_cache_size: 768MB }
@@ -31,6 +38,7 @@ heap_modes:
   stock: "-Xms64M -Xmx192M" # what the image ships with
   ram75: "-XX:InitialRAMPercentage=25 -XX:MaxRAMPercentage=75"
   ram60: "-XX:InitialRAMPercentage=25 -XX:MaxRAMPercentage=60"
+  xmx384: "-Xms64M -Xmx384M"
   xmx512: "-Xms64M -Xmx512M"
   xmx768: "-Xms64M -Xmx768M"
 

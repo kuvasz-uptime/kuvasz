@@ -54,8 +54,9 @@ CREATE TABLE docker_metrics_log (
     memory_usage_bytes BIGINT NULL, memory_limit_bytes BIGINT NULL, created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
     restart_count INT NULL, container_created_at TIMESTAMPTZ NULL
 );
-CREATE INDEX docker_metrics_log_monitor_id_created_at_idx ON docker_metrics_log USING btree (monitor_id, created_at)
-    INCLUDE (latency_ms, cpu_usage_percent, memory_usage_bytes);
+CREATE INDEX docker_metrics_log_monitor_id_created_at_idx ON docker_metrics_log USING btree (monitor_id, created_at, id)
+    INCLUDE (latency_ms, cpu_usage_percent, memory_usage_bytes, memory_limit_bytes, restart_count,
+        container_created_at);
 CREATE INDEX docker_metrics_log_created_at_idx ON docker_metrics_log USING btree (created_at);
 """
 

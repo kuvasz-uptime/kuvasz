@@ -23,6 +23,9 @@ TARGETS = Targets(monitor_ids={"http": [7, 8], "docker": [9], "dns": [11], "push
                   status_page_slug="bench-status", monitors=5000)
 
 
+CHARTS_PATH = "/api/internal/monitor-charts"
+
+
 def paths_of(probes) -> dict[str, str]:
     return {probe.name: probe.path for probe in probes}
 
@@ -46,13 +49,12 @@ def test_the_details_load_the_charts_with_the_default_period_then_with_the_picke
     default = paths_of(monitor_details_visit("http", 7, None).probes)
     assert default["ui_http_monitor_details"] == "/http-monitors/7"
     assert default["ui_http_monitor_incidents"] == "/incidents/fragments/monitor/http/7"
-    assert default["ui_http_monitor_stats_P1D"] == "/api/v2/http-monitors/7/stats?period=P1D"
-    assert default["ui_http_monitor_chart_incidents_P1D"] == (
-        "/api/v2/incidents?monitorId=7&period=P1D&includeResolved=true")
-    assert "ui_http_monitor_stats_P30D" not in default
+    # The incidents of the chart come with its checks
+    assert default["ui_http_monitor_chart_P1D"] == f"{CHARTS_PATH}/http/7?period=P1D"
+    assert "ui_http_monitor_chart_P30D" not in default
     longer = paths_of(monitor_details_visit("http", 7, "P30D").probes)
-    assert longer["ui_http_monitor_stats_P30D"] == "/api/v2/http-monitors/7/stats?period=P30D"
-    assert "ui_http_monitor_stats_P1D" in longer
+    assert longer["ui_http_monitor_chart_P30D"] == f"{CHARTS_PATH}/http/7?period=P30D"
+    assert "ui_http_monitor_chart_P1D" in longer
 
 
 def test_the_details_refresh_their_heading_and_incidents_and_push_monitors_have_no_charts():

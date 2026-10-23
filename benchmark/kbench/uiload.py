@@ -118,15 +118,11 @@ def monitor_list_visit(monitor_type: str) -> Visit:
                  (Refresh(LIST_REFRESH, (fragment,)),))
 
 
-def chart_probes(monitor_type: str, monitor_id: int, period: str) -> tuple[Probe, ...]:
-    """What the charts of the details page fetch from the browser (authenticated by the session, like the UI). Their
-    incidents still come from the v2 API."""
-    return (
-        Probe(f"ui_{monitor_type}_monitor_stats_{period}",
-              f"/api/v2/{monitor_type}-monitors/{monitor_id}/stats?period={period}"),
-        Probe(f"ui_{monitor_type}_monitor_chart_incidents_{period}",
-              f"/api/v2/incidents?monitorId={monitor_id}&period={period}&includeResolved=true"),
-    )
+def chart_probe(monitor_type: str, monitor_id: int, period: str) -> Probe:
+    """What the charts of the details page fetch from the browser (authenticated by the session, like the UI): the
+    checks and the incidents of the period."""
+    return Probe(f"ui_{monitor_type}_monitor_chart_{period}",
+                 f"/api/internal/monitor-charts/{monitor_type}/{monitor_id}?period={period}")
 
 
 def monitor_details_visit(monitor_type: str, monitor_id: int, chart_period: str | None,
@@ -145,9 +141,9 @@ def monitor_details_visit(monitor_type: str, monitor_id: int, chart_period: str 
         probes.append(snapshot)
         refreshed.append(snapshot)
     if monitor_type != "push":
-        probes += chart_probes(monitor_type, monitor_id, DEFAULT_CHART_PERIOD)
+        probes.append(chart_probe(monitor_type, monitor_id, DEFAULT_CHART_PERIOD))
         if chart_period and chart_period != DEFAULT_CHART_PERIOD:
-            probes += chart_probes(monitor_type, monitor_id, chart_period)
+            probes.append(chart_probe(monitor_type, monitor_id, chart_period))
     return Visit("monitor_details", tuple(probes), (Refresh(DETAILS_REFRESH, tuple(refreshed)),))
 
 
