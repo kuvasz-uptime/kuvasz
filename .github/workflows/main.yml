@@ -142,6 +142,43 @@ jobs:
           files: ./build/reports/kover/report.xml
           fail_ci_if_error: false
 
+  docker-image:
+    name: Build the Docker image (amd64)
+    needs: compile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Restore the build cache of the compile job
+        uses: actions/download-artifact@v8
+        with:
+          name: gradle-build-cache
+          path: ~/.gradle/caches/build-cache-1
+      - name: Prepare the files of the image
+        run: ./gradlew :app:dockerLayers
+      - uses: docker/setup-buildx-action@v4
+      # Fails when the training of the AOT cache breaks, e.g. because a page it opens was moved
+      - name: Build the image and train its AOT cache
+        uses: docker/build-push-action@v7
+        with:
+          context: app
+          file: app/docker/Dockerfile
+          platforms: linux/amd64
+          load: true
+          tags: kuvasz:candidate
+      - name: Check that Java can use the AOT cache
+        run: |
+          docker run --rm --entrypoint sh kuvasz:candidate -c \
+            'java -XX:AOTMode=on -XX:AOTCache=/home/app/kuvasz.aot -cp "$(sed -n "s/^-cp //p" /home/app/jvm-args)" -version'
+      - name: Check that the training tools didn't get into the image
+        run: |
+          docker run --rm --entrypoint sh kuvasz:candidate -c \
+            'for tool in postgres initdb psql curl; do if command -v "$tool"; then exit 1; fi; done; test ! -e /training'
+
   ui-tests:
     name: Run UI test suite (unit + E2E)
     needs: compile

@@ -9,8 +9,6 @@ plugins {
     alias(libs.plugins.detekt)
     alias(libs.plugins.kover)
     alias(libs.plugins.micronaut.minimal.application)
-    alias(libs.plugins.micronaut.docker)
-    alias(libs.plugins.jib)
     alias(libs.plugins.git.version)
     alias(libs.plugins.shadow)
     alias(libs.plugins.buildconfig)
@@ -19,8 +17,6 @@ plugins {
 
 val gitVersion: groovy.lang.Closure<String> by extra
 version = rootProject.version
-val versionDetails: groovy.lang.Closure<com.palantir.gradle.gitversion.VersionDetails> by extra
-val details = versionDetails()
 
 java {
     sourceCompatibility = JavaVersion.VERSION_25
@@ -276,45 +272,35 @@ tasks.withType<Detekt>().configureEach {
     exclude("/com/kuvaszuptime/kuvasz/buildconfig")
 }
 
-jib {
-    from {
-        image = "eclipse-temurin:25-jre-alpine"
-        platforms {
-            platform {
-                os = "linux"
-                architecture = "amd64"
-            }
-            platform {
-                os = "linux"
-                architecture = "arm64"
-            }
-        }
-    }
-    to {
-        image = "kuvaszmonitoring/kuvasz:$version"
-        tags = setOf("latest")
-    }
-    container {
-        labels = mapOf(
-            "org.opencontainers.image.source" to "https://github.com/kuvasz-uptime/kuvasz",
-            "org.opencontainers.image.version" to version.toString(),
-            "org.opencontainers.image.revision" to details.gitHash,
-            "org.opencontainers.image.description" to "Kuvasz (pronounce as [ˈkuvɒs]) is an open-source uptime and SSL monitoring service, with multiple notification channels, status pages, IAC support via YAML, Prometheus integration, a complete REST API and many more",
+// The files of the Docker image (see docker/Dockerfile). The JDK AOT cache of the image only accepts jars on the class
+// path, and the class path at runtime has to be the same as when the cache was trained, so Java gets it from an
+// argument file in a fixed order, instead of a wildcard or the Class-Path of a manifest (which has a resources dir).
+// The jars of the other modules are in their own folder (layer), because their names change with every version.
+val dockerLayers by tasks.registering(Sync::class) {
+    group = "build"
+    description = "Prepares the files of the Docker image in build/docker/layers"
+    val runtimeJars: FileCollection = configurations.runtimeClasspath.get()
+    val projectJars = configurations.runtimeClasspath.get().incoming
+        .artifactView { componentFilter { it is ProjectComponentIdentifier } }.files
+    val mainClassName = application.mainClass
+    val layersDir = layout.buildDirectory.dir("docker/layers")
+    val fixedTimestamp = 1000L // 1970-01-01T00:00:01Z, the same as Jib uses
+    inputs.property("mainClass", mainClassName)
+    from(tasks.jar) { rename { "application.jar" } }
+    from(runtimeJars.minus(projectJars)) { into("libs") }
+    from(projectJars) { into("project-libs") }
+    into(layersDir)
+    doLast {
+        val projectJarNames = projectJars.files.map { it.name }.toSet()
+        val classpath = listOf("application.jar") +
+            runtimeJars.files.map { "${if (it.name in projectJarNames) "project-libs" else "libs"}/${it.name}" }
+        val root = layersDir.get().asFile
+        root.resolve("jvm-args").writeText(
+            "-cp ${classpath.joinToString(":") { "/home/app/$it" }}\n${mainClassName.get()}\n"
         )
-        environment = mapOf(
-            "JAVA_TOOL_OPTIONS" to "-Xms64M -Xmx192M",
-            // Read after JAVA_TOOL_OPTIONS, so it stays when an operator replaces that one to change the heap size
-            "JDK_JAVA_OPTIONS" to "-XX:+UseCompactObjectHeaders",
-            "MICRONAUT_CONFIG_FILES" to "/config/kuvasz.yml"
-        )
-    }
-    extraDirectories {
-        paths {
-            path {
-                setFrom("docker/bootstrap")
-                into = "/"
-            }
-        }
+        // Fixed timestamps (like Jib), so a layer is the same between builds when its files are, and users don't
+        // download it again. It must happen before the image is built: the AOT cache checks the timestamps of the jars
+        root.walk().forEach { it.setLastModified(fixedTimestamp) }
     }
 }
 

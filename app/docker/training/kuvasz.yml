@@ -1,0 +1,42 @@
+# Used only while the AOT cache is trained during the image build. Every target is on the build machine itself
+# (Kuvasz, or the training PostgreSQL), so the training doesn't send traffic anywhere.
+http-monitors:
+  - name: "training http"
+    url: "http://localhost:8080/api/v2/health"
+    uptime-check-interval: 5
+    ssl-check-enabled: false
+    ignore-connectivity-check: true
+    expected-keyword: "UP"
+tcp-monitors:
+  - name: "training tcp"
+    host: "localhost"
+    port: 5432
+    uptime-check-interval: 5
+    ignore-connectivity-check: true
+push-monitors:
+  - name: "training push"
+    heartbeat-interval: 60
+    client-secret: "9b0c6a8e-7a3c-4d1e-9f53-2f0b8c1d4e6a"
+dns-monitors:
+  # There is no DNS server on 127.0.0.1, so the checks fail, which trains the failure path too
+  - name: "training dns"
+    host: "kuvasz.local"
+    resolver-host: "127.0.0.1"
+    uptime-check-interval: 5
+    timeout-ms: 500
+    ignore-connectivity-check: true
+maintenance-windows:
+  - name: "training maintenance"
+    cron: "0 3 * * *"
+    duration: "PT1H"
+    monitors:
+      - "http:training http"
+status-pages:
+  - title: "Training"
+    slug: "training"
+    public: true
+    monitors:
+      - "http:training http"
+      - "tcp:training tcp"
+      - "push:training push"
+      - "dns:training dns"
