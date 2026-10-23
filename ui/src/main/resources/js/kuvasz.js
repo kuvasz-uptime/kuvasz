@@ -636,12 +636,6 @@ const formatChartTimestamp = (date) =>
     `${date.getFullYear()}/${padToTwoDigits(date.getMonth() + 1)}/${padToTwoDigits(date.getDate())} ` +
     `${padToTwoDigits(date.getHours())}:${padToTwoDigits(date.getMinutes())}:${padToTwoDigits(date.getSeconds())}`;
 
-/*
- The chart marks every incident of the selected period, so they are fetched in a single page that is big enough for
- the longest period (30 days) even if a monitor is checked every 5 seconds and changes its status on every check.
-*/
-const CHART_INCIDENTS_PAGE_SIZE = 300000;
-
 // Adds a chart marker: a vertical line and a point on the zero line, the latter carrying the details in a tooltip. The
 // details can be anything (e.g. the error message of a check), so they have to be escaped.
 const addChartMarker = (annotations, timestamp, color, title, details) => {
@@ -694,22 +688,13 @@ const buildIncidentAnnotations = (incidents, rangeStart, rangeEnd, labels, color
  Marks the checks that found the container restarted by its restart policy since the previous check, the same way the
  restart alerts do. The counts are only compared within the same container, as a recreated one starts from zero. A
  manual restart resets the count to zero too, so a lower count means one happened in between, and the restarts counted
- since then were done by the restart policy after it. A log without a count (the container could not be inspected) is
- skipped, so the next known count is compared against the last known one. The logs arrive newest first, hence the
- sorting.
+ since then were done by the restart policy after it. The points arrive the oldest first, and only the checks whose
+ count or container differs from the previous counted check, so every other check would compare equal anyway.
 */
-const buildRestartAnnotations = (logs, rangeStart, rangeEnd, labels, colors) => {
+const buildRestartAnnotations = (restartPoints, rangeStart, rangeEnd, labels, colors) => {
     const annotations = {xaxis: [], points: []};
-    const countedLogs = logs
-        .filter(log => log.restartCount !== null && log.restartCount !== undefined)
-        .map(log => ({
-            timestamp: new Date(log.createdAt).getTime(),
-            restartCount: log.restartCount,
-            containerCreatedAt: log.containerCreatedAt ? new Date(log.containerCreatedAt).getTime() : null,
-        }))
-        .sort((a, b) => a.timestamp - b.timestamp);
-    countedLogs.forEach((log, index) => {
-        const previous = countedLogs[index - 1];
+    restartPoints.forEach((log, index) => {
+        const previous = restartPoints[index - 1];
         const isInRange = log.timestamp >= rangeStart && log.timestamp <= rangeEnd;
         const isSameContainer = previous && log.containerCreatedAt !== null
             && log.containerCreatedAt === previous.containerCreatedAt;
@@ -726,95 +711,182 @@ const buildRestartAnnotations = (logs, rangeStart, rangeEnd, labels, colors) => 
     return annotations;
 };
 
-// The time range displayed by a metrics chart: the selected period up to now. Not the range of the metrics logs, as an
-// incident is always a bit newer than the log of the check causing it, and HTTP monitors don't log failed checks at all.
-// Newer data extends the range, in case the local clock lags behind the server's. A loop instead of spreading the
-// timestamps into Math.max, because the logs of a long period can exceed the maximum number of arguments.
-const metricsChartRange = (period, now, logs, incidents) => {
-    let end = now;
-    const extendTo = (dateTime) => {
-        if (dateTime) {
-            end = Math.max(end, new Date(dateTime).getTime());
-        }
-    };
-    logs.forEach(item => extendTo(item.createdAt));
-    incidents.forEach(incident => {
-        extendTo(incident.startedAt);
-        extendTo(incident.endedAt);
-    });
-    return {start: now - isoDurationToMillis(period), end};
+// The charts refresh at most this often, however often the monitor is checked
+const MIN_AUTO_REFRESH_SECONDS = 30;
+
+// The pickers of a custom range only have a precision of a minute, so an end without seconds stands for the end of that
+// minute, otherwise the checks of the minute would be left out. Applied when a picked range is taken over, so the end of
+// a query is always exact: an end with seconds (typed in) is left as it is, just like the end of a zoom
+const inclusiveRangeEnd = (to) => {
+    const end = new Date(to);
+    return end.getSeconds() === 0 && end.getMilliseconds() === 0 ? new Date(end.getTime() + 59_999).toISOString() : to;
 };
+
+// The time range displayed by a metrics chart: the selected period up to now, or the selected range. Not the range of the
+// series, as an incident is always a bit newer than the log of the check causing it, and HTTP monitors don't log failed
+// checks at all. The end of a period is extended by newer data, in case the local clock lags behind the server's. The
+// timestamps of the series are the oldest first.
+const metricsChartRange = (query, now, timestamps, incidents) => {
+    if (!query.period) {
+        return {start: Date.parse(query.from), end: Date.parse(query.to)};
+    }
+    // Not spread into Math.max, as a flapping monitor can have more incidents than the maximum number of arguments
+    const newest = incidents.reduce(
+        (latest, incident) => Math.max(latest, incident.endedAt ?? incident.startedAt),
+        timestamps.at(-1) ?? now,
+    );
+    return {start: now - isoDurationToMillis(query.period), end: Math.max(now, newest)};
+};
+
+/*
+ Whether a range picked for a metrics block is wrong, by its start, its end, and the two of them together. An end is an
+ ISO-8601 timestamp, null if it's empty, or undefined if what was typed in is not a valid date and time. Both of them
+ are required.
+*/
+const metricsRangeErrors = (from, to) => ({
+    from: !from,
+    to: !to,
+    range: !!from && !!to && Date.parse(from) >= Date.parse(to),
+});
+
+// How long a metrics block waits after the last change of its range (or after the calendar of a picker is closed)
+// before it fetches it, so it's fetched once, not at every change, e.g. when both of its ends are picked one by one
+const METRICS_RANGE_APPLY_DELAY_MS = 1000;
+
+const hasMetricsRangeError = (errors) => Object.values(errors).some(Boolean);
+
+// The period selected on a chart, widened to whole seconds, as the pickers show at most seconds
+const zoomedMetricsRange = (min, max) => ({
+    from: new Date(Math.floor(min / 1000) * 1000).toISOString(),
+    to: new Date(Math.ceil(max / 1000) * 1000).toISOString(),
+});
+
+// The days the picker of one end of a range can pick: not after the day of its end in the picker of its start, and
+// not before the day of its start in the picker of its end. The times of the same day are checked by the validation.
+const metricsRangeDayLimits = (end, range) => {
+    const otherEnd = end === 'from' ? range.to : range.from;
+    const day = otherEnd ? toDateTimeLocalValue(otherEnd).split('T')[0] : undefined;
+    return end === 'from' ? {max: day} : {min: day};
+};
+
+/*
+ The picker of one end ('from' or 'to') of the custom range of a metrics block, nested into the x-data of the block. The
+ two of them work as one range picker: what's picked lands in the rangeDraft of the block, which validates the range, and
+ limits the days of the other picker.
+*/
+const metricsRangePicker = (end) => ({
+    ...dateTimePickerField(),
+
+    init() {
+        this.setPickedDateTime(this.rangeDraft[end]);
+        // The range is also changed by selecting an interval on the chart, and cleared by selecting a period
+        this.$watch(`rangeDraft.${end}`, (value) => {
+            if (value !== undefined && value !== this.pickedRangeEnd()) this.setPickedDateTime(value);
+        });
+    },
+
+    // Null if the picker is empty, undefined if it holds an invalid value
+    pickedRangeEnd() {
+        if (!this.pickedDate && !this.pickedTime) return null;
+        return this.pickedDateTimeAsIso() ?? undefined;
+    },
+
+    // Called by the picker on every change, see dateTimePickerField
+    validateDateTime() {
+        this.pickRangeEnd(end, this.pickedRangeEnd());
+    },
+
+    // What's picked while the calendar is open (e.g. while the time picker is dragged) is only shown once it's closed
+    initRangePicker(element) {
+        this.initDateTimePicker(element, () => this.dayLimits());
+        element.addEventListener('shown.bs.datepicker', () => this.setRangeCalendarOpen(true));
+        element.addEventListener('hidden.bs.datepicker', () => this.setRangeCalendarOpen(false));
+    },
+
+    dayLimits() {
+        return metricsRangeDayLimits(end, this.rangeDraft);
+    },
+});
 
 const nullableNumberOf = (value) => value === null || value === undefined ? null : Number(value);
 
-const nullableLatencyOf = (item) => nullableNumberOf(item.latencyInMs);
-
-// A point of a chart series: the time of the check (or the start of a bucket of checks) and the value of the series
-const chartSeries = (name, type, points, valueOf) => ({
+/*
+ The series of the metrics charts. A point is a bucket of the checks of the period (see MonitorChartService), at the
+ average time of its checks. Each measurement is drawn as the average of its bucket, with a band from its lowest to its
+ highest reading behind it. The bands come after the measurements and are always there, even without any reading, so
+ the colors, the axes and the tooltip rows of the series keep their places.
+*/
+const chartSeries = (name, type, timestamps, values) => ({
     name,
     type,
-    data: points.map(item => ({x: new Date(item.createdAt).getTime(), y: valueOf(item)})),
+    data: timestamps.map((x, index) => ({x, y: nullableNumberOf(values[index])})),
 });
 
-/*
- The band from the average up to the highest reading of each bucket of checks, drawn along the average. The points of a
- short period are single checks, which have no highest reading, so they have no band at all (null). The bands come
- after the other series of a chart, so the colors and the axes of those keep their places with or without them.
-*/
-const highestBandSeries = (name, points, averageOf, highestOf) => {
-    if (!points.some(item => highestOf(item) !== null)) {
-        return null;
-    }
-    return {
-        name,
-        type: 'rangeArea',
-        data: points.map(item => {
-            const average = averageOf(item);
-            const highest = highestOf(item);
-            return {
-                x: new Date(item.createdAt).getTime(),
-                y: average === null || highest === null ? null : [average, highest],
-            };
-        }),
-    };
+const bandSeries = (name, timestamps, lowest, highest) => ({
+    name,
+    type: 'rangeArea',
+    data: timestamps.map((x, index) => ({
+        x,
+        y: lowest[index] === null || highest[index] === null ? null : [Number(lowest[index]), Number(highest[index])],
+    })),
+});
+
+// The numbers of the checks of each point are carried by the points of the first series, for the tooltip
+const withCheckCounts = (series, {checks, checksWithoutReading}) => {
+    const [first, ...rest] = series;
+    const data = first.data.map((point, index) => ({
+        ...point,
+        checks: checks[index],
+        checksWithoutReading: checksWithoutReading[index],
+    }));
+    return [{...first, data}, ...rest];
 };
 
-const toLatencyChartData = (points, labels) => ({
-    series: [
-        chartSeries(labels.latency, 'area', points, nullableLatencyOf),
-        highestBandSeries(
-            labels.latencyHighest, points, nullableLatencyOf, item => nullableNumberOf(item.maxLatencyInMs),
-        ),
-    ].filter(Boolean),
+const toLatencyChartData = (series, labels) => ({
+    series: withCheckCounts([
+        chartSeries(labels.latency, 'area', series.timestamps, series.latencies),
+        bandSeries(labels.latencyRange, series.timestamps, series.lowestLatencies, series.highestLatencies),
+    ], series),
 });
 
-// The opacity of the bands of the highest readings, drawn in the color of the series they belong to
-const HIGHEST_BAND_OPACITY = 0.3;
+// The opacity of the bands of the lowest to the highest readings, drawn in the color of the series they belong to
+const RANGE_BAND_OPACITY = 0.3;
 
 /*
  The shared tooltip of the metrics charts, with the value of every visible series at the hovered point, formatted by the
- formatter of the same index. It's built here, because once a chart has a band (a range series), ApexCharts shows every
- series of it as a range, the ones with a single value too. A band shows its highest reading, as its name says.
+ formatter of the same index, and the number of the checks of the point that have no reading, if there are any. It's
+ built here, because once a chart has a band (a range series), ApexCharts shows every series of it as a range, the ones
+ with a single value too. A band shows its lowest and highest reading.
 */
-const metricsChartTooltip = (formatters) => ({dataPointIndex, w}) => {
+const metricsChartTooltip = (formatters, checksWithoutReadingLabel) => ({dataPointIndex, w}) => {
     const rows = w.config.series.map((series, index) => {
         const point = series.data[dataPointIndex];
         if (!point || w.globals.collapsedSeriesIndices.includes(index)) {
             return '';
         }
-        const value = Array.isArray(point.y) ? point.y[1] : point.y;
-        return `<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: ${index + 1}; display: flex;">` +
-            `<span class="apexcharts-tooltip-marker" style="color: ${w.globals.colors[index]}">` +
-            '<svg viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="5" fill="currentColor"></circle></svg>' +
-            '</span><div class="apexcharts-tooltip-text"><div class="apexcharts-tooltip-y-group">' +
-            `<span class="apexcharts-tooltip-text-y-label">${escapeHtml(series.name)}: </span>` +
-            `<span class="apexcharts-tooltip-text-y-value">${escapeHtml(formatters[index](value))}</span>` +
-            '</div></div></div>';
+        const format = formatters[index];
+        const value = Array.isArray(point.y) ? point.y.map(format).join(' – ') : format(point.y);
+        return tooltipRow(w.globals.colors[index], series.name, value, index + 1);
     });
     const hovered = w.config.series.map(series => series.data[dataPointIndex]).find(Boolean);
+    if (hovered && hovered.checksWithoutReading > 0) {
+        const value = `${hovered.checksWithoutReading} / ${hovered.checks}`;
+        rows.push(tooltipRow(null, checksWithoutReadingLabel, value, rows.length + 1));
+    }
     const title = hovered ? formatChartTimestamp(new Date(hovered.x)) : '';
     return `<div class="apexcharts-tooltip-title">${title}</div>${rows.join('')}`;
 };
+
+const tooltipRow = (color, label, value, order) =>
+    `<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: ${order}; display: flex;">` +
+    (color === null ? '' :
+        `<span class="apexcharts-tooltip-marker" style="color: ${color}">` +
+        '<svg viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="5" fill="currentColor"></circle></svg>' +
+        '</span>') +
+    '<div class="apexcharts-tooltip-text"><div class="apexcharts-tooltip-y-group">' +
+    `<span class="apexcharts-tooltip-text-y-label">${escapeHtml(label)}: </span>` +
+    `<span class="apexcharts-tooltip-text-y-value">${escapeHtml(value)}</span>` +
+    '</div></div></div>';
 
 const latencyChartOptions = (chartLabels) => {
     const latencyFormatter = formatWithUnit(" ms");
@@ -823,14 +895,18 @@ const latencyChartOptions = (chartLabels) => {
     return {
         ...options,
         colors: [latencyColor, latencyColor],
-        fill: {type: "solid", opacity: [0.16, HIGHEST_BAND_OPACITY]},
+        fill: {type: "solid", opacity: [0.16, RANGE_BAND_OPACITY]},
         stroke: {...options.stroke, width: [2, 0]},
-        tooltip: {...options.tooltip, shared: true, custom: metricsChartTooltip([latencyFormatter, latencyFormatter])},
+        tooltip: {
+            ...options.tooltip,
+            shared: true,
+            custom: metricsChartTooltip([latencyFormatter, latencyFormatter], chartLabels.checksWithoutReading),
+        },
     };
 };
 
-// The shared lifecycle of the metrics blocks on the monitor detail pages: polls the stats and the incidents of the
-// monitor in the selected period, and renders them with the type specific chart options and data transformation
+// The shared lifecycle of the metrics blocks on the monitor detail pages: polls the stats, the series and the incidents
+// of the monitor in the selected period, and renders them with the type specific chart options and data transformation
 const metricsBlock = ({
     monitorId,
     isMonitorEnabled,
@@ -838,12 +914,14 @@ const metricsBlock = ({
     chartLabels,
     period,
     chartPath,
-    incidentType,
     chartElementId,
     buildChartOptions,
     toChartData,
     // Series that start collapsed, still listed in the legend so they can be toggled on
     initiallyHiddenSeries = [],
+    // The series listed in the legend, with the band of each of them, if it has one. A band has no legend item of its
+    // own, it's shown and hidden together with its series
+    legendedSeries = [],
     // Markers of a monitor type's own, derived from its chart data, shown alongside the incident markers
     buildLogAnnotations = null,
 }) => {
@@ -851,7 +929,7 @@ const metricsBlock = ({
         isMonitorEnabled,
         chart: null,
         previousData: null,
-        pollInterval: uptimeCheckInterval * 1000,
+        pollInterval: Math.max(MIN_AUTO_REFRESH_SECONDS, uptimeCheckInterval) * 1000,
         isAutoRefreshEnabled: false,
         intervalId: null,
         lastResponse: null,
@@ -859,8 +937,15 @@ const metricsBlock = ({
         markerColors: {},
         // Only an explicit change of the period shows the loader, the auto-refresh keeps showing the stale data instead
         isPeriodLoading: false,
-        // An ISO-8601 duration, bound to the period selector of the block
+        // An ISO-8601 duration, bound to the period selector of the block, empty while a custom range is shown
         period,
+        // What the charts and the stats show: either a period until now ({period}), or a range ({from, to})
+        query: {period},
+        // What the pickers of the custom range hold, which is shown once it's valid, and they haven't changed for a while
+        rangeDraft: {from: null, to: null},
+        rangeErrors: {},
+        rangeApplyTimeoutId: null,
+        isRangeCalendarOpen: false,
         // The series are only added by the first update, so they cannot be collapsed before that
         hasCollapsedInitialSeries: false,
 
@@ -883,7 +968,65 @@ const metricsBlock = ({
                     this.stopPolling();
                 }
             });
-            this.$watch('period', () => this.refreshPeriod());
+            this.$watch('query', () => this.refreshPeriod());
+            this.$watch('period', (value) => this.selectPeriod(value));
+        },
+
+        // A picked period clears the custom range
+        selectPeriod(value) {
+            if (!value) return;
+            clearTimeout(this.rangeApplyTimeoutId);
+            this.rangeDraft = {from: null, to: null};
+            this.rangeErrors = {};
+            if (this.query.period !== value) {
+                this.query = {period: value};
+            }
+        },
+
+        // Called by the pickers, see metricsRangePicker. The errors are shown right away, but a valid range is only
+        // fetched once the pickers have stopped changing, and their calendars are closed
+        pickRangeEnd(end, value) {
+            this.rangeDraft = {...this.rangeDraft, [end]: value};
+            this.rangeErrors = metricsRangeErrors(this.rangeDraft.from, this.rangeDraft.to);
+            this.scheduleRangeApply();
+        },
+
+        setRangeCalendarOpen(isOpen) {
+            this.isRangeCalendarOpen = isOpen;
+            this.scheduleRangeApply();
+        },
+
+        // A calendar opened and closed without picking anything leaves the period alone, as there is no valid range
+        scheduleRangeApply() {
+            clearTimeout(this.rangeApplyTimeoutId);
+            const {from, to} = this.rangeDraft;
+            if (this.isRangeCalendarOpen || hasMetricsRangeError(metricsRangeErrors(from, to))) return;
+            this.rangeApplyTimeoutId = setTimeout(() => this.applyRangeDraft(), METRICS_RANGE_APPLY_DELAY_MS);
+        },
+
+        applyRangeDraft() {
+            const {from, to} = this.rangeDraft;
+            const end = inclusiveRangeEnd(to);
+            if (from !== this.query.from || (to !== this.query.to && end !== this.query.to)) {
+                this.showRange({from, to: end});
+            }
+        },
+
+        // Selecting an interval on the chart narrows the period down to it, right away
+        zoomTo(min, max) {
+            if (!Number.isFinite(min) || !Number.isFinite(max)) return;
+            const range = zoomedMetricsRange(min, max);
+            if (range.from >= range.to) return;
+            clearTimeout(this.rangeApplyTimeoutId);
+            this.rangeDraft = range;
+            this.rangeErrors = {};
+            this.showRange(range);
+        },
+
+        // A custom range clears the period selector
+        showRange(range) {
+            this.period = '';
+            this.query = range;
         },
 
         refreshPeriod() {
@@ -893,17 +1036,19 @@ const metricsBlock = ({
         },
 
         chartUrl() {
-            return `/api/internal/monitor-charts/${chartPath}/${monitorId}?period=${this.period}`;
-        },
-
-        incidentsUrl() {
-            return `/api/v3/incidents/${incidentType}?monitorId=${monitorId}&period=${this.period}` +
-                `&includeResolved=true&page=1&size=${CHART_INCIDENTS_PAGE_SIZE}`;
+            return `/api/internal/monitor-charts/${chartPath}/${monitorId}?${new URLSearchParams(this.query)}`;
         },
 
         startPolling() {
             this.pollEndpoint();
-            this.intervalId = setInterval(() => this.pollEndpoint(), this.pollInterval);
+            this.intervalId = setInterval(() => {
+                // A range that is over has nothing new to show
+                if (!this.isRangeOver()) this.pollEndpoint();
+            }, this.pollInterval);
+        },
+
+        isRangeOver() {
+            return !!this.query.to && Date.parse(this.query.to) < this.now();
         },
 
         stopPolling() {
@@ -919,8 +1064,36 @@ const metricsBlock = ({
                 resolved: themeColor("green"),
                 restarted: themeColor("yellow"),
             };
-            this.chart = new ApexCharts(document.getElementById(chartElementId), buildChartOptions(this.chartLabels));
+            const options = buildChartOptions(this.chartLabels);
+            this.chart = new ApexCharts(document.getElementById(chartElementId), {
+                ...options,
+                chart: {
+                    ...options.chart,
+                    zoom: {enabled: true, type: 'x'},
+                    events: {
+                        zoomed: (_, {xaxis}) => this.zoomTo(xaxis.min, xaxis.max),
+                        legendClick: (_, seriesIndex) => this.toggleBandOf(seriesIndex),
+                        // The legend is rendered anew by every update, toggling a series included
+                        updated: () => this.hideBandLegendItems(),
+                        mounted: () => this.hideBandLegendItems(),
+                    },
+                },
+            });
             this.chart.render();
+        },
+
+        // The bands come after the series of the legend (see legendedSeries), and ApexCharts lists all of them
+        hideBandLegendItems() {
+            if (!legendedSeries.length) return;
+            document.getElementById(chartElementId)?.querySelectorAll('.apexcharts-legend-series').forEach(item => {
+                if (Number(item.getAttribute('rel')) > legendedSeries.length) item.style.display = 'none';
+            });
+        },
+
+        toggleBandOf(seriesIndex) {
+            const name = this.chart.w.config.series[seriesIndex]?.name;
+            const band = legendedSeries.find(series => series.name === name)?.band;
+            if (band) this.chart.toggleSeries(band);
         },
 
         // The colors are resolved upfront for ApexCharts, so they have to be resolved again when the theme changes
@@ -929,40 +1102,21 @@ const metricsBlock = ({
             this.chart.updateOptions({colors, fill});
         },
 
-        // The incidents are only decoration on the chart, so failing to fetch them must not block the metrics
-        async fetchIncidents() {
-            try {
-                const response = await fetch(this.incidentsUrl());
-                if (!response.ok) {
-                    console.error('Error fetching incidents:', response.status);
-                    return [];
-                }
-                const page = await response.json();
-                if (page.totalPages > 1) {
-                    console.warn(`Only the first ${page.result.length} of the ${page.totalCount} incidents are marked`);
-                }
-                return page.result;
-            } catch (error) {
-                console.error('Error fetching incidents:', error);
-                return [];
-            }
-        },
-
         async pollEndpoint() {
-            const requestedPeriod = this.period;
+            const requestedQuery = this.query;
             try {
-                const [response, incidents] = await Promise.all([fetch(this.chartUrl()), this.fetchIncidents()]);
+                const response = await fetch(this.chartUrl());
                 if (!response.ok) {
                     console.error('Error fetching data:', response.status);
                     return;
                 }
                 const rawData = await response.json();
                 // The period has been changed in the meantime, so this response is outdated
-                if (requestedPeriod !== this.period) {
+                if (requestedQuery !== this.query) {
                     return;
                 }
                 this.lastResponse = rawData;
-                const transformedData = this.transformData(rawData, incidents);
+                const transformedData = this.transformData(rawData);
                 // The range follows the clock, so comparing it too would re-render the same data on every poll
                 const {range, ...displayedData} = transformedData;
 
@@ -974,15 +1128,15 @@ const metricsBlock = ({
                 console.error('Error during polling:', error);
             } finally {
                 // Only the response of the currently selected period can end the loading of a period change
-                if (requestedPeriod === this.period) {
+                if (requestedQuery === this.query) {
                     this.isPeriodLoading = false;
                 }
             }
         },
 
-        transformData(rawData, incidents) {
-            const points = rawData.points;
-            const range = metricsChartRange(this.period, this.now(), points, incidents);
+        transformData(rawData) {
+            const {series, incidents} = rawData;
+            const range = metricsChartRange(this.query, this.now(), series.timestamps, incidents);
             const annotations = buildIncidentAnnotations(
                 incidents, range.start, range.end, this.chartLabels, this.markerColors,
             );
@@ -994,7 +1148,7 @@ const metricsBlock = ({
                 annotations.points.push(...logAnnotations.points);
             }
             return {
-                ...toChartData(points, this.chartLabels),
+                ...toChartData(series, this.chartLabels),
                 annotations,
                 range,
             };
@@ -1005,7 +1159,7 @@ const metricsBlock = ({
             this.chart.updateOptions({
                 series: newData.series,
                 annotations: newData.annotations,
-                // The axis spans the whole range, otherwise it would only fit the logs and cut off the newest markers
+                // The axis spans the whole period, otherwise it would only fit the logs and cut off the newest markers
                 xaxis: {min: newData.range.start, max: newData.range.end},
             });
             /*
@@ -1020,18 +1174,18 @@ const metricsBlock = ({
     };
 };
 
-const httpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, chartLabels, period) => metricsBlock({
-    monitorId,
-    isMonitorEnabled,
-    uptimeCheckInterval,
-    chartLabels,
-    period,
-    chartPath: 'http',
-    incidentType: 'HTTP',
-    chartElementId: 'monitor-details-latency-chart',
-    buildChartOptions: latencyChartOptions,
-    toChartData: toLatencyChartData,
-});
+const httpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, chartLabels, period) =>
+    metricsBlock({
+        monitorId,
+        isMonitorEnabled,
+        uptimeCheckInterval,
+        chartLabels,
+        period,
+        chartPath: 'http',
+        chartElementId: 'monitor-details-latency-chart',
+        buildChartOptions: latencyChartOptions,
+        toChartData: toLatencyChartData,
+    });
 
 // Latency and packet loss share a single chart, each of them with an axis of its own
 const icmpChartOptions = (chartLabels) => {
@@ -1046,23 +1200,26 @@ const icmpChartOptions = (chartLabels) => {
         colors: [latencyColor, packetLossColor, latencyColor, packetLossColor],
         fill: {
             type: "solid",
-            opacity: [0.16, 1, HIGHEST_BAND_OPACITY, HIGHEST_BAND_OPACITY],
+            opacity: [0.16, 1, RANGE_BAND_OPACITY, RANGE_BAND_OPACITY],
         },
         stroke: {...options.stroke, width: [2, 2, 0, 0]},
         tooltip: {
             ...options.tooltip,
             shared: true,
-            custom: metricsChartTooltip([latencyFormatter, packetLossFormatter, latencyFormatter, packetLossFormatter]),
+            custom: metricsChartTooltip(
+                [latencyFormatter, packetLossFormatter, latencyFormatter, packetLossFormatter],
+                chartLabels.checksWithoutReading,
+            ),
         },
         // Each band is drawn on the axis of the series it belongs to
         yaxis: [
             {
-                seriesName: [chartLabels.latency, chartLabels.latencyHighest],
+                seriesName: [chartLabels.latency, chartLabels.latencyRange],
                 min: 0,
                 labels: {padding: 4, formatter: (val) => Math.round(val) + " ms"},
             },
             {
-                seriesName: [chartLabels.packetLoss, chartLabels.packetLossHighest],
+                seriesName: [chartLabels.packetLoss, chartLabels.packetLossRange],
                 opposite: true,
                 min: 0,
                 max: 100,
@@ -1075,65 +1232,63 @@ const icmpChartOptions = (chartLabels) => {
     };
 };
 
-const icmpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, chartLabels, period) => metricsBlock({
-    monitorId,
-    isMonitorEnabled,
-    uptimeCheckInterval,
-    chartLabels,
-    period,
-    chartPath: 'icmp',
-    incidentType: 'ICMP',
-    chartElementId: 'icmp-monitor-details-metrics-chart',
-    buildChartOptions: icmpChartOptions,
-    toChartData: (points, labels) => {
-        const packetLossOf = item => nullableNumberOf(item.packetLossPercentage);
-        return {
-            series: [
-                chartSeries(labels.latency, 'area', points, nullableLatencyOf),
-                chartSeries(labels.packetLoss, 'line', points, packetLossOf),
-                highestBandSeries(
-                    labels.latencyHighest, points, nullableLatencyOf, item => nullableNumberOf(item.maxLatencyInMs),
+const icmpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, chartLabels, period) =>
+    metricsBlock({
+        monitorId,
+        isMonitorEnabled,
+        uptimeCheckInterval,
+        chartLabels,
+        period,
+        chartPath: 'icmp',
+        chartElementId: 'icmp-monitor-details-metrics-chart',
+        buildChartOptions: icmpChartOptions,
+        legendedSeries: [
+            {name: chartLabels.latency, band: chartLabels.latencyRange},
+            {name: chartLabels.packetLoss, band: chartLabels.packetLossRange},
+        ],
+        toChartData: (series, labels) => ({
+            series: withCheckCounts([
+                chartSeries(labels.latency, 'area', series.timestamps, series.latencies),
+                chartSeries(labels.packetLoss, 'line', series.timestamps, series.packetLossPercentages),
+                bandSeries(labels.latencyRange, series.timestamps, series.lowestLatencies, series.highestLatencies),
+                bandSeries(
+                    labels.packetLossRange,
+                    series.timestamps,
+                    series.lowestPacketLossPercentages,
+                    series.highestPacketLossPercentages,
                 ),
-                highestBandSeries(
-                    labels.packetLossHighest,
-                    points,
-                    packetLossOf,
-                    item => nullableNumberOf(item.maxPacketLossPercentage),
-                ),
-            ].filter(Boolean),
-        };
-    },
-});
+            ], series),
+        }),
+    });
 
-const tcpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, chartLabels, period) => metricsBlock({
-    monitorId,
-    isMonitorEnabled,
-    uptimeCheckInterval,
-    chartLabels,
-    period,
-    chartPath: 'tcp',
-    incidentType: 'TCP',
-    chartElementId: 'tcp-monitor-details-latency-chart',
-    buildChartOptions: latencyChartOptions,
-    toChartData: toLatencyChartData,
-});
+const tcpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, chartLabels, period) =>
+    metricsBlock({
+        monitorId,
+        isMonitorEnabled,
+        uptimeCheckInterval,
+        chartLabels,
+        period,
+        chartPath: 'tcp',
+        chartElementId: 'tcp-monitor-details-latency-chart',
+        buildChartOptions: latencyChartOptions,
+        toChartData: toLatencyChartData,
+    });
 
-const dnsMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, chartLabels, period) => metricsBlock({
-    monitorId,
-    isMonitorEnabled,
-    uptimeCheckInterval,
-    chartLabels,
-    period,
-    chartPath: 'dns',
-    incidentType: 'DNS',
-    chartElementId: 'dns-monitor-details-latency-chart',
-    buildChartOptions: latencyChartOptions,
-    toChartData: toLatencyChartData,
-});
+const dnsMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, chartLabels, period) =>
+    metricsBlock({
+        monitorId,
+        isMonitorEnabled,
+        uptimeCheckInterval,
+        chartLabels,
+        period,
+        chartPath: 'dns',
+        chartElementId: 'dns-monitor-details-latency-chart',
+        buildChartOptions: latencyChartOptions,
+        toChartData: toLatencyChartData,
+    });
 
 const BYTES_IN_MIB = 1048576;
 
-const nullableCpuOf = (item) => nullableNumberOf(item.cpuUsagePercent);
 // Shared by the chart and the stat cards (called from their Alpine expressions), so both show the same figure
 const bytesToMib = (bytes) => bytes != null ? parseFloat((bytes / BYTES_IN_MIB).toFixed(1)) : null;
 
@@ -1160,24 +1315,27 @@ const dockerResourceChartOptions = (chartLabels) => {
         colors: [cpuUsageColor, memoryUsageColor, memoryLimitColor, cpuUsageColor, memoryUsageColor],
         fill: {
             type: "solid",
-            opacity: [0.16, 1, 1, HIGHEST_BAND_OPACITY, HIGHEST_BAND_OPACITY],
+            opacity: [0.16, 1, 1, RANGE_BAND_OPACITY, RANGE_BAND_OPACITY],
         },
         // The ceiling is a boundary rather than a measurement, so it is dashed instead of drawn like the readings
         stroke: {...options.stroke, width: [2, 2, 1, 0, 0], dashArray: [0, 0, 4, 0, 0]},
         tooltip: {
             ...options.tooltip,
             shared: true,
-            custom: metricsChartTooltip([cpuFormatter, memoryFormatter, memoryFormatter, cpuFormatter, memoryFormatter]),
+            custom: metricsChartTooltip(
+                [cpuFormatter, memoryFormatter, memoryFormatter, cpuFormatter, memoryFormatter],
+                chartLabels.checksWithoutReading,
+            ),
         },
-        // Two scales: the memory limit and the band of the highest memory usage share the scale of the memory usage
+        // Two scales: the memory limit and the band of the memory usage share the scale of the memory usage
         yaxis: [
             {
-                seriesName: [chartLabels.cpuUsage, chartLabels.cpuUsageHighest],
+                seriesName: [chartLabels.cpuUsage, chartLabels.cpuUsageRange],
                 min: 0,
                 labels: {padding: 4, formatter: (val) => Math.round(val) + "%"},
             },
             {
-                seriesName: [chartLabels.memoryUsage, chartLabels.memoryLimit, chartLabels.memoryUsageHighest],
+                seriesName: [chartLabels.memoryUsage, chartLabels.memoryLimit, chartLabels.memoryUsageRange],
                 opposite: true,
                 min: 0,
                 labels: {padding: 4, formatter: (val) => Math.round(val) + " MiB"},
@@ -1189,39 +1347,47 @@ const dockerResourceChartOptions = (chartLabels) => {
     };
 };
 
-const dockerMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, chartLabels, period) => metricsBlock({
-    monitorId,
-    isMonitorEnabled,
-    uptimeCheckInterval,
-    chartLabels,
-    period,
-    chartPath: 'docker',
-    incidentType: 'DOCKER',
-    chartElementId: 'docker-monitor-details-metrics-chart',
-    buildChartOptions: dockerResourceChartOptions,
-    toChartData: (points, labels) => {
-        const memoryUsageOf = item => bytesToMib(item.memoryUsageBytes);
-        return {
-            series: [
-                chartSeries(labels.cpuUsage, 'area', points, nullableCpuOf),
-                chartSeries(labels.memoryUsage, 'line', points, memoryUsageOf),
-                chartSeries(labels.memoryLimit, 'line', points, item => bytesToMib(item.memoryLimitBytes)),
-                highestBandSeries(
-                    labels.cpuUsageHighest, points, nullableCpuOf, item => nullableNumberOf(item.maxCpuUsagePercent),
+const dockerMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, chartLabels, period) =>
+    metricsBlock({
+        monitorId,
+        isMonitorEnabled,
+        uptimeCheckInterval,
+        chartLabels,
+        period,
+        chartPath: 'docker',
+        chartElementId: 'docker-monitor-details-metrics-chart',
+        buildChartOptions: dockerResourceChartOptions,
+        legendedSeries: [
+            {name: chartLabels.cpuUsage, band: chartLabels.cpuUsageRange},
+            {name: chartLabels.memoryUsage, band: chartLabels.memoryUsageRange},
+            {name: chartLabels.memoryLimit},
+        ],
+        toChartData: (series, labels) => ({
+            series: withCheckCounts([
+                chartSeries(labels.cpuUsage, 'area', series.timestamps, series.cpuUsagePercentages),
+                chartSeries(labels.memoryUsage, 'line', series.timestamps, series.memoryUsageBytes.map(bytesToMib)),
+                chartSeries(labels.memoryLimit, 'line', series.timestamps, series.memoryLimitBytes.map(bytesToMib)),
+                bandSeries(
+                    labels.cpuUsageRange,
+                    series.timestamps,
+                    series.lowestCpuUsagePercentages,
+                    series.highestCpuUsagePercentages,
                 ),
-                highestBandSeries(
-                    labels.memoryUsageHighest, points, memoryUsageOf, item => bytesToMib(item.maxMemoryUsageBytes),
+                bandSeries(
+                    labels.memoryUsageRange,
+                    series.timestamps,
+                    series.lowestMemoryUsageBytes.map(bytesToMib),
+                    series.highestMemoryUsageBytes.map(bytesToMib),
                 ),
-            ].filter(Boolean),
-        };
-    },
-    /*
-     A container started without a memory limit reports the host's whole RAM as one, which would dwarf the usage
-     and flatten it against the bottom of the scale. So the ceiling stays off until it is asked for.
-    */
-    initiallyHiddenSeries: [chartLabels.memoryLimit],
-    buildLogAnnotations: (rawData, ...rest) => buildRestartAnnotations(rawData.restarts, ...rest),
-});
+            ], series),
+        }),
+        /*
+         A container started without a memory limit reports the host's whole RAM as one, which would dwarf the usage
+         and flatten it against the bottom of the scale. So the ceiling stays off until it is asked for.
+        */
+        initiallyHiddenSeries: [chartLabels.memoryLimit],
+        buildLogAnnotations: (rawData, ...rest) => buildRestartAnnotations(rawData.restarts, ...rest),
+    });
 
 const hasNonNullValue = (obj) => Object.values(obj).some(value => value !== null);
 
@@ -2868,6 +3034,10 @@ const maintenanceWindowDetails = (maintenanceWindowId, isMaintenanceWindowEnable
     }
 });
 
+// The defaults of Vanilla Calendar Pro, which mean no limit for the days that can be picked
+const CALENDAR_FIRST_DAY = '1970-01-01';
+const CALENDAR_LAST_DAY = '2470-12-31';
+
 /**
  * A date and a time picked with Tabler's datepicker, extended with the time picker of the underlying Vanilla Calendar
  * Pro, and shown (and typed in) as YYYY-MM-DD HH:mm, optionally with seconds. The time picker can't select seconds,
@@ -2903,8 +3073,9 @@ const dateTimePickerField = () => ({
     },
 
     // The picker and the model are kept in sync in both directions: a picked day or time lands in the model, and a
-    // typed (or loaded) one is selected in the calendar
-    initDateTimePicker(element) {
+    // typed (or loaded) one is selected in the calendar. The optional dayLimitsOf returns the first and the last day
+    // (YYYY-MM-DD, or undefined for no limit) that can be picked, and it's watched, so the limits follow its values
+    initDateTimePicker(element, dayLimitsOf = null) {
         const datepicker = new tabler.Datepicker(element, {
             // Tabler writes the input when a day is picked, which has to show the time as well
             dateFormat: (date) => formatDateTimeValue(toIsoDate(date), this.pickedTime),
@@ -2972,6 +3143,18 @@ const dateTimePickerField = () => ({
                 datepicker.calendar.update({dates: false, month: false, year: false});
             }
         });
+        if (dayLimitsOf) {
+            const applyDayLimits = ({min = CALENDAR_FIRST_DAY, max = CALENDAR_LAST_DAY}) => {
+                // An update re-renders the calendar, which would e.g. drop the knob of the time picker while it's
+                // dragged, so the calendar is only updated when its limits do change
+                if (min === datepicker.calendar.dateMin && max === datepicker.calendar.dateMax) return;
+                datepicker.calendar.dateMin = min;
+                datepicker.calendar.dateMax = max;
+                datepicker.calendar.update({dates: false, month: false, year: false});
+            };
+            applyDayLimits(dayLimitsOf());
+            this.$watch(dayLimitsOf, applyDayLimits);
+        }
     },
 });
 
@@ -3355,9 +3538,13 @@ if (typeof module !== 'undefined' && module.exports) {
         anchorPopupToModal,
         formatChartTimestamp,
         buildIncidentAnnotations,
-        CHART_INCIDENTS_PAGE_SIZE,
         buildRestartAnnotations,
         metricsChartTooltip,
+        inclusiveRangeEnd,
+        MIN_AUTO_REFRESH_SECONDS,
+        metricsRangeErrors,
+        zoomedMetricsRange,
+        metricsRangeDayLimits,
         isValidUrl,
         isValidSlug,
         isValidIsoDuration,
@@ -3413,6 +3600,7 @@ if (typeof module !== 'undefined' && module.exports) {
         tcpMetricsBlock,
         dnsMetricsBlock,
         dockerMetricsBlock,
+        metricsRangePicker,
         fetchDockerContainers,
         initDockerHostSelect,
         initDockerContainerSelect,

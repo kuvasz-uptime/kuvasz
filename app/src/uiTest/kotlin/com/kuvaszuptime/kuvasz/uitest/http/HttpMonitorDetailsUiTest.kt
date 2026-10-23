@@ -32,6 +32,8 @@ class HttpMonitorDetailsUiTest(private val httpMonitorRepository: HttpMonitorRep
             // ApexCharts renders an <svg> even with no data (its no-data state).
             assertThat(details.latencyChartSvg).isVisible()
             assertThat(details.metricsPeriodSelector).hasValue("PT24H")
+            assertThat(details.metricsRangeFrom).isEmpty()
+            assertThat(details.metricsRangeTo).isEmpty()
         }
 
         "an ongoing incident is marked on the latency chart, even without any latency logs in the period" {

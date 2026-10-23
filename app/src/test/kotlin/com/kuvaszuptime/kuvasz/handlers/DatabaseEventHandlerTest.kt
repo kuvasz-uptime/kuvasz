@@ -493,7 +493,7 @@ class DatabaseEventHandlerTest(
                     val uptimeRecords = pushUptimeEventRepository.fetchByMonitorId(monitor.id)
 
                     verifyOrder {
-                        pushUptimeEventRepositorySpy.updateEvent(firstUptimeRecord.id, any())
+                        pushUptimeEventRepositorySpy.updateEvent(firstUptimeRecord.id, any(), any())
                     }
 
                     uptimeRecords.shouldHaveSize(1).forOne { event ->
@@ -528,7 +528,7 @@ class DatabaseEventHandlerTest(
                     val uptimeRecords = pushUptimeEventRepository.fetchByMonitorId(monitor.id)
 
                     verifyOrder {
-                        pushUptimeEventRepositorySpy.updateEvent(firstUptimeRecord.id, any())
+                        pushUptimeEventRepositorySpy.updateEvent(firstUptimeRecord.id, any(), any())
                     }
 
                     uptimeRecords.shouldHaveSize(1).forOne { event ->
@@ -727,7 +727,7 @@ class DatabaseEventHandlerTest(
                     val uptimeRecords = icmpUptimeEventRepository.fetchByMonitorId(monitor.id)
 
                     verifyOrder {
-                        icmpUptimeEventRepositorySpy.updateEvent(firstUptimeRecord.id, any())
+                        icmpUptimeEventRepositorySpy.updateEvent(firstUptimeRecord.id, any(), any())
                     }
 
                     uptimeRecords.shouldHaveSize(1).forOne { event ->
@@ -916,7 +916,7 @@ class DatabaseEventHandlerTest(
                     val uptimeRecords = tcpUptimeEventRepository.fetchByMonitorId(monitor.id)
 
                     verifyOrder {
-                        tcpUptimeEventRepositorySpy.updateEvent(firstUptimeRecord.id, any())
+                        tcpUptimeEventRepositorySpy.updateEvent(firstUptimeRecord.id, any(), any())
                     }
 
                     uptimeRecords.shouldHaveSize(1).forOne { event ->
@@ -1105,7 +1105,7 @@ class DatabaseEventHandlerTest(
                     val uptimeRecords = dockerUptimeEventRepository.fetchByMonitorId(monitor.id)
 
                     verifyOrder {
-                        dockerUptimeEventRepositorySpy.updateEvent(firstUptimeRecord.id, any())
+                        dockerUptimeEventRepositorySpy.updateEvent(firstUptimeRecord.id, any(), any())
                     }
 
                     uptimeRecords.shouldHaveSize(1).forOne { event ->

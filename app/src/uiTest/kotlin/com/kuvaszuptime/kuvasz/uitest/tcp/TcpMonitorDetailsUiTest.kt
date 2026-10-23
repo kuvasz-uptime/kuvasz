@@ -27,6 +27,8 @@ class TcpMonitorDetailsUiTest(private val tcpMonitorRepository: TcpMonitorReposi
             // ApexCharts renders an <svg> into the container even with no data (its no-data state).
             assertThat(details.latencyChartSvg).isVisible()
             assertThat(details.metricsPeriodSelector).hasValue("PT24H")
+            assertThat(details.metricsRangeFrom).isEmpty()
+            assertThat(details.metricsRangeTo).isEmpty()
         }
 
         "the monitor can be paused and resumed from its detail page" {

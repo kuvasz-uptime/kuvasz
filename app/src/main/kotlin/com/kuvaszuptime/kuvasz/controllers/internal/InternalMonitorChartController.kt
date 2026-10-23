@@ -10,6 +10,7 @@ import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.annotation.ExecuteOn
 import io.swagger.v3.oas.annotations.Hidden
 import java.time.Duration
+import java.time.OffsetDateTime
 
 @Controller("$API_INTERNAL_PREFIX/monitor-charts")
 @Hidden
@@ -18,22 +19,42 @@ class InternalMonitorChartController(
 ) : InternalMonitorChartOperations {
 
     @ExecuteOn(TaskExecutors.BLOCKING)
-    override fun getHttpMonitorChart(monitorId: Long, period: Duration): LatencyChartDto =
-        monitorChartService.getHttpMonitorChart(monitorId, period)
+    override fun getHttpMonitorChart(
+        monitorId: Long,
+        period: Duration?,
+        from: OffsetDateTime?,
+        to: OffsetDateTime?,
+    ): LatencyChartDto = monitorChartService.getHttpMonitorChart(monitorId, period, from, to)
 
     @ExecuteOn(TaskExecutors.BLOCKING)
-    override fun getTcpMonitorChart(monitorId: Long, period: Duration): LatencyChartDto =
-        monitorChartService.getTcpMonitorChart(monitorId, period)
+    override fun getTcpMonitorChart(
+        monitorId: Long,
+        period: Duration?,
+        from: OffsetDateTime?,
+        to: OffsetDateTime?,
+    ): LatencyChartDto = monitorChartService.getTcpMonitorChart(monitorId, period, from, to)
 
     @ExecuteOn(TaskExecutors.BLOCKING)
-    override fun getDnsMonitorChart(monitorId: Long, period: Duration): LatencyChartDto =
-        monitorChartService.getDnsMonitorChart(monitorId, period)
+    override fun getDnsMonitorChart(
+        monitorId: Long,
+        period: Duration?,
+        from: OffsetDateTime?,
+        to: OffsetDateTime?,
+    ): LatencyChartDto = monitorChartService.getDnsMonitorChart(monitorId, period, from, to)
 
     @ExecuteOn(TaskExecutors.BLOCKING)
-    override fun getIcmpMonitorChart(monitorId: Long, period: Duration): IcmpChartDto =
-        monitorChartService.getIcmpMonitorChart(monitorId, period)
+    override fun getIcmpMonitorChart(
+        monitorId: Long,
+        period: Duration?,
+        from: OffsetDateTime?,
+        to: OffsetDateTime?,
+    ): IcmpChartDto = monitorChartService.getIcmpMonitorChart(monitorId, period, from, to)
 
     @ExecuteOn(TaskExecutors.BLOCKING)
-    override fun getDockerMonitorChart(monitorId: Long, period: Duration): DockerChartDto =
-        monitorChartService.getDockerMonitorChart(monitorId, period)
+    override fun getDockerMonitorChart(
+        monitorId: Long,
+        period: Duration?,
+        from: OffsetDateTime?,
+        to: OffsetDateTime?,
+    ): DockerChartDto = monitorChartService.getDockerMonitorChart(monitorId, period, from, to)
 }

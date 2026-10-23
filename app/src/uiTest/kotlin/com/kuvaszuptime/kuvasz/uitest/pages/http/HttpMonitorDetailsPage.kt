@@ -44,8 +44,10 @@ class HttpMonitorDetailsPage(private val page: Page) {
         page.locator("#monitor-details-latency-chart .apexcharts-point-annotation-marker")
     val incidentMarkerTooltip: Locator get() = page.locator(".apexcharts-annotation-tooltip")
 
-    // The period selector of the metrics block, changing it refreshes the metrics without reloading the page
+    // The period selector of the metrics, and the pickers of the start and the end of a custom range
     val metricsPeriodSelector: Locator get() = page.getByTestId("metrics-period-selector")
+    val metricsRangeFrom: Locator get() = page.getByTestId("metrics-range-from")
+    val metricsRangeTo: Locator get() = page.getByTestId("metrics-range-to")
 
     fun navigate(monitorId: Long) {
         page.navigate("/http-monitors/$monitorId")

@@ -51,7 +51,7 @@ internal fun FlowContent.monitorIncidentsBlock(elementId: String, type: Incident
     h3 {
         +Messages.incidents()
         span {
-            classes(BADGE)
+            classes(BADGE, MS_2)
             +Messages.lastX(ListDefaults.INCIDENT_PERIOD.formatAsSimpleInterval())
         }
         a(href = query.url) {

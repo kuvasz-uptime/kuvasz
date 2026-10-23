@@ -44,6 +44,11 @@ body {
     font-feature-settings: "cv11" 0 !important;
 }
 
+/* Tabler 1.7 made the table header background translucent, so inheriting it in the sort link paints it twice */
+.table-sort {
+    background: transparent;
+}
+
 /* TomSelect clear button */
 div.ts-wrapper.form-select.plugin-clear_button > div.ts-control > div.clear-button {
     border: none !important;

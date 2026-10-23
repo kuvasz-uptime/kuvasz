@@ -10,6 +10,7 @@ import kotlinx.html.*
 import java.time.Duration
 
 private const val CHART_MIN_HEIGHT_STYLE = "min-height: 240px;"
+private const val PERIOD_FIELD_WIDTH_STYLE = "width: 14.0rem;"
 
 private val DEFAULT_METRICS_PERIOD: Duration = Duration.ofDays(UIDefaults.MONITOR_METRICS_PERIOD_DAYS)
 
@@ -140,24 +141,73 @@ internal fun FlowContent.metricsAutoRefreshToggle() {
 }
 
 /**
- * The heading of a metrics block with the period selector and the auto-refresh toggle next to it
+ * A picker of one end of the custom range of a metrics block, [end] being either `from` or `to`. It's a nested
+ * Alpine.js component of the block, see `metricsRangePicker` in kuvasz.js.
+ */
+private fun FlowContent.metricsRangePicker(end: String, labelIcon: Icon, rangeLabel: String) {
+    div {
+        classes(INPUT_GROUP, INPUT_GROUP_SM, FLEX_NOWRAP)
+        style = PERIOD_FIELD_WIDTH_STYLE
+        xData("metricsRangePicker('$end')")
+        label {
+            classes(INPUT_GROUP_TEXT)
+            htmlFor = "metrics-range-$end"
+            icon(labelIcon)
+        }
+        input(type = InputType.text) {
+            classes(FORM_CONTROL)
+            id = "metrics-range-$end"
+            name = "metrics-range-$end"
+            testId("metrics-range-$end")
+            placeholder = "YYYY-MM-DD HH:mm"
+            ariaLabel(rangeLabel)
+            autoComplete = "off"
+            attributes["data-bs-toggle"] = "datepicker"
+            xInit("initRangePicker(\$el)")
+            xBindValue("formatDateTimeValue(pickedDate, pickedTime)")
+            xBindClass("{'is-invalid': rangeErrors.$end || rangeErrors.range}")
+            xOnChange("onDateTimeTyped(\$event.target.value)")
+        }
+    }
+}
+
+/**
+ * The heading of a metrics block with the period selector, the pickers of a custom range instead of a period, and the
+ * auto-refresh toggle next to it. They go into rows of their own when they don't fit next to the title, the toggle
+ * always does so on small screens.
  */
 private fun FlowContent.metricsSectionHeading() {
     div {
-        classes(D_FLEX, ALIGN_ITEMS_CENTER, MB_3)
+        classes(D_FLEX, FLEX_WRAP, ALIGN_ITEMS_CENTER, GAP_2, MT_5, MB_3)
         h2 {
-            classes(MB_0)
+            classes(MB_0, ME_AUTO)
             testId("metrics-block-title")
             +Messages.metrics()
         }
         div {
-            classes(MS_AUTO, D_FLEX, ALIGN_ITEMS_CENTER)
+            classes(D_FLEX, FLEX_WRAP, ALIGN_ITEMS_CENTER, GAP_2)
             div {
-                classes(ME_2)
-                periodSelector(selected = DEFAULT_METRICS_PERIOD) {
+                classes(INPUT_GROUP, INPUT_GROUP_SM, FLEX_NOWRAP)
+                style = PERIOD_FIELD_WIDTH_STYLE
+                label {
+                    classes(INPUT_GROUP_TEXT, GAP_1)
+                    htmlFor = "metrics-period-selector"
+                    icon(Icon.RESTORE)
+                }
+                periodSelector(selected = DEFAULT_METRICS_PERIOD, customOptionLabel = Messages.metricsCustomPeriod()) {
+                    id = "metrics-period-selector"
                     testId("metrics-period-selector")
                     xModel("period")
                 }
+            }
+            span {
+                classes(TEXT_SECONDARY)
+                +Messages.metricsPeriodOrRange()
+            }
+            metricsRangePicker("from", Icon.ARROW_BAR_RIGHT, Messages.metricsFromLabel())
+            metricsRangePicker("to", Icon.ARROW_BAR_TO_RIGHT, Messages.metricsToLabel())
+            div {
+                classes(W_100, D_MD_NONE)
             }
             metricsAutoRefreshToggle()
         }
@@ -192,7 +242,8 @@ internal fun FlowContent.metricsChartCard(chartElementId: String) {
 
 /**
  * The root of a metrics block: the Alpine.js component that polls the metrics (and the incidents) of the monitor in the
- * selected period, rendering the heading of the block and feeding every card and chart rendered by [content].
+ * selected period, rendering the heading of the block and feeding every card and chart rendered by [content]. It's
+ * the last [DEFAULT_METRICS_PERIOD] by default.
  */
 internal fun FlowContent.monitorMetricsBlock(
     typeUiConfig: MonitorTypeUiConfig,
@@ -218,10 +269,11 @@ internal fun FlowContent.monitorMetricsBlock(
             |memoryLimit: "${Messages.dockerMemoryLimit()}",
             |containerRestarted: "${Messages.dockerContainerHasRestarted()}",
             |containerRestartedDetails: "${Messages.dockerContainerRestartedDetails("{delta}", "{total}")}",
-            |latencyHighest: "${Messages.chartHighestOf(Messages.latencyBlockTitle())}",
-            |packetLossHighest: "${Messages.chartHighestOf(Messages.packetLossBlockTitle())}",
-            |cpuUsageHighest: "${Messages.chartHighestOf(Messages.dockerCpuUsageBlockTitle())}",
-            |memoryUsageHighest: "${Messages.chartHighestOf(Messages.dockerMemoryUsageBlockTitle())}",
+            |latencyRange: "${Messages.chartLowestHighestOf(Messages.latencyBlockTitle())}",
+            |packetLossRange: "${Messages.chartLowestHighestOf(Messages.packetLossBlockTitle())}",
+            |cpuUsageRange: "${Messages.chartLowestHighestOf(Messages.dockerCpuUsageBlockTitle())}",
+            |memoryUsageRange: "${Messages.chartLowestHighestOf(Messages.dockerMemoryUsageBlockTitle())}",
+            |checksWithoutReading: "${Messages.chartChecksWithoutReading()}",
             |},
             |"$DEFAULT_METRICS_PERIOD"
             |)

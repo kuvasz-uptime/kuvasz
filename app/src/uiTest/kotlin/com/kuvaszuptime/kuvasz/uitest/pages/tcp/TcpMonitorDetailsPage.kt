@@ -18,8 +18,10 @@ class TcpMonitorDetailsPage(private val page: Page) {
     // ApexCharts container; once rendered it holds an `<svg>`.
     val latencyChartSvg: Locator get() = page.locator("#tcp-monitor-details-latency-chart svg")
 
-    // The period selector of the metrics block, changing it refreshes the metrics without reloading the page
+    // The period selector of the metrics, and the pickers of the start and the end of a custom range
     val metricsPeriodSelector: Locator get() = page.getByTestId("metrics-period-selector")
+    val metricsRangeFrom: Locator get() = page.getByTestId("metrics-range-from")
+    val metricsRangeTo: Locator get() = page.getByTestId("metrics-range-to")
 
     val configureButton: Locator get() = page.getByTestId("configure-button")
 

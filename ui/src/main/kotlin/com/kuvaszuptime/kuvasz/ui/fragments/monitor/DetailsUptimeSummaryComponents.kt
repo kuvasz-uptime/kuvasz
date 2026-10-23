@@ -139,7 +139,7 @@ internal fun FlowContent.monitorUptimeSummary(
             h3 {
                 classes(MT_3, MB_0)
                 +Messages.metrics()
-                inlineBadge(Messages.lastXDays(statsPeriodInDays))
+                inlineBadge(Messages.lastXDays(statsPeriodInDays), extraClasses = setOf(MS_2))
             }
             incidentsStatsCards(cssClasses = setOf(COL_12, COL_MD_4), stats)
             uptimeRatioStatsCards(cssClasses = setOf(COL_12, COL_MD_4), stats)

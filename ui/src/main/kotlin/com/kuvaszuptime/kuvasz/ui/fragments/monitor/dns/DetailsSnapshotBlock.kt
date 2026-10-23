@@ -20,7 +20,7 @@ private fun FlowContent.dnsResolutionSnapshotBlock(snapshot: DnsResolutionSnapsh
         classes(MB_0)
         +Messages.dnsResolvedRecordsTitle()
         span {
-            classes(BADGE)
+            classes(BADGE, MS_2)
             snapshot.updatedAt.let { updatedAt ->
                 tooltip(title = updatedAt.toDateTimeString())
                 +updatedAt.timeAgo()

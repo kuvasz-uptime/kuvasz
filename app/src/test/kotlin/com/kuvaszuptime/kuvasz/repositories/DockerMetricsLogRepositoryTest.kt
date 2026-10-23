@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.DatabaseBehaviorSpec
 import com.kuvaszuptime.kuvasz.jooq.Tables.DOCKER_METRICS_LOG
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DockerMetricsLogRecord
 import com.kuvaszuptime.kuvasz.mocks.createDockerMonitor
+import com.kuvaszuptime.kuvasz.models.dto.monitor.chart.DockerRestartPointDto
 import com.kuvaszuptime.kuvasz.services.docker.DockerCgroupVersion
 import com.kuvaszuptime.kuvasz.services.docker.DockerContainerStats
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
@@ -19,7 +20,9 @@ import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
 
 private val PERIOD = Duration.ofHours(1)
-private val ONE_DAY = Duration.ofDays(1)
+
+// Narrower than the distance of the test checks, so each check is a bucket of its own
+private val ONE_SECOND = Duration.ofSeconds(1)
 private val ONE_HOUR = Duration.ofHours(1)
 
 private fun stats(cpu: Double?, memory: Long?) = DockerContainerStats(
@@ -248,44 +251,28 @@ class DockerMetricsLogRepositoryTest(
             }
         }
 
-        given("the inherited fetchLatencyChartPoints() method") {
+        given("the inherited fetchLatencySeries() method") {
 
-            `when`("it's called without a resolution") {
+            `when`("there are logs before, during and after the period, of other monitors too") {
                 val monitor = createDockerMonitor(monitorRepository)
                 val otherMonitor = createDockerMonitor(monitorRepository)
                 insertLogAt(monitor.id, createdAt = minutesAgo(120), latencyMs = 1)
                 insertLogAt(monitor.id, createdAt = minutesAgo(30), latencyMs = 20)
                 insertLogAt(monitor.id, createdAt = minutesAgo(10), latencyMs = 10)
+                insertLogAt(monitor.id, createdAt = minutesAgo(1), latencyMs = 99)
                 insertLogAt(otherMonitor.id, createdAt = minutesAgo(5), latencyMs = 30)
 
-                val points = metricsLogRepository.fetchLatencyChartPoints(monitor.id, PERIOD, resolution = null)
+                then("every log of the monitor between the start and the end is returned, the oldest first") {
+                    val series = metricsLogRepository
+                        .fetchLatencySeries(monitor.id, minutesAgo(60), minutesAgo(5), ONE_SECOND)
 
-                then("every log of the monitor within the period is a point of its own, the newest first") {
-                    points.map { it.latencyInMs } shouldBe listOf(10, 20)
+                    series.latencies shouldBe listOf(20, 10)
+                    series.timestamps shouldBe listOf(minutesAgo(30), minutesAgo(10)).map { it.toEpochMillis() }
                 }
 
-                then("a single check has no highest reading") {
-                    points.map { it.maxLatencyInMs } shouldBe listOf(null, null)
-                }
-            }
-
-            `when`("it's called with a resolution") {
-                val monitor = createDockerMonitor(monitorRepository)
-                val bucket = hourStartAgo(3)
-                insertLogAt(monitor.id, createdAt = bucket.plusMinutes(10), latencyMs = 10)
-                insertLogAt(monitor.id, createdAt = bucket.plusMinutes(50), latencyMs = 21)
-                insertLogAt(monitor.id, createdAt = bucket.plusMinutes(70), latencyMs = 7)
-                insertLogAt(monitor.id, createdAt = getCurrentTimestamp().minusDays(2), latencyMs = 1_000)
-
-                val points = metricsLogRepository.fetchLatencyChartPoints(monitor.id, ONE_DAY, ONE_HOUR)
-
-                then("the logs within the period are grouped into buckets of whole hours, the newest first") {
-                    points.map { it.createdAt.toInstant() } shouldBe
-                        listOf(bucket.plusHours(1).toInstant(), bucket.toInstant())
-                }
-
-                then("a point holds the average of its bucket, rounded to a whole unit, and its highest reading") {
-                    points.map { it.latencyInMs to it.maxLatencyInMs } shouldBe listOf(7 to 7, 16 to 21)
+                then("an open end of the period is not limited") {
+                    metricsLogRepository.fetchLatencySeries(monitor.id, minutesAgo(60), null, ONE_SECOND)
+                        .latencies shouldBe listOf(20, 10, 99)
                 }
             }
 
@@ -293,105 +280,221 @@ class DockerMetricsLogRepositoryTest(
                 val monitor = createDockerMonitor(monitorRepository)
                 insertLogAt(monitor.id, createdAt = minutesAgo(120))
 
-                then("there are no points") {
-                    metricsLogRepository.fetchLatencyChartPoints(monitor.id, PERIOD, ONE_HOUR).shouldBeEmpty()
+                then("the series are empty") {
+                    val series = metricsLogRepository.fetchLatencySeries(monitor.id, minutesAgo(60), null, ONE_SECOND)
+
+                    series.timestamps.shouldBeEmpty()
+                    series.latencies.shouldBeEmpty()
+                }
+            }
+
+            `when`("the logs are grouped into buckets") {
+                val monitor = createDockerMonitor(monitorRepository)
+                val otherMonitor = createDockerMonitor(monitorRepository)
+                val bucket = now.truncatedTo(ChronoUnit.HOURS).minusHours(3)
+                insertLogAt(monitor.id, createdAt = bucket.minusMinutes(5), latencyMs = 1_000)
+                insertLogAt(monitor.id, createdAt = bucket.plusMinutes(10), latencyMs = 10)
+                insertLogAt(monitor.id, createdAt = bucket.plusMinutes(20), latencyMs = 21)
+                insertLogAt(monitor.id, createdAt = bucket.plusMinutes(50), latencyMs = 30)
+                insertLogAt(monitor.id, createdAt = bucket.plusMinutes(70), latencyMs = 7)
+                insertLogAt(otherMonitor.id, createdAt = bucket.plusMinutes(15), latencyMs = 5_000)
+
+                val series = metricsLogRepository
+                    .fetchLatencySeries(monitor.id, bucket, bucket.plusHours(2), ONE_HOUR)
+
+                then("a bucket of the given length holds the checks of a whole hour, the oldest first") {
+                    series.checks shouldBe listOf(3, 1)
+                    series.checksWithoutReading shouldBe listOf(0, 0)
+                }
+
+                then("a point holds the average, the lowest and the highest reading of its bucket") {
+                    series.latencies shouldBe listOf(20, 7)
+                    series.lowestLatencies shouldBe listOf(10, 7)
+                    series.highestLatencies shouldBe listOf(30, 7)
+                }
+
+                then("a point is where its checks are: at their average time, not at the start of its bucket") {
+                    // The checks are at the 10th, 20th and 50th minute of the hour, 26 min 40 s on average
+                    series.timestamps shouldBe listOf(
+                        bucket.plusMinutes(26).plusSeconds(40).toEpochMillis(),
+                        bucket.plusMinutes(70).toEpochMillis(),
+                    )
                 }
             }
         }
 
-        given("the fetchDockerChartPoints() method") {
+        given("the getLatencyMetricsBetween() method") {
 
-            `when`("it's called with a resolution") {
+            `when`("there are logs before, during and after the period") {
                 val monitor = createDockerMonitor(monitorRepository)
-                val bucket = hourStartAgo(5)
+                insertLogAt(monitor.id, createdAt = minutesAgo(120), latencyMs = 1_000)
+                insertLogAt(monitor.id, createdAt = minutesAgo(30), latencyMs = 20)
+                insertLogAt(monitor.id, createdAt = minutesAgo(20), latencyMs = 40)
+                insertLogAt(monitor.id, createdAt = minutesAgo(1), latencyMs = 3_000)
+
+                then("only the logs of the period are aggregated, with the percentiles too") {
+                    val result = metricsLogRepository
+                        .getLatencyMetricsBetween(monitor.id, minutesAgo(60), minutesAgo(10))
+                        .shouldNotBeNull()
+
+                    result.avg shouldBe 30
+                    result.min shouldBe 20
+                    result.max shouldBe 40
+                    result.p99.shouldNotBeNull()
+                }
+            }
+        }
+
+        given("the fetchDockerSeries() method") {
+
+            `when`("some of the checks were sampled") {
+                val monitor = createDockerMonitor(monitorRepository)
                 val oneGiB = 1024L * 1024 * 1024
                 insertLogAt(
                     monitor.id,
-                    createdAt = bucket.plusMinutes(5),
-                    cpu = BigDecimal("10.00"),
+                    createdAt = minutesAgo(30),
+                    cpu = BigDecimal("12.34"),
                     memory = 3 * oneGiB,
                     memoryLimit = 8 * oneGiB,
                 )
-                insertLogAt(
-                    monitor.id,
-                    createdAt = bucket.plusMinutes(35),
-                    cpu = BigDecimal("20.50"),
-                    memory = 4 * oneGiB,
-                    memoryLimit = 8 * oneGiB,
-                )
-                // The container wasn't sampled at all in the next hour
-                insertLogAt(monitor.id, createdAt = bucket.plusMinutes(65))
+                // The container wasn't sampled at this check
+                insertLogAt(monitor.id, createdAt = minutesAgo(20))
 
-                val points = metricsLogRepository.fetchDockerChartPoints(monitor.id, ONE_DAY, ONE_HOUR)
+                val series = metricsLogRepository.fetchDockerSeries(monitor.id, minutesAgo(60), null, ONE_SECOND)
 
                 then("the CPU keeps its decimals, and the memory readings their full size") {
-                    val sampled = points.last()
-                    sampled.cpuUsagePercent.shouldNotBeNull() shouldBeEqualComparingTo BigDecimal("15.25")
-                    sampled.maxCpuUsagePercent.shouldNotBeNull() shouldBeEqualComparingTo BigDecimal("20.50")
-                    sampled.memoryUsageBytes shouldBe 3 * oneGiB + oneGiB / 2
-                    sampled.maxMemoryUsageBytes shouldBe 4 * oneGiB
-                    sampled.memoryLimitBytes shouldBe 8 * oneGiB
+                    series.cpuUsagePercentages.first().shouldNotBeNull() shouldBeEqualComparingTo BigDecimal("12.34")
+                    series.memoryUsageBytes.first() shouldBe 3 * oneGiB
+                    series.memoryLimitBytes.first() shouldBe 8 * oneGiB
                 }
 
-                then("a bucket without any reading is a point without values, a gap on the chart") {
-                    val unsampled = points.first()
-                    unsampled.createdAt.toInstant() shouldBe bucket.plusHours(1).toInstant()
-                    unsampled.cpuUsagePercent.shouldBeNull()
-                    unsampled.maxCpuUsagePercent.shouldBeNull()
-                    unsampled.memoryUsageBytes.shouldBeNull()
-                    unsampled.memoryLimitBytes.shouldBeNull()
-                }
-            }
-
-            `when`("it's called without a resolution") {
-                val monitor = createDockerMonitor(monitorRepository)
-                insertLogAt(monitor.id, createdAt = minutesAgo(10), cpu = BigDecimal("12.34"), memory = 1_000)
-
-                val points = metricsLogRepository.fetchDockerChartPoints(monitor.id, PERIOD, resolution = null)
-
-                then("every log is a point, without the highest readings") {
-                    val point = points.single()
-                    point.cpuUsagePercent.shouldNotBeNull() shouldBeEqualComparingTo BigDecimal("12.34")
-                    point.memoryUsageBytes shouldBe 1_000
-                    point.maxCpuUsagePercent.shouldBeNull()
-                    point.maxMemoryUsageBytes.shouldBeNull()
+                then("a check without a sample is a gap in each series") {
+                    series.timestamps shouldBe listOf(minutesAgo(30), minutesAgo(20)).map { it.toEpochMillis() }
+                    series.cpuUsagePercentages.last().shouldBeNull()
+                    series.memoryUsageBytes.last().shouldBeNull()
+                    series.memoryLimitBytes.last().shouldBeNull()
                 }
             }
         }
 
-        given("the fetchRestartPoints() method") {
+        given("the fetchDockerSeries() method with buckets") {
+
+            `when`("a bucket has checks without a sample") {
+                val monitor = createDockerMonitor(monitorRepository)
+                val bucket = now.truncatedTo(ChronoUnit.HOURS).minusHours(3)
+                insertLogAt(
+                    monitor.id,
+                    createdAt = bucket.plusMinutes(10),
+                    cpu = BigDecimal("10.00"),
+                    memory = 1_000,
+                    memoryLimit = 8_000,
+                )
+                insertLogAt(
+                    monitor.id,
+                    createdAt = bucket.plusMinutes(20),
+                    cpu = BigDecimal("20.00"),
+                    memory = 3_000,
+                    memoryLimit = 8_000,
+                )
+                insertLogAt(monitor.id, createdAt = bucket.plusMinutes(30))
+                insertLogAt(monitor.id, createdAt = bucket.plusMinutes(70))
+
+                val series = metricsLogRepository.fetchDockerSeries(monitor.id, bucket, bucket.plusHours(2), ONE_HOUR)
+
+                then("the readings are summarized, and the checks without a sample are counted, not averaged") {
+                    series.checks shouldBe listOf(3, 1)
+                    series.checksWithoutReading shouldBe listOf(1, 1)
+                    series.cpuUsagePercentages.first().shouldNotBeNull() shouldBeEqualComparingTo BigDecimal("15.00")
+                    series.lowestCpuUsagePercentages.first().shouldNotBeNull() shouldBeEqualComparingTo
+                        BigDecimal("10.00")
+                    series.highestCpuUsagePercentages.first().shouldNotBeNull() shouldBeEqualComparingTo
+                        BigDecimal("20.00")
+                    series.memoryUsageBytes.first() shouldBe 2_000L
+                    series.lowestMemoryUsageBytes.first() shouldBe 1_000L
+                    series.highestMemoryUsageBytes.first() shouldBe 3_000L
+                    series.memoryLimitBytes.first() shouldBe 8_000L
+                }
+
+                then("a bucket without any sample is a gap in every series") {
+                    series.cpuUsagePercentages.last().shouldBeNull()
+                    series.highestCpuUsagePercentages.last().shouldBeNull()
+                    series.memoryUsageBytes.last().shouldBeNull()
+                    series.highestMemoryUsageBytes.last().shouldBeNull()
+                    series.memoryLimitBytes.last().shouldBeNull()
+                }
+            }
+        }
+
+        given("the getCpuUsageMetricsBetween() and getMemoryUsageMetricsBetween() methods") {
+
+            `when`("there are readings before and during the period") {
+                val monitor = createDockerMonitor(monitorRepository)
+                insertLogAt(monitor.id, createdAt = minutesAgo(120), cpu = BigDecimal("90.00"), memory = 9_000)
+                insertLogAt(monitor.id, createdAt = minutesAgo(30), cpu = BigDecimal("10.00"), memory = 1_000)
+                insertLogAt(monitor.id, createdAt = minutesAgo(20), cpu = BigDecimal("20.00"), memory = 2_000)
+
+                then("only the readings of the period are aggregated") {
+                    val cpu = metricsLogRepository.getCpuUsageMetricsBetween(monitor.id, minutesAgo(60), null)
+                    val memory = metricsLogRepository.getMemoryUsageMetricsBetween(monitor.id, minutesAgo(60), null)
+
+                    cpu?.max.shouldNotBeNull() shouldBeEqualComparingTo BigDecimal("20.00")
+                    memory?.avg shouldBe 1_500L
+                }
+            }
+        }
+
+        given("the fetchRestarts() method") {
 
             `when`("the restart count or the container changes between the checks") {
                 val monitor = createDockerMonitor(monitorRepository)
                 val otherMonitor = createDockerMonitor(monitorRepository)
-                val container = getCurrentTimestamp().minusDays(10)
+                val container = getCurrentTimestamp().minusDays(10).truncatedTo(ChronoUnit.SECONDS)
                 val recreatedContainer = minutesAgo(25)
                 insertLogAt(monitor.id, createdAt = minutesAgo(120), restartCount = 9, containerCreatedAt = container)
                 insertLogAt(monitor.id, createdAt = minutesAgo(50), restartCount = null)
-                val first = insertLogAt(monitor.id, minutesAgo(45), restartCount = 1, containerCreatedAt = container)
+                insertLogAt(monitor.id, minutesAgo(45), restartCount = 1, containerCreatedAt = container)
                 insertLogAt(monitor.id, createdAt = minutesAgo(40), restartCount = 1, containerCreatedAt = container)
-                val restarted =
-                    insertLogAt(monitor.id, minutesAgo(35), restartCount = 2, containerCreatedAt = container)
+                insertLogAt(monitor.id, minutesAgo(35), restartCount = 2, containerCreatedAt = container)
                 insertLogAt(monitor.id, createdAt = minutesAgo(30), restartCount = null, containerCreatedAt = container)
-                val recreated = insertLogAt(
-                    monitor.id,
-                    minutesAgo(20),
-                    restartCount = 2,
-                    containerCreatedAt = recreatedContainer,
-                )
+                insertLogAt(monitor.id, minutesAgo(20), restartCount = 2, containerCreatedAt = recreatedContainer)
                 insertLogAt(monitor.id, minutesAgo(10), restartCount = 2, containerCreatedAt = recreatedContainer)
+                insertLogAt(monitor.id, minutesAgo(1), restartCount = 3, containerCreatedAt = recreatedContainer)
                 insertLogAt(otherMonitor.id, minutesAgo(15), restartCount = 5, containerCreatedAt = container)
 
-                val points = metricsLogRepository.fetchRestartPoints(monitor.id, PERIOD)
+                val restarts = metricsLogRepository.fetchRestarts(monitor.id, minutesAgo(60), minutesAgo(5))
 
-                then("only the first check of the period with a count, and the changes are returned, newest first") {
-                    points.map { it.restartCount to it.containerCreatedAt?.toInstant() } shouldBe listOf(
-                        2 to recreatedContainer.toInstant(),
-                        2 to container.toInstant(),
-                        1 to container.toInstant(),
+                then("the last check with a count before the period, and the changes are returned, oldest first") {
+                    restarts shouldBe listOf(
+                        DockerRestartPointDto(minutesAgo(120).toEpochMillis(), 9, container.toEpochMillis()),
+                        DockerRestartPointDto(minutesAgo(45).toEpochMillis(), 1, container.toEpochMillis()),
+                        DockerRestartPointDto(minutesAgo(35).toEpochMillis(), 2, container.toEpochMillis()),
+                        DockerRestartPointDto(minutesAgo(20).toEpochMillis(), 2, recreatedContainer.toEpochMillis()),
                     )
-                    points.map { it.createdAt.toInstant() } shouldBe
-                        listOf(recreated, restarted, first).map { createdAtOf(it).toInstant() }
+                }
+
+                then("without a check with a count before the period, the first one of the period is the baseline") {
+                    metricsLogRepository.fetchRestarts(otherMonitor.id, minutesAgo(60), null) shouldBe listOf(
+                        DockerRestartPointDto(minutesAgo(15).toEpochMillis(), 5, container.toEpochMillis()),
+                    )
+                }
+            }
+
+            `when`("the container was restarted right before the first check of the period") {
+                val monitor = createDockerMonitor(monitorRepository)
+                val container = getCurrentTimestamp().minusDays(10).truncatedTo(ChronoUnit.SECONDS)
+                insertLogAt(monitor.id, createdAt = minutesAgo(90), restartCount = 2, containerCreatedAt = container)
+                insertLogAt(monitor.id, createdAt = minutesAgo(70), restartCount = 3, containerCreatedAt = container)
+                insertLogAt(monitor.id, createdAt = minutesAgo(65), restartCount = null)
+                insertLogAt(monitor.id, createdAt = minutesAgo(30), restartCount = 4, containerCreatedAt = container)
+                insertLogAt(monitor.id, createdAt = minutesAgo(20), restartCount = 4, containerCreatedAt = container)
+
+                val restarts = metricsLogRepository.fetchRestarts(monitor.id, minutesAgo(60), null)
+
+                then("the restart is returned after the last check with a count before the period") {
+                    restarts shouldBe listOf(
+                        DockerRestartPointDto(minutesAgo(70).toEpochMillis(), 3, container.toEpochMillis()),
+                        DockerRestartPointDto(minutesAgo(30).toEpochMillis(), 4, container.toEpochMillis()),
+                    )
                 }
             }
 
@@ -400,7 +503,7 @@ class DockerMetricsLogRepositoryTest(
                 insertLogAt(monitor.id, createdAt = minutesAgo(10))
 
                 then("there are no restart points") {
-                    metricsLogRepository.fetchRestartPoints(monitor.id, PERIOD).shouldBeEmpty()
+                    metricsLogRepository.fetchRestarts(monitor.id, minutesAgo(60), null).shouldBeEmpty()
                 }
             }
         }
@@ -503,11 +606,12 @@ class DockerMetricsLogRepositoryTest(
         }
     }
 
-    private fun minutesAgo(minutes: Long): OffsetDateTime = getCurrentTimestamp().minusMinutes(minutes)
+    // A single instant in whole seconds, so the timestamps can be compared with the epoch milliseconds of the series
+    private val now = getCurrentTimestamp().truncatedTo(ChronoUnit.SECONDS)
 
-    // The start of a whole hour, a few hours ago, so the logs can be placed into the buckets of the charts
-    private fun hourStartAgo(hours: Long): OffsetDateTime =
-        getCurrentTimestamp().truncatedTo(ChronoUnit.HOURS).minusHours(hours)
+    private fun minutesAgo(minutes: Long): OffsetDateTime = now.minusMinutes(minutes)
+
+    private fun OffsetDateTime.toEpochMillis(): Long = toInstant().toEpochMilli()
 
     private fun insertLogAt(
         monitorId: Long,
@@ -533,14 +637,6 @@ class DockerMetricsLogRepositoryTest(
             )
             .returning(DOCKER_METRICS_LOG.ID)
             .fetchSingle(DOCKER_METRICS_LOG.ID)
-    )
-
-    private fun createdAtOf(logId: Long): OffsetDateTime = checkNotNull(
-        dslContext
-            .select(DOCKER_METRICS_LOG.CREATED_AT)
-            .from(DOCKER_METRICS_LOG)
-            .where(DOCKER_METRICS_LOG.ID.eq(logId))
-            .fetchSingle(DOCKER_METRICS_LOG.CREATED_AT)
     )
 
     private fun countLogsOf(monitorId: Long): Int =

@@ -5,6 +5,8 @@ import com.kuvaszuptime.kuvasz.jooq.Tables.ICMP_METRICS_LOG
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMetricsLogRecord
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import java.time.Duration
@@ -54,43 +56,75 @@ class IcmpMetricsLogRepositoryTest(
             }
         }
 
-        given("the fetchIcmpChartPoints() method") {
+        given("the fetchIcmpSeries() method") {
 
-            `when`("it's called with a resolution") {
+            `when`("there are checks with and without a latency") {
                 val monitor = createIcmpMonitor(monitorRepository)
-                val quarter = getCurrentTimestamp().truncatedTo(ChronoUnit.HOURS).minusHours(1)
-                insertLogAt(monitor.id, createdAt = quarter.plusMinutes(1), packetLoss = 0, latencyMs = 20)
-                insertLogAt(monitor.id, createdAt = quarter.plusMinutes(2), packetLoss = 100, latencyMs = null)
-                insertLogAt(monitor.id, createdAt = quarter.plusMinutes(3), packetLoss = 50, latencyMs = 40)
-
-                val points = metricsLogRepository.fetchIcmpChartPoints(
-                    monitor.id,
-                    Duration.ofDays(7),
-                    Duration.ofMinutes(15),
-                )
-
-                then("both the latency and the packet loss get their average and their highest reading") {
-                    val point = points.single()
-                    point.createdAt.toInstant() shouldBe quarter.toInstant()
-                    point.latencyInMs shouldBe 30
-                    point.maxLatencyInMs shouldBe 40
-                    point.packetLossPercentage shouldBe 50
-                    point.maxPacketLossPercentage shouldBe 100
-                }
-            }
-
-            `when`("it's called without a resolution") {
-                val monitor = createIcmpMonitor(monitorRepository)
+                insertLogAt(monitor.id, createdAt = minutesAgo(90), packetLoss = 50, latencyMs = 1)
                 insertLogAt(monitor.id, createdAt = minutesAgo(20), packetLoss = 100, latencyMs = null)
                 insertLogAt(monitor.id, createdAt = minutesAgo(10), packetLoss = 0, latencyMs = 15)
 
-                val points = metricsLogRepository.fetchIcmpChartPoints(monitor.id, PERIOD, resolution = null)
+                val series = metricsLogRepository
+                    .fetchIcmpSeries(monitor.id, minutesAgo(60), null, Duration.ofSeconds(1))
 
-                then("every log is a point, the newest first, without the highest readings") {
-                    points.map { listOf(it.latencyInMs, it.packetLossPercentage) } shouldBe
-                        listOf(listOf(15, 0), listOf(null, 100))
-                    points.map { listOf(it.maxLatencyInMs, it.maxPacketLossPercentage) } shouldBe
-                        listOf(listOf(null, null), listOf(null, null))
+                then("both the latency and the packet loss of every check of the period are returned, oldest first") {
+                    series.latencies shouldBe listOf(null, 15)
+                    series.packetLossPercentages shouldBe listOf(100, 0)
+                    series.timestamps shouldBe
+                        listOf(minutesAgo(20), minutesAgo(10)).map { it.toInstant().toEpochMilli() }
+                }
+            }
+        }
+
+        given("the fetchIcmpSeries() method with buckets") {
+
+            `when`("most of the checks of a bucket failed") {
+                val monitor = createIcmpMonitor(monitorRepository)
+                val bucket = now.truncatedTo(ChronoUnit.HOURS).minusHours(3)
+                insertLogAt(monitor.id, createdAt = bucket.plusMinutes(10), packetLoss = 0, latencyMs = 20)
+                insertLogAt(monitor.id, createdAt = bucket.plusMinutes(20), packetLoss = 100, latencyMs = null)
+                insertLogAt(monitor.id, createdAt = bucket.plusMinutes(30), packetLoss = 100, latencyMs = null)
+                insertLogAt(monitor.id, createdAt = bucket.plusMinutes(40), packetLoss = 50, latencyMs = 40)
+                insertLogAt(monitor.id, createdAt = bucket.plusMinutes(70), packetLoss = 100, latencyMs = null)
+
+                val series = metricsLogRepository.fetchIcmpSeries(monitor.id, bucket, null, Duration.ofHours(1))
+
+                then("the failed checks are counted, and the readings of the others are summarized") {
+                    series.checks shouldBe listOf(4, 1)
+                    series.checksWithoutReading shouldBe listOf(2, 1)
+                    series.latencies.first() shouldBe 30
+                    series.lowestLatencies.first() shouldBe 20
+                    series.highestLatencies.first() shouldBe 40
+                    series.packetLossPercentages.first() shouldBe 63
+                    series.lowestPacketLossPercentages.first() shouldBe 0
+                    series.highestPacketLossPercentages.first() shouldBe 100
+                }
+
+                then("a bucket of failed checks only has no latency, but still has its packet loss") {
+                    series.latencies.last().shouldBeNull()
+                    series.lowestLatencies.last().shouldBeNull()
+                    series.highestLatencies.last().shouldBeNull()
+                    series.packetLossPercentages.last() shouldBe 100
+                }
+            }
+        }
+
+        given("the getPacketLossMetricsBetween() method") {
+
+            `when`("there are checks before, during and after the period") {
+                val monitor = createIcmpMonitor(monitorRepository)
+                insertLogAt(monitor.id, createdAt = minutesAgo(90), packetLoss = 100)
+                insertLogAt(monitor.id, createdAt = minutesAgo(30), packetLoss = 20)
+                insertLogAt(monitor.id, createdAt = minutesAgo(20), packetLoss = 40)
+                insertLogAt(monitor.id, createdAt = minutesAgo(1), packetLoss = 100)
+
+                then("only the checks of the period are aggregated") {
+                    val result = metricsLogRepository
+                        .getPacketLossMetricsBetween(monitor.id, minutesAgo(60), minutesAgo(10))
+                        .shouldNotBeNull()
+
+                    result.avg shouldBe 30
+                    result.max shouldBe 40
                 }
             }
         }
@@ -112,7 +146,10 @@ class IcmpMetricsLogRepositoryTest(
         }
     }
 
-    private fun minutesAgo(minutes: Long): OffsetDateTime = getCurrentTimestamp().minusMinutes(minutes)
+    // A single instant in whole seconds, so the timestamps can be compared with the epoch milliseconds of the series
+    private val now = getCurrentTimestamp().truncatedTo(ChronoUnit.SECONDS)
+
+    private fun minutesAgo(minutes: Long): OffsetDateTime = now.minusMinutes(minutes)
 
     private fun insertLogAt(monitorId: Long, createdAt: OffsetDateTime, packetLoss: Int, latencyMs: Int? = 10) {
         dslContext.insertInto(ICMP_METRICS_LOG)

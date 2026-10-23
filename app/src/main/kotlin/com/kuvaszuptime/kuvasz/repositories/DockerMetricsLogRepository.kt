@@ -2,14 +2,17 @@ package com.kuvaszuptime.kuvasz.repositories
 
 import com.kuvaszuptime.kuvasz.jooq.Tables.DOCKER_METRICS_LOG
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DockerMetricsLogRecord
-import com.kuvaszuptime.kuvasz.models.dto.monitor.chart.DockerChartPointDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.chart.DockerRestartPointDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.chart.DockerSeriesDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.docker.DockerMetricsLogDto
 import com.kuvaszuptime.kuvasz.services.docker.DockerContainerStats
 import com.kuvaszuptime.kuvasz.services.docker.cpuUsagePercentDecimal
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
+import org.jooq.Record
+import org.jooq.Table
+import org.jooq.impl.DSL
 import org.jooq.impl.DSL.lag
 import java.time.Duration
 import java.time.OffsetDateTime
@@ -77,74 +80,126 @@ class DockerMetricsLogRepository(dslContext: DSLContext) :
         .fetchOne(DOCKER_METRICS_LOG.LATENCY_MS)
 
     fun getCpuUsageMetrics(monitorId: Long, period: Duration): CpuUsageMetricResult? =
-        aggregate(DOCKER_METRICS_LOG.CPU_USAGE_PERCENT, monitorId, period, CpuUsageMetricResult::class.java)
+        getCpuUsageMetricsBetween(monitorId, from = periodStart(period), to = null)
+
+    fun getCpuUsageMetricsBetween(monitorId: Long, from: OffsetDateTime, to: OffsetDateTime?) =
+        aggregate(DOCKER_METRICS_LOG.CPU_USAGE_PERCENT, monitorId, from, to, CpuUsageMetricResult::class.java)
 
     fun getMemoryUsageMetrics(monitorId: Long, period: Duration): MemoryUsageMetricResult? =
-        aggregate(DOCKER_METRICS_LOG.MEMORY_USAGE_BYTES, monitorId, period, MemoryUsageMetricResult::class.java)
+        getMemoryUsageMetricsBetween(monitorId, from = periodStart(period), to = null)
 
-    fun fetchDockerChartPoints(monitorId: Long, period: Duration, resolution: Duration?): List<DockerChartPointDto> =
-        chartQueries.fetchPoints(
+    fun getMemoryUsageMetricsBetween(monitorId: Long, from: OffsetDateTime, to: OffsetDateTime?) =
+        aggregate(DOCKER_METRICS_LOG.MEMORY_USAGE_BYTES, monitorId, from, to, MemoryUsageMetricResult::class.java)
+
+    fun fetchDockerSeries(
+        monitorId: Long,
+        from: OffsetDateTime,
+        to: OffsetDateTime?,
+        width: Duration,
+    ): DockerSeriesDto {
+        val cpuUsage = chartQueries.measurement(DOCKER_METRICS_LOG.CPU_USAGE_PERCENT, "cpu_usage")
+        val memoryUsage = chartQueries.measurement(DOCKER_METRICS_LOG.MEMORY_USAGE_BYTES, "memory_usage")
+        // A boundary rather than a reading, so it has no average or lowest value of its own
+        val memoryLimit = DSL.max(DOCKER_METRICS_LOG.MEMORY_LIMIT_BYTES).`as`("memory_limit")
+        val withoutReading = chartQueries.checksWithoutReading(DOCKER_METRICS_LOG.CPU_USAGE_PERCENT)
+        val buckets = chartQueries.fetchBuckets(
             monitorId = monitorId,
-            period = period,
-            resolution = resolution,
-            createdAtAlias = DockerChartPointDto::createdAt.name,
-            measurements = listOf(
-                chartQueries.measurement(
-                    measurement = DOCKER_METRICS_LOG.CPU_USAGE_PERCENT,
-                    alias = DockerChartPointDto::cpuUsagePercent.name,
-                    maxAlias = DockerChartPointDto::maxCpuUsagePercent.name,
-                ),
-                chartQueries.measurement(
-                    measurement = DOCKER_METRICS_LOG.MEMORY_USAGE_BYTES,
-                    alias = DockerChartPointDto::memoryUsageBytes.name,
-                    maxAlias = DockerChartPointDto::maxMemoryUsageBytes.name,
-                ),
-                // A boundary rather than a reading, so it has no band of its own
-                chartQueries.measurement(
-                    measurement = DOCKER_METRICS_LOG.MEMORY_LIMIT_BYTES,
-                    alias = DockerChartPointDto::memoryLimitBytes.name,
-                ),
+            from = from,
+            to = to,
+            width = width,
+            selected = listOf(
+                withoutReading,
+                cpuUsage.average,
+                cpuUsage.lowest,
+                cpuUsage.highest,
+                memoryUsage.average,
+                memoryUsage.lowest,
+                memoryUsage.highest,
+                memoryLimit,
             ),
-            pointType = DockerChartPointDto::class.java,
         )
+        return DockerSeriesDto(
+            timestamps = buckets.getValues(chartQueries.bucketTimestamp),
+            checks = buckets.getValues(chartQueries.checks),
+            checksWithoutReading = buckets.getValues(withoutReading),
+            cpuUsagePercentages = buckets.getValues(cpuUsage.average),
+            lowestCpuUsagePercentages = buckets.getValues(cpuUsage.lowest),
+            highestCpuUsagePercentages = buckets.getValues(cpuUsage.highest),
+            memoryUsageBytes = buckets.getValues(memoryUsage.average),
+            lowestMemoryUsageBytes = buckets.getValues(memoryUsage.lowest),
+            highestMemoryUsageBytes = buckets.getValues(memoryUsage.highest),
+            memoryLimitBytes = buckets.getValues(memoryLimit),
+        )
+    }
 
     /**
-     * The checks of the period whose restart count or container creation time differs from the previous check with a
-     * count (the first one of the period included), newest first. The checks without a count are left out, the same
-     * way the restart markers of the chart skip them.
+     * The checks between [from] and [to] (both inclusive, [to] can be open) whose restart count or
+     * container creation time differs from the previous check with a count, the oldest first. The first point is the
+     * baseline the next one is compared to: the last check with a count before [from], or without one, the first
+     * check of the period. This way a restart is found even if it's the first check of the period. The checks without
+     * a count are left out, the same way the restart markers of the chart skip them.
      */
-    fun fetchRestartPoints(monitorId: Long, period: Duration): List<DockerRestartPointDto> {
-        val ordering = listOf(DOCKER_METRICS_LOG.CREATED_AT, DOCKER_METRICS_LOG.ID)
+    fun fetchRestarts(monitorId: Long, from: OffsetDateTime, to: OffsetDateTime?): List<DockerRestartPointDto> {
+        val checks = countedChecksWithBaseline(monitorId, from, to)
+        val createdAt = checkNotNull(checks.field(DOCKER_METRICS_LOG.CREATED_AT))
+        val id = checkNotNull(checks.field(DOCKER_METRICS_LOG.ID))
+        val restartCount = checkNotNull(checks.field(DOCKER_METRICS_LOG.RESTART_COUNT))
+        val containerCreatedAt = checkNotNull(checks.field(DOCKER_METRICS_LOG.CONTAINER_CREATED_AT))
+        val ordering = listOf(createdAt, id)
         val counted = dslContext
             .select(
-                DOCKER_METRICS_LOG.CREATED_AT,
-                DOCKER_METRICS_LOG.ID,
-                DOCKER_METRICS_LOG.RESTART_COUNT,
-                DOCKER_METRICS_LOG.CONTAINER_CREATED_AT,
-                lag(DOCKER_METRICS_LOG.RESTART_COUNT).over().orderBy(ordering).`as`(PREVIOUS_RESTART_COUNT),
-                lag(DOCKER_METRICS_LOG.CONTAINER_CREATED_AT).over().orderBy(ordering).`as`(PREVIOUS_CREATED_AT),
-                lag(DOCKER_METRICS_LOG.ID).over().orderBy(ordering).`as`(PREVIOUS_ID),
+                createdAt,
+                id,
+                restartCount,
+                containerCreatedAt,
+                lag(restartCount).over().orderBy(ordering).`as`(PREVIOUS_RESTART_COUNT),
+                lag(containerCreatedAt).over().orderBy(ordering).`as`(PREVIOUS_CREATED_AT),
+                lag(id).over().orderBy(ordering).`as`(PREVIOUS_ID),
             )
-            .from(DOCKER_METRICS_LOG)
-            .where(DOCKER_METRICS_LOG.MONITOR_ID.eq(monitorId))
-            .and(DOCKER_METRICS_LOG.CREATED_AT.greaterOrEqual(getCurrentTimestamp().minusSeconds(period.toSeconds())))
-            .and(DOCKER_METRICS_LOG.RESTART_COUNT.isNotNull)
+            .from(checks)
             .asTable("counted")
-        val createdAt = checkNotNull(counted.field(DOCKER_METRICS_LOG.CREATED_AT))
-        val restartCount = checkNotNull(counted.field(DOCKER_METRICS_LOG.RESTART_COUNT))
-        val containerCreatedAt = checkNotNull(counted.field(DOCKER_METRICS_LOG.CONTAINER_CREATED_AT))
+        val countedCreatedAt = checkNotNull(counted.field(createdAt))
+        val countedRestartCount = checkNotNull(counted.field(restartCount))
+        val countedContainerCreatedAt = checkNotNull(counted.field(containerCreatedAt))
         return dslContext
             .select(
-                createdAt.`as`(DockerRestartPointDto::createdAt.name),
-                restartCount.`as`(DockerRestartPointDto::restartCount.name),
-                containerCreatedAt.`as`(DockerRestartPointDto::containerCreatedAt.name),
+                epochMillisOf(countedCreatedAt).`as`(DockerRestartPointDto::timestamp.name),
+                countedRestartCount.`as`(DockerRestartPointDto::restartCount.name),
+                epochMillisOf(countedContainerCreatedAt).`as`(DockerRestartPointDto::containerCreatedAt.name),
             )
             .from(counted)
             .where(checkNotNull(counted.field(PREVIOUS_ID)).isNull)
-            .or(restartCount.isDistinctFrom(counted.field(PREVIOUS_RESTART_COUNT, Int::class.java)))
-            .or(containerCreatedAt.isDistinctFrom(counted.field(PREVIOUS_CREATED_AT, OffsetDateTime::class.java)))
-            .orderBy(createdAt.desc(), checkNotNull(counted.field(DOCKER_METRICS_LOG.ID)).desc())
+            .or(countedRestartCount.isDistinctFrom(counted.field(PREVIOUS_RESTART_COUNT, Int::class.java)))
+            .or(
+                countedContainerCreatedAt.isDistinctFrom(counted.field(PREVIOUS_CREATED_AT, OffsetDateTime::class.java))
+            )
+            .orderBy(countedCreatedAt, checkNotNull(counted.field(id)))
             .fetchInto(DockerRestartPointDto::class.java)
+    }
+
+    /** The checks with a restart count between [from] and [to], and the last one before [from], if there is one. */
+    private fun countedChecksWithBaseline(monitorId: Long, from: OffsetDateTime, to: OffsetDateTime?): Table<Record> {
+        val columns = listOf(
+            DOCKER_METRICS_LOG.CREATED_AT,
+            DOCKER_METRICS_LOG.ID,
+            DOCKER_METRICS_LOG.RESTART_COUNT,
+            DOCKER_METRICS_LOG.CONTAINER_CREATED_AT,
+        )
+        val baseline = dslContext
+            .select(columns)
+            .from(DOCKER_METRICS_LOG)
+            .where(DOCKER_METRICS_LOG.MONITOR_ID.eq(monitorId))
+            .and(DOCKER_METRICS_LOG.CREATED_AT.lessThan(from))
+            .and(DOCKER_METRICS_LOG.RESTART_COUNT.isNotNull)
+            .orderBy(DOCKER_METRICS_LOG.CREATED_AT.desc(), DOCKER_METRICS_LOG.ID.desc())
+            .limit(1)
+        val period = dslContext
+            .select(columns)
+            .from(DOCKER_METRICS_LOG)
+            .where(DOCKER_METRICS_LOG.MONITOR_ID.eq(monitorId))
+            .and(isBetween(DOCKER_METRICS_LOG.CREATED_AT, from, to))
+            .and(DOCKER_METRICS_LOG.RESTART_COUNT.isNotNull)
+        return baseline.unionAll(period).asTable("checks")
     }
 
     override fun DSLContext.logDtoSelect(monitorId: Long) =

@@ -1413,6 +1413,64 @@ class IncidentRepositoryTest(
             }
         }
 
+        given("the getIncidentsOfMonitorBetween() method") {
+
+            `when`("the monitor has incidents before, during and after the period") {
+                val monitor = createHttpMonitor(httpMonitorRepository, enabled = false)
+                val otherMonitor = createHttpMonitor(httpMonitorRepository)
+                val now = getCurrentTimestamp()
+                val from = now.minusHours(10)
+                val to = now.minusHours(2)
+                fun incident(startedAt: OffsetDateTime, endedAt: OffsetDateTime?, error: String) =
+                    createHttpUptimeEventRecord(
+                        dslContext,
+                        monitorId = monitor.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = startedAt,
+                        endedAt = endedAt,
+                        error = error,
+                    )
+                incident(now.minusHours(14), now.minusHours(12), "resolved before the period")
+                incident(now.minusHours(1), null, "started after the period")
+                incident(now.minusHours(11), now.minusHours(9), "ended in the period")
+                incident(now.minusHours(5), now.minusHours(4), "within the period")
+                incident(now.minusHours(3), null, "ongoing since the period")
+                createHttpUptimeEventRecord(
+                    dslContext,
+                    monitorId = monitor.id,
+                    status = UptimeStatus.UP,
+                    startedAt = now.minusHours(9),
+                    endedAt = now.minusHours(5),
+                )
+                createHttpUptimeEventRecord(
+                    dslContext,
+                    monitorId = otherMonitor.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = now.minusHours(5),
+                    endedAt = null,
+                )
+
+                then("only the incidents of the monitor open during the period are returned, the earliest first") {
+                    incidentRepository.getIncidentsOfMonitorBetween(IncidentType.HTTP, monitor.id, from, to)
+                        .map { it.details } shouldBe listOf(
+                        "ended in the period",
+                        "within the period",
+                        "ongoing since the period",
+                    )
+                }
+
+                then("without the end of the period, the ones started since then are returned too") {
+                    incidentRepository.getIncidentsOfMonitorBetween(IncidentType.HTTP, monitor.id, from, null)
+                        .map { it.details } shouldBe listOf(
+                        "ended in the period",
+                        "within the period",
+                        "ongoing since the period",
+                        "started after the period",
+                    )
+                }
+            }
+        }
+
         given("the getLatestResolvedIncidents() method") {
 
             `when`("there are incidents of different types, states and monitors") {

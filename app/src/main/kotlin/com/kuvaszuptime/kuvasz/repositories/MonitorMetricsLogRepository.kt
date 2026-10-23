@@ -1,20 +1,20 @@
 package com.kuvaszuptime.kuvasz.repositories
 
-import com.kuvaszuptime.kuvasz.models.dto.monitor.chart.LatencyChartPointDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.chart.LatencySeriesDto
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import org.jooq.Condition
 import org.jooq.DSLContext
 import org.jooq.Field
 import org.jooq.Record
+import org.jooq.Result
 import org.jooq.SelectConditionStep
 import org.jooq.Table
 import org.jooq.TableField
 import org.jooq.impl.DSL
 import org.jooq.impl.DSL.avg
-import org.jooq.impl.DSL.castNull
 import org.jooq.impl.DSL.inline
 import org.jooq.impl.DSL.max
 import org.jooq.impl.DSL.min
-import org.jooq.impl.DSL.percentileCont
 import org.jooq.impl.DSL.round
 import org.jooq.impl.SQLDataType
 import java.math.BigDecimal
@@ -56,9 +56,7 @@ abstract class MonitorMetricsLogRepository<R : Record, D : Any>(
     fun fetchLatestByMonitorId(monitorId: Long, period: Duration? = null): List<D> = dslContext
         .logDtoSelect(monitorId)
         .apply {
-            period?.toSeconds()?.let { thresholdSeconds ->
-                and(logTable.createdAt.greaterOrEqual(getCurrentTimestamp().minusSeconds(thresholdSeconds)))
-            }
+            period?.let { and(logTable.createdAt.greaterOrEqual(periodStart(it))) }
         }
         .orderBy(logTable.createdAt.desc(), logTable.id.desc())
         .fetchInto(dtoType)
@@ -80,7 +78,10 @@ abstract class MonitorMetricsLogRepository<R : Record, D : Any>(
         .execute()
 
     open fun getLatencyMetrics(monitorId: Long, period: Duration): LatencyMetricResult? =
-        aggregateWithPercentiles(logTable.latency, monitorId, period, LatencyMetricResult::class.java)
+        getLatencyMetricsBetween(monitorId, from = periodStart(period), to = null)
+
+    fun getLatencyMetricsBetween(monitorId: Long, from: OffsetDateTime, to: OffsetDateTime?): LatencyMetricResult? =
+        aggregate(logTable.latency, monitorId, from, to, LatencyMetricResult::class.java, withPercentiles = true)
 
     /**
      * The average latency of each of the given monitors over the period, in a single query, leaving out the ones
@@ -102,35 +103,38 @@ abstract class MonitorMetricsLogRepository<R : Record, D : Any>(
             .select(logTable.monitorId, average)
             .from(logTable.table)
             .where(logTable.monitorId.`in`(monitorIds))
-            .and(logTable.createdAt.greaterOrEqual(getCurrentTimestamp().minusSeconds(period.toSeconds())))
+            .and(logTable.createdAt.greaterOrEqual(periodStart(period)))
             .and(measurement.isNotNull)
             .groupBy(logTable.monitorId)
             .fetchMap(logTable.monitorId, average)
     }
 
-    /**
-     * The points of the latency chart of a monitor, for the types whose chart shows their latency, see
-     * [MetricsLogChartQueries.fetchPoints].
-     */
-    fun fetchLatencyChartPoints(monitorId: Long, period: Duration, resolution: Duration?): List<LatencyChartPointDto> =
-        chartQueries.fetchPoints(
-            monitorId = monitorId,
-            period = period,
-            resolution = resolution,
-            createdAtAlias = LatencyChartPointDto::createdAt.name,
-            measurements = listOf(
-                chartQueries.measurement(
-                    logTable.latency,
-                    LatencyChartPointDto::latencyInMs.name,
-                    LatencyChartPointDto::maxLatencyInMs.name,
-                ),
-            ),
-            pointType = LatencyChartPointDto::class.java,
+    fun fetchLatencySeries(
+        monitorId: Long,
+        from: OffsetDateTime,
+        to: OffsetDateTime?,
+        width: Duration,
+    ): LatencySeriesDto {
+        val latency = chartQueries.measurement(logTable.latency, "latency")
+        val withoutReading = chartQueries.checksWithoutReading(logTable.latency)
+        val buckets = chartQueries.fetchBuckets(
+            monitorId, from, to, width, listOf(withoutReading, latency.average, latency.lowest, latency.highest),
         )
+        return LatencySeriesDto(
+            timestamps = buckets.getValues(chartQueries.bucketTimestamp),
+            checks = buckets.getValues(chartQueries.checks),
+            checksWithoutReading = buckets.getValues(withoutReading),
+            latencies = buckets.getValues(latency.average),
+            lowestLatencies = buckets.getValues(latency.lowest),
+            highestLatencies = buckets.getValues(latency.highest),
+        )
+    }
 
     /**
-     * Aggregates a measurement of a monitor's logs over the given period. Rows where the measurement is null are left
-     * out, they carry no reading at all - a container that was not sampled has no CPU reading, for example.
+     * Aggregates a measurement of a monitor's logs between [from] and [to] (both inclusive, [to] can be open). Rows
+     * where the measurement is null are left out, they carry no reading at all - a container that was not sampled has
+     * no CPU reading, for example. [withPercentiles] adds the percentiles, which only the timings and the loss ratios
+     * are read by.
      *
      * The result is reported in the measurement's own type, which [asMeasurementOf] brings the average back to,
      * since the database answers it in its own decimal type whatever the column is.
@@ -138,123 +142,129 @@ abstract class MonitorMetricsLogRepository<R : Record, D : Any>(
     protected fun <N : Number, T : Any> aggregate(
         measurement: TableField<R, N>,
         monitorId: Long,
-        period: Duration,
+        from: OffsetDateTime,
+        to: OffsetDateTime?,
         resultType: Class<T>,
-    ): T? = aggregateSelect(measurement, emptyList(), monitorId, period, resultType)
-
-    /**
-     * The same aggregation, extended with the percentiles that only the timings and the loss ratios are read by.
-     */
-    protected fun <N : Number, T : Any> aggregateWithPercentiles(
-        measurement: TableField<R, N>,
-        monitorId: Long,
-        period: Duration,
-        resultType: Class<T>,
-    ): T? = aggregateSelect(
-        measurement = measurement,
-        percentiles = listOf(
-            P90 to PercentileMetricResult<*>::p90.name,
-            P95 to PercentileMetricResult<*>::p95.name,
-            P99 to PercentileMetricResult<*>::p99.name,
-        ),
-        monitorId = monitorId,
-        period = period,
-        resultType = resultType,
-    )
-
-    private fun <N : Number, T : Any> aggregateSelect(
-        measurement: TableField<R, N>,
-        percentiles: List<Pair<Double, String>>,
-        monitorId: Long,
-        period: Duration,
-        resultType: Class<T>,
-    ): T? = dslContext
-        .select(
+        withPercentiles: Boolean = false,
+    ): T? {
+        val percentiles = if (withPercentiles) {
             listOf(
-                logTable.monitorId.`as`(MetricResult<*>::monitorId.name),
-                avg(measurement).asMeasurementOf(measurement).`as`(MetricResult<*>::avg.name),
-                min(measurement).`as`(MetricResult<*>::min.name),
-                max(measurement).`as`(MetricResult<*>::max.name),
-            ) + percentiles.map { (fraction, alias) ->
-                percentileCont(fraction).withinGroupOrderBy(measurement).asMeasurementOf(measurement).`as`(alias)
-            }
-        )
-        .from(logTable.table)
-        .where(logTable.monitorId.eq(monitorId))
-        .and(logTable.createdAt.greaterOrEqual(getCurrentTimestamp().minusSeconds(period.toSeconds())))
-        .and(measurement.isNotNull)
-        .groupBy(logTable.monitorId)
-        .fetchOneInto(resultType)
-
+                PercentileMetricResult<*>::p90.name,
+                PercentileMetricResult<*>::p95.name,
+                PercentileMetricResult<*>::p99.name,
+            )
+        } else {
+            emptyList()
+        }
+        return dslContext
+            .select(
+                listOf(
+                    logTable.monitorId.`as`(MetricResult<*>::monitorId.name),
+                    avg(measurement).asMeasurementOf(measurement).`as`(MetricResult<*>::avg.name),
+                    min(measurement).`as`(MetricResult<*>::min.name),
+                    max(measurement).`as`(MetricResult<*>::max.name),
+                ) + percentiles.mapIndexed { index, alias ->
+                    percentileOf(measurement, index).asMeasurementOf(measurement).`as`(alias)
+                }
+            )
+            .from(logTable.table)
+            .where(logTable.monitorId.eq(monitorId))
+            .and(isBetween(logTable.createdAt, from, to))
+            .and(measurement.isNotNull)
+            .groupBy(logTable.monitorId)
+            .fetchOneInto(resultType)
+    }
 }
 
+/**
+ * The queries of the charts, which group the logs of a monitor in a period into buckets of equal length in the
+ * database, so a chart gets a bounded number of points however many checks the period has.
+ */
 class MetricsLogChartQueries<R : Record>(
     private val dslContext: DSLContext,
     private val logTable: MetricsLogTable<R>,
 ) {
 
     /**
-     * The points of a monitor's chart in the given period, newest first. Without a [resolution], every log is a point.
-     * With one, the logs are grouped into buckets of that length (aligned to the epoch, so to whole hours, quarters,
-     * etc.), and a point holds the average of each measurement in its bucket, plus the highest reading of the ones
-     * that have a max alias. A null reading (e.g. a failed check) is left out of both, so a bucket of only null
-     * readings is a gap on the chart, like a single null reading is.
+     * The average, the lowest and the highest reading of a measurement in each bucket, the null readings (e.g. of a
+     * failed check) left out. They are all null for a bucket that has no reading at all.
      */
-    fun <P : Any> fetchPoints(
+    class BucketedMeasurement<N : Number>(val average: Field<N>, val lowest: Field<N>, val highest: Field<N>)
+
+    // The timestamp of a bucket is the average timestamp of its checks, not its start, so it's where its checks really
+    // are, and the bucket of a single check is that check exactly
+    val bucketTimestamp: Field<Long> = DSL
+        .field("floor(avg(extract(epoch from {0})) * 1000)::bigint", SQLDataType.BIGINT, logTable.createdAt)
+        .`as`("bucket_timestamp")
+
+    val checks: Field<Int> = DSL.count().`as`("checks")
+
+    /** The number of the checks of a bucket that have no reading of the given column, e.g. the failed ones. */
+    fun checksWithoutReading(field: Field<*>): Field<Int> =
+        DSL.count().filterWhere(field.isNull).`as`("checks_without_reading")
+
+    fun <N : Number> measurement(field: TableField<R, N>, alias: String) = BucketedMeasurement(
+        average = avg(field).asMeasurementOf(field).`as`("${alias}_average"),
+        lowest = min(field).`as`("${alias}_lowest"),
+        highest = max(field).`as`("${alias}_highest"),
+    )
+
+    /**
+     * Fetches the buckets of the given [width] of a monitor's logs between [from] and [to], both inclusive, [to] can
+     * be open, the oldest first. The buckets are aligned to the epoch, so to whole hours, quarters, etc.
+     */
+    fun fetchBuckets(
         monitorId: Long,
-        period: Duration,
-        resolution: Duration?,
-        createdAtAlias: String,
-        measurements: List<Measurement>,
-        pointType: Class<P>,
-    ): List<P> {
-        val since = getCurrentTimestamp().minusSeconds(period.toSeconds())
-
-        return if (resolution == null) {
-            dslContext
-                .select(listOf(logTable.createdAt.`as`(createdAtAlias)) + measurements.flatMap { it.ofLog })
-                .from(logTable.table)
-                .where(logTable.monitorId.eq(monitorId))
-                .and(logTable.createdAt.greaterOrEqual(since))
-                .orderBy(logTable.createdAt.desc(), logTable.id.desc())
-                .fetchInto(pointType)
-        } else {
-            val bucketStart = bucketStart(logTable.createdAt, resolution)
-            dslContext
-                .select(listOf(bucketStart.`as`(createdAtAlias)) + measurements.flatMap { it.ofBucket })
-                .from(logTable.table)
-                .where(logTable.monitorId.eq(monitorId))
-                .and(logTable.createdAt.greaterOrEqual(since))
-                .groupBy(bucketStart)
-                .orderBy(bucketStart.desc())
-                .fetchInto(pointType)
-        }
+        from: OffsetDateTime,
+        to: OffsetDateTime?,
+        width: Duration,
+        selected: List<Field<*>>,
+    ): Result<Record> {
+        val bucket = DSL.field(
+            "floor(extract(epoch from {0}) / {1})",
+            SQLDataType.NUMERIC,
+            logTable.createdAt,
+            inline(width.toSeconds()),
+        )
+        // Ordered outside of the grouping, so the database can hash the logs into buckets instead of sorting all of
+        // them first, which spills to disk for a long period. A bucket's timestamp lies within the bucket.
+        val buckets = dslContext
+            .select(listOf(bucketTimestamp, checks) + selected)
+            .from(logTable.table)
+            .where(logTable.monitorId.eq(monitorId))
+            .and(isBetween(logTable.createdAt, from, to))
+            .groupBy(bucket)
+            .asTable("buckets")
+        return dslContext
+            .selectFrom(buckets)
+            .orderBy(checkNotNull(buckets.field(bucketTimestamp)))
+            .fetch()
     }
-
-    fun <N : Number> measurement(measurement: TableField<R, N>, alias: String, maxAlias: String? = null) = Measurement(
-        ofLog = listOfNotNull(measurement.`as`(alias), maxAlias?.let { castNull(measurement.dataType).`as`(it) }),
-        ofBucket = listOfNotNull(
-            avg(measurement).asMeasurementOf(measurement).`as`(alias),
-            maxAlias?.let { max(measurement).`as`(it) },
-        ),
-    )
-
-    /**
-     * The start of the bucket of the given length that the timestamp falls into, counted from the epoch
-     * */
-    private fun bucketStart(timestamp: Field<OffsetDateTime>, length: Duration): Field<OffsetDateTime> = DSL.field(
-        "to_timestamp(floor(extract(epoch from {0}) / {1}) * {1})",
-        SQLDataType.TIMESTAMPWITHTIMEZONE,
-        timestamp,
-        inline(length.toSeconds()),
-    )
-
-    /**
-     * The columns of a measurement on a chart: [ofLog] when every log is a point, [ofBucket] when a point is a bucket
-     * of logs. A log has no highest reading of its own, so its max column is null.
-     */
-    class Measurement(val ofLog: List<Field<*>>, val ofBucket: List<Field<*>>)
 }
+
+private val PERCENTILE_FRACTIONS = listOf(P90, P95, P99)
+
+/**
+ * One of the [PERCENTILE_FRACTIONS] of a measurement. Asked for as the elements of a single array-valued aggregate,
+ * the database sorts the readings once for all of them, which it would do for each of them as separate aggregates.
+ * The database answers them as double precision numbers, the same as for a percentile of its own.
+ */
+private fun percentileOf(measurement: TableField<*, *>, index: Int): Field<BigDecimal> {
+    val fractions = PERCENTILE_FRACTIONS.joinToString()
+    return DSL.field(
+        "(percentile_cont(array[$fractions]) within group (order by {0}))[${index + 1}]",
+        SQLDataType.NUMERIC,
+        measurement,
+    )
+}
+
+fun isBetween(timestamp: Field<OffsetDateTime>, from: OffsetDateTime, to: OffsetDateTime?): Condition =
+    timestamp.greaterOrEqual(from).and(to?.let { timestamp.lessOrEqual(it) } ?: DSL.noCondition())
+
+fun periodStart(period: Duration): OffsetDateTime = getCurrentTimestamp().minusSeconds(period.toSeconds())
+
+fun epochMillisOf(timestamp: Field<OffsetDateTime>): Field<Long> =
+    DSL.field("floor(extract(epoch from {0}) * 1000)::bigint", SQLDataType.BIGINT, timestamp)
 
 /**
  * Brings a computed decimal back to the type of the column it was computed from: an integral measurement is

@@ -219,9 +219,10 @@ internal fun FlowContent.inlineBadge(
     color: Color = Color.DEFAULT,
     tooltip: String? = null,
     icon: Icon? = null,
+    extraClasses: Set<CSSClass> = emptySet(),
 ) {
     span {
-        classes(BADGE, color.bgColor, color.textColor)
+        classes(setOf(BADGE, color.bgColor, color.textColor) + extraClasses)
         tooltip?.let { tooltip(it) }
         icon?.let { icon(it) }
         +text
