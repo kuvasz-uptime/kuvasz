@@ -196,12 +196,7 @@ class InternalMonitorChartControllerTest(
 
                 val chart = client.getTcpMonitorChart(monitor.id, Duration.ofDays(30), from = null, to = null)
 
-                then("a bucket is an hour, and it tells how many of its checks have no reading") {
-                    chart.series.checks shouldBe listOf(3, 1)
-                    chart.series.checksWithoutReading shouldBe listOf(1, 1)
-                }
-
-                then("a point holds the average, the lowest and the highest reading, a gap if there is none") {
+                then("a bucket is an hour, its point holds the average, the lowest and the highest reading, or a gap") {
                     chart.series.latencies shouldBe listOf(20, null)
                     chart.series.lowestLatencies shouldBe listOf(10, null)
                     chart.series.highestLatencies shouldBe listOf(30, null)
@@ -221,7 +216,7 @@ class InternalMonitorChartControllerTest(
                     val chart = client.getTcpMonitorChart(monitor.id, Duration.ofHours(1), from = null, to = null)
 
                     chart.series.timestamps.shouldBeEmpty()
-                    chart.series.checks.shouldBeEmpty()
+                    chart.series.latencies.shouldBeEmpty()
                     chart.latencyStats.shouldBeNull()
                 }
             }

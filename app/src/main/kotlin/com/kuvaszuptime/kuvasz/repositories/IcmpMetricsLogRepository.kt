@@ -59,14 +59,12 @@ class IcmpMetricsLogRepository(dslContext: DSLContext) :
     ): IcmpSeriesDto {
         val latency = chartQueries.measurement(ICMP_METRICS_LOG.LATENCY_MS, "latency")
         val packetLoss = chartQueries.measurement(ICMP_METRICS_LOG.PACKET_LOSS_PERCENTAGE, "packet_loss")
-        val withoutReading = chartQueries.checksWithoutReading(ICMP_METRICS_LOG.LATENCY_MS)
         val buckets = chartQueries.fetchBuckets(
             monitorId = monitorId,
             from = from,
             to = to,
             width = width,
             selected = listOf(
-                withoutReading,
                 latency.average,
                 latency.lowest,
                 latency.highest,
@@ -77,8 +75,6 @@ class IcmpMetricsLogRepository(dslContext: DSLContext) :
         )
         return IcmpSeriesDto(
             timestamps = buckets.getValues(chartQueries.bucketTimestamp),
-            checks = buckets.getValues(chartQueries.checks),
-            checksWithoutReading = buckets.getValues(withoutReading),
             latencies = buckets.getValues(latency.average),
             lowestLatencies = buckets.getValues(latency.lowest),
             highestLatencies = buckets.getValues(latency.highest),

@@ -302,11 +302,6 @@ class DockerMetricsLogRepositoryTest(
                 val series = metricsLogRepository
                     .fetchLatencySeries(monitor.id, bucket, bucket.plusHours(2), ONE_HOUR)
 
-                then("a bucket of the given length holds the checks of a whole hour, the oldest first") {
-                    series.checks shouldBe listOf(3, 1)
-                    series.checksWithoutReading shouldBe listOf(0, 0)
-                }
-
                 then("a point holds the average, the lowest and the highest reading of its bucket") {
                     series.latencies shouldBe listOf(20, 7)
                     series.lowestLatencies shouldBe listOf(10, 7)
@@ -401,9 +396,7 @@ class DockerMetricsLogRepositoryTest(
 
                 val series = metricsLogRepository.fetchDockerSeries(monitor.id, bucket, bucket.plusHours(2), ONE_HOUR)
 
-                then("the readings are summarized, and the checks without a sample are counted, not averaged") {
-                    series.checks shouldBe listOf(3, 1)
-                    series.checksWithoutReading shouldBe listOf(1, 1)
+                then("the readings are summarized, and the checks without a sample are left out of them") {
                     series.cpuUsagePercentages.first().shouldNotBeNull() shouldBeEqualComparingTo BigDecimal("15.00")
                     series.lowestCpuUsagePercentages.first().shouldNotBeNull() shouldBeEqualComparingTo
                         BigDecimal("10.00")

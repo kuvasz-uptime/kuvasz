@@ -9,10 +9,9 @@ import java.math.BigDecimal
 
 // The checks of the period are grouped into buckets, so a chart has a bounded number of points (see
 // MonitorChartService). The series are sent as one array per column, the same index of the arrays belongs to the same
-// bucket, the oldest first. The timestamp of a bucket is the average time of its checks in epoch milliseconds, `checks`
-// is the number of the checks in it, and `checksWithoutReading` the number of those that have no reading of the
-// measurement the chart is about (e.g. the failed ones), which the average, the lowest and the highest readings leave
-// out. They are null for a bucket that has no reading at all.
+// bucket, the oldest first. The timestamp of a bucket is the average time of its checks in epoch milliseconds. The
+// average, the lowest and the highest readings leave out the checks that have no reading of the measurement the chart
+// is about (e.g. the failed ones), and they are null for a bucket that has no reading at all.
 
 @Introspected
 data class LatencyChartDto(
@@ -28,8 +27,6 @@ data class LatencyChartDto(
 @Introspected
 data class LatencySeriesDto(
     val timestamps: List<Long>,
-    val checks: List<Int>,
-    val checksWithoutReading: List<Int>,
     val latencies: List<Int?>,
     val lowestLatencies: List<Int?>,
     val highestLatencies: List<Int?>,
@@ -37,8 +34,6 @@ data class LatencySeriesDto(
     companion object {
         fun empty() = LatencySeriesDto(
             timestamps = emptyList(),
-            checks = emptyList(),
-            checksWithoutReading = emptyList(),
             latencies = emptyList(),
             lowestLatencies = emptyList(),
             highestLatencies = emptyList(),
@@ -66,8 +61,6 @@ data class IcmpChartDto(
 @Introspected
 data class IcmpSeriesDto(
     val timestamps: List<Long>,
-    val checks: List<Int>,
-    val checksWithoutReading: List<Int>,
     val latencies: List<Int?>,
     val lowestLatencies: List<Int?>,
     val highestLatencies: List<Int?>,
@@ -78,8 +71,6 @@ data class IcmpSeriesDto(
     companion object {
         fun empty() = IcmpSeriesDto(
             timestamps = emptyList(),
-            checks = emptyList(),
-            checksWithoutReading = emptyList(),
             latencies = emptyList(),
             lowestLatencies = emptyList(),
             highestLatencies = emptyList(),
@@ -112,8 +103,6 @@ data class DockerChartDto(
 @Introspected
 data class DockerSeriesDto(
     val timestamps: List<Long>,
-    val checks: List<Int>,
-    val checksWithoutReading: List<Int>,
     val cpuUsagePercentages: List<BigDecimal?>,
     val lowestCpuUsagePercentages: List<BigDecimal?>,
     val highestCpuUsagePercentages: List<BigDecimal?>,
@@ -125,8 +114,6 @@ data class DockerSeriesDto(
     companion object {
         fun empty() = DockerSeriesDto(
             timestamps = emptyList(),
-            checks = emptyList(),
-            checksWithoutReading = emptyList(),
             cpuUsagePercentages = emptyList(),
             lowestCpuUsagePercentages = emptyList(),
             highestCpuUsagePercentages = emptyList(),

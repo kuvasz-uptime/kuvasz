@@ -101,14 +101,12 @@ class DockerMetricsLogRepository(dslContext: DSLContext) :
         val memoryUsage = chartQueries.measurement(DOCKER_METRICS_LOG.MEMORY_USAGE_BYTES, "memory_usage")
         // A boundary rather than a reading, so it has no average or lowest value of its own
         val memoryLimit = DSL.max(DOCKER_METRICS_LOG.MEMORY_LIMIT_BYTES).`as`("memory_limit")
-        val withoutReading = chartQueries.checksWithoutReading(DOCKER_METRICS_LOG.CPU_USAGE_PERCENT)
         val buckets = chartQueries.fetchBuckets(
             monitorId = monitorId,
             from = from,
             to = to,
             width = width,
             selected = listOf(
-                withoutReading,
                 cpuUsage.average,
                 cpuUsage.lowest,
                 cpuUsage.highest,
@@ -120,8 +118,6 @@ class DockerMetricsLogRepository(dslContext: DSLContext) :
         )
         return DockerSeriesDto(
             timestamps = buckets.getValues(chartQueries.bucketTimestamp),
-            checks = buckets.getValues(chartQueries.checks),
-            checksWithoutReading = buckets.getValues(withoutReading),
             cpuUsagePercentages = buckets.getValues(cpuUsage.average),
             lowestCpuUsagePercentages = buckets.getValues(cpuUsage.lowest),
             highestCpuUsagePercentages = buckets.getValues(cpuUsage.highest),

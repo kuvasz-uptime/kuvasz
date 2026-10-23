@@ -13,6 +13,9 @@ object UIDefaults {
     const val MONITOR_METRICS_PERIOD_DAYS = 1L
     const val STATUS_PAGE_PATH = "/status"
 
+    private const val FIVE_MINUTES = 5L
+    private const val FIFTEEN_MINUTES = 15L
+    private const val THIRTY_MINUTES = 30L
     private const val ONE_HOUR = 1L
     private const val SIX_HOURS = 6L
     private const val TWELVE_HOURS = 12L
@@ -20,6 +23,9 @@ object UIDefaults {
     private const val SEVEN_DAYS = 7L
     private const val THIRTY_DAYS = 30L
 
+    val LAST_5_MINUTES: Duration = Duration.ofMinutes(FIVE_MINUTES)
+    val LAST_15_MINUTES: Duration = Duration.ofMinutes(FIFTEEN_MINUTES)
+    val LAST_30_MINUTES: Duration = Duration.ofMinutes(THIRTY_MINUTES)
     val LAST_HOUR: Duration = Duration.ofHours(ONE_HOUR)
     val LAST_6_HOURS: Duration = Duration.ofHours(SIX_HOURS)
     val LAST_12_HOURS: Duration = Duration.ofHours(TWELVE_HOURS)
@@ -29,4 +35,7 @@ object UIDefaults {
 
     val PERIOD_SELECTOR_OPTIONS: List<Duration> =
         listOf(LAST_HOUR, LAST_6_HOURS, LAST_12_HOURS, LAST_24_HOURS, LAST_7_DAYS, LAST_30_DAYS)
+
+    val METRICS_PERIOD_SELECTOR_OPTIONS: List<Duration> =
+        listOf(LAST_5_MINUTES, LAST_15_MINUTES, LAST_30_MINUTES) + PERIOD_SELECTOR_OPTIONS
 }

@@ -618,7 +618,6 @@ const CHART_LABELS = {
     packetLossRange: 'Packet loss (lowest–highest)',
     cpuUsageRange: 'CPU (lowest–highest)',
     memoryUsageRange: 'Memory (lowest–highest)',
-    checksWithoutReading: 'Checks without a reading',
 };
 const MARKER_COLORS = {started: 'red', resolved: 'green', restarted: 'yellow'};
 const NOW = Date.parse('2024-01-01T02:00:00Z');
@@ -626,8 +625,6 @@ const ONE_DAY_IN_MILLIS = 24 * 60 * 60 * 1000;
 // The latency series of a chart where every point is a single check, with no band around it
 const aLatencySeries = (timestamps, latencies) => ({
     timestamps,
-    checks: latencies.map(() => 1),
-    checksWithoutReading: latencies.map(latency => latency === null ? 1 : 0),
     latencies,
     lowestLatencies: latencies,
     highestLatencies: latencies,
@@ -638,8 +635,6 @@ const LATENCY_SERIES_OF_AN_HOUR = aLatencySeries(
     [10, 20],
 );
 const NO_LATENCY_SERIES = aLatencySeries([], []);
-// The points of a series, without the numbers of the checks that the first series of a chart carries
-const pointsOf = (series) => series.data.map(({x, y}) => ({x, y}));
 
 // A metrics block that sees the given moment as the current time, showing the last day by default
 const metricsBlockAt = (factory, now) => {
@@ -666,8 +661,6 @@ test('httpMetricsBlock.transformData draws the latency with a band from its lowe
     const result = block.transformData({
         series: {
             ...LATENCY_SERIES_OF_AN_HOUR,
-            checks: [60, 3],
-            checksWithoutReading: [0, 1],
             lowestLatencies: [5, 20],
             highestLatencies: [90, 20],
         },
@@ -677,11 +670,7 @@ test('httpMetricsBlock.transformData draws the latency with a band from its lowe
         ['Latency', 'area'],
         ['Latency (lowest–highest)', 'rangeArea'],
     ]);
-    // The numbers of the checks of a point are carried by the first series, for the tooltip
-    assert.deepEqual(result.series[0].data, [
-        {x: first, y: 10, checks: 60, checksWithoutReading: 0},
-        {x: second, y: 20, checks: 3, checksWithoutReading: 1},
-    ]);
+    assert.deepEqual(result.series[0].data, [{x: first, y: 10}, {x: second, y: 20}]);
     assert.deepEqual(result.series[1].data, [{x: first, y: [5, 90]}, {x: second, y: [20, 20]}]);
     assert.deepEqual(result.annotations, {xaxis: [], points: []});
 });
@@ -707,8 +696,8 @@ test('icmpMetricsBlock.transformData merges latency and packet loss, and their b
         ['Packet loss (lowest–highest)', 'rangeArea'],
     ]);
     // A null latency stays null, a gap in the chart, and so does its band
-    assert.deepEqual(pointsOf(result.series[0]), [{x: 1000, y: null}, {x: 2000, y: 80}]);
-    assert.deepEqual(pointsOf(result.series[1]), [{x: 1000, y: 50}, {x: 2000, y: 0}]);
+    assert.deepEqual(result.series[0].data, [{x: 1000, y: null}, {x: 2000, y: 80}]);
+    assert.deepEqual(result.series[1].data, [{x: 1000, y: 50}, {x: 2000, y: 0}]);
     assert.deepEqual(result.series[2].data, [{x: 1000, y: null}, {x: 2000, y: [70, 95]}]);
     assert.deepEqual(result.series[3].data, [{x: 1000, y: [0, 100]}, {x: 2000, y: [0, 0]}]);
 });
@@ -735,7 +724,7 @@ test('tcpMetricsBlock.transformData preserves null latency and has no packet-los
     const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
     const result = block.transformData({series: aLatencySeries([1000, 2000], [null, 80]), incidents: []});
     assert.deepEqual(result.series.map(series => series.name), ['Latency', 'Latency (lowest–highest)']);
-    assert.deepEqual(pointsOf(result.series[0]), [{x: 1000, y: null}, {x: 2000, y: 80}]);
+    assert.deepEqual(result.series[0].data, [{x: 1000, y: null}, {x: 2000, y: 80}]);
 });
 
 test('dockerMetricsBlock.transformData shows the memory in MiB, and a missing CPU reading as a gap', () => {
@@ -743,8 +732,6 @@ test('dockerMetricsBlock.transformData shows the memory in MiB, and a missing CP
     const result = block.transformData({
         series: {
             timestamps: [1000, 2000],
-            checks: [2, 1],
-            checksWithoutReading: [0, 1],
             cpuUsagePercentages: [1.5, null],
             lowestCpuUsagePercentages: [1, null],
             highestCpuUsagePercentages: [2, null],
@@ -763,9 +750,9 @@ test('dockerMetricsBlock.transformData shows the memory in MiB, and a missing CP
         ['CPU (lowest–highest)', 'rangeArea'],
         ['Memory (lowest–highest)', 'rangeArea'],
     ]);
-    assert.deepEqual(pointsOf(result.series[0]), [{x: 1000, y: 1.5}, {x: 2000, y: null}]);
-    assert.deepEqual(pointsOf(result.series[1]), [{x: 1000, y: 1}, {x: 2000, y: null}]);
-    assert.deepEqual(pointsOf(result.series[2]), [{x: 1000, y: 8}, {x: 2000, y: null}]);
+    assert.deepEqual(result.series[0].data, [{x: 1000, y: 1.5}, {x: 2000, y: null}]);
+    assert.deepEqual(result.series[1].data, [{x: 1000, y: 1}, {x: 2000, y: null}]);
+    assert.deepEqual(result.series[2].data, [{x: 1000, y: 8}, {x: 2000, y: null}]);
     assert.deepEqual(result.series[3].data, [{x: 1000, y: [1, 2]}, {x: 2000, y: null}]);
     assert.deepEqual(result.series[4].data, [{x: 1000, y: [1, 3]}, {x: 2000, y: null}]);
 });
@@ -1060,8 +1047,6 @@ test('dockerMetricsBlock.transformData shows the restart markers alongside the i
     const result = block.transformData({
         series: {
             timestamps: [],
-            checks: [],
-            checksWithoutReading: [],
             cpuUsagePercentages: [],
             lowestCpuUsagePercentages: [],
             highestCpuUsagePercentages: [],
@@ -1159,7 +1144,6 @@ const tooltipTextOf = (html) => [...html.matchAll(/apexcharts-tooltip-(?:title|t
     .map(match => match[1]);
 const tooltipOf = (series, dataPointIndex, collapsedSeriesIndices = []) => metricsChartTooltip(
     series.map(() => withUnit(' ms')),
-    'Checks without a reading',
 )({
     dataPointIndex,
     w: {config: {series}, globals: {collapsedSeriesIndices, colors: series.map(() => 'blue')}},
@@ -1168,7 +1152,7 @@ const tooltipOf = (series, dataPointIndex, collapsedSeriesIndices = []) => metri
 test('metricsChartTooltip shows a value for a series, and the lowest and the highest reading for a band', () => {
     const x = new Date(2024, 0, 2, 3, 4, 5).getTime();
     const html = tooltipOf([
-        {name: 'Latency', type: 'area', data: [{x, y: 40, checks: 3, checksWithoutReading: 0}]},
+        {name: 'Latency', type: 'area', data: [{x, y: 40}]},
         {name: 'Latency <range>', type: 'rangeArea', data: [{x, y: [10, 90]}]},
     ], 0);
 
@@ -1179,27 +1163,17 @@ test('metricsChartTooltip shows a value for a series, and the lowest and the hig
     assert.match(html, /color: blue/);
 });
 
-test('metricsChartTooltip tells how many of the checks of a point have no reading, if any', () => {
-    const x = new Date(2024, 0, 2, 3, 4, 5).getTime();
-    const series = (checksWithoutReading) => [
-        {name: 'Latency', type: 'area', data: [{x, y: 40, checks: 60, checksWithoutReading}]},
-    ];
-
-    assert.deepEqual(tooltipTextOf(tooltipOf(series(59), 0)).slice(-2), ['Checks without a reading: ', '59 / 60']);
-    assert.ok(!tooltipOf(series(0), 0).includes('Checks without a reading'));
-});
-
 test('metricsChartTooltip formats a missing reading, and leaves out the collapsed series and the missing points', () => {
     const x = new Date(2024, 0, 2, 3, 4, 5).getTime();
     const html = tooltipOf([
-        {name: 'Latency', type: 'area', data: [{x, y: null, checks: 1, checksWithoutReading: 1}]},
+        {name: 'Latency', type: 'area', data: [{x, y: null}]},
         {name: 'Packet loss', type: 'line', data: [{x, y: 5}]},
         {name: 'Latency (range)', type: 'rangeArea', data: [{x, y: null}]},
         {name: 'Missing', type: 'line', data: []},
     ], 0, [1]);
 
     assert.deepEqual(tooltipTextOf(html), [
-        '2024/01/02 03:04:05', 'Latency: ', '-', 'Latency (range): ', '-', 'Checks without a reading: ', '1 / 1',
+        '2024/01/02 03:04:05', 'Latency: ', '-', 'Latency (range): ', '-',
     ]);
 });
 
@@ -2191,7 +2165,7 @@ test('dnsMetricsBlock.transformData preserves null latency and has no packet-los
     const result = block.transformData({series: aLatencySeries([1000, 2000], [null, 42]), incidents: []});
     // Null latency must stay null (a gap in the chart), not become NaN, and there is no packet-loss series
     assert.deepEqual(result.series.map(series => series.name), ['Latency', 'Latency (lowest–highest)']);
-    assert.deepEqual(pointsOf(result.series[0]), [{x: 1000, y: null}, {x: 2000, y: 42}]);
+    assert.deepEqual(result.series[0].data, [{x: 1000, y: null}, {x: 2000, y: 42}]);
 });
 
 // --------- DNS: numeric-boundary validators ---------

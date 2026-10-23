@@ -116,14 +116,11 @@ abstract class MonitorMetricsLogRepository<R : Record, D : Any>(
         width: Duration,
     ): LatencySeriesDto {
         val latency = chartQueries.measurement(logTable.latency, "latency")
-        val withoutReading = chartQueries.checksWithoutReading(logTable.latency)
         val buckets = chartQueries.fetchBuckets(
-            monitorId, from, to, width, listOf(withoutReading, latency.average, latency.lowest, latency.highest),
+            monitorId, from, to, width, listOf(latency.average, latency.lowest, latency.highest),
         )
         return LatencySeriesDto(
             timestamps = buckets.getValues(chartQueries.bucketTimestamp),
-            checks = buckets.getValues(chartQueries.checks),
-            checksWithoutReading = buckets.getValues(withoutReading),
             latencies = buckets.getValues(latency.average),
             lowestLatencies = buckets.getValues(latency.lowest),
             highestLatencies = buckets.getValues(latency.highest),
@@ -197,12 +194,6 @@ class MetricsLogChartQueries<R : Record>(
         .field("floor(avg(extract(epoch from {0})) * 1000)::bigint", SQLDataType.BIGINT, logTable.createdAt)
         .`as`("bucket_timestamp")
 
-    val checks: Field<Int> = DSL.count().`as`("checks")
-
-    /** The number of the checks of a bucket that have no reading of the given column, e.g. the failed ones. */
-    fun checksWithoutReading(field: Field<*>): Field<Int> =
-        DSL.count().filterWhere(field.isNull).`as`("checks_without_reading")
-
     fun <N : Number> measurement(field: TableField<R, N>, alias: String) = BucketedMeasurement(
         average = avg(field).asMeasurementOf(field).`as`("${alias}_average"),
         lowest = min(field).`as`("${alias}_lowest"),
@@ -229,7 +220,7 @@ class MetricsLogChartQueries<R : Record>(
         // Ordered outside of the grouping, so the database can hash the logs into buckets instead of sorting all of
         // them first, which spills to disk for a long period. A bucket's timestamp lies within the bucket.
         val buckets = dslContext
-            .select(listOf(bucketTimestamp, checks) + selected)
+            .select(listOf(bucketTimestamp) + selected)
             .from(logTable.table)
             .where(logTable.monitorId.eq(monitorId))
             .and(isBetween(logTable.createdAt, from, to))

@@ -89,9 +89,7 @@ class IcmpMetricsLogRepositoryTest(
 
                 val series = metricsLogRepository.fetchIcmpSeries(monitor.id, bucket, null, Duration.ofHours(1))
 
-                then("the failed checks are counted, and the readings of the others are summarized") {
-                    series.checks shouldBe listOf(4, 1)
-                    series.checksWithoutReading shouldBe listOf(2, 1)
+                then("the readings of the checks are summarized, the failed ones left out of the latency") {
                     series.latencies.first() shouldBe 30
                     series.lowestLatencies.first() shouldBe 20
                     series.highestLatencies.first() shouldBe 40

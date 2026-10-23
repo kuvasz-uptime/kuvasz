@@ -194,7 +194,11 @@ private fun FlowContent.metricsSectionHeading() {
                     htmlFor = "metrics-period-selector"
                     icon(Icon.RESTORE)
                 }
-                periodSelector(selected = DEFAULT_METRICS_PERIOD, customOptionLabel = Messages.metricsCustomPeriod()) {
+                periodSelector(
+                    selected = DEFAULT_METRICS_PERIOD,
+                    options = UIDefaults.METRICS_PERIOD_SELECTOR_OPTIONS,
+                    customOptionLabel = Messages.metricsCustomPeriod(),
+                ) {
                     id = "metrics-period-selector"
                     testId("metrics-period-selector")
                     xModel("period")
@@ -273,7 +277,6 @@ internal fun FlowContent.monitorMetricsBlock(
             |packetLossRange: "${Messages.chartLowestHighestOf(Messages.packetLossBlockTitle())}",
             |cpuUsageRange: "${Messages.chartLowestHighestOf(Messages.dockerCpuUsageBlockTitle())}",
             |memoryUsageRange: "${Messages.chartLowestHighestOf(Messages.dockerMemoryUsageBlockTitle())}",
-            |checksWithoutReading: "${Messages.chartChecksWithoutReading()}",
             |},
             |"$DEFAULT_METRICS_PERIOD"
             |)

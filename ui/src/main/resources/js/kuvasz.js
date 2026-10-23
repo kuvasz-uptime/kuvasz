@@ -831,22 +831,11 @@ const bandSeries = (name, timestamps, lowest, highest) => ({
     })),
 });
 
-// The numbers of the checks of each point are carried by the points of the first series, for the tooltip
-const withCheckCounts = (series, {checks, checksWithoutReading}) => {
-    const [first, ...rest] = series;
-    const data = first.data.map((point, index) => ({
-        ...point,
-        checks: checks[index],
-        checksWithoutReading: checksWithoutReading[index],
-    }));
-    return [{...first, data}, ...rest];
-};
-
 const toLatencyChartData = (series, labels) => ({
-    series: withCheckCounts([
+    series: [
         chartSeries(labels.latency, 'area', series.timestamps, series.latencies),
         bandSeries(labels.latencyRange, series.timestamps, series.lowestLatencies, series.highestLatencies),
-    ], series),
+    ],
 });
 
 // The opacity of the bands of the lowest to the highest readings, drawn in the color of the series they belong to
@@ -854,11 +843,10 @@ const RANGE_BAND_OPACITY = 0.3;
 
 /*
  The shared tooltip of the metrics charts, with the value of every visible series at the hovered point, formatted by the
- formatter of the same index, and the number of the checks of the point that have no reading, if there are any. It's
- built here, because once a chart has a band (a range series), ApexCharts shows every series of it as a range, the ones
- with a single value too. A band shows its lowest and highest reading.
+ formatter of the same index. It's built here, because once a chart has a band (a range series), ApexCharts shows
+ every series of it as a range, the ones with a single value too. A band shows its lowest and highest reading.
 */
-const metricsChartTooltip = (formatters, checksWithoutReadingLabel) => ({dataPointIndex, w}) => {
+const metricsChartTooltip = (formatters) => ({dataPointIndex, w}) => {
     const rows = w.config.series.map((series, index) => {
         const point = series.data[dataPointIndex];
         if (!point || w.globals.collapsedSeriesIndices.includes(index)) {
@@ -869,20 +857,15 @@ const metricsChartTooltip = (formatters, checksWithoutReadingLabel) => ({dataPoi
         return tooltipRow(w.globals.colors[index], series.name, value, index + 1);
     });
     const hovered = w.config.series.map(series => series.data[dataPointIndex]).find(Boolean);
-    if (hovered && hovered.checksWithoutReading > 0) {
-        const value = `${hovered.checksWithoutReading} / ${hovered.checks}`;
-        rows.push(tooltipRow(null, checksWithoutReadingLabel, value, rows.length + 1));
-    }
     const title = hovered ? formatChartTimestamp(new Date(hovered.x)) : '';
     return `<div class="apexcharts-tooltip-title">${title}</div>${rows.join('')}`;
 };
 
 const tooltipRow = (color, label, value, order) =>
     `<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: ${order}; display: flex;">` +
-    (color === null ? '' :
-        `<span class="apexcharts-tooltip-marker" style="color: ${color}">` +
-        '<svg viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="5" fill="currentColor"></circle></svg>' +
-        '</span>') +
+    `<span class="apexcharts-tooltip-marker" style="color: ${color}">` +
+    '<svg viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="5" fill="currentColor"></circle></svg>' +
+    '</span>' +
     '<div class="apexcharts-tooltip-text"><div class="apexcharts-tooltip-y-group">' +
     `<span class="apexcharts-tooltip-text-y-label">${escapeHtml(label)}: </span>` +
     `<span class="apexcharts-tooltip-text-y-value">${escapeHtml(value)}</span>` +
@@ -900,7 +883,7 @@ const latencyChartOptions = (chartLabels) => {
         tooltip: {
             ...options.tooltip,
             shared: true,
-            custom: metricsChartTooltip([latencyFormatter, latencyFormatter], chartLabels.checksWithoutReading),
+            custom: metricsChartTooltip([latencyFormatter, latencyFormatter]),
         },
     };
 };
@@ -1208,7 +1191,6 @@ const icmpChartOptions = (chartLabels) => {
             shared: true,
             custom: metricsChartTooltip(
                 [latencyFormatter, packetLossFormatter, latencyFormatter, packetLossFormatter],
-                chartLabels.checksWithoutReading,
             ),
         },
         // Each band is drawn on the axis of the series it belongs to
@@ -1247,7 +1229,7 @@ const icmpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, char
             {name: chartLabels.packetLoss, band: chartLabels.packetLossRange},
         ],
         toChartData: (series, labels) => ({
-            series: withCheckCounts([
+            series: [
                 chartSeries(labels.latency, 'area', series.timestamps, series.latencies),
                 chartSeries(labels.packetLoss, 'line', series.timestamps, series.packetLossPercentages),
                 bandSeries(labels.latencyRange, series.timestamps, series.lowestLatencies, series.highestLatencies),
@@ -1257,7 +1239,7 @@ const icmpMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, char
                     series.lowestPacketLossPercentages,
                     series.highestPacketLossPercentages,
                 ),
-            ], series),
+            ],
         }),
     });
 
@@ -1324,7 +1306,6 @@ const dockerResourceChartOptions = (chartLabels) => {
             shared: true,
             custom: metricsChartTooltip(
                 [cpuFormatter, memoryFormatter, memoryFormatter, cpuFormatter, memoryFormatter],
-                chartLabels.checksWithoutReading,
             ),
         },
         // Two scales: the memory limit and the band of the memory usage share the scale of the memory usage
@@ -1363,7 +1344,7 @@ const dockerMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, ch
             {name: chartLabels.memoryLimit},
         ],
         toChartData: (series, labels) => ({
-            series: withCheckCounts([
+            series: [
                 chartSeries(labels.cpuUsage, 'area', series.timestamps, series.cpuUsagePercentages),
                 chartSeries(labels.memoryUsage, 'line', series.timestamps, series.memoryUsageBytes.map(bytesToMib)),
                 chartSeries(labels.memoryLimit, 'line', series.timestamps, series.memoryLimitBytes.map(bytesToMib)),
@@ -1379,7 +1360,7 @@ const dockerMetricsBlock = (monitorId, isMonitorEnabled, uptimeCheckInterval, ch
                     series.lowestMemoryUsageBytes.map(bytesToMib),
                     series.highestMemoryUsageBytes.map(bytesToMib),
                 ),
-            ], series),
+            ],
         }),
         /*
          A container started without a memory limit reports the host's whole RAM as one, which would dwarf the usage
