@@ -338,7 +338,7 @@ private fun FlowContent.monitorCounts(stats: ActualUptimeStats, outsideMaintenan
     span {
         classes(D_INLINE_FLEX, ALIGN_ITEMS_CENTER, GAP_2, TEXT_SECONDARY)
         testId("dashboard-monitor-counts")
-        countFigures(monitorCountsOf(stats, outsideMaintenance, withZeros = false))
+        countFigures(monitorCountsOf(stats, outsideMaintenance, withZeros = false), collapseOnSmallScreens = true)
     }
 }
 
@@ -356,7 +356,13 @@ internal fun monitorCountsOf(
     val down = outsideMaintenance.down
     val pending = outsideMaintenance.pending
     return listOfNotNull(
-        countFigure(Icon.ARROW_NARROW_UP, labeledCount(Messages.up(), up), up, alwaysShown = true),
+        countFigure(
+            Icon.ARROW_NARROW_UP,
+            labeledCount(Messages.up(), up),
+            up,
+            alwaysShown = true,
+            hiddenOnSmallScreens = true,
+        ),
         countFigure(
             Icon.ARROW_NARROW_DOWN,
             labeledCount(Messages.down(), down),
@@ -370,8 +376,20 @@ internal fun monitorCountsOf(
             stats.inMaintenance,
             alwaysShown = withZeros,
         ),
-        countFigure(Icon.PAUSE, labeledCount(Messages.paused(), stats.paused), stats.paused, alwaysShown = withZeros),
-        countFigure(Icon.HOURGLASS, Messages.dashboardPendingCount(pending), pending, alwaysShown = withZeros),
+        countFigure(
+            Icon.PAUSE,
+            labeledCount(Messages.paused(), stats.paused),
+            stats.paused,
+            alwaysShown = withZeros,
+            hiddenOnSmallScreens = true,
+        ),
+        countFigure(
+            Icon.HOURGLASS,
+            Messages.dashboardPendingCount(pending),
+            pending,
+            alwaysShown = withZeros,
+            hiddenOnSmallScreens = true,
+        ),
     )
 }
 
@@ -385,7 +403,13 @@ internal fun certificateCountsOf(sslStats: SslStats): List<CountFigure> = with(s
     )
 }
 
-internal data class CountFigure(val icon: Icon, val text: String, val value: Int, val color: CSSClass? = null)
+internal data class CountFigure(
+    val icon: Icon,
+    val text: String,
+    val value: Int,
+    val color: CSSClass? = null,
+    val hiddenOnSmallScreens: Boolean = false,
+)
 
 private fun countFigure(
     icon: Icon,
@@ -393,18 +417,41 @@ private fun countFigure(
     value: Int,
     color: CSSClass? = null,
     alwaysShown: Boolean = false,
-): CountFigure? = CountFigure(icon, text, value, color).takeIf { alwaysShown || value > 0 }
+    hiddenOnSmallScreens: Boolean = false,
+): CountFigure? = CountFigure(icon, text, value, color, hiddenOnSmallScreens).takeIf { alwaysShown || value > 0 }
 
 private fun labeledCount(label: String, count: Int) = "$label: $count"
 
-private fun FlowContent.countFigures(figures: List<CountFigure>) = figures.forEach { figure ->
-    iconCount(figure.icon, figure.text, figure.value.toString(), figure.color)
-}
+private fun FlowContent.countFigures(figures: List<CountFigure>, collapseOnSmallScreens: Boolean = false) =
+    figures.forEach { figure ->
+        iconCount(
+            figure.icon,
+            figure.text,
+            figure.value.toString(),
+            figure.color,
+            collapsed = collapseOnSmallScreens && figure.hiddenOnSmallScreens,
+        )
+    }
 
 /** A figure shown as an icon and a short [value], spelled out in full by its tooltip. */
-private fun FlowContent.iconCount(icon: Icon, text: String, value: String, color: CSSClass? = null) {
+private fun FlowContent.iconCount(
+    icon: Icon,
+    text: String,
+    value: String,
+    color: CSSClass? = null,
+    collapsed: Boolean = false,
+) {
     span {
-        classes(setOfNotNull(D_INLINE_FLEX, ALIGN_ITEMS_CENTER, GAP_1, ICON_INLINE, color))
+        classes(
+            setOfNotNull(
+                if (collapsed) D_NONE else D_INLINE_FLEX,
+                D_MD_INLINE_FLEX.takeIf { collapsed },
+                ALIGN_ITEMS_CENTER,
+                GAP_1,
+                ICON_INLINE,
+                color,
+            ),
+        )
         tooltip(text)
         ariaLabel(text)
         icon(icon)

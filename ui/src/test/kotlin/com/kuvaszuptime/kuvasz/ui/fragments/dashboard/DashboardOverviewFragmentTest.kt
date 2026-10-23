@@ -168,11 +168,11 @@ class DashboardOverviewFragmentTest : BehaviorSpec({
 
             then("every monitor is counted once, the ones under maintenance only by the maintenance") {
                 monitorCountsOf(stats, outsideMaintenance, withZeros = false) shouldBe listOf(
-                    CountFigure(Icon.ARROW_NARROW_UP, "Up: 2", 2),
+                    CountFigure(Icon.ARROW_NARROW_UP, "Up: 2", 2, hiddenOnSmallScreens = true),
                     CountFigure(Icon.ARROW_NARROW_DOWN, "Down: 1", 1, TEXT_RED),
                     CountFigure(Icon.TOOL, "Maintenance: 4", 4),
-                    CountFigure(Icon.PAUSE, "Paused: 1", 1),
-                    CountFigure(Icon.HOURGLASS, "Pending: 1", 1),
+                    CountFigure(Icon.PAUSE, "Paused: 1", 1, hiddenOnSmallScreens = true),
+                    CountFigure(Icon.HOURGLASS, "Pending: 1", 1, hiddenOnSmallScreens = true),
                 )
             }
         }
@@ -182,17 +182,17 @@ class DashboardOverviewFragmentTest : BehaviorSpec({
 
             then("the zeros are left out, except for the monitors that are up") {
                 monitorCountsOf(stats, stats.outsideOf(NO_MAINTENANCE), withZeros = false) shouldBe listOf(
-                    CountFigure(Icon.ARROW_NARROW_UP, "Up: 1", 1),
+                    CountFigure(Icon.ARROW_NARROW_UP, "Up: 1", 1, hiddenOnSmallScreens = true),
                 )
             }
 
             then("every count is there when the zeros are asked for, and nothing is red") {
                 monitorCountsOf(stats, stats.outsideOf(NO_MAINTENANCE), withZeros = true) shouldBe listOf(
-                    CountFigure(Icon.ARROW_NARROW_UP, "Up: 1", 1),
+                    CountFigure(Icon.ARROW_NARROW_UP, "Up: 1", 1, hiddenOnSmallScreens = true),
                     CountFigure(Icon.ARROW_NARROW_DOWN, "Down: 0", 0),
                     CountFigure(Icon.TOOL, "Maintenance: 0", 0),
-                    CountFigure(Icon.PAUSE, "Paused: 0", 0),
-                    CountFigure(Icon.HOURGLASS, "Pending: 0", 0),
+                    CountFigure(Icon.PAUSE, "Paused: 0", 0, hiddenOnSmallScreens = true),
+                    CountFigure(Icon.HOURGLASS, "Pending: 0", 0, hiddenOnSmallScreens = true),
                 )
             }
         }
