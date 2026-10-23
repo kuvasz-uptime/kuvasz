@@ -1,10 +1,46 @@
-## 4.5.0 <small>2026-10-14</small> { id="4.5.0" data-toc-label="4.5.0" }
+## 4.6.0 <small>unreleased</small> { id="4.6.0" data-toc-label="4.6.0" }
 
 !!! question "Make your voice heard!"
 
     There is a **short questionnaire about Kuvasz** in general, which you can fill out anonymously. It takes only a few minutes, and your feedback is highly appreciated as it helps me to focus on the most important features and improvements in the future. You can find it [**here**](https://forms.gle/Lb1q6CmW8eUgVbNr9).
 
     _Thanks, Adam_
+
+### 🚀 To Infinity and Beyond!
+
+![Monitors, Woody!](https://i.imgflip.com/b3t531.jpg)
+
+This release brings **significant performance improvements**. For the average user (with a few hundred monitors), _Kuvasz_ was already blazingly fast, but there were a few warning signs, especially around the UX. Leaving out pagination and proper filtering from the UI and the API was a deliberate decision at the beginning, to keep everything as simple as possible. However, being fast and usable with 100 monitors doesn't mean that it also works with 5,000.
+
+This time, _Kuvasz_ (and the PostgreSQL database under it) was benchmarked under really heavy load (the benchmark is publicly available in the repository) to make sure that it can handle enterprise-grade volumes too. The result is a proper [**sizing guide**](setup/sizing.md), which also summarizes the findings of these initial benchmarks and how they were run.
+
+From now on, it doesn't matter whether you have 5 or 5,000 monitors: everything will be as snappy as possible. And a hint: _Kuvasz_ won't be hungry either. With **up to 1,000 monitors, the default setup works without any problem**, and if you'd like to run 5,000 monitors, 1.5 GB of memory dedicated to it is more than enough!
+
+!!!warning "Watch out for the changes!"
+
+    There are no breaking changes in this release, but a few API endpoints got deprecated, and a few things behave a little bit different than before. Make sure that you [**read the documentation**](upgrade-notes.md#upgrade-to-v460) before you upgrade!
+
+### Features
+
+- **Pagination & filters for almost everything, almost everywhere**: on the **Web UI**, the lists of the monitors, the status pages, the maintenance windows and the incidents show **25 items per page** by default (10, 50 or 100 if you prefer), so they stay quick with thousands of items too. You can **search** them by name, **filter** them (e.g. the monitors by category, by whether they are enabled or paused, and by their status, the incidents by their type and period), and **sort** them by clicking the column headers. The filters, the order and the page are part of the address of the page, so a filtered list can be bookmarked or shared. The incident lists on the details pages of the monitors are paged too, and they link to the incidents page, filtered by the monitor.
+
+![Filters and pagination](images/changelog/filters_and_pagination.webp)
+
+In the **API**, the new `/api/v3` endpoints return the monitors of every type, their uptime and SSL events, the incidents (of every type, or of one type only), the status pages and the maintenance windows page by page, and can **sort** them (e.g. by name, status or date, in both orders) and **search** them by name. The full lists of `/api/v2` keep working as before, but they are deprecated, so please switch to the `/api/v3` ones. The [MCP server's](features/mcp-server.md) list tools return one page at a time too (25 items by default), so a large installation no longer fills the assistant's context with every monitor at once.
+
+- **Any time range on the charts of the monitors**: on the details pages of the monitors, the charts and the numbers above them (e.g. the average and the highest response time) can show any time range now, not only the periods of the period selector (the last 24 hours is still the default). Pick the start and the end of the range with the date pickers, or **select a part of a chart with the mouse** to zoom in to it. Picking a period again goes back to it. The numbers above the charts are always calculated from every check of the range. The period selector of the charts got shorter periods too: the **last 5, 15 and 30 minutes**.
+
+### Improvements
+
+- **Charts that stay fast with a lot of history**: a chart shows at most about 1,000 points, however long the period or the range is, and however often the monitor is checked. The checks of a period are grouped into equal time slots, and a point is the **average** of its slot, with a band around it from the **lowest** to the **highest** reading, so a short spike stays visible on a long period too.
+
+- **Faster monitor details pages, status pages and daily cleanup with a lot of history**: the tables that keep the response times and the other metrics of every check got better indexes. With about 1,000 monitors and a month of history, the details page of an HTTP monitor loaded about **4 times faster** in our tests, the ones of the TCP, ICMP, DNS and Docker monitors about **20 times faster**, and the nightly cleanup of the HTTP history went from almost 4 seconds to a quarter of a second. With 5,000 monitors and a month of history, the 30-day averages of 25 monitors on a status page took about **0.2 seconds instead of up to 6 seconds**, and the 30-day statistics of a single HTTP monitor about **15 milliseconds instead of 3 seconds**.
+
+- **Dashboard and status pages that stay fast with a lot of history**: the uptime figures of the dashboard, the statistics of the monitors and the uptime history of the status pages are now added up by the database. Before, _Kuvasz_ loaded every uptime event of the period into its memory first. With 5,000 monitors and a month of history, a few people looking at the 30-day dashboard at the same time could fill the memory of _Kuvasz_ and stop it from checking the monitors. The figures themselves are exactly the same as before.
+
+- **Lighter status page and maintenance window pages with a lot of monitors**: the forms of the status pages and the maintenance windows load the list of the monitors when you open them. The monitor and category pickers of the forms show the first 100 matches, and tell you when there are more. Type to find the rest: the search still covers every monitor and category.
+
+## 4.5.0 <small>2026-10-14</small> { id="4.5.0" data-toc-label="4.5.0" }
 
 ### Features
 

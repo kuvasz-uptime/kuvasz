@@ -30,6 +30,8 @@ paths:
       tags:
       - DNS monitors
       summary: Get all monitors with their details
+      description: "Deprecated: use GET /api/v3/dns-monitors instead, which returns\
+        \ the monitors page by page"
       operationId: getMonitorsWithDetails
       parameters:
       - name: enabled
@@ -64,6 +66,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/DnsMonitorDetailsDto"
+      deprecated: true
       security:
       - apiKey: []
       - bearerAuth: []
@@ -282,6 +285,8 @@ paths:
       tags:
       - DNS monitors
       summary: Get the uptime events of the given monitor
+      description: "Deprecated: use GET /api/v3/dns-monitors/{monitorId}/uptime-events\
+        \ instead, which returns the events page by page"
       operationId: getUptimeEvents
       parameters:
       - name: monitorId
@@ -299,6 +304,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/DnsUptimeEventDto"
+      deprecated: true
       security:
       - apiKey: []
       - bearerAuth: []
@@ -325,6 +331,8 @@ paths:
       tags:
       - Docker monitors
       summary: Get all monitors with their details
+      description: "Deprecated: use GET /api/v3/docker-monitors instead, which returns\
+        \ the monitors page by page"
       operationId: getMonitorsWithDetails_1
       parameters:
       - name: enabled
@@ -359,6 +367,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/DockerMonitorDetailsDto"
+      deprecated: true
       security:
       - apiKey: []
       - bearerAuth: []
@@ -577,6 +586,8 @@ paths:
       tags:
       - Docker monitors
       summary: Get the uptime events of the given monitor
+      description: "Deprecated: use GET /api/v3/docker-monitors/{monitorId}/uptime-events\
+        \ instead, which returns the events page by page"
       operationId: getUptimeEvents_1
       parameters:
       - name: monitorId
@@ -594,6 +605,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/DockerUptimeEventDto"
+      deprecated: true
       security:
       - apiKey: []
       - bearerAuth: []
@@ -602,6 +614,8 @@ paths:
       tags:
       - HTTP monitors
       summary: Get all monitors with their details
+      description: "Deprecated: use GET /api/v3/http-monitors instead, which returns\
+        \ the monitors page by page"
       operationId: getMonitorsWithDetails_2
       parameters:
       - name: enabled
@@ -650,6 +664,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/HttpMonitorDetailsDto"
+      deprecated: true
       security:
       - apiKey: []
       - bearerAuth: []
@@ -832,6 +847,8 @@ paths:
       tags:
       - HTTP monitors
       summary: Get the SSL events of the given monitor
+      description: "Deprecated: use GET /api/v3/http-monitors/{monitorId}/ssl-events\
+        \ instead, which returns the events page by page"
       operationId: getSSLEvents
       parameters:
       - name: monitorId
@@ -849,6 +866,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/SSLEventDto"
+      deprecated: true
       security:
       - apiKey: []
       - bearerAuth: []
@@ -893,6 +911,8 @@ paths:
       tags:
       - HTTP monitors
       summary: Get the uptime events of the given monitor
+      description: "Deprecated: use GET /api/v3/http-monitors/{monitorId}/uptime-events\
+        \ instead, which returns the events page by page"
       operationId: getUptimeEvents_2
       parameters:
       - name: monitorId
@@ -910,6 +930,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/HttpUptimeEventDto"
+      deprecated: true
       security:
       - apiKey: []
       - bearerAuth: []
@@ -918,6 +939,8 @@ paths:
       tags:
       - ICMP monitors
       summary: Get all monitors with their details
+      description: "Deprecated: use GET /api/v3/icmp-monitors instead, which returns\
+        \ the monitors page by page"
       operationId: getMonitorsWithDetails_3
       parameters:
       - name: enabled
@@ -952,6 +975,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/IcmpMonitorDetailsDto"
+      deprecated: true
       security:
       - apiKey: []
       - bearerAuth: []
@@ -1170,6 +1194,8 @@ paths:
       tags:
       - ICMP monitors
       summary: Get the uptime events of the given monitor
+      description: "Deprecated: use GET /api/v3/icmp-monitors/{monitorId}/uptime-events\
+        \ instead, which returns the events page by page"
       operationId: getUptimeEvents_3
       parameters:
       - name: monitorId
@@ -1187,6 +1213,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/IcmpUptimeEventDto"
+      deprecated: true
       security:
       - apiKey: []
       - bearerAuth: []
@@ -1195,6 +1222,8 @@ paths:
       tags:
       - Incidents
       summary: Get all incidents
+      description: "Deprecated: use GET /api/v3/incidents instead, which returns the\
+        \ incidents page by page"
       operationId: getIncidents
       parameters:
       - name: monitorId
@@ -1227,6 +1256,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/IncidentDto"
+      deprecated: true
       security:
       - apiKey: []
       - bearerAuth: []
@@ -1451,6 +1481,8 @@ paths:
       tags:
       - Maintenance windows
       summary: Get all maintenance windows
+      description: "Deprecated: use GET /api/v3/maintenance-windows instead, which\
+        \ returns them page by page"
       operationId: getMaintenanceWindows
       responses:
         "200":
@@ -1461,6 +1493,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/MaintenanceWindowDetailsDto"
+      deprecated: true
       security:
       - apiKey: []
       - bearerAuth: []
@@ -1762,6 +1795,8 @@ paths:
       tags:
       - Push monitors
       summary: Get all monitors with their details
+      description: "Deprecated: use GET /api/v3/push-monitors instead, which returns\
+        \ the monitors page by page"
       operationId: getMonitorsWithDetails_4
       parameters:
       - name: enabled
@@ -1796,6 +1831,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/PushMonitorDetailsDto"
+      deprecated: true
       security:
       - apiKey: []
       - bearerAuth: []
@@ -2078,6 +2114,8 @@ paths:
       tags:
       - Push monitors
       summary: Get the uptime events of the given monitor
+      description: "Deprecated: use GET /api/v3/push-monitors/{monitorId}/uptime-events\
+        \ instead, which returns the events page by page"
       operationId: getUptimeEvents_4
       parameters:
       - name: monitorId
@@ -2095,6 +2133,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/PushUptimeEventDto"
+      deprecated: true
       security:
       - apiKey: []
       - bearerAuth: []
@@ -2119,6 +2158,8 @@ paths:
       tags:
       - Status pages
       summary: Get all status pages
+      description: "Deprecated: use GET /api/v3/status-pages instead, which returns\
+        \ them page by page"
       operationId: getStatusPages
       parameters:
       - name: public
@@ -2136,6 +2177,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/StatusPageDto"
+      deprecated: true
       security:
       - apiKey: []
       - bearerAuth: []
@@ -2388,6 +2430,8 @@ paths:
       tags:
       - TCP monitors
       summary: Get all monitors with their details
+      description: "Deprecated: use GET /api/v3/tcp-monitors instead, which returns\
+        \ the monitors page by page"
       operationId: getMonitorsWithDetails_5
       parameters:
       - name: enabled
@@ -2422,6 +2466,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/TcpMonitorDetailsDto"
+      deprecated: true
       security:
       - apiKey: []
       - bearerAuth: []
@@ -2640,6 +2685,8 @@ paths:
       tags:
       - TCP monitors
       summary: Get the uptime events of the given monitor
+      description: "Deprecated: use GET /api/v3/tcp-monitors/{monitorId}/uptime-events\
+        \ instead, which returns the events page by page"
       operationId: getUptimeEvents_5
       parameters:
       - name: monitorId
@@ -2657,6 +2704,1353 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/TcpUptimeEventDto"
+      deprecated: true
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v3/dns-monitors:
+    get:
+      tags:
+      - DNS monitors
+      summary: "Get the monitors with their details, page by page"
+      operationId: getMonitorsPage
+      parameters:
+      - name: enabled
+        in: query
+        explode: false
+        schema:
+          type: boolean
+          nullable: true
+      - name: uptimeStatus
+        in: query
+        explode: false
+        schema:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/UptimeStatus"
+      - name: category
+        in: query
+        description: "Narrows the result to one monitor category. An empty value selects\
+          \ the monitors that have no category at all, omitting the parameter selects\
+          \ every monitor."
+        explode: false
+        schema:
+          type: string
+          nullable: true
+      - name: name
+        in: query
+        description: "Returns only the monitors whose name contains this text, without\
+          \ regard to the case of the letters"
+        explode: false
+        schema:
+          type: string
+          nullable: true
+      - name: page
+        in: query
+        description: "The number of the page to return, starting from 1. A page after\
+          \ the last one returns no items."
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 1
+      - name: size
+        in: query
+        description: The number of items on a page
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 25
+      - name: sortedBy
+        in: query
+        description: "The field to sort the monitors by, NAME if it's not given. Monitors\
+          \ with the same value are sorted by their ID. A monitor that has no value\
+          \ for the field yet (e.g. no UPTIME_STATUS before its first check) comes\
+          \ last, whatever the order is."
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/DnsMonitorSortField"
+      - name: sortOrder
+        in: query
+        description: "The order of the sorting, ASC if it's not given"
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/SortOrder"
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PagedResult_DnsMonitorDetailsDto_"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v3/dns-monitors/{monitorId}/uptime-events:
+    get:
+      tags:
+      - DNS monitors
+      summary: "Get the uptime events of the given monitor, page by page"
+      operationId: getUptimeEventsPage
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: page
+        in: query
+        description: "The number of the page to return, starting from 1. A page after\
+          \ the last one returns no items."
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 1
+      - name: size
+        in: query
+        description: The number of items on a page
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 25
+      - name: sortedBy
+        in: query
+        description: "The field to sort the events by. Without sortedBy and sortOrder,\
+          \ the newest events come first (STARTED_AT, DESC). Events with the same\
+          \ value are sorted by their ID. When sorted by ENDED_AT, the ongoing events\
+          \ (which haven't ended yet) come last, whatever the order is."
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/EventSortField"
+      - name: sortOrder
+        in: query
+        description: "The order of the sorting, ASC if it's not given"
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/SortOrder"
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PagedResult_DnsUptimeEventDto_"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v3/docker-monitors:
+    get:
+      tags:
+      - Docker monitors
+      summary: "Get the monitors with their details, page by page"
+      operationId: getMonitorsPage_1
+      parameters:
+      - name: enabled
+        in: query
+        explode: false
+        schema:
+          type: boolean
+          nullable: true
+      - name: uptimeStatus
+        in: query
+        explode: false
+        schema:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/UptimeStatus"
+      - name: category
+        in: query
+        description: "Narrows the result to one monitor category. An empty value selects\
+          \ the monitors that have no category at all, omitting the parameter selects\
+          \ every monitor."
+        explode: false
+        schema:
+          type: string
+          nullable: true
+      - name: name
+        in: query
+        description: "Returns only the monitors whose name contains this text, without\
+          \ regard to the case of the letters"
+        explode: false
+        schema:
+          type: string
+          nullable: true
+      - name: page
+        in: query
+        description: "The number of the page to return, starting from 1. A page after\
+          \ the last one returns no items."
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 1
+      - name: size
+        in: query
+        description: The number of items on a page
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 25
+      - name: sortedBy
+        in: query
+        description: "The field to sort the monitors by, NAME if it's not given. Monitors\
+          \ with the same value are sorted by their ID. A monitor that has no value\
+          \ for the field yet (e.g. no UPTIME_STATUS before its first check) comes\
+          \ last, whatever the order is."
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/DockerMonitorSortField"
+      - name: sortOrder
+        in: query
+        description: "The order of the sorting, ASC if it's not given"
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/SortOrder"
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PagedResult_DockerMonitorDetailsDto_"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v3/docker-monitors/{monitorId}/uptime-events:
+    get:
+      tags:
+      - Docker monitors
+      summary: "Get the uptime events of the given monitor, page by page"
+      operationId: getUptimeEventsPage_1
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: page
+        in: query
+        description: "The number of the page to return, starting from 1. A page after\
+          \ the last one returns no items."
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 1
+      - name: size
+        in: query
+        description: The number of items on a page
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 25
+      - name: sortedBy
+        in: query
+        description: "The field to sort the events by. Without sortedBy and sortOrder,\
+          \ the newest events come first (STARTED_AT, DESC). Events with the same\
+          \ value are sorted by their ID. When sorted by ENDED_AT, the ongoing events\
+          \ (which haven't ended yet) come last, whatever the order is."
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/EventSortField"
+      - name: sortOrder
+        in: query
+        description: "The order of the sorting, ASC if it's not given"
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/SortOrder"
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PagedResult_DockerUptimeEventDto_"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v3/http-monitors:
+    get:
+      tags:
+      - HTTP monitors
+      summary: "Get the monitors with their details, page by page"
+      operationId: getMonitorsPage_2
+      parameters:
+      - name: enabled
+        in: query
+        explode: false
+        schema:
+          type: boolean
+          nullable: true
+      - name: uptimeStatus
+        in: query
+        explode: false
+        schema:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/UptimeStatus"
+      - name: sslStatus
+        in: query
+        explode: false
+        schema:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/SslStatus"
+      - name: sslCheckEnabled
+        in: query
+        explode: false
+        schema:
+          type: boolean
+          nullable: true
+      - name: category
+        in: query
+        description: "Narrows the result to one monitor category. An empty value selects\
+          \ the monitors that have no category at all, omitting the parameter selects\
+          \ every monitor."
+        explode: false
+        schema:
+          type: string
+          nullable: true
+      - name: name
+        in: query
+        description: "Returns only the monitors whose name contains this text, without\
+          \ regard to the case of the letters"
+        explode: false
+        schema:
+          type: string
+          nullable: true
+      - name: page
+        in: query
+        description: "The number of the page to return, starting from 1. A page after\
+          \ the last one returns no items."
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 1
+      - name: size
+        in: query
+        description: The number of items on a page
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 25
+      - name: sortedBy
+        in: query
+        description: "The field to sort the monitors by, NAME if it's not given. Monitors\
+          \ with the same value are sorted by their ID. A monitor that has no value\
+          \ for the field yet (e.g. no UPTIME_STATUS before its first check) comes\
+          \ last, whatever the order is."
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/HttpMonitorSortField"
+      - name: sortOrder
+        in: query
+        description: "The order of the sorting, ASC if it's not given"
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/SortOrder"
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PagedResult_HttpMonitorDetailsDto_"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v3/http-monitors/{monitorId}/ssl-events:
+    get:
+      tags:
+      - HTTP monitors
+      summary: "Get the SSL events of the given monitor, page by page"
+      operationId: getSSLEventsPage
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: page
+        in: query
+        description: "The number of the page to return, starting from 1. A page after\
+          \ the last one returns no items."
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 1
+      - name: size
+        in: query
+        description: The number of items on a page
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 25
+      - name: sortedBy
+        in: query
+        description: "The field to sort the events by. Without sortedBy and sortOrder,\
+          \ the newest events come first (STARTED_AT, DESC). Events with the same\
+          \ value are sorted by their ID. When sorted by ENDED_AT, the ongoing events\
+          \ (which haven't ended yet) come last, whatever the order is."
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/EventSortField"
+      - name: sortOrder
+        in: query
+        description: "The order of the sorting, ASC if it's not given"
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/SortOrder"
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PagedResult_SSLEventDto_"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v3/http-monitors/{monitorId}/uptime-events:
+    get:
+      tags:
+      - HTTP monitors
+      summary: "Get the uptime events of the given monitor, page by page"
+      operationId: getUptimeEventsPage_2
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: page
+        in: query
+        description: "The number of the page to return, starting from 1. A page after\
+          \ the last one returns no items."
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 1
+      - name: size
+        in: query
+        description: The number of items on a page
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 25
+      - name: sortedBy
+        in: query
+        description: "The field to sort the events by. Without sortedBy and sortOrder,\
+          \ the newest events come first (STARTED_AT, DESC). Events with the same\
+          \ value are sorted by their ID. When sorted by ENDED_AT, the ongoing events\
+          \ (which haven't ended yet) come last, whatever the order is."
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/EventSortField"
+      - name: sortOrder
+        in: query
+        description: "The order of the sorting, ASC if it's not given"
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/SortOrder"
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PagedResult_HttpUptimeEventDto_"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v3/icmp-monitors:
+    get:
+      tags:
+      - ICMP monitors
+      summary: "Get the monitors with their details, page by page"
+      operationId: getMonitorsPage_3
+      parameters:
+      - name: enabled
+        in: query
+        explode: false
+        schema:
+          type: boolean
+          nullable: true
+      - name: uptimeStatus
+        in: query
+        explode: false
+        schema:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/UptimeStatus"
+      - name: category
+        in: query
+        description: "Narrows the result to one monitor category. An empty value selects\
+          \ the monitors that have no category at all, omitting the parameter selects\
+          \ every monitor."
+        explode: false
+        schema:
+          type: string
+          nullable: true
+      - name: name
+        in: query
+        description: "Returns only the monitors whose name contains this text, without\
+          \ regard to the case of the letters"
+        explode: false
+        schema:
+          type: string
+          nullable: true
+      - name: page
+        in: query
+        description: "The number of the page to return, starting from 1. A page after\
+          \ the last one returns no items."
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 1
+      - name: size
+        in: query
+        description: The number of items on a page
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 25
+      - name: sortedBy
+        in: query
+        description: "The field to sort the monitors by, NAME if it's not given. Monitors\
+          \ with the same value are sorted by their ID. A monitor that has no value\
+          \ for the field yet (e.g. no UPTIME_STATUS before its first check) comes\
+          \ last, whatever the order is."
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/IcmpMonitorSortField"
+      - name: sortOrder
+        in: query
+        description: "The order of the sorting, ASC if it's not given"
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/SortOrder"
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PagedResult_IcmpMonitorDetailsDto_"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v3/icmp-monitors/{monitorId}/uptime-events:
+    get:
+      tags:
+      - ICMP monitors
+      summary: "Get the uptime events of the given monitor, page by page"
+      operationId: getUptimeEventsPage_3
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: page
+        in: query
+        description: "The number of the page to return, starting from 1. A page after\
+          \ the last one returns no items."
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 1
+      - name: size
+        in: query
+        description: The number of items on a page
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 25
+      - name: sortedBy
+        in: query
+        description: "The field to sort the events by. Without sortedBy and sortOrder,\
+          \ the newest events come first (STARTED_AT, DESC). Events with the same\
+          \ value are sorted by their ID. When sorted by ENDED_AT, the ongoing events\
+          \ (which haven't ended yet) come last, whatever the order is."
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/EventSortField"
+      - name: sortOrder
+        in: query
+        description: "The order of the sorting, ASC if it's not given"
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/SortOrder"
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PagedResult_IcmpUptimeEventDto_"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v3/incidents:
+    get:
+      tags:
+      - Incidents
+      summary: "Get the incidents of every type, page by page"
+      operationId: getIncidentsPage
+      parameters:
+      - name: monitorId
+        in: query
+        explode: false
+        schema:
+          type: integer
+          format: int64
+          nullable: true
+      - name: period
+        in: query
+        explode: false
+        schema:
+          type: string
+          description: "An ISO-8601 Duration string, default P7D"
+          nullable: true
+      - name: includeResolved
+        in: query
+        description: "If false, only ongoing incidents are returned, default true"
+        explode: false
+        schema:
+          type: boolean
+          nullable: true
+      - name: name
+        in: query
+        description: "Returns only the incidents whose monitor's name contains this\
+          \ text, without regard to the case of the letters"
+        explode: false
+        schema:
+          type: string
+          nullable: true
+      - name: page
+        in: query
+        description: "The number of the page to return, starting from 1. A page after\
+          \ the last one returns no items."
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 1
+      - name: size
+        in: query
+        description: The number of items on a page
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 25
+      - name: sortedBy
+        in: query
+        description: "The field to sort the incidents by. Without sortedBy and sortOrder,\
+          \ the latest started incidents come first (STARTED_AT, DESC). ID is the\
+          \ ID of the event of the incident. Incidents with the same value are sorted\
+          \ by their type and the ID of their event. When sorted by ENDED_AT, the\
+          \ ongoing incidents (which haven't ended yet) come last, whatever the order\
+          \ is."
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/IncidentSortField"
+      - name: sortOrder
+        in: query
+        description: "The order of the sorting, ASC if it's not given"
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/SortOrder"
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PagedResult_IncidentDto_"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v3/incidents/{incidentType}:
+    get:
+      tags:
+      - Incidents
+      summary: "Get the incidents of one type, page by page"
+      operationId: getIncidentsOfTypePage
+      parameters:
+      - name: incidentType
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/IncidentType"
+      - name: monitorId
+        in: query
+        explode: false
+        schema:
+          type: integer
+          format: int64
+          nullable: true
+      - name: period
+        in: query
+        explode: false
+        schema:
+          type: string
+          description: "An ISO-8601 Duration string, default P7D"
+          nullable: true
+      - name: includeResolved
+        in: query
+        description: "If false, only ongoing incidents are returned, default true"
+        explode: false
+        schema:
+          type: boolean
+          nullable: true
+      - name: name
+        in: query
+        description: "Returns only the incidents whose monitor's name contains this\
+          \ text, without regard to the case of the letters"
+        explode: false
+        schema:
+          type: string
+          nullable: true
+      - name: page
+        in: query
+        description: "The number of the page to return, starting from 1. A page after\
+          \ the last one returns no items."
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 1
+      - name: size
+        in: query
+        description: The number of items on a page
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 25
+      - name: sortedBy
+        in: query
+        description: "The field to sort the incidents by. Without sortedBy and sortOrder,\
+          \ the latest started incidents come first (STARTED_AT, DESC). ID is the\
+          \ ID of the event of the incident. Incidents with the same value are sorted\
+          \ by their type and the ID of their event. When sorted by ENDED_AT, the\
+          \ ongoing incidents (which haven't ended yet) come last, whatever the order\
+          \ is."
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/IncidentSortField"
+      - name: sortOrder
+        in: query
+        description: "The order of the sorting, ASC if it's not given"
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/SortOrder"
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PagedResult_IncidentDto_"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v3/maintenance-windows:
+    get:
+      tags:
+      - Maintenance windows
+      summary: "Get the maintenance windows, page by page"
+      operationId: getMaintenanceWindowsPage
+      parameters:
+      - name: enabled
+        in: query
+        explode: false
+        schema:
+          type: boolean
+          nullable: true
+      - name: name
+        in: query
+        description: "Returns only the maintenance windows whose name contains this\
+          \ text, without regard to the case of the letters"
+        explode: false
+        schema:
+          type: string
+          nullable: true
+      - name: page
+        in: query
+        description: "The number of the page to return, starting from 1. A page after\
+          \ the last one returns no items."
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 1
+      - name: size
+        in: query
+        description: The number of items on a page
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 25
+      - name: sortedBy
+        in: query
+        description: "The field to sort the maintenance windows by, NAME if it's not\
+          \ given. Maintenance windows with the same value are sorted by their ID.\
+          \ When sorted by START, the windows without a fixed start (the manual and\
+          \ the recurring ones) come last, whatever the order is."
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/MaintenanceWindowSortField"
+      - name: sortOrder
+        in: query
+        description: "The order of the sorting, ASC if it's not given"
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/SortOrder"
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PagedResult_MaintenanceWindowDetailsDto_"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v3/push-monitors:
+    get:
+      tags:
+      - Push monitors
+      summary: "Get the monitors with their details, page by page"
+      operationId: getMonitorsPage_4
+      parameters:
+      - name: enabled
+        in: query
+        explode: false
+        schema:
+          type: boolean
+          nullable: true
+      - name: uptimeStatus
+        in: query
+        explode: false
+        schema:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/UptimeStatus"
+      - name: category
+        in: query
+        description: "Narrows the result to one monitor category. An empty value selects\
+          \ the monitors that have no category at all, omitting the parameter selects\
+          \ every monitor."
+        explode: false
+        schema:
+          type: string
+          nullable: true
+      - name: name
+        in: query
+        description: "Returns only the monitors whose name contains this text, without\
+          \ regard to the case of the letters"
+        explode: false
+        schema:
+          type: string
+          nullable: true
+      - name: page
+        in: query
+        description: "The number of the page to return, starting from 1. A page after\
+          \ the last one returns no items."
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 1
+      - name: size
+        in: query
+        description: The number of items on a page
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 25
+      - name: sortedBy
+        in: query
+        description: "The field to sort the monitors by, NAME if it's not given. Monitors\
+          \ with the same value are sorted by their ID. A monitor that has no value\
+          \ for the field yet (e.g. no UPTIME_STATUS before its first check) comes\
+          \ last, whatever the order is."
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/PushMonitorSortField"
+      - name: sortOrder
+        in: query
+        description: "The order of the sorting, ASC if it's not given"
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/SortOrder"
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PagedResult_PushMonitorDetailsDto_"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v3/push-monitors/{monitorId}/uptime-events:
+    get:
+      tags:
+      - Push monitors
+      summary: "Get the uptime events of the given monitor, page by page"
+      operationId: getUptimeEventsPage_4
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: page
+        in: query
+        description: "The number of the page to return, starting from 1. A page after\
+          \ the last one returns no items."
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 1
+      - name: size
+        in: query
+        description: The number of items on a page
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 25
+      - name: sortedBy
+        in: query
+        description: "The field to sort the events by. Without sortedBy and sortOrder,\
+          \ the newest events come first (STARTED_AT, DESC). Events with the same\
+          \ value are sorted by their ID. When sorted by ENDED_AT, the ongoing events\
+          \ (which haven't ended yet) come last, whatever the order is."
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/EventSortField"
+      - name: sortOrder
+        in: query
+        description: "The order of the sorting, ASC if it's not given"
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/SortOrder"
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PagedResult_PushUptimeEventDto_"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v3/status-pages:
+    get:
+      tags:
+      - Status pages
+      summary: "Get the status pages, page by page"
+      operationId: getStatusPagesPage
+      parameters:
+      - name: public
+        in: query
+        explode: false
+        schema:
+          type: boolean
+          nullable: true
+      - name: name
+        in: query
+        description: "Returns only the status pages whose title contains this text,\
+          \ without regard to the case of the letters"
+        explode: false
+        schema:
+          type: string
+          nullable: true
+      - name: page
+        in: query
+        description: "The number of the page to return, starting from 1. A page after\
+          \ the last one returns no items."
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 1
+      - name: size
+        in: query
+        description: The number of items on a page
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 25
+      - name: sortedBy
+        in: query
+        description: "The field to sort the status pages by, TITLE if it's not given.\
+          \ Status pages with the same value are sorted by their ID."
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/StatusPageSortField"
+      - name: sortOrder
+        in: query
+        description: "The order of the sorting, ASC if it's not given"
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/SortOrder"
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PagedResult_StatusPageDto_"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v3/tcp-monitors:
+    get:
+      tags:
+      - TCP monitors
+      summary: "Get the monitors with their details, page by page"
+      operationId: getMonitorsPage_5
+      parameters:
+      - name: enabled
+        in: query
+        explode: false
+        schema:
+          type: boolean
+          nullable: true
+      - name: uptimeStatus
+        in: query
+        explode: false
+        schema:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/UptimeStatus"
+      - name: category
+        in: query
+        description: "Narrows the result to one monitor category. An empty value selects\
+          \ the monitors that have no category at all, omitting the parameter selects\
+          \ every monitor."
+        explode: false
+        schema:
+          type: string
+          nullable: true
+      - name: name
+        in: query
+        description: "Returns only the monitors whose name contains this text, without\
+          \ regard to the case of the letters"
+        explode: false
+        schema:
+          type: string
+          nullable: true
+      - name: page
+        in: query
+        description: "The number of the page to return, starting from 1. A page after\
+          \ the last one returns no items."
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 1
+      - name: size
+        in: query
+        description: The number of items on a page
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 25
+      - name: sortedBy
+        in: query
+        description: "The field to sort the monitors by, NAME if it's not given. Monitors\
+          \ with the same value are sorted by their ID. A monitor that has no value\
+          \ for the field yet (e.g. no UPTIME_STATUS before its first check) comes\
+          \ last, whatever the order is."
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/TcpMonitorSortField"
+      - name: sortOrder
+        in: query
+        description: "The order of the sorting, ASC if it's not given"
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/SortOrder"
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PagedResult_TcpMonitorDetailsDto_"
+      security:
+      - apiKey: []
+      - bearerAuth: []
+  /api/v3/tcp-monitors/{monitorId}/uptime-events:
+    get:
+      tags:
+      - TCP monitors
+      summary: "Get the uptime events of the given monitor, page by page"
+      operationId: getUptimeEventsPage_5
+      parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: page
+        in: query
+        description: "The number of the page to return, starting from 1. A page after\
+          \ the last one returns no items."
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 1
+      - name: size
+        in: query
+        description: The number of items on a page
+        required: false
+        explode: false
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 25
+      - name: sortedBy
+        in: query
+        description: "The field to sort the events by. Without sortedBy and sortOrder,\
+          \ the newest events come first (STARTED_AT, DESC). Events with the same\
+          \ value are sorted by their ID. When sorted by ENDED_AT, the ongoing events\
+          \ (which haven't ended yet) come last, whatever the order is."
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/EventSortField"
+      - name: sortOrder
+        in: query
+        description: "The order of the sorting, ASC if it's not given"
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/SortOrder"
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PagedResult_TcpUptimeEventDto_"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceError"
       security:
       - apiKey: []
       - bearerAuth: []
@@ -3364,6 +4758,19 @@ components:
           description: "Whether the monitor should keep being checked even when Kuvasz\
             \ believes that it has no outbound connectivity. Useful for monitors that\
             \ target the local network, since those don't depend on it at all."
+    DnsMonitorSortField:
+      type: string
+      enum:
+      - ID
+      - NAME
+      - ENABLED
+      - UPTIME_STATUS
+      - UPTIME_STATUS_STARTED_AT
+      - LAST_UPTIME_CHECK
+      - UPTIME_CHECK_INTERVAL
+      - HOST
+      - CREATED_AT
+      - UPDATED_AT
     DnsMonitorStatsDto:
       required:
       - id
@@ -4073,6 +5480,20 @@ components:
           description: "Whether the monitor should keep being checked even when Kuvasz\
             \ believes that it has no outbound connectivity. Useful for monitors that\
             \ target the local network, since those don't depend on it at all."
+    DockerMonitorSortField:
+      type: string
+      enum:
+      - ID
+      - NAME
+      - ENABLED
+      - UPTIME_STATUS
+      - UPTIME_STATUS_STARTED_AT
+      - LAST_UPTIME_CHECK
+      - UPTIME_CHECK_INTERVAL
+      - DOCKER_HOST
+      - CONTAINER
+      - CREATED_AT
+      - UPDATED_AT
     DockerMonitorStatsDto:
       required:
       - cpuStats
@@ -4331,6 +5752,14 @@ components:
         toAddress:
           type: string
           description: The email address to which notifications are sent
+    EventSortField:
+      type: string
+      enum:
+      - ID
+      - STATUS
+      - STARTED_AT
+      - ENDED_AT
+      - UPDATED_AT
     GenericWebhookMessage:
       required:
       - eventDetails
@@ -5006,6 +6435,21 @@ components:
           description: "Whether the monitor should keep being checked even when Kuvasz\
             \ believes that it has no outbound connectivity. Useful for monitors that\
             \ target the local network, since those don't depend on it at all."
+    HttpMonitorSortField:
+      type: string
+      enum:
+      - ID
+      - NAME
+      - ENABLED
+      - UPTIME_STATUS
+      - UPTIME_STATUS_STARTED_AT
+      - LAST_UPTIME_CHECK
+      - UPTIME_CHECK_INTERVAL
+      - URL
+      - SSL_STATUS
+      - SSL_VALID_UNTIL
+      - CREATED_AT
+      - UPDATED_AT
     HttpMonitorStatsDto:
       required:
       - id
@@ -5654,6 +7098,19 @@ components:
           description: "Whether the monitor should keep being checked even when Kuvasz\
             \ believes that it has no outbound connectivity. Useful for monitors that\
             \ target the local network, since those don't depend on it at all."
+    IcmpMonitorSortField:
+      type: string
+      enum:
+      - ID
+      - NAME
+      - ENABLED
+      - UPTIME_STATUS
+      - UPTIME_STATUS_STARTED_AT
+      - LAST_UPTIME_CHECK
+      - UPTIME_CHECK_INTERVAL
+      - HOST
+      - CREATED_AT
+      - UPDATED_AT
     IcmpMonitorStatsDto:
       required:
       - id
@@ -6058,6 +7515,16 @@ components:
             \ the monitor of the incident. SSL incidents are never shown on status\
             \ pages, so it has no effect on them"
           nullable: false
+    IncidentSortField:
+      type: string
+      enum:
+      - ID
+      - MONITOR_NAME
+      - INCIDENT_TYPE
+      - STATUS
+      - STARTED_AT
+      - ENDED_AT
+      - UPDATED_AT
     IncidentStatus:
       type: string
       enum:
@@ -6458,6 +7925,17 @@ components:
             \ because they are not configured"
           items:
             type: string
+    MaintenanceWindowSortField:
+      type: string
+      enum:
+      - ID
+      - NAME
+      - ENABLED
+      - GLOBAL
+      - SHOW_ON_STATUS_PAGES
+      - START
+      - CREATED_AT
+      - UPDATED_AT
     MaintenanceWindowUpdateDto:
       type: object
       properties:
@@ -6700,6 +8178,486 @@ components:
           description: The 99th percentile packet loss percentage for the monitor
           format: int32
           nullable: true
+    PagedResult_DnsMonitorDetailsDto_:
+      required:
+      - page
+      - result
+      - size
+      - totalCount
+      - totalPages
+      type: object
+      properties:
+        result:
+          type: array
+          description: The items on the requested page
+          items:
+            $ref: "#/components/schemas/DnsMonitorDetailsDto"
+        page:
+          type: integer
+          description: "The number of the requested page, starting from 1"
+          format: int32
+        size:
+          type: integer
+          description: The requested page size
+          format: int32
+        totalCount:
+          type: integer
+          description: "The number of items matching the filters, on all the pages"
+          format: int64
+        totalPages:
+          type: integer
+          description: "The number of pages, 0 if nothing matches the filters"
+          format: int32
+    PagedResult_DnsUptimeEventDto_:
+      required:
+      - page
+      - result
+      - size
+      - totalCount
+      - totalPages
+      type: object
+      properties:
+        result:
+          type: array
+          description: The items on the requested page
+          items:
+            $ref: "#/components/schemas/DnsUptimeEventDto"
+        page:
+          type: integer
+          description: "The number of the requested page, starting from 1"
+          format: int32
+        size:
+          type: integer
+          description: The requested page size
+          format: int32
+        totalCount:
+          type: integer
+          description: "The number of items matching the filters, on all the pages"
+          format: int64
+        totalPages:
+          type: integer
+          description: "The number of pages, 0 if nothing matches the filters"
+          format: int32
+    PagedResult_DockerMonitorDetailsDto_:
+      required:
+      - page
+      - result
+      - size
+      - totalCount
+      - totalPages
+      type: object
+      properties:
+        result:
+          type: array
+          description: The items on the requested page
+          items:
+            $ref: "#/components/schemas/DockerMonitorDetailsDto"
+        page:
+          type: integer
+          description: "The number of the requested page, starting from 1"
+          format: int32
+        size:
+          type: integer
+          description: The requested page size
+          format: int32
+        totalCount:
+          type: integer
+          description: "The number of items matching the filters, on all the pages"
+          format: int64
+        totalPages:
+          type: integer
+          description: "The number of pages, 0 if nothing matches the filters"
+          format: int32
+    PagedResult_DockerUptimeEventDto_:
+      required:
+      - page
+      - result
+      - size
+      - totalCount
+      - totalPages
+      type: object
+      properties:
+        result:
+          type: array
+          description: The items on the requested page
+          items:
+            $ref: "#/components/schemas/DockerUptimeEventDto"
+        page:
+          type: integer
+          description: "The number of the requested page, starting from 1"
+          format: int32
+        size:
+          type: integer
+          description: The requested page size
+          format: int32
+        totalCount:
+          type: integer
+          description: "The number of items matching the filters, on all the pages"
+          format: int64
+        totalPages:
+          type: integer
+          description: "The number of pages, 0 if nothing matches the filters"
+          format: int32
+    PagedResult_HttpMonitorDetailsDto_:
+      required:
+      - page
+      - result
+      - size
+      - totalCount
+      - totalPages
+      type: object
+      properties:
+        result:
+          type: array
+          description: The items on the requested page
+          items:
+            $ref: "#/components/schemas/HttpMonitorDetailsDto"
+        page:
+          type: integer
+          description: "The number of the requested page, starting from 1"
+          format: int32
+        size:
+          type: integer
+          description: The requested page size
+          format: int32
+        totalCount:
+          type: integer
+          description: "The number of items matching the filters, on all the pages"
+          format: int64
+        totalPages:
+          type: integer
+          description: "The number of pages, 0 if nothing matches the filters"
+          format: int32
+    PagedResult_HttpUptimeEventDto_:
+      required:
+      - page
+      - result
+      - size
+      - totalCount
+      - totalPages
+      type: object
+      properties:
+        result:
+          type: array
+          description: The items on the requested page
+          items:
+            $ref: "#/components/schemas/HttpUptimeEventDto"
+        page:
+          type: integer
+          description: "The number of the requested page, starting from 1"
+          format: int32
+        size:
+          type: integer
+          description: The requested page size
+          format: int32
+        totalCount:
+          type: integer
+          description: "The number of items matching the filters, on all the pages"
+          format: int64
+        totalPages:
+          type: integer
+          description: "The number of pages, 0 if nothing matches the filters"
+          format: int32
+    PagedResult_IcmpMonitorDetailsDto_:
+      required:
+      - page
+      - result
+      - size
+      - totalCount
+      - totalPages
+      type: object
+      properties:
+        result:
+          type: array
+          description: The items on the requested page
+          items:
+            $ref: "#/components/schemas/IcmpMonitorDetailsDto"
+        page:
+          type: integer
+          description: "The number of the requested page, starting from 1"
+          format: int32
+        size:
+          type: integer
+          description: The requested page size
+          format: int32
+        totalCount:
+          type: integer
+          description: "The number of items matching the filters, on all the pages"
+          format: int64
+        totalPages:
+          type: integer
+          description: "The number of pages, 0 if nothing matches the filters"
+          format: int32
+    PagedResult_IcmpUptimeEventDto_:
+      required:
+      - page
+      - result
+      - size
+      - totalCount
+      - totalPages
+      type: object
+      properties:
+        result:
+          type: array
+          description: The items on the requested page
+          items:
+            $ref: "#/components/schemas/IcmpUptimeEventDto"
+        page:
+          type: integer
+          description: "The number of the requested page, starting from 1"
+          format: int32
+        size:
+          type: integer
+          description: The requested page size
+          format: int32
+        totalCount:
+          type: integer
+          description: "The number of items matching the filters, on all the pages"
+          format: int64
+        totalPages:
+          type: integer
+          description: "The number of pages, 0 if nothing matches the filters"
+          format: int32
+    PagedResult_IncidentDto_:
+      required:
+      - page
+      - result
+      - size
+      - totalCount
+      - totalPages
+      type: object
+      properties:
+        result:
+          type: array
+          description: The items on the requested page
+          items:
+            $ref: "#/components/schemas/IncidentDto"
+        page:
+          type: integer
+          description: "The number of the requested page, starting from 1"
+          format: int32
+        size:
+          type: integer
+          description: The requested page size
+          format: int32
+        totalCount:
+          type: integer
+          description: "The number of items matching the filters, on all the pages"
+          format: int64
+        totalPages:
+          type: integer
+          description: "The number of pages, 0 if nothing matches the filters"
+          format: int32
+    PagedResult_MaintenanceWindowDetailsDto_:
+      required:
+      - page
+      - result
+      - size
+      - totalCount
+      - totalPages
+      type: object
+      properties:
+        result:
+          type: array
+          description: The items on the requested page
+          items:
+            $ref: "#/components/schemas/MaintenanceWindowDetailsDto"
+        page:
+          type: integer
+          description: "The number of the requested page, starting from 1"
+          format: int32
+        size:
+          type: integer
+          description: The requested page size
+          format: int32
+        totalCount:
+          type: integer
+          description: "The number of items matching the filters, on all the pages"
+          format: int64
+        totalPages:
+          type: integer
+          description: "The number of pages, 0 if nothing matches the filters"
+          format: int32
+    PagedResult_PushMonitorDetailsDto_:
+      required:
+      - page
+      - result
+      - size
+      - totalCount
+      - totalPages
+      type: object
+      properties:
+        result:
+          type: array
+          description: The items on the requested page
+          items:
+            $ref: "#/components/schemas/PushMonitorDetailsDto"
+        page:
+          type: integer
+          description: "The number of the requested page, starting from 1"
+          format: int32
+        size:
+          type: integer
+          description: The requested page size
+          format: int32
+        totalCount:
+          type: integer
+          description: "The number of items matching the filters, on all the pages"
+          format: int64
+        totalPages:
+          type: integer
+          description: "The number of pages, 0 if nothing matches the filters"
+          format: int32
+    PagedResult_PushUptimeEventDto_:
+      required:
+      - page
+      - result
+      - size
+      - totalCount
+      - totalPages
+      type: object
+      properties:
+        result:
+          type: array
+          description: The items on the requested page
+          items:
+            $ref: "#/components/schemas/PushUptimeEventDto"
+        page:
+          type: integer
+          description: "The number of the requested page, starting from 1"
+          format: int32
+        size:
+          type: integer
+          description: The requested page size
+          format: int32
+        totalCount:
+          type: integer
+          description: "The number of items matching the filters, on all the pages"
+          format: int64
+        totalPages:
+          type: integer
+          description: "The number of pages, 0 if nothing matches the filters"
+          format: int32
+    PagedResult_SSLEventDto_:
+      required:
+      - page
+      - result
+      - size
+      - totalCount
+      - totalPages
+      type: object
+      properties:
+        result:
+          type: array
+          description: The items on the requested page
+          items:
+            $ref: "#/components/schemas/SSLEventDto"
+        page:
+          type: integer
+          description: "The number of the requested page, starting from 1"
+          format: int32
+        size:
+          type: integer
+          description: The requested page size
+          format: int32
+        totalCount:
+          type: integer
+          description: "The number of items matching the filters, on all the pages"
+          format: int64
+        totalPages:
+          type: integer
+          description: "The number of pages, 0 if nothing matches the filters"
+          format: int32
+    PagedResult_StatusPageDto_:
+      required:
+      - page
+      - result
+      - size
+      - totalCount
+      - totalPages
+      type: object
+      properties:
+        result:
+          type: array
+          description: The items on the requested page
+          items:
+            $ref: "#/components/schemas/StatusPageDto"
+        page:
+          type: integer
+          description: "The number of the requested page, starting from 1"
+          format: int32
+        size:
+          type: integer
+          description: The requested page size
+          format: int32
+        totalCount:
+          type: integer
+          description: "The number of items matching the filters, on all the pages"
+          format: int64
+        totalPages:
+          type: integer
+          description: "The number of pages, 0 if nothing matches the filters"
+          format: int32
+    PagedResult_TcpMonitorDetailsDto_:
+      required:
+      - page
+      - result
+      - size
+      - totalCount
+      - totalPages
+      type: object
+      properties:
+        result:
+          type: array
+          description: The items on the requested page
+          items:
+            $ref: "#/components/schemas/TcpMonitorDetailsDto"
+        page:
+          type: integer
+          description: "The number of the requested page, starting from 1"
+          format: int32
+        size:
+          type: integer
+          description: The requested page size
+          format: int32
+        totalCount:
+          type: integer
+          description: "The number of items matching the filters, on all the pages"
+          format: int64
+        totalPages:
+          type: integer
+          description: "The number of pages, 0 if nothing matches the filters"
+          format: int32
+    PagedResult_TcpUptimeEventDto_:
+      required:
+      - page
+      - result
+      - size
+      - totalCount
+      - totalPages
+      type: object
+      properties:
+        result:
+          type: array
+          description: The items on the requested page
+          items:
+            $ref: "#/components/schemas/TcpUptimeEventDto"
+        page:
+          type: integer
+          description: "The number of the requested page, starting from 1"
+          format: int32
+        size:
+          type: integer
+          description: The requested page size
+          format: int32
+        totalCount:
+          type: integer
+          description: "The number of items matching the filters, on all the pages"
+          format: int64
+        totalPages:
+          type: integer
+          description: "The number of pages, 0 if nothing matches the filters"
+          format: int32
     PagerdutyConfigDto:
       required:
       - enabled
@@ -7063,6 +9021,19 @@ components:
           description: "The optional, explicit error that is signaled manually for\
             \ a push monitor"
           nullable: true
+    PushMonitorSortField:
+      type: string
+      enum:
+      - ID
+      - NAME
+      - ENABLED
+      - UPTIME_STATUS
+      - UPTIME_STATUS_STARTED_AT
+      - LAST_UPTIME_CHECK
+      - HEARTBEAT_INTERVAL
+      - LAST_HEARTBEAT
+      - CREATED_AT
+      - UPDATED_AT
     PushMonitorStatsDto:
       required:
       - id
@@ -7761,6 +9732,11 @@ components:
             \ for this integration. If empty or null, no event types are excluded."
           items:
             $ref: "#/components/schemas/IntegrationEventType"
+    SortOrder:
+      type: string
+      enum:
+      - ASC
+      - DESC
     SslStatus:
       type: string
       enum:
@@ -7795,7 +9771,10 @@ components:
         incidents:
           type: array
           description: "The incidents that were open on the given date, an incident\
-            \ spanning multiple days is listed on each of them"
+            \ spanning multiple days is listed on each of them. Only the latest 20\
+            \ incidents of the monitor are listed in its whole history, see incidentCount\
+            \ for the number of every one of them. outageCnt always counts every incident\
+            \ of the date."
           items:
             $ref: "#/components/schemas/StatusPageIncidentDto"
     StatusPageCreateDto:
@@ -7954,6 +9933,7 @@ components:
     StatusPageDockerMonitorDetailsDto:
       required:
       - inMaintenance
+      - incidentCount
       - name
       - type
       - uptimeStatusHistory
@@ -7979,6 +9959,12 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/StatusHistoryDto"
+        incidentCount:
+          type: integer
+          description: "The number of incidents of the monitor in its whole uptime\
+            \ status history. It can be more than the number of the incidents listed\
+            \ on its dates, as only the latest 20 of them are listed."
+          format: int32
         inMaintenance:
           type: boolean
         category:
@@ -8059,6 +10045,7 @@ components:
     StatusPageHttpMonitorDetailsDto:
       required:
       - inMaintenance
+      - incidentCount
       - name
       - type
       - uptimeStatusHistory
@@ -8084,6 +10071,12 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/StatusHistoryDto"
+        incidentCount:
+          type: integer
+          description: "The number of incidents of the monitor in its whole uptime\
+            \ status history. It can be more than the number of the incidents listed\
+            \ on its dates, as only the latest 20 of them are listed."
+          format: int32
         averageLatencyInMs:
           type: integer
           format: int32
@@ -8096,6 +10089,7 @@ components:
     StatusPageIcmpMonitorDetailsDto:
       required:
       - inMaintenance
+      - incidentCount
       - name
       - type
       - uptimeStatusHistory
@@ -8121,6 +10115,12 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/StatusHistoryDto"
+        incidentCount:
+          type: integer
+          description: "The number of incidents of the monitor in its whole uptime\
+            \ status history. It can be more than the number of the incidents listed\
+            \ on its dates, as only the latest 20 of them are listed."
+          format: int32
         averageLatencyInMs:
           type: integer
           format: int32
@@ -8265,6 +10265,9 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/StatusHistoryDto"
+        incidentCount:
+          type: integer
+          format: int32
         inMaintenance:
           type: boolean
         category:
@@ -8279,6 +10282,7 @@ components:
     StatusPagePushMonitorDetailsDto:
       required:
       - inMaintenance
+      - incidentCount
       - name
       - type
       - uptimeStatusHistory
@@ -8304,6 +10308,12 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/StatusHistoryDto"
+        incidentCount:
+          type: integer
+          description: "The number of incidents of the monitor in its whole uptime\
+            \ status history. It can be more than the number of the incidents listed\
+            \ on its dates, as only the latest 20 of them are listed."
+          format: int32
         inMaintenance:
           type: boolean
         category:
@@ -8313,9 +10323,19 @@ components:
           type: string
           format: date-time
           nullable: true
+    StatusPageSortField:
+      type: string
+      enum:
+      - ID
+      - TITLE
+      - SLUG
+      - PUBLIC
+      - CREATED_AT
+      - UPDATED_AT
     StatusPageTcpMonitorDetailsDto:
       required:
       - inMaintenance
+      - incidentCount
       - name
       - type
       - uptimeStatusHistory
@@ -8341,6 +10361,12 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/StatusHistoryDto"
+        incidentCount:
+          type: integer
+          description: "The number of incidents of the monitor in its whole uptime\
+            \ status history. It can be more than the number of the incidents listed\
+            \ on its dates, as only the latest 20 of them are listed."
+          format: int32
         averageLatencyInMs:
           type: integer
           format: int32
@@ -8786,6 +10812,20 @@ components:
             \ establishment of the tunnel. If null, the monitor is checked over a\
             \ direct connection."
           nullable: true
+    TcpMonitorSortField:
+      type: string
+      enum:
+      - ID
+      - NAME
+      - ENABLED
+      - UPTIME_STATUS
+      - UPTIME_STATUS_STARTED_AT
+      - LAST_UPTIME_CHECK
+      - UPTIME_CHECK_INTERVAL
+      - HOST
+      - PORT
+      - CREATED_AT
+      - UPDATED_AT
     TcpMonitorStatsDto:
       required:
       - id

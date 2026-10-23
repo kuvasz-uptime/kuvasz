@@ -201,7 +201,8 @@ private fun FlowContent.containerSelector(
         xOnChange("\$nextTick(() => validateContainer())")
         xInitNextTick(
             "{ initDockerContainerSelect('#$selectId', ${Messages.dockerContainerLoading().asJsonString()}, " +
-                "${Messages.dockerContainerNoResults().asJsonString()}); " +
+                "${Messages.dockerContainerNoResults().asJsonString()}, " +
+                "${Messages.selectSearchHint().asJsonString()}); " +
                 "watchModal() }"
         )
         if (isReadOnlyMode) disabled = true

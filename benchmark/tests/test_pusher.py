@@ -3,7 +3,7 @@ import random
 
 import pytest
 
-from kbench.pusher import FIRST_HEARTBEAT_SPREAD, JITTER, schedule
+from kbench.pusher import FIRST_HEARTBEAT_SPREAD, JITTER, schedule, send_times
 
 
 def delays(behavior: str, interval=60, grace=10, count=7) -> list[float]:
@@ -34,3 +34,7 @@ def test_flapping_clients_skip_every_other_heartbeat():
 
 def test_down_clients_die_after_their_first_heartbeat():
     assert len(delays("down")) == 1
+
+
+def test_send_times_keep_the_schedule():
+    assert list(send_times([5.0, 60.0, 61.5], start=100.0)) == [105.0, 165.0, 226.5]

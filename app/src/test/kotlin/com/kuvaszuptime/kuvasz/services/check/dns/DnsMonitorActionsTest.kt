@@ -10,7 +10,6 @@ import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
 import com.kuvaszuptime.kuvasz.models.monitor.dns.monitorId
 import com.kuvaszuptime.kuvasz.repositories.DnsMetricsLogRepository
 import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
-import com.kuvaszuptime.kuvasz.repositories.LatencyMetricResult
 import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.UptimeOverview
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
@@ -55,16 +54,8 @@ class DnsMonitorActionsTest(
                 val statCalculatorMock = getMock(statCalculator)
                 val metricsLogRepositoryMock = getMock(metricsLogRepository)
                 every {
-                    metricsLogRepositoryMock.getLatencyMetrics(enabledMonitor.id, testPeriod)
-                } returns LatencyMetricResult(
-                    monitorId = enabledMonitor.id,
-                    avg = 123,
-                    min = 6982,
-                    max = 2814,
-                    p90 = 9114,
-                    p95 = 8989,
-                    p99 = 3129,
-                )
+                    metricsLogRepositoryMock.getAverageLatencies(listOf(enabledMonitor.id), testPeriod)
+                } returns mapOf(enabledMonitor.id to 123)
 
                 createDnsMonitor(dnsMonitorRepository, enabled = false, monitorName = "disabled-monitor")
                 createMaintenanceWindow(dslContext, global = true)
@@ -95,10 +86,12 @@ class DnsMonitorActionsTest(
                     enabledMonitor.id to UptimeOverview(
                         uptimeRatio = 0.2312,
                         statusHistory = listOf(StatusHistoryDto(LocalDate.now(), 12)),
+                        incidentCount = 12,
                     ),
                     enabledMonitor2.id to UptimeOverview(
                         uptimeRatio = 0.0123,
                         statusHistory = listOf(StatusHistoryDto(LocalDate.now(), 34)),
+                        incidentCount = 34,
                     ),
                 )
 
@@ -120,6 +113,7 @@ class DnsMonitorActionsTest(
                         upMonitor.uptimeStatusHistory shouldBe listOf(
                             StatusHistoryDto(LocalDate.now(), 12)
                         )
+                        upMonitor.incidentCount shouldBe 12
                         upMonitor.inMaintenance shouldBe true
                     }
                     result.forOne { downMonitor ->
@@ -131,6 +125,7 @@ class DnsMonitorActionsTest(
                         downMonitor.uptimeStatusHistory shouldBe listOf(
                             StatusHistoryDto(LocalDate.now(), 34)
                         )
+                        downMonitor.incidentCount shouldBe 34
                         downMonitor.inMaintenance shouldBe true
                     }
                 }
@@ -155,16 +150,8 @@ class DnsMonitorActionsTest(
                 val statCalculatorMock = getMock(statCalculator)
                 val metricsLogRepositoryMock = getMock(metricsLogRepository)
                 every {
-                    metricsLogRepositoryMock.getLatencyMetrics(enabledMonitor.id, testPeriod)
-                } returns LatencyMetricResult(
-                    monitorId = enabledMonitor.id,
-                    avg = 123,
-                    min = 6982,
-                    max = 2814,
-                    p90 = 9114,
-                    p95 = 8989,
-                    p99 = 3129,
-                )
+                    metricsLogRepositoryMock.getAverageLatencies(listOf(enabledMonitor.id), testPeriod)
+                } returns mapOf(enabledMonitor.id to 123)
 
                 createDnsMonitor(dnsMonitorRepository, enabled = false, monitorName = "disabled-monitor")
                 val enabledMonitorsUptimeEvent = createDnsUptimeEventRecord(
@@ -194,6 +181,7 @@ class DnsMonitorActionsTest(
                     enabledMonitor.id to UptimeOverview(
                         uptimeRatio = 0.2312,
                         statusHistory = listOf(StatusHistoryDto(LocalDate.now(), 12)),
+                        incidentCount = 12,
                     ),
                 )
 
@@ -215,6 +203,7 @@ class DnsMonitorActionsTest(
                         upMonitor.uptimeStatusHistory shouldBe listOf(
                             StatusHistoryDto(LocalDate.now(), 12)
                         )
+                        upMonitor.incidentCount shouldBe 12
                         upMonitor.inMaintenance shouldBe false
                     }
                 }

@@ -33,6 +33,8 @@ class DockerMonitorDetailsUiTest(private val dockerMonitorRepository: DockerMoni
             // ApexCharts renders an <svg> into the container even with no data (its no-data state).
             assertThat(details.metricsChartSvg).isVisible()
             assertThat(details.metricsPeriodSelector).hasValue("PT24H")
+            assertThat(details.metricsRangeFrom).isEmpty()
+            assertThat(details.metricsRangeTo).isEmpty()
         }
 
         /*
@@ -59,6 +61,34 @@ class DockerMonitorDetailsUiTest(private val dockerMonitorRepository: DockerMoni
             // Clicking its legend entry brings it back
             details.chartLegendItem(limit).click()
             assertThat(details.collapsedChartLegendItem(limit)).hasCount(0)
+        }
+
+        "a band of the lowest and the highest readings has no legend entry, it follows its series" {
+            val monitor = createDockerMonitor(
+                dockerMonitorRepository,
+                monitorName = "Docker Band Monitor",
+                metricsHistoryEnabled = true,
+            )
+            createDockerMetricsLogRecord(dslContext, monitorId = monitor.id)
+
+            val page = newPage()
+            val details = DockerMonitorDetailsPage(page)
+            details.navigate(monitor.id)
+
+            val memory = Messages.dockerMemoryUsageBlockTitle()
+            val memoryBand = Messages.chartLowestHighestOf(memory)
+            assertThat(details.chartLegendItem(memory)).isVisible()
+            assertThat(details.chartLegendItem(memoryBand)).isHidden()
+
+            // The band is collapsed together with its series, and is brought back with it
+            details.chartLegendItem(memory).click()
+            assertThat(details.collapsedChartLegendItem(memory)).hasCount(1)
+            assertThat(details.collapsedChartLegendItem(memoryBand)).hasCount(1)
+            assertThat(details.chartLegendItem(memoryBand)).isHidden()
+
+            details.chartLegendItem(memory).click()
+            assertThat(details.collapsedChartLegendItem(memory)).hasCount(0)
+            assertThat(details.collapsedChartLegendItem(memoryBand)).hasCount(0)
         }
 
         "the image the container was last seen with is shown in the heading, once it is known" {

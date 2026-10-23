@@ -1,25 +1,21 @@
 package com.kuvaszuptime.kuvasz.controllers.ui
 
 import com.kuvaszuptime.kuvasz.AppGlobals
-import com.kuvaszuptime.kuvasz.jooq.tables.TcpMonitor.TCP_MONITOR
 import com.kuvaszuptime.kuvasz.models.MonitorType
-import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
-import com.kuvaszuptime.kuvasz.repositories.IncidentRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
 import com.kuvaszuptime.kuvasz.security.ui.WebSecured
 import com.kuvaszuptime.kuvasz.services.StatCalculator
 import com.kuvaszuptime.kuvasz.services.check.tcp.TcpMonitorActions
-import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.tcp.*
 import com.kuvaszuptime.kuvasz.ui.pages.monitor.tcp.*
 import com.kuvaszuptime.kuvasz.util.UIDefaults
-import com.kuvaszuptime.kuvasz.util.ascIgnoreCase
+import io.micronaut.http.HttpRequest
+import io.micronaut.http.HttpResponse
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.PathVariable
 import io.micronaut.http.annotation.Produces
-import io.micronaut.http.annotation.QueryValue
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.annotation.ExecuteOn
 import io.swagger.v3.oas.annotations.Hidden
@@ -32,17 +28,18 @@ class WebUITcpMonitorController(
     private val appGlobals: AppGlobals,
     private val statCalculator: StatCalculator,
     private val monitorRepository: TcpMonitorRepository,
-    private val incidentRepository: IncidentRepository,
 ) {
 
     @Get("/tcp-monitors")
     @WebSecured
     @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
-    fun tcpMonitors(@QueryValue category: String?) = renderTcpMonitorsPage(
+    fun tcpMonitors(request: HttpRequest<*>) = renderTcpMonitorsPage(
         globals = appGlobals,
-        categoryFilter = CategoryFilter.fromQueryParam(category),
-        availableCategories = monitorRepository.fetchDistinctCategories().sortedBy { it.lowercase() },
+        query = tcpMonitorListQuery(
+            params = request.queryParams(),
+            availableCategories = monitorRepository.fetchDistinctCategories().sortedBy { it.lowercase() },
+        ),
     )
 
     @Get("/tcp-monitors/{monitorId}")
@@ -67,13 +64,22 @@ class WebUITcpMonitorController(
     @WebSecured
     @ExecuteOn(TaskExecutors.BLOCKING)
     @Produces(MediaType.TEXT_HTML)
-    fun tcpMonitorList(@QueryValue category: String?): String {
-        val monitors = monitorActions.getMonitorsWithDetails(
-            sortedBy = TCP_MONITOR.NAME.ascIgnoreCase(),
-            categoryFilter = CategoryFilter.fromQueryParam(category),
-        )
-
-        return renderTcpMonitorList(monitors, appGlobals.editabilityState, appGlobals.configuredProxies)
+    fun tcpMonitorList(request: HttpRequest<*>): HttpResponse<String> {
+        val query = tcpMonitorListQuery(request.queryParams())
+        val filters = query.filters
+        val monitors = fetchListPage(query.pageRequest) { pageRequest ->
+            monitorActions.getMonitorsPage(
+                enabled = filters.enabled.value,
+                uptimeStatus = filters.uptimeStatus.values,
+                categoryFilter = filters.category.value,
+                name = filters.name.value,
+                sorting = query.sorting,
+                pageRequest = pageRequest,
+            )
+        }
+        return pagedListFragment(query, monitors) { shownQuery ->
+            renderTcpMonitorList(monitors, shownQuery, appGlobals.editabilityState, appGlobals.configuredProxies)
+        }
     }
 
     @Get("/tcp-monitors/fragments/details-heading/{monitorId}")
@@ -96,19 +102,4 @@ class WebUITcpMonitorController(
             )
         }
     }
-
-    @Get("/tcp-monitors/fragments/details-uptime-incidents/{monitorId}")
-    @WebSecured
-    @ExecuteOn(TaskExecutors.BLOCKING)
-    @Produces(MediaType.TEXT_HTML)
-    fun tcpMonitorUptimeIncidents(@PathVariable monitorId: Long) =
-        monitorRepository.findById(monitorId, null)?.let { monitor ->
-            renderIncidents(
-                incidents = incidentRepository.getTcpUptimeIncidents(
-                    monitor.id,
-                    period = Duration.ofDays(UIDefaults.INCIDENTS_PERIOD_DAYS),
-                    includeResolved = true,
-                )
-            )
-        }
 }

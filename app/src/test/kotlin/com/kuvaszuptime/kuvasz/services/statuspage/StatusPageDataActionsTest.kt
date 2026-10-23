@@ -15,7 +15,9 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.statuspage.SystemStatus
 import com.kuvaszuptime.kuvasz.models.theme.ThemeBase
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDefaults
 import com.kuvaszuptime.kuvasz.repositories.MaintenanceWindowRepository
+import com.kuvaszuptime.kuvasz.repositories.SharedMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.services.check.dns.DnsMonitorActions
 import com.kuvaszuptime.kuvasz.services.check.docker.DockerMonitorActions
@@ -48,6 +50,7 @@ class StatusPageDataActionsTest(
     private val tcpMonitorActions: TcpMonitorActions,
     private val statusPageRepository: StatusPageRepository,
     private val maintenanceWindowRepository: MaintenanceWindowRepository,
+    private val sharedMonitorRepository: SharedMonitorRepository,
 ) : BehaviorSpec({
 
     fun maintenanceWindowRecord(
@@ -76,6 +79,31 @@ class StatusPageDataActionsTest(
         this.updatedAt = getCurrentTimestamp()
     }
 
+    given("the isDefaultStatusPageAvailable() method") {
+
+        `when`("there are as many enabled monitors as the limit of the default status page") {
+
+            then("it should be available") {
+                every {
+                    getMock(sharedMonitorRepository).countEnabled()
+                } returns StatusPageDefaults.DEFAULT_PAGE_MAX_MONITORS
+
+                statusPageActions.isDefaultStatusPageAvailable() shouldBe true
+            }
+        }
+
+        `when`("there are more enabled monitors than the limit of the default status page") {
+
+            then("it should not be available") {
+                every {
+                    getMock(sharedMonitorRepository).countEnabled()
+                } returns StatusPageDefaults.DEFAULT_PAGE_MAX_MONITORS + 1
+
+                statusPageActions.isDefaultStatusPageAvailable() shouldBe false
+            }
+        }
+    }
+
     given("the getDefaultStatusPageData() method") {
 
         `when`("there is a pending monitor coming from the data providers") {
@@ -87,6 +115,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = null,
                     uptimeRatio = null,
                     uptimeStatus = null,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList()
                 ),
                 StatusPageHttpMonitorDetailsDto(
@@ -95,6 +124,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9234,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = listOf(
                         StatusHistoryDto(
                             date = getCurrentTimestamp().minusDays(1).toLocalDate(),
@@ -110,6 +140,7 @@ class StatusPageDataActionsTest(
                     lastHeartbeat = null,
                     uptimeRatio = null,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList()
                 ),
                 StatusPagePushMonitorDetailsDto(
@@ -118,6 +149,7 @@ class StatusPageDataActionsTest(
                     lastHeartbeat = null,
                     uptimeRatio = 0.9231,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = listOf(
                         StatusHistoryDto(
                             date = getCurrentTimestamp().minusDays(1).toLocalDate(),
@@ -158,6 +190,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9999,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList()
                 ),
                 StatusPageHttpMonitorDetailsDto(
@@ -166,6 +199,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9234,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = listOf(
                         StatusHistoryDto(
                             date = getCurrentTimestamp().minusDays(1).toLocalDate(),
@@ -181,6 +215,7 @@ class StatusPageDataActionsTest(
                     lastHeartbeat = null,
                     uptimeRatio = null,
                     uptimeStatus = UptimeStatus.DOWN,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList()
                 ),
                 StatusPagePushMonitorDetailsDto(
@@ -189,6 +224,7 @@ class StatusPageDataActionsTest(
                     lastHeartbeat = null,
                     uptimeRatio = 0.9231,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = listOf(
                         StatusHistoryDto(
                             date = getCurrentTimestamp().minusDays(1).toLocalDate(),
@@ -227,6 +263,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9999,
                     uptimeStatus = UptimeStatus.DOWN,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList()
                 ),
                 StatusPageHttpMonitorDetailsDto(
@@ -235,6 +272,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9234,
                     uptimeStatus = UptimeStatus.DOWN,
+                    incidentCount = 0,
                     uptimeStatusHistory = listOf(
                         StatusHistoryDto(
                             date = getCurrentTimestamp().minusDays(1).toLocalDate(),
@@ -250,6 +288,7 @@ class StatusPageDataActionsTest(
                     lastHeartbeat = null,
                     uptimeRatio = null,
                     uptimeStatus = UptimeStatus.DOWN,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList()
                 ),
                 StatusPagePushMonitorDetailsDto(
@@ -258,6 +297,7 @@ class StatusPageDataActionsTest(
                     lastHeartbeat = null,
                     uptimeRatio = 0.9231,
                     uptimeStatus = UptimeStatus.DOWN,
+                    incidentCount = 0,
                     uptimeStatusHistory = listOf(
                         StatusHistoryDto(
                             date = getCurrentTimestamp().minusDays(1).toLocalDate(),
@@ -296,6 +336,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9999,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList()
                 ),
                 StatusPageHttpMonitorDetailsDto(
@@ -304,6 +345,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9234,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = listOf(
                         StatusHistoryDto(
                             date = getCurrentTimestamp().minusDays(1).toLocalDate(),
@@ -319,6 +361,7 @@ class StatusPageDataActionsTest(
                     lastHeartbeat = null,
                     uptimeRatio = null,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList()
                 ),
                 StatusPagePushMonitorDetailsDto(
@@ -327,6 +370,7 @@ class StatusPageDataActionsTest(
                     lastHeartbeat = null,
                     uptimeRatio = 0.9231,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = listOf(
                         StatusHistoryDto(
                             date = getCurrentTimestamp().minusDays(1).toLocalDate(),
@@ -385,6 +429,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = 50,
                     uptimeRatio = 1.0,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList(),
                 ),
             )
@@ -396,6 +441,7 @@ class StatusPageDataActionsTest(
                     lastPacketLossPercentage = null,
                     uptimeRatio = null,
                     uptimeStatus = null,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList(),
                 ),
                 StatusPageIcmpMonitorDetailsDto(
@@ -405,6 +451,7 @@ class StatusPageDataActionsTest(
                     lastPacketLossPercentage = 0,
                     uptimeRatio = 0.9999,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = listOf(
                         StatusHistoryDto(
                             date = getCurrentTimestamp().minusDays(1).toLocalDate(),
@@ -445,6 +492,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = 50,
                     uptimeRatio = 1.0,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList(),
                 ),
             )
@@ -456,6 +504,7 @@ class StatusPageDataActionsTest(
                     lastPacketLossPercentage = 100,
                     uptimeRatio = 0.95,
                     uptimeStatus = UptimeStatus.DOWN,
+                    incidentCount = 0,
                     uptimeStatusHistory = listOf(
                         StatusHistoryDto(
                             date = getCurrentTimestamp().minusDays(1).toLocalDate(),
@@ -496,6 +545,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = 50,
                     uptimeRatio = 1.0,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList(),
                 ),
             )
@@ -506,6 +556,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = null,
                     uptimeRatio = null,
                     uptimeStatus = null,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList(),
                 ),
                 StatusPageTcpMonitorDetailsDto(
@@ -514,6 +565,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = null,
                     uptimeRatio = 0.95,
                     uptimeStatus = UptimeStatus.DOWN,
+                    incidentCount = 0,
                     uptimeStatusHistory = listOf(
                         StatusHistoryDto(
                             date = getCurrentTimestamp().minusDays(1).toLocalDate(),
@@ -554,6 +606,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9999,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList(),
                     inMaintenance = true,
                 ),
@@ -563,6 +616,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9234,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList(),
                 ),
             )
@@ -602,6 +656,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9999,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList(),
                     inMaintenance = true,
                 ),
@@ -611,6 +666,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9234,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList(),
                     inMaintenance = true,
                 ),
@@ -640,6 +696,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9999,
                     uptimeStatus = UptimeStatus.DOWN,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList(),
                 ),
                 StatusPageHttpMonitorDetailsDto(
@@ -648,6 +705,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9234,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList(),
                     inMaintenance = true,
                 ),
@@ -677,6 +735,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9999,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList(),
                 ),
             )
@@ -721,6 +780,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9999,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList(),
                     inMaintenance = true,
                 ),
@@ -760,6 +820,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9999,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList(),
                     inMaintenance = true,
                     category = "Payments",
@@ -856,6 +917,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = null,
                     uptimeRatio = null,
                     uptimeStatus = null,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList()
                 ),
                 StatusPageHttpMonitorDetailsDto(
@@ -864,6 +926,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9234,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = listOf(
                         StatusHistoryDto(
                             date = getCurrentTimestamp().minusDays(1).toLocalDate(),
@@ -879,6 +942,7 @@ class StatusPageDataActionsTest(
                     lastHeartbeat = null,
                     uptimeRatio = null,
                     uptimeStatus = null,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList()
                 ),
                 StatusPagePushMonitorDetailsDto(
@@ -887,6 +951,7 @@ class StatusPageDataActionsTest(
                     lastHeartbeat = null,
                     uptimeRatio = 0.9231,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = listOf(
                         StatusHistoryDto(
                             date = getCurrentTimestamp().minusDays(1).toLocalDate(),
@@ -937,6 +1002,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9999,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList()
                 ),
                 StatusPageHttpMonitorDetailsDto(
@@ -945,6 +1011,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9234,
                     uptimeStatus = UptimeStatus.DOWN,
+                    incidentCount = 0,
                     uptimeStatusHistory = listOf(
                         StatusHistoryDto(
                             date = getCurrentTimestamp().minusDays(1).toLocalDate(),
@@ -960,6 +1027,7 @@ class StatusPageDataActionsTest(
                     lastHeartbeat = null,
                     uptimeRatio = null,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList()
                 ),
                 StatusPagePushMonitorDetailsDto(
@@ -968,6 +1036,7 @@ class StatusPageDataActionsTest(
                     lastHeartbeat = null,
                     uptimeRatio = 0.9231,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = listOf(
                         StatusHistoryDto(
                             date = getCurrentTimestamp().minusDays(1).toLocalDate(),
@@ -1017,6 +1086,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9999,
                     uptimeStatus = UptimeStatus.DOWN,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList()
                 ),
                 StatusPageHttpMonitorDetailsDto(
@@ -1025,6 +1095,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9234,
                     uptimeStatus = UptimeStatus.DOWN,
+                    incidentCount = 0,
                     uptimeStatusHistory = listOf(
                         StatusHistoryDto(
                             date = getCurrentTimestamp().minusDays(1).toLocalDate(),
@@ -1040,6 +1111,7 @@ class StatusPageDataActionsTest(
                     lastHeartbeat = null,
                     uptimeRatio = null,
                     uptimeStatus = UptimeStatus.DOWN,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList()
                 ),
                 StatusPagePushMonitorDetailsDto(
@@ -1048,6 +1120,7 @@ class StatusPageDataActionsTest(
                     lastHeartbeat = null,
                     uptimeRatio = 0.9231,
                     uptimeStatus = UptimeStatus.DOWN,
+                    incidentCount = 0,
                     uptimeStatusHistory = listOf(
                         StatusHistoryDto(
                             date = getCurrentTimestamp().minusDays(1).toLocalDate(),
@@ -1097,6 +1170,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9999,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList(),
                 ),
                 StatusPageHttpMonitorDetailsDto(
@@ -1105,6 +1179,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9234,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = listOf(
                         StatusHistoryDto(
                             date = getCurrentTimestamp().minusDays(1).toLocalDate(),
@@ -1120,6 +1195,7 @@ class StatusPageDataActionsTest(
                     lastHeartbeat = null,
                     uptimeRatio = null,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList()
                 ),
                 StatusPagePushMonitorDetailsDto(
@@ -1128,6 +1204,7 @@ class StatusPageDataActionsTest(
                     lastHeartbeat = null,
                     uptimeRatio = 0.9231,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = listOf(
                         StatusHistoryDto(
                             date = getCurrentTimestamp().minusDays(1).toLocalDate(),
@@ -1219,6 +1296,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = 80,
                     uptimeRatio = 1.0,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList(),
                 ),
             )
@@ -1230,6 +1308,7 @@ class StatusPageDataActionsTest(
                     lastPacketLossPercentage = 0,
                     uptimeRatio = 1.0,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = listOf(
                         StatusHistoryDto(
                             date = getCurrentTimestamp().minusDays(1).toLocalDate(),
@@ -1244,6 +1323,7 @@ class StatusPageDataActionsTest(
                     lastPacketLossPercentage = 100,
                     uptimeRatio = 0.9,
                     uptimeStatus = UptimeStatus.DOWN,
+                    incidentCount = 0,
                     uptimeStatusHistory = listOf(
                         StatusHistoryDto(
                             date = getCurrentTimestamp().minusDays(1).toLocalDate(),
@@ -1333,6 +1413,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = 80,
                     uptimeRatio = 1.0,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList(),
                 ),
             )
@@ -1343,6 +1424,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = 15,
                     uptimeRatio = 1.0,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = listOf(
                         StatusHistoryDto(
                             date = getCurrentTimestamp().minusDays(1).toLocalDate(),
@@ -1356,6 +1438,7 @@ class StatusPageDataActionsTest(
                     averageLatencyInMs = null,
                     uptimeRatio = 0.9,
                     uptimeStatus = UptimeStatus.DOWN,
+                    incidentCount = 0,
                     uptimeStatusHistory = listOf(
                         StatusHistoryDto(
                             date = getCurrentTimestamp().minusDays(1).toLocalDate(),
@@ -1422,6 +1505,7 @@ class StatusPageDataActionsTest(
                 averageLatencyInMs = null,
                 uptimeRatio = null,
                 uptimeStatus = status,
+                incidentCount = 0,
                 uptimeStatusHistory = emptyList(),
                 inMaintenance = inMaintenance,
                 category = category,
@@ -1524,6 +1608,9 @@ class StatusPageDataActionsTest(
     @MockBean(StatusPageRepository::class)
     fun statusPageRepository(): StatusPageRepository = mockk()
 
+    @MockBean(SharedMonitorRepository::class)
+    fun sharedMonitorRepository(): SharedMonitorRepository = mockk()
+
     @MockBean(MaintenanceWindowRepository::class)
     fun maintenanceWindowRepository(): MaintenanceWindowRepository = mockk {
         every { fetchEnabledOnStatusPages() } returns emptyList()
@@ -1599,5 +1686,6 @@ private fun historyMonitor() = StatusPageHttpMonitorDetailsDto(
     averageLatencyInMs = null,
     uptimeRatio = null,
     uptimeStatus = null,
+    incidentCount = 0,
     uptimeStatusHistory = emptyList(),
 )

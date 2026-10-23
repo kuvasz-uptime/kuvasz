@@ -7,17 +7,27 @@ import com.kuvaszuptime.kuvasz.jooq.tables.IcmpUptimeEvent.ICMP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.IcmpMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.IcmpMonitorSummary
+import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorSortField
+import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
-import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.icmp.idWithName
-import com.kuvaszuptime.kuvasz.models.dto.monitor.IcmpMonitorSummary
+import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
+import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
+import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
+import com.kuvaszuptime.kuvasz.util.fetchPage
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import com.kuvaszuptime.kuvasz.util.sortedIn
 import jakarta.inject.Singleton
+import org.jooq.Condition
 import org.jooq.DSLContext
+import org.jooq.Field
 import org.jooq.Record
+import org.jooq.Record1
+import org.jooq.Select
 import org.jooq.SelectConditionStep
 import org.jooq.SortField
 import org.jooq.Table
@@ -80,7 +90,7 @@ class IcmpMonitorRepository(
         .where(ICMP_MONITOR.ID.eq(monitorId))
         .execute()
 
-    @Suppress("IgnoredReturnValue", "UnsafeCallOnNullableType")
+    @Suppress("IgnoredReturnValue")
     fun getMonitorsWithDetails(
         enabled: Boolean? = null,
         uptimeStatus: List<UptimeStatus> = emptyList(),
@@ -90,16 +100,78 @@ class IcmpMonitorRepository(
         categoryFilter: CategoryFilter? = null,
     ): List<IcmpMonitorDetailsDto> =
         monitorDetailsSelect()
+            .and(filterCondition(enabled, uptimeStatus, categoryFilter))
             .apply {
-                enabled?.let { and(ICMP_MONITOR.ENABLED.eq(it)) }
-                uptimeStatus.takeIf { it.isNotEmpty() }?.let {
-                    and(latestUptimeEventSelect.field(ICMP_UPTIME_EVENT.STATUS)!!.`in`(it))
-                }
                 selectionCondition(ICMP_MONITOR.NAME, ICMP_MONITOR.CATEGORY, monitorNames, categories)?.let { and(it) }
-                categoryFilterCondition(ICMP_MONITOR.CATEGORY, categoryFilter)?.let { and(it) }
                 sortedBy?.let { orderBy(it, ICMP_MONITOR.ID.asc()) }
             }
             .fetchInto(IcmpMonitorDetailsDto::class.java)
+
+    fun getMonitorsPage(
+        enabled: Boolean?,
+        uptimeStatus: List<UptimeStatus>,
+        categoryFilter: CategoryFilter?,
+        name: String?,
+        sorting: Sorting<IcmpMonitorSortField>,
+        pageRequest: PageRequest,
+    ): PagedResult<IcmpMonitorDetailsDto> {
+        val condition = DSL.and(
+            filterCondition(enabled, uptimeStatus, categoryFilter),
+            containsIgnoreCaseCondition(ICMP_MONITOR.NAME, name),
+        )
+        return monitorDetailsSelect()
+            .and(condition)
+            .fetchPage(
+                countQuery = countSelect(uptimeStatus, condition),
+                pageRequest = pageRequest,
+                orderBy = listOf(sorting.field.toField().sortedIn(sorting.order), ICMP_MONITOR.ID.asc()),
+                type = IcmpMonitorDetailsDto::class.java,
+            )
+    }
+
+    private fun filterCondition(
+        enabled: Boolean?,
+        uptimeStatus: List<UptimeStatus>,
+        categoryFilter: CategoryFilter?,
+    ): Condition = DSL.and(
+        listOfNotNull(
+            enabled?.let { ICMP_MONITOR.ENABLED.eq(it) },
+            uptimeStatus.takeIf { it.isNotEmpty() }
+                ?.let { checkNotNull(latestUptimeEventSelect.field(ICMP_UPTIME_EVENT.STATUS)).`in`(it) },
+            categoryFilterCondition(ICMP_MONITOR.CATEGORY, categoryFilter),
+        )
+    )
+
+    /**
+     * Counts the monitors [condition] selects, joining only what it can refer to: the latest uptime event only when it
+     * filters by the uptime status. The status pages can't change the number of the rows, so they are never joined.
+     */
+    private fun countSelect(uptimeStatus: List<UptimeStatus>, condition: Condition): Select<Record1<Int>> {
+        val monitors = if (uptimeStatus.isEmpty()) {
+            ICMP_MONITOR
+        } else {
+            ICMP_MONITOR.leftJoin(DSL.lateral(latestUptimeEventSelect)).on(DSL.trueCondition())
+        }
+        return dslContext
+            .selectCount()
+            .from(monitors)
+            .where(condition)
+    }
+
+    private fun IcmpMonitorSortField.toField(): Field<*> = when (this) {
+        IcmpMonitorSortField.ID -> ICMP_MONITOR.ID
+        IcmpMonitorSortField.NAME -> ICMP_MONITOR.NAME
+        IcmpMonitorSortField.ENABLED -> ICMP_MONITOR.ENABLED
+        IcmpMonitorSortField.UPTIME_STATUS -> checkNotNull(latestUptimeEventSelect.field(ICMP_UPTIME_EVENT.STATUS))
+        IcmpMonitorSortField.UPTIME_STATUS_STARTED_AT ->
+            checkNotNull(latestUptimeEventSelect.field(ICMP_UPTIME_EVENT.STARTED_AT))
+        IcmpMonitorSortField.LAST_UPTIME_CHECK ->
+            checkNotNull(latestUptimeEventSelect.field(ICMP_UPTIME_EVENT.UPDATED_AT))
+        IcmpMonitorSortField.UPTIME_CHECK_INTERVAL -> ICMP_MONITOR.UPTIME_CHECK_INTERVAL
+        IcmpMonitorSortField.HOST -> ICMP_MONITOR.HOST
+        IcmpMonitorSortField.CREATED_AT -> ICMP_MONITOR.CREATED_AT
+        IcmpMonitorSortField.UPDATED_AT -> ICMP_MONITOR.UPDATED_AT
+    }
 
     fun getMonitorWithDetails(monitorId: Long): IcmpMonitorDetailsDto? =
         monitorDetailsSelect()

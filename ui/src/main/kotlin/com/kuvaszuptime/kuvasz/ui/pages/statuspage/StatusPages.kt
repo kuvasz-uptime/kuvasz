@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.ui.pages.statuspage
 
-import com.iodesystems.htmx.Htmx.Companion.hx
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.ui.*
@@ -11,7 +10,7 @@ import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
 
-fun renderStatusPagesPage(globals: AppGlobals) =
+fun renderStatusPagesPage(globals: AppGlobals, query: StatusPageListQuery) =
     withLayout(
         globals,
         title = Messages.statusPages(),
@@ -21,21 +20,13 @@ fun renderStatusPagesPage(globals: AppGlobals) =
             classes(ROW, ROW_CARDS)
             div {
                 classes(COL_12)
-                div {
-                    classes(CARD)
-                    div {
-                        hx {
-                            get("/status-pages/fragments/list")
-                            trigger {
-                                load()
-                                event("refresh-status-page-list")
-                            }
-                            onSwapReinitTooltips()
-                        }
-                        id = "status-page-list"
-                        htmxLoadingIndicator()
-                    }
-                }
+                pagedListCard(
+                    query = query,
+                    listElementId = STATUS_PAGE_LIST_ID,
+                    fragmentPath = "/status-pages/fragments/list",
+                    refreshEvent = "refresh-status-page-list",
+                    refreshInterval = null,
+                )
             }
         }
     }

@@ -61,6 +61,10 @@ services:
       ADMIN_API_KEY: kbench-api-key-0123456789
       ENABLE_CHECK_UPDATES: "false"
       USE_VIRTUAL_THREAD_SCHEDULING: ${KUVASZ_VIRTUAL_THREADS:-false}
+      # Raised only when a history longer than the default 7 days is loaded before the run (see kbench/backfill.py)
+      LATENCY_DATA_RETENTION_DAYS: ${KUVASZ_LATENCY_RETENTION_DAYS:-7}
+      # The database connections of Kuvasz, 10 like the image's own default, unless a run raises it
+      DATASOURCES_DEFAULT_MAXIMUM_POOL_SIZE: ${KUVASZ_DB_POOL_SIZE:-10}
       JAVA_TOOL_OPTIONS: ${KUVASZ_JAVA_OPTS:--Xms64M -Xmx192M}
     cpus: ${KUVASZ_CPUS:-1}
     mem_limit: ${KUVASZ_MEM:-1g}

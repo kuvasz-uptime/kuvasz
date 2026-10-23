@@ -1,9 +1,9 @@
 package com.kuvaszuptime.kuvasz.ui.fragments.monitor.http
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
+import com.kuvaszuptime.kuvasz.models.IncidentType
 import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
-import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
@@ -31,11 +31,10 @@ internal fun FlowContent.httpMonitorDetailsContent(monitor: HttpMonitorDetailsDt
             }
             detailsSSLSummary(monitor)
             // SSL incidents
-            incidentsHeading()
-            autoRefreshedBlock(
+            monitorIncidentsBlock(
                 elementId = SSL_EVENTS_ELEMENT_ID,
-                path = MonitorTypeUiConfig.HTTP.fragmentPath("details-ssl-incidents/${monitor.id}"),
-                cssClasses = setOf(ROW, ROW_CARDS, MB_3),
+                type = IncidentType.SSL,
+                monitorId = monitor.id,
             )
         }
     }

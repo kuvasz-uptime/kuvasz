@@ -12,6 +12,7 @@ import com.kuvaszuptime.kuvasz.mcp.schemas.DockerMonitorSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.DockerMonitorStatsSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.DockerMonitorSummarySchema
 import com.kuvaszuptime.kuvasz.models.dto.monitor.docker.DockerMonitorDto
+import com.kuvaszuptime.kuvasz.models.pagination.ListDefaults
 import com.kuvaszuptime.kuvasz.services.check.docker.DockerMonitorActions
 import com.kuvaszuptime.kuvasz.validation.throwIfNotEmpty
 import io.micronaut.mcp.annotations.Tool
@@ -27,13 +28,34 @@ class DockerMonitorTools(
 
     @Tool(
         name = ToolNames.LIST_DOCKER_MONITORS,
-        description = "Lists all Docker container monitors configured in Kuvasz with their current uptime status",
+        description = "Lists the Docker container monitors configured in Kuvasz with their current uptime status, " +
+            "sorted by their name by default." +
+            ListToolArgs.PAGINATION_NOTE,
         annotations = Tool.ToolAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true)
     )
-    fun listDockerMonitors(): DockerMonitorListSchema =
-        DockerMonitorListSchema(
-            monitors = dockerMonitorActions.getMonitorsWithDetails().map { DockerMonitorSummarySchema.fromDto(it) }
+    fun listDockerMonitors(
+        @ToolArg(description = ListToolArgs.MONITOR_NAME) name: String? = null,
+        @ToolArg(description = ListToolArgs.PAGE) page: Int? = null,
+        @ToolArg(description = ListToolArgs.SIZE) size: Int? = null,
+        @ToolArg(description = ListToolArgs.SORTED_BY) sortedBy: String? = null,
+        @ToolArg(description = ListToolArgs.SORT_ORDER) sortOrder: String? = null,
+    ): DockerMonitorListSchema {
+        val monitors = dockerMonitorActions.getMonitorsPage(
+            enabled = null,
+            uptimeStatus = emptyList(),
+            categoryFilter = null,
+            name = name,
+            sorting = sortingOf(sortedBy, sortOrder, default = ListDefaults.DOCKER_MONITOR_SORTING),
+            pageRequest = pageRequestOf(page, size),
         )
+        return DockerMonitorListSchema(
+            monitors = monitors.result.map { DockerMonitorSummarySchema.fromDto(it) },
+            page = monitors.page,
+            size = monitors.size,
+            totalCount = monitors.totalCount,
+            totalPages = monitors.totalPages,
+        )
+    }
 
     @Tool(
         name = ToolNames.GET_DOCKER_MONITOR_DETAILS,

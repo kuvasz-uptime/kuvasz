@@ -59,6 +59,10 @@ The `/mcp` endpoint is protected by a dedicated [**MCP API key**](../setup/confi
     
     This is the **expected behavior**, and works exactly the same as if you were to perform these operations via the REST API or dashboard.
 
+!!! info "Lists, page by page"
+
+    The tools that list monitors, status pages, maintenance windows and incidents return **one page** at a time: 25 items by default. The result tells how many items and pages there are in total, so the assistant can ask for the next page with `page`. These tools can also change the page size (`size`), search by name (`name`), and sort the items (`sortedBy`, `sortOrder`).
+
 The MCP server exposes the following tools to connected clients:
 
 ### HTTP monitors
@@ -146,7 +150,7 @@ The MCP server exposes the following tools to connected clients:
 | Tool                      | Description                                                                                                             |
 |---------------------------|-------------------------------------------------------------------------------------------------------------------------|
 | `list-status-pages`       | List all status pages with their basic configuration (title, slug, visibility, monitor count, selected categories)      |
-| `get-status-page-details` | Get full details of a specific status page including per-monitor uptime status, uptime ratio, and 30-day uptime history |
+| `get-status-page-details` | Get full details of a specific status page including per-monitor uptime status, uptime ratio, and 30-day uptime history. Like on the status pages, only the latest 20 incidents of each monitor are listed, and `incidentCount` tells how many there were in total |
 
 ### Maintenance windows
 
@@ -195,7 +199,7 @@ Both are defined in the YAML configuration only, so they can be listed, but not 
 
 | Tool                   | Description                                                                                                                                                                             |
 |------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `list-incidents`       | List incidents across all monitor types, optionally filtered by monitor ID, with a configurable look-back window and resolved-flag filter                                               |
+| `list-incidents`       | List incidents across all monitor types, optionally filtered by monitor ID, monitor name or incident type, with a configurable look-back window and resolved-flag filter                |
 | `get-incident-details` | Get the details of an incident by its type and event ID: its [**notes**](incidents.md#incident-notes), and the integrations that were notified when it started and when it was resolved |
 | `create-incident-note` | Add a note to an incident, with an investigation status, an optional timestamp, and an optional public flag to show it on the status pages. To change a note, delete and recreate it    |
 | `delete-incident-note` | Permanently delete an incident note                                                                                                                                                     |

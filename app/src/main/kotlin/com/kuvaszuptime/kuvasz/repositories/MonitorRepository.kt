@@ -37,6 +37,13 @@ internal fun categoryFilterCondition(categoryField: Field<String>, filter: Categ
     }
 
 /**
+ * Selects the rows whose [field] contains the [text], without regard to the case of the letters. The wildcards of
+ * LIKE (`%`, `_`) are matched literally. A blank text selects everything.
+ */
+internal fun containsIgnoreCaseCondition(field: Field<String>, text: String?): Condition =
+    text?.trim()?.takeIf { it.isNotEmpty() }?.let { field.containsIgnoreCase(it) } ?: DSL.noCondition()
+
+/**
  * The WHERE condition selecting the monitors of a status page: the ones referenced explicitly by their name,
  * plus every monitor belonging to one of the referenced categories. The two selectors are additive.
  *

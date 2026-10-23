@@ -11,6 +11,7 @@ import com.kuvaszuptime.kuvasz.mcp.schemas.PushMonitorSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.PushMonitorStatsSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.PushMonitorSummarySchema
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorDto
+import com.kuvaszuptime.kuvasz.models.pagination.ListDefaults
 import com.kuvaszuptime.kuvasz.services.check.push.PushMonitorActions
 import com.kuvaszuptime.kuvasz.validation.throwIfNotEmpty
 import io.micronaut.mcp.annotations.Tool
@@ -26,13 +27,34 @@ class PushMonitorTools(
 
     @Tool(
         name = ToolNames.LIST_PUSH_MONITORS,
-        description = "Lists all push (heartbeat) monitors configured in Kuvasz with their current uptime status",
+        description = "Lists the push (heartbeat) monitors configured in Kuvasz with their current uptime status, " +
+            "sorted by their name by default." +
+            ListToolArgs.PAGINATION_NOTE,
         annotations = Tool.ToolAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true)
     )
-    fun listPushMonitors(): PushMonitorListSchema =
-        PushMonitorListSchema(
-            monitors = pushMonitorActions.getMonitorsWithDetails().map { PushMonitorSummarySchema.fromDto(it) }
+    fun listPushMonitors(
+        @ToolArg(description = ListToolArgs.MONITOR_NAME) name: String? = null,
+        @ToolArg(description = ListToolArgs.PAGE) page: Int? = null,
+        @ToolArg(description = ListToolArgs.SIZE) size: Int? = null,
+        @ToolArg(description = ListToolArgs.SORTED_BY) sortedBy: String? = null,
+        @ToolArg(description = ListToolArgs.SORT_ORDER) sortOrder: String? = null,
+    ): PushMonitorListSchema {
+        val monitors = pushMonitorActions.getMonitorsPage(
+            enabled = null,
+            uptimeStatus = emptyList(),
+            categoryFilter = null,
+            name = name,
+            sorting = sortingOf(sortedBy, sortOrder, default = ListDefaults.PUSH_MONITOR_SORTING),
+            pageRequest = pageRequestOf(page, size),
         )
+        return PushMonitorListSchema(
+            monitors = monitors.result.map { PushMonitorSummarySchema.fromDto(it) },
+            page = monitors.page,
+            size = monitors.size,
+            totalCount = monitors.totalCount,
+            totalPages = monitors.totalPages,
+        )
+    }
 
     @Tool(
         name = ToolNames.GET_PUSH_MONITOR_DETAILS,

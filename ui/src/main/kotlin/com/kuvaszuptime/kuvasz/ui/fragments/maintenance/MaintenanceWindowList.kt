@@ -3,7 +3,10 @@ package com.kuvaszuptime.kuvasz.ui.fragments.maintenance
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowSortField
+import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
 import com.kuvaszuptime.kuvasz.models.maintenance.MaintenanceWindowType
+import com.kuvaszuptime.kuvasz.models.pagination.ListDefaults
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
@@ -13,13 +16,54 @@ import kotlinx.html.*
 import kotlinx.html.stream.*
 
 internal const val CREATE_MAINTENANCE_WINDOW_MODAL_ID = "create-maintenance-window-modal"
+internal const val MAINTENANCE_WINDOW_LIST_ID = "maintenance-window-list"
+private const val MAINTENANCE_WINDOW_LIST_PATH = "/maintenance-windows"
 
-fun renderMaintenanceWindowList(maintenanceWindows: List<MaintenanceWindowDetailsDto>, appGlobals: AppGlobals): String =
+/** The filters of the maintenance window list, named after the query parameters of the v3 API. */
+class MaintenanceWindowListFilters internal constructor(params: QueryParams) : ListFilters {
+
+    val name: TextFilter = textFilter(params, "name", Messages.name(), placeholder = Messages.searchByName())
+
+    val enabled: ChoiceFilter<Boolean> = yesNoFilter(params, "enabled", Messages.enabled())
+
+    override val all: List<ListFilter> = listOf(name, enabled)
+}
+
+typealias MaintenanceWindowListQuery = ListQuery<MaintenanceWindowSortField, MaintenanceWindowListFilters>
+
+/** The state of the maintenance window list, parsed from the query parameters of its page or fragment. */
+fun maintenanceWindowListQuery(params: QueryParams): MaintenanceWindowListQuery = ListQuery.parse(
+    params = params,
+    path = MAINTENANCE_WINDOW_LIST_PATH,
+    filters = MaintenanceWindowListFilters(params),
+    sortFields = MaintenanceWindowSortField.entries,
+    defaultSorting = ListDefaults.MAINTENANCE_WINDOW_SORTING,
+)
+
+fun renderMaintenanceWindowList(
+    maintenanceWindows: PagedResult<MaintenanceWindowDetailsDto>,
+    query: MaintenanceWindowListQuery,
+    appGlobals: AppGlobals,
+): String =
     createHTML(prettyPrint = false, xhtmlCompatible = false).run {
         val isReadOnlyMode = appGlobals.editabilityState.areMaintenanceWindowsReadOnly()
         div {
-            if (maintenanceWindows.isEmpty()) {
-                emptyState(
+            // The page shown, which is the last one if the requested page is past the end, see listQuery in kuvasz.js
+            attributes["data-list-page"] = "${maintenanceWindows.page}"
+            activeFilterCount(MAINTENANCE_WINDOW_LIST_ID, query.activeFilterCount, outOfBand = true)
+            when {
+                maintenanceWindows.result.isNotEmpty() -> {
+                    maintenanceWindowTable(maintenanceWindows.result, query, isReadOnlyMode)
+                    listPagination(maintenanceWindows, query)
+                }
+
+                query.activeFilterCount > 0 -> emptyState(
+                    icon = Icon.FILTER,
+                    title = Messages.noMatchingMaintenanceWindows(),
+                    subtitle = Messages.noMatchingMaintenanceWindowsDescription(),
+                )
+
+                else -> emptyState(
                     icon = Icon.TOOL,
                     title = Messages.noMaintenanceWindowsYet(),
                     subtitle = if (isReadOnlyMode) {
@@ -28,48 +72,53 @@ fun renderMaintenanceWindowList(maintenanceWindows: List<MaintenanceWindowDetail
                         Messages.noMaintenanceWindowsDescription()
                     },
                 )
-            } else {
-                classes(CARD_TABLE, TABLE_RESPONSIVE)
-                table {
-                    classes(TABLE, TABLE_SM, TABLE_VCENTER, CARD_TABLE)
-                    thead {
-                        tr {
-                            th {
-                                classes(TEXT_CENTER)
-                                +"ID"
-                            }
-                            th { +Messages.name() }
-                            th {
-                                classes(D_NONE, D_MD_TABLE_CELL)
-                                +Messages.maintenanceWindowTypeLabel()
-                            }
-                            th {
-                                classes(D_NONE, D_MD_TABLE_CELL)
-                                +Messages.schedule()
-                            }
-                            th {
-                                classes(TEXT_CENTER)
-                                +Messages.status()
-                            }
-                            th {
-                                classes(D_NONE, D_MD_TABLE_CELL, TEXT_CENTER)
-                                +Messages.monitors()
-                            }
-                            th {
-                                classes(D_NONE, D_MD_TABLE_CELL, TEXT_CENTER)
-                                +Messages.categories()
-                            }
-                            // Actions
-                            th {}
-                        }
-                    }
-                    tbody {
-                        maintenanceWindows.forEach { window -> maintenanceWindowListItem(isReadOnlyMode, window) }
-                    }
-                }
             }
         }
     }
+
+private fun FlowContent.maintenanceWindowTable(
+    maintenanceWindows: List<MaintenanceWindowDetailsDto>,
+    query: MaintenanceWindowListQuery,
+    isReadOnlyMode: Boolean,
+) {
+    div {
+        classes(TABLE_RESPONSIVE)
+        table {
+            classes(TABLE, TABLE_SM, TABLE_VCENTER, CARD_TABLE)
+            thead {
+                tr {
+                    sortableHeader(query, MaintenanceWindowSortField.ID, "ID", setOf(TEXT_CENTER))
+                    sortableHeader(query, MaintenanceWindowSortField.NAME, Messages.name())
+                    th {
+                        classes(D_NONE, D_MD_TABLE_CELL)
+                        +Messages.maintenanceWindowTypeLabel()
+                    }
+                    // Only the windows with a single run have a start, the others come last when sorted by it
+                    sortableHeader(
+                        query,
+                        MaintenanceWindowSortField.START,
+                        Messages.schedule(),
+                        setOf(D_NONE, D_MD_TABLE_CELL),
+                    )
+                    sortableHeader(query, MaintenanceWindowSortField.ENABLED, Messages.status(), setOf(TEXT_CENTER))
+                    th {
+                        classes(D_NONE, D_MD_TABLE_CELL, TEXT_CENTER)
+                        +Messages.monitors()
+                    }
+                    th {
+                        classes(D_NONE, D_MD_TABLE_CELL, TEXT_CENTER)
+                        +Messages.categories()
+                    }
+                    // Actions
+                    th {}
+                }
+            }
+            tbody {
+                maintenanceWindows.forEach { window -> maintenanceWindowListItem(isReadOnlyMode, window) }
+            }
+        }
+    }
+}
 
 private fun TBODY.maintenanceWindowListItem(isReadOnlyMode: Boolean, window: MaintenanceWindowDetailsDto) {
     val type = window.resolveType()

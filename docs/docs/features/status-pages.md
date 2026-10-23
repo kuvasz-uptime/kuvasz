@@ -7,7 +7,7 @@ Status pages are one of the key features of a proper monitoring system. They hel
 
 ## What can be configured? <!-- md:config ../management/status-pages.md -->
 
-There are two types of status pages available: the **default, built-in one, that contains every enabled monitors automatically**. The other type is a **custom status page**, which allows you to select the monitors you would like to display.
+There are two types of status pages available: the **default, built-in one, that contains every enabled monitors automatically** (as long as you have [100 enabled monitors or fewer](../management/status-pages.md#the-default-status-page)). The other type is a **custom status page**, which allows you to select the monitors you would like to display.
 Both types supports the following features:
 
 - **Public or private access**: You can choose to make your status page public, or make it available only to authenticated users.
@@ -16,7 +16,7 @@ Both types supports the following features:
 - **Historical statistics** from the last 30 days (or less, if the [**event data retention**](../setup/configuration.md#event-data-retention) is shorter than that):
     - uptime percentage
     - average response time (a.k.a. "latency") if recorded
-    - the incidents of every day, with their time span and the total downtime of the day
+    - the incidents of every day, with their time span and the total downtime of the day. Only the **latest 20 incidents** of each monitor are listed, so a monitor that goes up and down all the time doesn't make the page too big. The number of incidents and the downtime still count every one of them, and the tooltip of a day lists its latest 5 incidents, then tells how many more there were.
 - **Public incident notes**: the [**notes**](incidents.md#incident-notes) you mark as public are shown with their incidents, so your users can follow what's going on. Everything else about the incidents (e.g. the errors of the checks, the private notes, or the notified integrations) stays private. The incidents of SSL certificates are never shown on status pages.
 - **Server-side caching**: To improve performance, status pages are cached on the server-side. You can configure the cache duration to balance between performance and data freshness.
 - **Monitor categories**: If you assign a [category](../management/http-monitors.md#category) to your monitors (e.g. a product or service name), the status page groups them into one section per category, each with its own aggregated status.

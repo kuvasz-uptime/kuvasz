@@ -197,6 +197,100 @@ class AuthenticationTest(
             }
         }
 
+        // The API key used to be accepted only on the v2 paths
+        given("a secured v3 API endpoint") {
+
+            `when`("an anonymous user calls it") {
+                val exception = shouldThrow<HttpClientResponseException> {
+                    client.exchange("/api/v3/http-monitors").awaitFirst()
+                }
+                then("it should return 401") {
+                    exception.status shouldBe HttpStatus.UNAUTHORIZED
+                }
+            }
+
+            `when`("a user provides a wrong API key in the X-API-KEY header") {
+                val request = HttpRequest.GET<Any>("/api/v3/http-monitors").header("X-API-KEY", "irrelevant")
+                val exception = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request).awaitFirst()
+                }
+
+                then("it should return 401") {
+                    exception.status shouldBe HttpStatus.UNAUTHORIZED
+                }
+            }
+
+            `when`("a user provides the right API key in the X-API-KEY header") {
+                val request = HttpRequest.GET<Any>("/api/v3/http-monitors").header("X-API-KEY", TEST_API_KEY)
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+
+            `when`("a user provides the right API key in the Authorization header") {
+                val request = HttpRequest.GET<Any>("/api/v3/http-monitors").bearerAuth(TEST_API_KEY)
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+
+            `when`("a user is authenticated via a JWT cookie") {
+                val jwt = getValidJWT(client, authConfig)
+
+                val request = HttpRequest
+                    .GET<Any>("/api/v3/http-monitors")
+                    .header(HttpHeaders.COOKIE, "JWT=$jwt")
+
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+        }
+
+        // Only the web UI calls the internal endpoints, so the API key is not accepted there
+        given("an internal API endpoint") {
+
+            `when`("an anonymous user calls it") {
+                val exception = shouldThrow<HttpClientResponseException> {
+                    client.exchange("/api/internal/monitors").awaitFirst()
+                }
+                then("it should return 401") {
+                    exception.status shouldBe HttpStatus.UNAUTHORIZED
+                }
+            }
+
+            `when`("a user provides the right API key in the X-API-KEY header") {
+                val request = HttpRequest.GET<Any>("/api/internal/monitors").header("X-API-KEY", TEST_API_KEY)
+                val exception = shouldThrow<HttpClientResponseException> {
+                    client.exchange(request).awaitFirst()
+                }
+
+                then("it should return 401") {
+                    exception.status shouldBe HttpStatus.UNAUTHORIZED
+                }
+            }
+
+            `when`("a user is authenticated via a JWT cookie") {
+                val jwt = getValidJWT(client, authConfig)
+
+                val request = HttpRequest
+                    .GET<Any>("/api/internal/monitors")
+                    .header(HttpHeaders.COOKIE, "JWT=$jwt")
+
+                val response = client.exchange(request).awaitFirst()
+
+                then("it should return 200") {
+                    response.status shouldBe HttpStatus.OK
+                }
+            }
+        }
+
         given("the /prometheus API endpoint") {
 
             `when`("an anonymous user calls it") {

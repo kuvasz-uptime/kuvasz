@@ -1,11 +1,20 @@
 package com.kuvaszuptime.kuvasz.repositories
 
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
+import com.kuvaszuptime.kuvasz.models.dto.event.EventSortField
+import com.kuvaszuptime.kuvasz.services.LatestUptimeIncidents
+import com.kuvaszuptime.kuvasz.services.MonitorUptimeAggregate
+import com.kuvaszuptime.kuvasz.services.UptimeAggregate
+import com.kuvaszuptime.kuvasz.services.UptimeDayAggregate
 import com.kuvaszuptime.kuvasz.services.UptimeEventCalculationContext
+import com.kuvaszuptime.kuvasz.services.UptimeTimelineAggregate
+import org.jooq.Condition
 import org.jooq.DSLContext
+import org.jooq.Field
 import org.jooq.Table
 import org.jooq.TableField
 import org.jooq.impl.DSL
+import java.math.BigDecimal
 import java.time.OffsetDateTime
 
 /**
@@ -17,27 +26,123 @@ import java.time.OffsetDateTime
  * - [monitorType] is an extension property instead of a member, so it keeps working on the implementations even when
  *   they are mocked in the tests. A mocked member would return nothing and break every consumer that collects these
  *   repositories as a bean list, like [com.kuvaszuptime.kuvasz.services.StatCalculator].
+ * - The queries below are the same for every monitor type, so they are implemented here once, run on the
+ *   [uptimeEventColumns] of the type. It's an abstract class for that, because the columns are internal.
  */
-sealed interface UptimeEventRepository {
+sealed class UptimeEventRepository(protected val dslContext: DSLContext) {
+
+    internal abstract val uptimeEventColumns: UptimeEventColumns
 
     /**
-     * Fetches the uptime events that were open at any point of the period: the ones that started by its end, and
-     * either haven't ended yet or ended after its start. Both ends are passed in, so they are anchored to the very same
-     * instant as the calculations relying on the events.
-     *
-     * @param onlyEnabledMonitors Whether the events of the monitors that are paused now should be left out.
+     * Fetches the latest incidents (DOWN events) of the given monitors, at most [limitPerMonitor] of each, along with
+     * how many incidents they were picked from. Only the incidents that were open at any point of the period are
+     * considered (the ones that started by its end, and either haven't ended yet or ended after its start), and only if
+     * they were in effect between [effectiveFrom] and [effectiveTo], see
+     * [UptimeEventCalculationContext.wasEffectiveBetween]. Both ends of the period are passed in, so they are anchored
+     * to the very same instant as the calculations relying on the incidents. The monitors without any incident are
+     * left out.
      */
-    fun fetchAllInPeriod(
+    fun fetchLatestIncidents(
         periodStart: OffsetDateTime,
         periodEnd: OffsetDateTime,
-        monitorIds: List<Long>? = null,
-        onlyEnabledMonitors: Boolean = false,
-    ): List<UptimeEventCalculationContext>
+        monitorIds: List<Long>,
+        effectiveFrom: OffsetDateTime,
+        effectiveTo: OffsetDateTime,
+        limitPerMonitor: Int,
+    ): Map<Long, LatestUptimeIncidents> = dslContext.fetchLatestUptimeIncidents(
+        uptimeEventColumns,
+        periodStart,
+        periodEnd,
+        monitorIds,
+        effectiveFrom,
+        effectiveTo,
+        limitPerMonitor,
+    )
 
     /**
      * Fetches the timestamp of the latest incident (DOWN status) for enabled monitors.
      */
-    fun fetchLatestIncidentTimestamp(): OffsetDateTime?
+    fun fetchLatestIncidentTimestamp(): OffsetDateTime? =
+        dslContext.fetchLatestUptimeIncidentTimestamp(uptimeEventColumns)
+
+    /**
+     * Adds up the uptime events of the period on the database side, see [UptimeAggregate] for the rules. Only the
+     * figures leave the database, so the size of the history doesn't matter for the memory of the application.
+     *
+     * @param monitorIdsInMaintenance The monitors whose ongoing incidents are counted as the ones in maintenance.
+     */
+    fun aggregateInPeriod(
+        periodStart: OffsetDateTime,
+        periodEnd: OffsetDateTime,
+        monitorIds: List<Long>? = null,
+        onlyEnabledMonitors: Boolean = false,
+        monitorIdsInMaintenance: Collection<Long> = emptyList(),
+    ): UptimeAggregate = dslContext.aggregateUptimeInPeriod(
+        uptimeEventColumns,
+        periodStart,
+        periodEnd,
+        monitorIds,
+        onlyEnabledMonitors,
+        monitorIdsInMaintenance,
+    )
+
+    /**
+     * Adds up how much uptime and downtime the events of the period contributed to each slot, and how many incidents
+     * started in them, see [UptimeTimelineAggregate]. The first slot starts at the start of the period, the last one
+     * ends at [periodEnd].
+     */
+    fun aggregateTimeline(
+        slotStarts: List<OffsetDateTime>,
+        periodEnd: OffsetDateTime,
+        onlyEnabledMonitors: Boolean,
+    ): List<UptimeTimelineAggregate> =
+        dslContext.aggregateUptimeTimeline(uptimeEventColumns, slotStarts, periodEnd, onlyEnabledMonitors)
+
+    /**
+     * The monitors with the most downtime during the period, and among them, with the most incidents, leaving out the
+     * ones without any incident. Every monitor tied with the last one is returned too, so the caller can break the
+     * ties in its own order.
+     */
+    fun fetchLeastReliableMonitors(
+        periodStart: OffsetDateTime,
+        periodEnd: OffsetDateTime,
+        limit: Int,
+        onlyEnabledMonitors: Boolean,
+    ): List<MonitorUptimeAggregate> =
+        dslContext.fetchLeastReliableMonitors(uptimeEventColumns, periodStart, periodEnd, limit, onlyEnabledMonitors)
+
+    /**
+     * Adds up the uptime events of the period monitor by monitor, the same way as [aggregateInPeriod] does. The
+     * monitors without any event in the period are left out.
+     */
+    fun aggregateByMonitor(
+        periodStart: OffsetDateTime,
+        periodEnd: OffsetDateTime,
+        monitorIds: List<Long>,
+    ): List<MonitorUptimeAggregate> =
+        dslContext.aggregateUptimeByMonitor(uptimeEventColumns, periodStart, periodEnd, monitorIds)
+
+    /**
+     * Adds up the incidents of the given monitors day by day, see [UptimeDayAggregate]. Every day ends where the next
+     * one starts, the last one at [lastDayEnd]. Only the events that were open at any point of the period are
+     * considered, whether they were in effect on a day is decided by
+     * [UptimeEventCalculationContext.wasEffectiveBetween]. A day is only returned for a monitor if any of its uptime
+     * events was in effect on it.
+     */
+    fun aggregateDays(
+        periodStart: OffsetDateTime,
+        periodEnd: OffsetDateTime,
+        monitorIds: List<Long>,
+        dayStarts: List<OffsetDateTime>,
+        lastDayEnd: OffsetDateTime,
+    ): List<UptimeDayAggregate> = dslContext.aggregateUptimeDays(
+        uptimeEventColumns,
+        periodStart,
+        periodEnd,
+        monitorIds,
+        dayStarts,
+        lastDayEnd,
+    )
 }
 
 /**
@@ -58,15 +163,38 @@ internal class UptimeEventColumns(
     val monitors: Table<*> get() = checkNotNull(monitorId.table)
 }
 
-/** See [UptimeEventRepository.fetchAllInPeriod]. */
-internal fun DSLContext.fetchUptimeEventsInPeriod(
+// Written this way, instead of coalescing the end with now(), so it can use the index of ended_at
+private fun UptimeEventColumns.wasOpenDuring(periodStart: OffsetDateTime, periodEnd: OffsetDateTime): List<Condition> =
+    listOf(startedAt.lessOrEqual(periodEnd), endedAt.isNull.or(endedAt.greaterThan(periodStart)))
+
+// See UptimeEventCalculationContext.wasEffectiveBetween
+private fun UptimeEventColumns.wasEffectiveBetween(from: Field<OffsetDateTime>, to: Field<OffsetDateTime>): Condition =
+    startedAt.lessThan(to).and(DSL.coalesce(endedAt, updatedAt).greaterOrEqual(from))
+
+/**
+ * The last instant an event was in effect, if the period ends at [periodEnd], see
+ * [com.kuvaszuptime.kuvasz.util.getEffectiveEndOfEvent].
+ */
+private fun UptimeEventColumns.effectiveEnd(periodEnd: OffsetDateTime): Field<OffsetDateTime> = DSL.coalesce(
+    endedAt,
+    DSL.`when`(monitorEnabled.isTrue, DSL.`val`(periodEnd)).otherwise(updatedAt),
+)
+
+/** See [UptimeEventRepository.fetchLatestIncidents]. */
+internal fun DSLContext.fetchLatestUptimeIncidents(
     columns: UptimeEventColumns,
     periodStart: OffsetDateTime,
     periodEnd: OffsetDateTime,
-    monitorIds: List<Long>?,
-    onlyEnabledMonitors: Boolean,
-): List<UptimeEventCalculationContext> = with(columns) {
-    select(
+    monitorIds: List<Long>,
+    effectiveFrom: OffsetDateTime,
+    effectiveTo: OffsetDateTime,
+    limitPerMonitor: Int,
+): Map<Long, LatestUptimeIncidents> = with(columns) {
+    val latestFirst = DSL.rowNumber()
+        .over(DSL.partitionBy(eventMonitorId).orderBy(startedAt.desc(), eventId.desc()))
+        .`as`("latest_first")
+    val incidentsOfMonitor = DSL.count().over(DSL.partitionBy(eventMonitorId)).`as`("incidents_of_monitor")
+    val incidents = select(
         eventId.`as`(UptimeEventCalculationContext::id.name),
         monitorId.`as`(UptimeEventCalculationContext::monitorId.name),
         monitorEnabled.`as`(UptimeEventCalculationContext::isMonitorEnabled.name),
@@ -74,19 +202,28 @@ internal fun DSLContext.fetchUptimeEventsInPeriod(
         startedAt.`as`(UptimeEventCalculationContext::startedAt.name),
         endedAt.`as`(UptimeEventCalculationContext::endedAt.name),
         updatedAt.`as`(UptimeEventCalculationContext::updatedAt.name),
+        latestFirst,
+        incidentsOfMonitor,
     )
         .from(events)
         .join(monitors).on(eventMonitorId.eq(monitorId))
-        .where(
-            listOfNotNull(
-                startedAt.lessOrEqual(periodEnd),
-                // Written this way, instead of coalescing the end with now(), so it can use the index of ended_at
-                endedAt.isNull.or(endedAt.greaterThan(periodStart)),
-                monitorIds?.let { eventMonitorId.`in`(it) },
-                monitorEnabled.isTrue.takeIf { onlyEnabledMonitors },
+        .where(wasOpenDuring(periodStart, periodEnd))
+        .and(status.eq(UptimeStatus.DOWN))
+        .and(eventMonitorId.`in`(monitorIds))
+        .and(wasEffectiveBetween(DSL.`val`(effectiveFrom), DSL.`val`(effectiveTo)))
+        .asTable("incidents")
+    val incidentsOfMonitorField = checkNotNull(incidents.field(incidentsOfMonitor))
+
+    selectFrom(incidents)
+        .where(checkNotNull(incidents.field(latestFirst)).lessOrEqual(limitPerMonitor))
+        .fetch { record -> record.into(UptimeEventCalculationContext::class.java) to record[incidentsOfMonitorField] }
+        .groupBy { (incident, _) -> incident.monitorId }
+        .mapValues { (_, latestIncidents) ->
+            LatestUptimeIncidents(
+                incidents = latestIncidents.map { (incident, _) -> incident },
+                total = latestIncidents.first().second,
             )
-        )
-        .fetchInto(UptimeEventCalculationContext::class.java)
+        }
 }
 
 /**
@@ -116,3 +253,255 @@ internal fun DSLContext.fetchLatestUptimeIncidentTimestamp(columns: UptimeEventC
             .fetchOne()
             ?.value1()
     }
+
+/**
+ * The uptime events of a period, clipped to it, as a derived table: an event starts at the start of the period the
+ * earliest, and an ongoing one ends at the end of the period, or at its last update if its monitor is paused (see
+ * [com.kuvaszuptime.kuvasz.util.getEffectiveEndOfEvent]). The events of a paused monitor that were last updated before
+ * the period are left out, since they weren't effective during it.
+ */
+private class ClippedUptimeEvents(
+    columns: UptimeEventColumns,
+    periodStart: OffsetDateTime,
+    periodEnd: OffsetDateTime,
+    monitorIds: List<Long>?,
+    onlyEnabledMonitors: Boolean,
+) {
+    private val monitorIdColumn = columns.eventMonitorId.`as`("monitor_id")
+    private val statusColumn = columns.status.`as`("status")
+    private val startedAtColumn = columns.startedAt.`as`("started_at")
+    private val endedAtColumn = columns.endedAt.`as`("ended_at")
+    private val clippedStartColumn = DSL.greatest(columns.startedAt, DSL.`val`(periodStart)).`as`("clipped_start")
+    private val clippedEndColumn = columns.effectiveEnd(periodEnd).`as`("clipped_end")
+
+    val table: Table<*> = with(columns) {
+        DSL.select(monitorIdColumn, statusColumn, startedAtColumn, endedAtColumn, clippedStartColumn, clippedEndColumn)
+            .from(events)
+            .join(monitors).on(eventMonitorId.eq(monitorId))
+            .where(
+                wasOpenDuring(periodStart, periodEnd) + listOfNotNull(
+                    monitorEnabled.isTrue.or(updatedAt.greaterOrEqual(periodStart)),
+                    monitorIds?.let { eventMonitorId.`in`(it) },
+                    monitorEnabled.isTrue.takeIf { onlyEnabledMonitors },
+                )
+            )
+            .asTable("clipped_events")
+    }
+    val monitorId: Field<Long> = checkNotNull(table.field(monitorIdColumn))
+    val status: Field<UptimeStatus> = checkNotNull(table.field(statusColumn))
+    val startedAt: Field<OffsetDateTime> = checkNotNull(table.field(startedAtColumn))
+    val endedAt: Field<OffsetDateTime> = checkNotNull(table.field(endedAtColumn))
+    val clippedStart: Field<OffsetDateTime> = checkNotNull(table.field(clippedStartColumn))
+    val clippedEnd: Field<OffsetDateTime> = checkNotNull(table.field(clippedEndColumn))
+
+    val isUp: Condition = status.eq(UptimeStatus.UP)
+    val isDown: Condition = status.eq(UptimeStatus.DOWN)
+
+    // The duration of an event in the history, measured between the whole seconds of its ends, see
+    // com.kuvaszuptime.kuvasz.util.getDurationOfEvent
+    val durationSeconds: Field<Long> = epochSecondsBetween(clippedStart, clippedEnd)
+
+    val uptimeSeconds: Field<Long> = DSL.sum(durationSeconds).filterWhere(isUp).orZero()
+    val downtimeSeconds: Field<Long> = DSL.sum(durationSeconds).filterWhere(isDown).orZero()
+    val incidents: Field<Int> = DSL.count().filterWhere(isDown)
+}
+
+/** Whole seconds between the epoch seconds of two instants, like `end.toEpochSecond() - start.toEpochSecond()`. */
+private fun epochSecondsBetween(start: Field<OffsetDateTime>, end: Field<OffsetDateTime>): Field<Long> =
+    DSL.field(
+        "floor(extract(epoch from {0}))::bigint - floor(extract(epoch from {1}))::bigint",
+        Long::class.java,
+        end,
+        start,
+    )
+
+/** Whole seconds of the span between two instants, like `Duration.between(start, end).seconds`. */
+private fun secondsOfSpan(start: Field<OffsetDateTime>, end: Field<OffsetDateTime>): Field<Long> =
+    DSL.field("floor(extract(epoch from {0}) - extract(epoch from {1}))::bigint", Long::class.java, end, start)
+
+/**
+ * The number of the slot an instant falls into: the 1-based index of the last one of the ascending [slotStarts] that
+ * starts by it, 0 if it's before every one of them.
+ */
+private fun slotIndexOf(instant: Field<OffsetDateTime>, slotStarts: Field<Array<OffsetDateTime>>): Field<Int> =
+    DSL.field("width_bucket({0}, {1})", Int::class.java, instant, slotStarts)
+
+private fun Field<BigDecimal>.orZero(): Field<Long> = DSL.coalesce(this, BigDecimal.ZERO).cast(Long::class.java)
+
+/** See [UptimeEventRepository.aggregateInPeriod]. */
+internal fun DSLContext.aggregateUptimeInPeriod(
+    columns: UptimeEventColumns,
+    periodStart: OffsetDateTime,
+    periodEnd: OffsetDateTime,
+    monitorIds: List<Long>?,
+    onlyEnabledMonitors: Boolean,
+    monitorIdsInMaintenance: Collection<Long>,
+): UptimeAggregate = with(ClippedUptimeEvents(columns, periodStart, periodEnd, monitorIds, onlyEnabledMonitors)) {
+    val isOngoingIncident = isDown.and(endedAt.isNull)
+    val isResolvedIncident = isDown.and(endedAt.isNotNull)
+    select(
+        uptimeSeconds.`as`(UptimeAggregate::uptimeSeconds.name),
+        downtimeSeconds.`as`(UptimeAggregate::downtimeSeconds.name),
+        incidents.`as`(UptimeAggregate::incidents.name),
+        DSL.countDistinct(monitorId).filterWhere(isDown).`as`(UptimeAggregate::affectedMonitors.name),
+        DSL.count().filterWhere(isOngoingIncident).`as`(UptimeAggregate::ongoingIncidents.name),
+        DSL.count().filterWhere(isOngoingIncident.and(monitorId.`in`(monitorIdsInMaintenance)))
+            .`as`(UptimeAggregate::ongoingIncidentsInMaintenance.name),
+        DSL.count().filterWhere(isResolvedIncident).`as`(UptimeAggregate::resolvedIncidents.name),
+        DSL.sum(secondsOfSpan(startedAt, endedAt)).filterWhere(isResolvedIncident).orZero()
+            .`as`(UptimeAggregate::resolvedIncidentSeconds.name),
+    )
+        .from(table)
+        .fetchSingleInto(UptimeAggregate::class.java)
+}
+
+/**
+ * Consecutive slots of time as a derived table, numbered from 1: every slot ends where the next one starts, the last
+ * one at [lastEnd].
+ */
+private class ConsecutiveSlots(starts: List<OffsetDateTime>, lastEnd: OffsetDateTime) {
+    private val startsWithIndex = DSL.unnest(starts).withOrdinality().`as`("slot_starts", "slot_start", "slot_index")
+    private val startColumn = checkNotNull(startsWithIndex.field("slot_start", OffsetDateTime::class.java))
+    private val indexColumn = checkNotNull(startsWithIndex.field("slot_index", Long::class.java))
+    private val endColumn = DSL.coalesce(DSL.lead(startColumn).over(DSL.orderBy(indexColumn)), DSL.`val`(lastEnd))
+        .`as`("slot_end")
+
+    val table: Table<*> = DSL.select(startColumn, indexColumn, endColumn).from(startsWithIndex).asTable("slots")
+    val index: Field<Long> = checkNotNull(table.field(indexColumn))
+    val start: Field<OffsetDateTime> = checkNotNull(table.field(startColumn))
+    val end: Field<OffsetDateTime> = checkNotNull(table.field(endColumn))
+}
+
+/** See [UptimeEventRepository.aggregateTimeline]. */
+internal fun DSLContext.aggregateUptimeTimeline(
+    columns: UptimeEventColumns,
+    slotStarts: List<OffsetDateTime>,
+    periodEnd: OffsetDateTime,
+    onlyEnabledMonitors: Boolean,
+): List<UptimeTimelineAggregate> {
+    val events = ClippedUptimeEvents(columns, slotStarts.first(), periodEnd, null, onlyEnabledMonitors)
+    val slots = ConsecutiveSlots(slotStarts, periodEnd)
+    val slotIndex = slots.index
+    val slotStart = slots.start
+    val slotEnd = slots.end
+
+    return with(events) {
+        // The timeline doesn't reach beyond its end, not even with the last update of a paused monitor
+        val end = DSL.least(clippedEnd, DSL.`val`(periodEnd))
+        val overlaps = end.greaterThan(slotStart).and(clippedStart.lessThan(slotEnd))
+        val overlapSeconds = secondsOfSpan(DSL.greatest(clippedStart, slotStart), DSL.least(end, slotEnd))
+        // An incident only counts in the slot where it started, otherwise a long outage would show up in every slot it
+        // spans. The ones that started before the period start in the first slot, and nothing goes past the last one.
+        val startsInSlot = clippedStart.greaterOrEqual(slotStart)
+            .and(clippedStart.lessThan(slotEnd).or(slotIndex.eq(slotStarts.size.toLong())))
+        // Every event is only paired with the slots from the one it starts in to the one it ends in, instead of every
+        // slot, the conditions above still decide what it adds to them
+        val slotStartsArray = DSL.`val`(slotStarts.toTypedArray())
+        val firstSlot = slotIndexOf(clippedStart, slotStartsArray)
+        val candidateSlots = DSL.generateSeries(firstSlot, DSL.greatest(firstSlot, slotIndexOf(end, slotStartsArray)))
+            .`as`("candidate_slots", "slot_index")
+        val candidateSlot = checkNotNull(candidateSlots.field("slot_index", Int::class.java))
+
+        select(
+            DSL.sum(overlapSeconds).filterWhere(isUp.and(overlaps)).orZero()
+                .`as`(UptimeTimelineAggregate::uptimeSeconds.name),
+            DSL.sum(overlapSeconds).filterWhere(isDown.and(overlaps)).orZero()
+                .`as`(UptimeTimelineAggregate::downtimeSeconds.name),
+            DSL.count().filterWhere(isDown.and(startsInSlot)).`as`(UptimeTimelineAggregate::incidents.name),
+        )
+            .from(slots.table)
+            .leftJoin(table.crossJoin(DSL.lateral(candidateSlots)))
+            .on(candidateSlot.cast(Long::class.java).eq(slotIndex))
+            .groupBy(slotIndex)
+            .orderBy(slotIndex)
+            .fetchInto(UptimeTimelineAggregate::class.java)
+    }
+}
+
+/** See [UptimeEventRepository.fetchLeastReliableMonitors]. */
+internal fun DSLContext.fetchLeastReliableMonitors(
+    columns: UptimeEventColumns,
+    periodStart: OffsetDateTime,
+    periodEnd: OffsetDateTime,
+    limit: Int,
+    onlyEnabledMonitors: Boolean,
+): List<MonitorUptimeAggregate> =
+    with(ClippedUptimeEvents(columns, periodStart, periodEnd, null, onlyEnabledMonitors)) {
+        selectUptimeByMonitor(this)
+            .having(incidents.greaterThan(0))
+            .orderBy(downtimeSeconds.desc(), incidents.desc())
+            .limit(limit)
+            .withTies()
+            .fetchInto(MonitorUptimeAggregate::class.java)
+    }
+
+/** See [UptimeEventRepository.aggregateByMonitor]. */
+internal fun DSLContext.aggregateUptimeByMonitor(
+    columns: UptimeEventColumns,
+    periodStart: OffsetDateTime,
+    periodEnd: OffsetDateTime,
+    monitorIds: List<Long>,
+): List<MonitorUptimeAggregate> =
+    selectUptimeByMonitor(ClippedUptimeEvents(columns, periodStart, periodEnd, monitorIds, onlyEnabledMonitors = false))
+        .fetchInto(MonitorUptimeAggregate::class.java)
+
+private fun DSLContext.selectUptimeByMonitor(events: ClippedUptimeEvents) = with(events) {
+    select(
+        monitorId.`as`(MonitorUptimeAggregate::monitorId.name),
+        uptimeSeconds.`as`(MonitorUptimeAggregate::uptimeSeconds.name),
+        downtimeSeconds.`as`(MonitorUptimeAggregate::downtimeSeconds.name),
+        incidents.`as`(MonitorUptimeAggregate::incidents.name),
+    )
+        .from(table)
+        .groupBy(monitorId)
+}
+
+/** See [UptimeEventRepository.aggregateDays]. */
+internal fun DSLContext.aggregateUptimeDays(
+    columns: UptimeEventColumns,
+    periodStart: OffsetDateTime,
+    periodEnd: OffsetDateTime,
+    monitorIds: List<Long>,
+    dayStarts: List<OffsetDateTime>,
+    lastDayEnd: OffsetDateTime,
+): List<UptimeDayAggregate> = with(columns) {
+    val days = ConsecutiveSlots(dayStarts, lastDayEnd)
+    val isDown = status.eq(UptimeStatus.DOWN)
+    // Every incident counts until its effective end, but only within the day
+    val startOnDay = DSL.greatest(startedAt, days.start)
+    val endOnDay = DSL.least(effectiveEnd(periodEnd), days.end)
+
+    select(
+        eventMonitorId.`as`(UptimeDayAggregate::monitorId.name),
+        days.index.minus(1).cast(Int::class.java).`as`(UptimeDayAggregate::dayIndex.name),
+        DSL.count().filterWhere(isDown).`as`(UptimeDayAggregate::incidents.name),
+        DSL.sum(secondsOfSpan(startOnDay, endOnDay)).filterWhere(isDown.and(endOnDay.greaterThan(startOnDay))).orZero()
+            .`as`(UptimeDayAggregate::downtimeSeconds.name),
+    )
+        .from(events)
+        .join(monitors).on(eventMonitorId.eq(monitorId))
+        .join(days.table).on(wasEffectiveBetween(days.start, days.end))
+        .where(wasOpenDuring(periodStart, periodEnd))
+        .and(eventMonitorId.`in`(monitorIds))
+        .groupBy(eventMonitorId, days.index)
+        .fetchInto(UptimeDayAggregate::class.java)
+}
+
+/** The column of an event table that [field] sorts by, shared by the uptime and the SSL events. */
+internal fun eventSortColumn(
+    field: EventSortField,
+    id: Field<Long>,
+    status: Field<*>,
+    startedAt: Field<OffsetDateTime>,
+    endedAt: Field<OffsetDateTime>,
+    updatedAt: Field<OffsetDateTime>,
+): Field<*> = when (field) {
+    EventSortField.ID -> id
+    EventSortField.STATUS -> status
+    EventSortField.STARTED_AT -> startedAt
+    EventSortField.ENDED_AT -> endedAt
+    EventSortField.UPDATED_AT -> updatedAt
+}
+
+internal fun EventSortField.toField(columns: UptimeEventColumns): Field<*> =
+    eventSortColumn(this, columns.eventId, columns.status, columns.startedAt, columns.endedAt, columns.updatedAt)

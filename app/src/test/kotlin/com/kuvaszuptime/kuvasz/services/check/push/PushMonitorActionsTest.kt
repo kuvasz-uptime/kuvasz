@@ -82,6 +82,7 @@ class PushMonitorActionsTest(
                     enabledMonitor.id to UptimeOverview(
                         uptimeRatio = 0.2312,
                         statusHistory = listOf(StatusHistoryDto(LocalDate.now(), 12)),
+                        incidentCount = 12,
                     ),
                 )
 
@@ -104,6 +105,7 @@ class PushMonitorActionsTest(
                         upMonitor.uptimeStatusHistory shouldBe listOf(
                             StatusHistoryDto(LocalDate.now(), 12)
                         )
+                        upMonitor.incidentCount shouldBe 12
                         upMonitor.inMaintenance shouldBe true
                     }
                 }
@@ -154,6 +156,7 @@ class PushMonitorActionsTest(
                     enabledMonitor.id to UptimeOverview(
                         uptimeRatio = 0.2312,
                         statusHistory = listOf(StatusHistoryDto(LocalDate.now(), 12)),
+                        incidentCount = 12,
                     ),
                 )
 
@@ -176,6 +179,7 @@ class PushMonitorActionsTest(
                         upMonitor.uptimeStatusHistory shouldBe listOf(
                             StatusHistoryDto(LocalDate.now(), 12)
                         )
+                        upMonitor.incidentCount shouldBe 12
                         upMonitor.inMaintenance shouldBe false
                     }
                 }

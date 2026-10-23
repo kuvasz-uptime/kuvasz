@@ -4,10 +4,8 @@ import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorType
-import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
-import com.kuvaszuptime.kuvasz.ui.utils.*
 
 /**
  * Everything the shared monitor fragments need to know about a concrete monitor type: how it is branded on the UI and
@@ -38,8 +36,6 @@ internal enum class MonitorTypeUiConfig(
     val listPath: String get() = "/$slug-monitors"
 
     val listElementId: String get() = "$slug-monitors-list"
-
-    val listCountElementId: String get() = "$slug-monitors-count"
 
     val createModalId: String get() = "create-$slug-monitor-modal"
 
@@ -85,15 +81,6 @@ internal enum class MonitorTypeUiConfig(
     fun detailsPath(monitorId: Long): String = "$listPath/$monitorId"
 
     fun fragmentPath(fragment: String): String = "$listPath/fragments/$fragment"
-
-    fun listFragmentPath(categoryFilter: CategoryFilter?): String {
-        val listFragment = fragmentPath("list")
-        return when (categoryFilter) {
-            null -> listFragment
-            CategoryFilter.Uncategorized -> "$listFragment?category="
-            is CategoryFilter.InCategory -> "$listFragment?category=${categoryFilter.category.urlEncode()}"
-        }
-    }
 
     companion object {
         fun of(type: MonitorType): MonitorTypeUiConfig = entries.first { it.type == type }

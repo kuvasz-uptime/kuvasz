@@ -6,16 +6,21 @@ import com.kuvaszuptime.kuvasz.jooq.tables.pojos.DnsMonitor
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
 import com.kuvaszuptime.kuvasz.models.MonitorNotFoundException
 import com.kuvaszuptime.kuvasz.models.dto.event.DnsUptimeEventDto
+import com.kuvaszuptime.kuvasz.models.dto.event.EventSortField
 import com.kuvaszuptime.kuvasz.models.dto.monitor.DnsMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorCreateDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorSortField
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorId
 import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorsWithCategory
+import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDnsMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.dns.deduplicated
+import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
+import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.repositories.DnsUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.repositories.toStatsDto
@@ -87,26 +92,31 @@ class DnsMonitorActions(
         uptimeStatus: List<UptimeStatus> = emptyList(),
         sortedBy: SortField<*>? = null,
         categoryFilter: CategoryFilter? = null,
-    ): List<DnsMonitorDetailsDto> {
-        val monitors = monitorRepository.getMonitorsWithDetails(
+    ): List<DnsMonitorDetailsDto> =
+        monitorRepository.getMonitorsWithDetails(
             enabled = enabled,
             uptimeStatus = uptimeStatus,
             sortedBy = sortedBy,
             categoryFilter = categoryFilter,
-        )
-        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(monitors.monitorsWithCategory())
+        ).withListDetails()
 
-        return monitors.map { detailsDto ->
-            val windows = windowsByMonitor[detailsDto.monitorId()].orEmpty()
-            detailsDto.copy(
-                nextUptimeCheck = checkScheduler.getNextCheck(detailsDto.id),
-                effectiveIntegrations = integrationRepository
-                    .getEffectiveIntegrations(detailsDto.integrations)
-                    .toSet(),
-                maintenanceWindows = windows,
-                inMaintenance = windows.any { it.active },
-            )
-        }
+    fun getMonitorsPage(
+        enabled: Boolean?,
+        uptimeStatus: List<UptimeStatus>,
+        categoryFilter: CategoryFilter?,
+        name: String?,
+        sorting: Sorting<DnsMonitorSortField>,
+        pageRequest: PageRequest,
+    ): PagedResult<DnsMonitorDetailsDto> {
+        val page = monitorRepository.getMonitorsPage(
+            enabled = enabled,
+            uptimeStatus = uptimeStatus,
+            categoryFilter = categoryFilter,
+            name = name,
+            sorting = sorting,
+            pageRequest = pageRequest,
+        )
+        return page.withResult(page.result.withListDetails())
     }
 
     fun createMonitor(monitorCreateDto: DnsMonitorCreateDto): DnsMonitorRecord {
@@ -147,6 +157,15 @@ class DnsMonitorActions(
                 uptimeEventRepository.getEventsByMonitorId(monitor.id, limit)
             }
 
+    fun getUptimeEventsPage(
+        monitorId: Long,
+        sorting: Sorting<EventSortField>,
+        pageRequest: PageRequest,
+    ): PagedResult<DnsUptimeEventDto> =
+        monitorRepository.findById(monitorId, null)
+            .orThrowNotFound(monitorId)
+            .let { monitor -> uptimeEventRepository.getEventsPage(monitor.id, sorting, pageRequest) }
+
     fun getMonitorStats(monitorId: Long, period: Duration): DnsMonitorStatsDto =
         withUptimeHistory(monitorId, period) { monitor, uptimeHistory ->
             val statsDto = DnsMonitorStatsDto(
@@ -176,19 +195,38 @@ class DnsMonitorActions(
             period = period,
             monitorIds = monitorIds,
             categories = categories,
-        ) { monitor, uptime ->
-            val latencyMetrics = monitor.metricsHistoryEnabled.takeIf { it }
-                ?.let { metricsLogRepository.getLatencyMetrics(monitor.id, period) }
-
+            prefetch = { monitors ->
+                metricsLogRepository.getAverageLatencies(
+                    monitorIds = monitors.filter { it.metricsHistoryEnabled }.map { it.id },
+                    period = period,
+                )
+            },
+        ) { monitor, uptime, averageLatencies ->
             StatusPageDnsMonitorDetailsDto(
                 name = monitor.name,
                 lastCheck = monitor.lastUptimeCheck,
-                averageLatencyInMs = latencyMetrics?.avg,
+                averageLatencyInMs = averageLatencies[monitor.id],
                 uptimeRatio = uptime.uptimeRatio,
                 uptimeStatus = monitor.uptimeStatus,
                 uptimeStatusHistory = uptime.uptimeStatusHistory,
+                incidentCount = uptime.incidentCount,
                 inMaintenance = uptime.inMaintenance,
                 category = monitor.category,
             )
         }
+
+    private fun List<DnsMonitorDetailsDto>.withListDetails(): List<DnsMonitorDetailsDto> {
+        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(monitorsWithCategory())
+        return map { detailsDto ->
+            val windows = windowsByMonitor[detailsDto.monitorId()].orEmpty()
+            detailsDto.copy(
+                nextUptimeCheck = checkScheduler.getNextCheck(detailsDto.id),
+                effectiveIntegrations = integrationRepository
+                    .getEffectiveIntegrations(detailsDto.integrations)
+                    .toSet(),
+                maintenanceWindows = windows,
+                inMaintenance = windows.any { it.active },
+            )
+        }
+    }
 }

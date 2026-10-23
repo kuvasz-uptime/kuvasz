@@ -16,6 +16,7 @@ import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldEndWith
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
+import java.util.Locale
 
 @MicronautTest(environments = [PlaywrightSupport.UI_TEST_ENV])
 class StatusPageCrudUiTest(private val httpMonitorRepository: HttpMonitorRepository) : UiTestSpec() {
@@ -384,8 +385,29 @@ class StatusPageCrudUiTest(private val httpMonitorRepository: HttpMonitorReposit
             list.navigate()
             val modal = list.openCreateModal()
 
-            assertThat(modal.monitorOptions).hasCount(names.size)
-            modal.monitorOptionNames shouldBe listOf("http:alpha", "http:bravo", "http:Charlie", "http:Delta")
+            modal.offeredMonitors shouldBe listOf("http:alpha", "http:bravo", "http:Charlie", "http:Delta")
+            assertThat(modal.monitorSearchHint).isHidden()
+        }
+
+        "the status-page modal shows only the first monitors with a hint, and the search finds the rest" {
+            val names = (1..SHOWN_MONITOR_OPTIONS + 1).map { "Monitor %03d".format(Locale.ROOT, it) }
+            names.forEach { createHttpMonitor(httpMonitorRepository, monitorName = it) }
+
+            val page = newPage()
+            val list = StatusPageListPage(page)
+            list.navigate()
+            val modal = list.openCreateModal()
+
+            modal.offeredMonitors shouldBe names.take(SHOWN_MONITOR_OPTIONS).map { "http:$it" }
+            assertThat(modal.monitorSearchHint).isVisible()
+            assertThat(modal.monitorSearchHint).hasText(Messages.selectSearchHint())
+
+            modal.searchMonitors(names.last())
+            assertThat(modal.shownMonitorOptions).hasCount(1)
+            assertThat(modal.monitorSearchHint).isHidden()
+            modal.shownMonitorOptions.click()
+            assertThat(modal.selectedOptions).hasCount(1)
+            assertThat(modal.selectedOptions).containsText(names.last())
         }
 
         "a status page can be published and unpublished from the list" {
@@ -464,5 +486,8 @@ class StatusPageCrudUiTest(private val httpMonitorRepository: HttpMonitorReposit
     companion object {
         private const val SLUG_MAX_LENGTH = 50
         private const val CLONED_SLUG_SUFFIX = "-copy"
+
+        // MAX_SHOWN_SELECT_OPTIONS of kuvasz.js
+        private const val SHOWN_MONITOR_OPTIONS = 100
     }
 }

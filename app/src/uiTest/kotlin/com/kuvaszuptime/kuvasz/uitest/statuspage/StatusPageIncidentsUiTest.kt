@@ -438,6 +438,54 @@ class StatusPageIncidentsUiTest(
             downTooltips.tooltipOf(yesterday) shouldContain "${ongoingStart.asTimestamp()} - ${today.midnight()}"
             downTooltips.last() shouldContain "${today.midnight()} - ${Messages.statusPageIncidentOngoing()}"
         }
+
+        "a flapping monitor only lists its latest incidents, but counts every one of them" {
+            val monitor = createHttpMonitor(httpMonitorRepository, monitorName = "Flapping API")
+            val zone = ZoneId.systemDefault()
+            val yesterday = LocalDate.now(zone).minusDays(1)
+            val maxListed = StatusPageDefaults.MAX_INCIDENTS_PER_MONITOR
+            val incidentCount = maxListed + 2
+            repeat(incidentCount) { index ->
+                val startedAt = yesterday.atStartOfDay(zone).toOffsetDateTime()
+                    .plusMinutes(index * FLAPPING_INCIDENT_INTERVAL_MINUTES)
+                createHttpUptimeEventRecord(
+                    dslContext,
+                    monitorId = monitor.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = startedAt,
+                    endedAt = startedAt.plusMinutes(1),
+                )
+            }
+            createStatusPage(
+                dslContext,
+                title = "Flapping Status",
+                slug = "flapping-status",
+                public = true,
+                monitors = listOf(MonitorID(MonitorType.HTTP_SSL, monitor.name)),
+            )
+
+            val page = newPage(authenticated = false)
+            val statusPage = PublicStatusPage(page)
+            statusPage.navigate("flapping-status")
+
+            val badge = statusPage.monitorIncidentsBadge(monitor.name)
+            assertThat(badge).hasText(incidentCount.toString())
+            badge.click()
+            val modal = statusPage.incidentsModal
+            assertThat(modal.getByTestId("status-page-incident-card")).hasCount(maxListed)
+            assertThat(modal.getByTestId("status-page-incidents-latest-only")).hasText(
+                Messages.statusPageLatestIncidentsOnly(maxListed.toString(), incidentCount.toString())
+            )
+
+            // The day only spells out its latest few incidents, the rest is counted
+            val dateFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd")
+            val dayTooltip = statusPage.trackingBlocks(monitor.name).all()
+                .map { it.tooltipText().shouldNotBeNull() }
+                .single { it.contains(">${yesterday.format(dateFormatter)}<") }
+            Regex("<li>").findAll(dayTooltip).count() shouldBe TOOLTIP_MAX_INCIDENTS
+            val notListed = incidentCount - TOOLTIP_MAX_INCIDENTS
+            dayTooltip shouldContain Messages.statusPageDayMoreIncidents(notListed.toString())
+        }
     }
 }
 
@@ -449,5 +497,7 @@ private const val SECONDS_IN_MINUTE = 60L
 private const val NOTE_OFFSET_MINUTES = 10L
 private const val LATER_NOTE_OFFSET_MINUTES = 20L
 private const val INCIDENT_HOURS_AGO = 3L
+private const val FLAPPING_INCIDENT_INTERVAL_MINUTES = 30L
+private const val TOOLTIP_MAX_INCIDENTS = 5
 private const val PUBLIC_TIMELINE_NODES =
     "[data-testid=public-incident-started], [data-testid=public-incident-note], [data-testid=public-incident-resolved]"

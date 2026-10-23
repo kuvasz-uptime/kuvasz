@@ -25,7 +25,11 @@ import java.time.Duration
 
 interface DnsMonitorOperations {
 
-    @Operation(summary = "Get all monitors with their details")
+    @Operation(
+        summary = "Get all monitors with their details",
+        description = "Deprecated: use GET /api/v3/dns-monitors instead, which returns the monitors page by page",
+        deprecated = true,
+    )
     @Get("/")
     fun getMonitorsWithDetails(
         @QueryValue
@@ -60,7 +64,12 @@ interface DnsMonitorOperations {
     @Patch("/{monitorId}")
     fun updateMonitor(monitorId: Long, @Body updates: ObjectNode): DnsMonitorDto
 
-    @Operation(summary = "Get the uptime events of the given monitor")
+    @Operation(
+        summary = "Get the uptime events of the given monitor",
+        description = "Deprecated: use GET /api/v3/dns-monitors/{monitorId}/uptime-events instead, " +
+            "which returns the events page by page",
+        deprecated = true,
+    )
     @Get("/{monitorId}/uptime-events")
     fun getUptimeEvents(monitorId: Long): List<DnsUptimeEventDto>
 

@@ -6,15 +6,20 @@ import com.kuvaszuptime.kuvasz.jooq.tables.pojos.DockerMonitor
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DockerMonitorRecord
 import com.kuvaszuptime.kuvasz.models.MonitorNotFoundException
 import com.kuvaszuptime.kuvasz.models.dto.event.DockerUptimeEventDto
+import com.kuvaszuptime.kuvasz.models.dto.event.EventSortField
 import com.kuvaszuptime.kuvasz.models.dto.monitor.DockerMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.docker.DockerMonitorCreateDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.docker.DockerMonitorSortField
 import com.kuvaszuptime.kuvasz.models.dto.monitor.docker.DockerMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.docker.DockerMonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorId
 import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorsWithCategory
+import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDockerMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
+import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.repositories.DockerUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.repositories.toStatsDto
@@ -86,26 +91,31 @@ class DockerMonitorActions(
         uptimeStatus: List<UptimeStatus> = emptyList(),
         sortedBy: SortField<*>? = null,
         categoryFilter: CategoryFilter? = null,
-    ): List<DockerMonitorDetailsDto> {
-        val monitors = monitorRepository.getMonitorsWithDetails(
+    ): List<DockerMonitorDetailsDto> =
+        monitorRepository.getMonitorsWithDetails(
             enabled = enabled,
             uptimeStatus = uptimeStatus,
             sortedBy = sortedBy,
             categoryFilter = categoryFilter,
-        )
-        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(monitors.monitorsWithCategory())
+        ).withListDetails()
 
-        return monitors.map { detailsDto ->
-            val windows = windowsByMonitor[detailsDto.monitorId()].orEmpty()
-            detailsDto.copy(
-                nextUptimeCheck = checkScheduler.getNextCheck(detailsDto.id),
-                effectiveIntegrations = integrationRepository
-                    .getEffectiveIntegrations(detailsDto.integrations)
-                    .toSet(),
-                maintenanceWindows = windows,
-                inMaintenance = windows.any { it.active },
-            )
-        }
+    fun getMonitorsPage(
+        enabled: Boolean?,
+        uptimeStatus: List<UptimeStatus>,
+        categoryFilter: CategoryFilter?,
+        name: String?,
+        sorting: Sorting<DockerMonitorSortField>,
+        pageRequest: PageRequest,
+    ): PagedResult<DockerMonitorDetailsDto> {
+        val page = monitorRepository.getMonitorsPage(
+            enabled = enabled,
+            uptimeStatus = uptimeStatus,
+            categoryFilter = categoryFilter,
+            name = name,
+            sorting = sorting,
+            pageRequest = pageRequest,
+        )
+        return page.withResult(page.result.withListDetails())
     }
 
     fun createMonitor(monitorCreateDto: DockerMonitorCreateDto): DockerMonitorRecord {
@@ -152,6 +162,15 @@ class DockerMonitorActions(
                 uptimeEventRepository.getEventsByMonitorId(monitor.id, limit)
             }
 
+    fun getUptimeEventsPage(
+        monitorId: Long,
+        sorting: Sorting<EventSortField>,
+        pageRequest: PageRequest,
+    ): PagedResult<DockerUptimeEventDto> =
+        monitorRepository.findById(monitorId, null)
+            .orThrowNotFound(monitorId)
+            .let { monitor -> uptimeEventRepository.getEventsPage(monitor.id, sorting, pageRequest) }
+
     /**
      * Unlike the other types this reports no latency: the only timing a Docker check produces is the round-trip to
      * the daemon, which is recorded for the metrics exporter but is not a measurement of the container.
@@ -187,15 +206,32 @@ class DockerMonitorActions(
             period = period,
             monitorIds = monitorIds,
             categories = categories,
-        ) { monitor, uptime ->
+            prefetch = {},
+        ) { monitor, uptime, _ ->
             StatusPageDockerMonitorDetailsDto(
                 name = monitor.name,
                 lastCheck = monitor.lastUptimeCheck,
                 uptimeRatio = uptime.uptimeRatio,
                 uptimeStatus = monitor.uptimeStatus,
                 uptimeStatusHistory = uptime.uptimeStatusHistory,
+                incidentCount = uptime.incidentCount,
                 inMaintenance = uptime.inMaintenance,
                 category = monitor.category,
             )
         }
+
+    private fun List<DockerMonitorDetailsDto>.withListDetails(): List<DockerMonitorDetailsDto> {
+        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(monitorsWithCategory())
+        return map { detailsDto ->
+            val windows = windowsByMonitor[detailsDto.monitorId()].orEmpty()
+            detailsDto.copy(
+                nextUptimeCheck = checkScheduler.getNextCheck(detailsDto.id),
+                effectiveIntegrations = integrationRepository
+                    .getEffectiveIntegrations(detailsDto.integrations)
+                    .toSet(),
+                maintenanceWindows = windows,
+                inMaintenance = windows.any { it.active },
+            )
+        }
+    }
 }

@@ -49,6 +49,10 @@ data class MaintenanceWindowSummarySchema(
 @Introspected
 data class MaintenanceWindowListSchema(
     val maintenanceWindows: List<MaintenanceWindowSummarySchema>,
+    val page: Int,
+    val size: Int,
+    val totalCount: Long,
+    val totalPages: Int,
 )
 
 @JsonSchema

@@ -2,7 +2,9 @@ package com.kuvaszuptime.kuvasz.ui.fragments.monitor
 
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentDto
+import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
+import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.pages.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import com.kuvaszuptime.kuvasz.util.formatAsInterval
@@ -10,17 +12,24 @@ import com.kuvaszuptime.kuvasz.util.getDurationOfEvent
 import kotlinx.html.*
 import kotlinx.html.stream.*
 
-fun renderIncidents(incidents: List<IncidentDto>): String =
-    buildString { appendHTML().div { detailsIncidentList(incidents) } }
+/** A page of the incidents on the details page of a monitor, see [monitorIncidentListQuery]. */
+fun renderIncidents(incidents: PagedResult<IncidentDto>, query: IncidentListQuery): String =
+    buildString {
+        appendHTML().div {
+            // The page shown, which is the last one if the requested page is past the end, see listQuery in kuvasz.js
+            attributes["data-list-page"] = "${incidents.page}"
+            detailsIncidentList(incidents, query)
+        }
+    }
 
-internal fun FlowContent.detailsIncidentList(incidents: List<IncidentDto>) {
+private fun FlowContent.detailsIncidentList(incidents: PagedResult<IncidentDto>, query: IncidentListQuery) {
     div {
         classes(COL_12)
         div {
             classes(CARD)
-            if (incidents.isNotEmpty()) {
+            if (incidents.result.isNotEmpty()) {
                 div {
-                    classes(CARD_TABLE, TABLE_RESPONSIVE)
+                    classes(TABLE_RESPONSIVE)
                     table {
                         classes(TABLE, TABLE_SM, TABLE_VCENTER, CARD_TABLE)
                         thead {
@@ -50,7 +59,7 @@ internal fun FlowContent.detailsIncidentList(incidents: List<IncidentDto>) {
                             }
                         }
                         tbody {
-                            incidents.forEach { incident ->
+                            incidents.result.forEach { incident ->
                                 tr {
                                     // Status
                                     td {
@@ -87,6 +96,7 @@ internal fun FlowContent.detailsIncidentList(incidents: List<IncidentDto>) {
                         }
                     }
                 }
+                listPagination(incidents, query)
             } else {
                 div {
                     classes(CARD_BODY)

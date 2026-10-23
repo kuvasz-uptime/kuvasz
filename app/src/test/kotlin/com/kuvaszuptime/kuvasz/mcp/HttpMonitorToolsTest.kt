@@ -17,6 +17,7 @@ import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.mocks.createStatusPage
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorSortField
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
@@ -27,9 +28,11 @@ import com.kuvaszuptime.kuvasz.testutils.shouldHaveError
 import com.kuvaszuptime.kuvasz.testutils.shouldHaveInputValidationError
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldHaveSingleElement
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
@@ -46,6 +49,73 @@ class HttpMonitorToolsTest(
 
     init {
         given("the list-http-monitors tool") {
+
+            `when`("list-http-monitors is called with paging, sorting and a name filter") {
+                listOf("a-x", "b-x", "c").forEach { createHttpMonitor(httpMonitorRepository, monitorName = it) }
+                val response = callToolWithMcpClient(
+                    LIST_HTTP_MONITORS,
+                    mapOf("name" to "X", "size" to 1, "sortedBy" to "name", "sortOrder" to "desc"),
+                )
+
+                then("it should return the requested page of the matching ones, with the totals") {
+                    response.isError shouldBe false
+
+                    val list = response.structuredContentAs<HttpMonitorListSchema>().shouldNotBeNull()
+                    list.monitors.map { it.name } shouldBe listOf("b-x")
+                    list.page shouldBe 1
+                    list.size shouldBe 1
+                    list.totalCount shouldBe 2
+                    list.totalPages shouldBe 2
+                }
+            }
+
+            `when`("list-http-monitors is called without any args, with more monitors than fit on a page") {
+                repeat(26) { createHttpMonitor(httpMonitorRepository) }
+                val response = callToolWithMcpClient(LIST_HTTP_MONITORS)
+
+                then("it should return the first page of 25 monitors, with the totals") {
+                    val list = response.structuredContentAs<HttpMonitorListSchema>().shouldNotBeNull()
+                    list.monitors shouldHaveSize 25
+                    list.page shouldBe 1
+                    list.size shouldBe 25
+                    list.totalCount shouldBe 26
+                    list.totalPages shouldBe 2
+                }
+            }
+
+            `when`("list-http-monitors is called with an unknown sort field or order") {
+                val unknownField = callTool(LIST_HTTP_MONITORS, mapOf("sortedBy" to "NOPE"))
+                val unknownOrder = callTool(LIST_HTTP_MONITORS, mapOf("sortOrder" to "SIDEWAYS"))
+
+                then("it should return an invalid-params protocol error, listing every valid value") {
+                    unknownField.shouldHaveError(McpSchema.ErrorCodes.INVALID_PARAMS)
+                    HttpMonitorSortField.entries.forEach { field ->
+                        unknownField.error.shouldNotBeNull().message shouldContain "'${field.name}'"
+                    }
+                    unknownOrder.shouldHaveError(McpSchema.ErrorCodes.INVALID_PARAMS, "'ASC', 'DESC'")
+                }
+            }
+
+            `when`("list-http-monitors is called with a blank sort field and order") {
+                listOf("b", "a").forEach { createHttpMonitor(httpMonitorRepository, monitorName = it) }
+                val response = callToolWithMcpClient(LIST_HTTP_MONITORS, mapOf("sortedBy" to "", "sortOrder" to " "))
+
+                then("it should ignore them, and sort by name") {
+                    response.isError shouldBe false
+                    val list = response.structuredContentAs<HttpMonitorListSchema>().shouldNotBeNull()
+                    list.monitors.map { it.name } shouldBe listOf("a", "b")
+                }
+            }
+
+            `when`("list-http-monitors is called with a page or a size below 1") {
+                val zeroPage = callTool(LIST_HTTP_MONITORS, mapOf("page" to 0))
+                val zeroSize = callTool(LIST_HTTP_MONITORS, mapOf("size" to 0))
+
+                then("it should return an invalid-params protocol error") {
+                    zeroPage.shouldHaveError(McpSchema.ErrorCodes.INVALID_PARAMS, "at least 1")
+                    zeroSize.shouldHaveError(McpSchema.ErrorCodes.INVALID_PARAMS, "at least 1")
+                }
+            }
 
             `when`("list-http-monitors is called with monitors in the DB") {
                 val monitor = createHttpMonitor(httpMonitorRepository)

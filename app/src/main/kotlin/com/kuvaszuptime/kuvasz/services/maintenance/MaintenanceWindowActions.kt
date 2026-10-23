@@ -5,9 +5,13 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.MaintenanceWindowRecord
 import com.kuvaszuptime.kuvasz.models.MaintenanceWindowNotFoundException
 import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowSortField
 import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowUpdateDto
+import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
 import com.kuvaszuptime.kuvasz.models.maintenance.toMaintenanceWindowRecord
 import com.kuvaszuptime.kuvasz.models.maintenance.validateScheduleConsistency
+import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
+import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.repositories.MaintenanceWindowRepository
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageDataActions.Companion.DEFAULT_PAGE_CACHE_NAME
 import com.kuvaszuptime.kuvasz.services.statuspage.StatusPageDataActions.Companion.STATUS_PAGES_CACHE_NAME
@@ -38,6 +42,16 @@ class MaintenanceWindowActions(
 
     fun getMaintenanceWindows(sortedBy: SortField<*>? = null): List<MaintenanceWindowDetailsDto> =
         maintenanceWindowRepository.fetchAll(sortedBy).map { it.toDetailsDto(calculator) }
+
+    fun getMaintenanceWindowsPage(
+        enabled: Boolean?,
+        name: String?,
+        sorting: Sorting<MaintenanceWindowSortField>,
+        pageRequest: PageRequest,
+    ): PagedResult<MaintenanceWindowDetailsDto> {
+        val page = maintenanceWindowRepository.fetchPage(enabled, name, sorting, pageRequest)
+        return page.withResult(page.result.map { it.toDetailsDto(calculator) })
+    }
 
     fun getMaintenanceWindowById(maintenanceWindowId: Long): MaintenanceWindowDetailsDto =
         maintenanceWindowRepository.findById(maintenanceWindowId)

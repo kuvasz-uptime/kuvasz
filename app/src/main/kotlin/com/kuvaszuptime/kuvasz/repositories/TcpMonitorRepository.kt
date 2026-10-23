@@ -8,17 +8,27 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.TcpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.TcpMonitorSummary
+import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorSortField
+import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.models.monitor.tcp.idWithName
+import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
+import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
+import com.kuvaszuptime.kuvasz.util.fetchPage
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.kuvaszuptime.kuvasz.util.nullIfBlank
+import com.kuvaszuptime.kuvasz.util.sortedIn
 import jakarta.inject.Singleton
+import org.jooq.Condition
 import org.jooq.DSLContext
+import org.jooq.Field
 import org.jooq.Record
+import org.jooq.Record1
+import org.jooq.Select
 import org.jooq.SelectConditionStep
 import org.jooq.SortField
 import org.jooq.Table
@@ -87,7 +97,7 @@ class TcpMonitorRepository(
         .where(TCP_MONITOR.ID.eq(monitorId))
         .execute()
 
-    @Suppress("IgnoredReturnValue", "UnsafeCallOnNullableType")
+    @Suppress("IgnoredReturnValue")
     fun getMonitorsWithDetails(
         enabled: Boolean? = null,
         uptimeStatus: List<UptimeStatus> = emptyList(),
@@ -97,16 +107,79 @@ class TcpMonitorRepository(
         categoryFilter: CategoryFilter? = null,
     ): List<TcpMonitorDetailsDto> =
         monitorDetailsSelect()
+            .and(filterCondition(enabled, uptimeStatus, categoryFilter))
             .apply {
-                enabled?.let { and(TCP_MONITOR.ENABLED.eq(it)) }
-                uptimeStatus.takeIf { it.isNotEmpty() }?.let {
-                    and(latestUptimeEventSelect.field(TCP_UPTIME_EVENT.STATUS)!!.`in`(it))
-                }
                 selectionCondition(TCP_MONITOR.NAME, TCP_MONITOR.CATEGORY, monitorNames, categories)?.let { and(it) }
-                categoryFilterCondition(TCP_MONITOR.CATEGORY, categoryFilter)?.let { and(it) }
                 sortedBy?.let { orderBy(it, TCP_MONITOR.ID.asc()) }
             }
             .fetchInto(TcpMonitorDetailsDto::class.java)
+
+    fun getMonitorsPage(
+        enabled: Boolean?,
+        uptimeStatus: List<UptimeStatus>,
+        categoryFilter: CategoryFilter?,
+        name: String?,
+        sorting: Sorting<TcpMonitorSortField>,
+        pageRequest: PageRequest,
+    ): PagedResult<TcpMonitorDetailsDto> {
+        val condition = DSL.and(
+            filterCondition(enabled, uptimeStatus, categoryFilter),
+            containsIgnoreCaseCondition(TCP_MONITOR.NAME, name),
+        )
+        return monitorDetailsSelect()
+            .and(condition)
+            .fetchPage(
+                countQuery = countSelect(uptimeStatus, condition),
+                pageRequest = pageRequest,
+                orderBy = listOf(sorting.field.toField().sortedIn(sorting.order), TCP_MONITOR.ID.asc()),
+                type = TcpMonitorDetailsDto::class.java,
+            )
+    }
+
+    private fun filterCondition(
+        enabled: Boolean?,
+        uptimeStatus: List<UptimeStatus>,
+        categoryFilter: CategoryFilter?,
+    ): Condition = DSL.and(
+        listOfNotNull(
+            enabled?.let { TCP_MONITOR.ENABLED.eq(it) },
+            uptimeStatus.takeIf { it.isNotEmpty() }
+                ?.let { checkNotNull(latestUptimeEventSelect.field(TCP_UPTIME_EVENT.STATUS)).`in`(it) },
+            categoryFilterCondition(TCP_MONITOR.CATEGORY, categoryFilter),
+        )
+    )
+
+    /**
+     * Counts the monitors [condition] selects, joining only what it can refer to: the latest uptime event only when it
+     * filters by the uptime status. The status pages can't change the number of the rows, so they are never joined.
+     */
+    private fun countSelect(uptimeStatus: List<UptimeStatus>, condition: Condition): Select<Record1<Int>> {
+        val monitors = if (uptimeStatus.isEmpty()) {
+            TCP_MONITOR
+        } else {
+            TCP_MONITOR.leftJoin(DSL.lateral(latestUptimeEventSelect)).on(DSL.trueCondition())
+        }
+        return dslContext
+            .selectCount()
+            .from(monitors)
+            .where(condition)
+    }
+
+    private fun TcpMonitorSortField.toField(): Field<*> = when (this) {
+        TcpMonitorSortField.ID -> TCP_MONITOR.ID
+        TcpMonitorSortField.NAME -> TCP_MONITOR.NAME
+        TcpMonitorSortField.ENABLED -> TCP_MONITOR.ENABLED
+        TcpMonitorSortField.UPTIME_STATUS -> checkNotNull(latestUptimeEventSelect.field(TCP_UPTIME_EVENT.STATUS))
+        TcpMonitorSortField.UPTIME_STATUS_STARTED_AT ->
+            checkNotNull(latestUptimeEventSelect.field(TCP_UPTIME_EVENT.STARTED_AT))
+        TcpMonitorSortField.LAST_UPTIME_CHECK ->
+            checkNotNull(latestUptimeEventSelect.field(TCP_UPTIME_EVENT.UPDATED_AT))
+        TcpMonitorSortField.UPTIME_CHECK_INTERVAL -> TCP_MONITOR.UPTIME_CHECK_INTERVAL
+        TcpMonitorSortField.HOST -> TCP_MONITOR.HOST
+        TcpMonitorSortField.PORT -> TCP_MONITOR.PORT
+        TcpMonitorSortField.CREATED_AT -> TCP_MONITOR.CREATED_AT
+        TcpMonitorSortField.UPDATED_AT -> TCP_MONITOR.UPDATED_AT
+    }
 
     fun getMonitorWithDetails(monitorId: Long): TcpMonitorDetailsDto? =
         monitorDetailsSelect()

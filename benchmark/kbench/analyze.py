@@ -1,6 +1,7 @@
 """Turns the raw data of a step (the database, the samples of the collector, the heartbeats of the pusher) into the
 metrics of the step, and decides whether Kuvasz handled the load."""
 
+import fnmatch
 import json
 import math
 import re
@@ -419,7 +420,7 @@ def ui_load_metrics(records: list[dict], window: Window) -> dict:
                 "p50_ms": rounded(percentile([r["latency_ms"] for r in rs], 50)),
                 "p95_ms": rounded(percentile([r["latency_ms"] for r in rs], 95)),
                 "max_ms": rounded(max(r["latency_ms"] for r in rs)),
-                "errors": sum(1 for r in rs if r["status"] != 200),
+                "errors": sum(1 for r in rs if r["status"] != r.get("expected_status", 200)),
                 "response_kb": round(max(r["bytes"] for r in rs) / 1024, 1),
             }
             for name, rs in sorted(by_name.items())
@@ -496,10 +497,19 @@ def db_snapshot(conn) -> dict:
             "temp_bytes", "deadlocks"]
     snapshot = dict(zip(keys, row))
     snapshot["database_bytes"] = conn.execute("SELECT pg_database_size(current_database())").fetchone()[0]
+    # From the statistics instead of count(*): with a long history, counting would scan gigabytes right before the
+    # measurement, pushing everything else out of the cache
+    stats = dict(
+        (name, (live, inserted)) for name, live, inserted in conn.execute(
+            "SELECT relname, n_live_tup, n_tup_ins FROM pg_stat_user_tables WHERE relname = ANY(%s)",
+            (LOG_AND_EVENT_TABLES,),
+        ).fetchall()
+    )
     snapshot["tables"] = {
         table: {
             "bytes": conn.execute("SELECT pg_total_relation_size(%s)", (table,)).fetchone()[0],
-            "rows": conn.execute(f"SELECT count(*) FROM {table}").fetchone()[0],
+            "rows": stats.get(table, (0, 0))[0],
+            "inserted": stats.get(table, (0, 0))[1],
         }
         for table in LOG_AND_EVENT_TABLES
     }
@@ -532,7 +542,7 @@ def top_statements(conn, limit: int = 10) -> list[dict]:
 def db_metrics(before: dict, after: dict, window: Window, latency_retention_days: int = 7) -> dict:
     seconds = window.seconds
     log_tables = [t for t, _ in schema.CHECK_LOG_TABLES.values()]
-    rows_per_s = sum(after["tables"][t]["rows"] - before["tables"][t]["rows"] for t in log_tables) / seconds
+    rows_per_s = sum(after["tables"][t]["inserted"] - before["tables"][t]["inserted"] for t in log_tables) / seconds
     log_bytes = sum(after["tables"][t]["bytes"] for t in log_tables)
     log_rows = sum(after["tables"][t]["rows"] for t in log_tables)
     bytes_per_row = log_bytes / log_rows if log_rows >= MIN_ROWS_FOR_SIZE_PROJECTION else None
@@ -578,23 +588,27 @@ def evaluate_gates(metrics: dict, gates: dict) -> list[str]:
         reasons.append(f"heartbeat p99 {push['p99_ms']}ms")
     if push.get("errors", 0) > gates["push_errors"]:
         reasons.append(f"{push['errors']} failed heartbeats")
-    for name, p in metrics.get("probes", {}).items():
-        if p["p95_ms"] is not None and p["p95_ms"] > gates["probe_p95_ms"]:
-            reasons.append(f"{name} p95 {p['p95_ms']}ms")
-        if p["max_ms"] is not None and p["max_ms"] > gates["probe_max_ms"]:
-            reasons.append(f"{name} max {p['max_ms']}ms")
-        if p["errors"] > 0:
-            reasons.append(f"{name}: {p['errors']} failed requests")
-    for name, p in metrics.get("ui_load", {}).get("endpoints", {}).items():
-        if p["p95_ms"] is not None and p["p95_ms"] > gates["probe_p95_ms"]:
-            reasons.append(f"UI load: {name} p95 {p['p95_ms']}ms")
-        if p["max_ms"] is not None and p["max_ms"] > gates["probe_max_ms"]:
-            reasons.append(f"UI load: {name} max {p['max_ms']}ms")
-        if p["errors"] > 0:
-            reasons.append(f"UI load: {name}: {p['errors']} failed requests")
+    requests = [("", metrics.get("probes", {})), ("UI load: ", metrics.get("ui_load", {}).get("endpoints", {}))]
+    for prefix, by_name in requests:
+        for name, p in by_name.items():
+            p95_limit, max_limit = request_limits(name, gates)
+            if p["p95_ms"] is not None and p["p95_ms"] > p95_limit:
+                reasons.append(f"{prefix}{name} p95 {p['p95_ms']}ms")
+            if p["max_ms"] is not None and p["max_ms"] > max_limit:
+                reasons.append(f"{prefix}{name} max {p['max_ms']}ms")
+            if p["errors"] > 0:
+                reasons.append(f"{prefix}{name}: {p['errors']} failed requests")
     if (metrics.get("jvm", {}).get("hikari_timeouts") or 0) > gates["hikari_timeouts"]:
         reasons.append(f"{metrics['jvm']['hikari_timeouts']} DB connection timeouts")
     return reasons
+
+
+def request_limits(name: str, gates: dict) -> tuple[float, float]:
+    """The p95 and the max latency limits of a request: reports (that add up the history of many monitors) get looser
+    limits than the other pages and API requests."""
+    if any(fnmatch.fnmatchcase(name, pattern) for pattern in gates["report_requests"]):
+        return gates["report_p95_ms"], gates["report_max_ms"]
+    return gates["probe_p95_ms"], gates["probe_max_ms"]
 
 
 def validity_warnings(metrics: dict, max_target_cpu_percent: float) -> list[str]:

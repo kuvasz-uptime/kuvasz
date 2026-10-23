@@ -129,7 +129,7 @@ postgresql:
 
 ### Resource limits
 
-Configure resource requests and limits for Kuvasz. The values below are enough for **up to 500 monitors**. If you have more, give _Kuvasz_ more memory, and make its heap bigger with the `JAVA_TOOL_OPTIONS` environment variable (through `extraEnv`), as described in the [**hardware requirements**](sizing.md#the-memory-setting):
+Configure resource requests and limits for Kuvasz. The values below are enough for **up to 1,000 monitors**. If you have more, give _Kuvasz_ more memory, and make its heap bigger with the `JAVA_TOOL_OPTIONS` environment variable (through `extraEnv`), as described in the [**hardware requirements**](sizing.md#the-memory-setting):
 
 ```yaml
 resources:

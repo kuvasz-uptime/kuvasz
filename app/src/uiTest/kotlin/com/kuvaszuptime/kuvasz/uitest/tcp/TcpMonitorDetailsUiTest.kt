@@ -10,6 +10,7 @@ import com.kuvaszuptime.kuvasz.uitest.PlaywrightSupport
 import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
 import com.kuvaszuptime.kuvasz.uitest.pages.tcp.TcpMonitorDetailsPage
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
+import io.kotest.matchers.shouldBe
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 
 @MicronautTest(environments = [PlaywrightSupport.UI_TEST_ENV])
@@ -27,6 +28,12 @@ class TcpMonitorDetailsUiTest(private val tcpMonitorRepository: TcpMonitorReposi
             // ApexCharts renders an <svg> into the container even with no data (its no-data state).
             assertThat(details.latencyChartSvg).isVisible()
             assertThat(details.metricsPeriodSelector).hasValue("PT24H")
+            // Unlike the dashboard, the metrics can be shown for the last few minutes too
+            details.metricsPeriodSelector.locator("option:not([hidden])")
+                .evaluateAll("options => options.map(option => option.value)") shouldBe
+                listOf("PT5M", "PT15M", "PT30M", "PT1H", "PT6H", "PT12H", "PT24H", "PT168H", "PT720H")
+            assertThat(details.metricsRangeFrom).isEmpty()
+            assertThat(details.metricsRangeTo).isEmpty()
         }
 
         "the monitor can be paused and resumed from its detail page" {

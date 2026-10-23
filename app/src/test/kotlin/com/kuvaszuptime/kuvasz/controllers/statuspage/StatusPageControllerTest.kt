@@ -64,6 +64,7 @@ import io.micronaut.test.extensions.kotest5.MicronautKotest5Extension.getMock
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.reactive.awaitFirst
 import tools.jackson.databind.node.JsonNodeFactory
@@ -491,6 +492,7 @@ class StatusPageControllerTest(
                             lastCheck = getCurrentTimestamp().minusMinutes(5),
                             uptimeRatio = 0.97,
                             uptimeStatus = UptimeStatus.UP,
+                            incidentCount = 0,
                             uptimeStatusHistory = listOf(
                                 StatusHistoryDto(
                                     date = getCurrentTimestamp().toLocalDate(),
@@ -611,6 +613,7 @@ class StatusPageControllerTest(
                             lastCheck = getCurrentTimestamp().minusMinutes(5),
                             uptimeRatio = 0.97,
                             uptimeStatus = UptimeStatus.UP,
+                            incidentCount = 0,
                             uptimeStatusHistory = emptyList(),
                             averageLatencyInMs = 123,
                             category = "Mock category",
@@ -640,6 +643,7 @@ class StatusPageControllerTest(
                         )
                     ),
                 )
+                every { dataMock.isDefaultStatusPageAvailable() } returns true
                 every { dataMock.getCachedDefaultStatusPageData() } returns mockDataResponse
 
                 val response = statusPageClient.getStatusPageDetails(statusPageId = 0)
@@ -683,6 +687,22 @@ class StatusPageControllerTest(
                         window.start.shouldNotBeNull() shouldBe expected.start.shouldNotBeNull()
                         window.end.shouldNotBeNull() shouldBe expected.end.shouldNotBeNull()
                     }
+                }
+            }
+
+            `when`("the default status page is requested, but there are too many enabled monitors") {
+                val dataMock = getMock(statusPageDataActions)
+                every { dataMock.isDefaultStatusPageAvailable() } returns false
+
+                val response = shouldThrow<HttpClientResponseException> {
+                    client.exchange("/api/v2/status-pages/0/details", String::class.java).awaitFirst()
+                }
+
+                then("it should return a 404 without serving the cached page") {
+                    response.status shouldBe HttpStatus.NOT_FOUND
+                    response.response.getBody(String::class.java).get() shouldContain
+                        "more than ${StatusPageDefaults.DEFAULT_PAGE_MAX_MONITORS} enabled monitors"
+                    verify(exactly = 0) { dataMock.getCachedDefaultStatusPageData() }
                 }
             }
 

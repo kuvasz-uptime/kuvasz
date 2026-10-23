@@ -6,9 +6,11 @@ import com.kuvaszuptime.kuvasz.config.DefaultStatusPageConfig
 import com.kuvaszuptime.kuvasz.config.StatusPageConfig
 import com.kuvaszuptime.kuvasz.controllers.API_V2_PREFIX
 import com.kuvaszuptime.kuvasz.models.ServiceError
+import com.kuvaszuptime.kuvasz.models.StatusPageNotFoundException
 import com.kuvaszuptime.kuvasz.models.dto.importing.StatusPageImportResultDto
 import com.kuvaszuptime.kuvasz.models.dto.importing.StatusPageImportAdapter
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageCreateDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDefaults
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDocs.STATUS_PAGES_405_REASON
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDto
@@ -114,6 +116,13 @@ class StatusPageController(
         if (statusPageId == 0L) {
             if (!defaultStatusPageConfig.public && !hasApiRole()) {
                 throw AuthorizationException(null)
+            }
+            if (!statusPageDataActions.isDefaultStatusPageAvailable()) {
+                throw StatusPageNotFoundException(
+                    statusPageId = statusPageId.toString(),
+                    message = "The default status page is not available with more than " +
+                        "${StatusPageDefaults.DEFAULT_PAGE_MAX_MONITORS} enabled monitors",
+                )
             }
 
             val dataDto = statusPageDataActions.getCachedDefaultStatusPageData()

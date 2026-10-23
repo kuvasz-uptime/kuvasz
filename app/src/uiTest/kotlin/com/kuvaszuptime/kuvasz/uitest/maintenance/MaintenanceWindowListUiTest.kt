@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.models.monitor.http.monitorId
+import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.uitest.PlaywrightSupport
 import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
@@ -11,6 +12,7 @@ import com.kuvaszuptime.kuvasz.uitest.pages.maintenance.MaintenanceWindowListPag
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import io.kotest.matchers.shouldBe
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
+import java.time.OffsetDateTime
 
 @MicronautTest(environments = [PlaywrightSupport.UI_TEST_ENV])
 class MaintenanceWindowListUiTest(private val httpMonitorRepository: HttpMonitorRepository) : UiTestSpec() {
@@ -120,5 +122,85 @@ class MaintenanceWindowListUiTest(private val httpMonitorRepository: HttpMonitor
             assertThat(list.rows).hasCount(names.size)
             list.names shouldBe listOf("alpha", "bravo", "Charlie", "Delta")
         }
+
+        "the maintenance windows can be searched by their name and filtered by whether they are enabled" {
+            createMaintenanceWindow(dslContext, name = "Database upgrade", enabled = true)
+            createMaintenanceWindow(dslContext, name = "Database backup", enabled = false)
+            createMaintenanceWindow(dslContext, name = "Network", enabled = true)
+
+            val page = newPage()
+            val list = MaintenanceWindowListPage(page)
+            val filters = list.pagedList
+            list.navigate()
+            assertThat(list.rows).hasCount(FILTERED_WINDOW_COUNT)
+
+            filters.openFilters()
+            filters.searchByName("database")
+            filters.expectQuery("/maintenance-windows", "name=database")
+            assertThat(list.rows).hasCount(2)
+
+            filters.choose("enabled", Messages.no())
+            filters.expectQuery("/maintenance-windows", "name=database&enabled=false")
+            assertThat(list.rows).hasCount(1)
+            assertThat(list.rowByName("Database backup")).isVisible()
+
+            filters.searchByName("nothing like this")
+            assertThat(list.emptyState).containsText(Messages.noMatchingMaintenanceWindows())
+
+            filters.clearFiltersButton.click()
+            filters.expectQuery("/maintenance-windows")
+            assertThat(list.rows).hasCount(FILTERED_WINDOW_COUNT)
+        }
+
+        "the maintenance windows are sorted by clicking the headers" {
+            val now = OffsetDateTime.now()
+            createMaintenanceWindow(dslContext, name = "Later", start = now.plusDays(2), duration = "PT1H")
+            createMaintenanceWindow(dslContext, name = "Sooner", start = now.plusDays(1), duration = "PT1H")
+            createMaintenanceWindow(dslContext, name = "Manual", enabled = false)
+
+            val page = newPage()
+            val list = MaintenanceWindowListPage(page)
+            val sorting = list.pagedList
+            val names = list.rows.locator("td:first-of-type")
+            list.navigate()
+            assertThat(names).hasText(arrayOf("Later", "Manual", "Sooner"))
+
+            // The windows without a fixed start come last, whatever the order is
+            sorting.sortHeader("START").click()
+            sorting.expectQuery("/maintenance-windows", "sortedBy=START")
+            assertThat(names).hasText(arrayOf("Sooner", "Later", "Manual"))
+
+            sorting.sortHeader("START").click()
+            sorting.expectQuery("/maintenance-windows", "sortedBy=START&sortOrder=DESC")
+            assertThat(names).hasText(arrayOf("Later", "Sooner", "Manual"))
+
+            sorting.sortHeader("ENABLED").click()
+            sorting.expectQuery("/maintenance-windows", "sortedBy=ENABLED")
+            assertThat(names.first()).hasText("Manual")
+
+            sorting.sortHeader("ID").click()
+            sorting.expectQuery("/maintenance-windows", "sortedBy=ID")
+            assertThat(names).hasText(arrayOf("Later", "Sooner", "Manual"))
+        }
+
+        "the maintenance windows are paged" {
+            for (index in 1..WINDOW_COUNT) {
+                createMaintenanceWindow(dslContext, name = "Window ${"$index".padStart(2, '0')}")
+            }
+
+            val page = newPage()
+            val list = MaintenanceWindowListPage(page)
+            list.navigate()
+            assertThat(list.rows).hasCount(PageRequest.DEFAULT_SIZE)
+
+            list.pagedList.pageLink(2).click()
+            list.pagedList.expectQuery("/maintenance-windows", "page=2")
+            assertThat(list.rows).hasCount(WINDOW_COUNT - PageRequest.DEFAULT_SIZE)
+        }
+    }
+
+    private companion object {
+        const val WINDOW_COUNT = PageRequest.DEFAULT_SIZE + 2
+        const val FILTERED_WINDOW_COUNT = 3
     }
 }

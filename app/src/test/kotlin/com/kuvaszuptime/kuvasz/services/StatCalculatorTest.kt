@@ -24,6 +24,7 @@ import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.dashboard.DashboardIncidentStats
 import com.kuvaszuptime.kuvasz.models.dashboard.DashboardUptimeStats
 import com.kuvaszuptime.kuvasz.models.dashboard.MonitorStateCounts
+import com.kuvaszuptime.kuvasz.models.dashboard.UptimeTimelineSlot
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentStatus
 import com.kuvaszuptime.kuvasz.models.dto.monitor.DnsMonitorSummary
 import com.kuvaszuptime.kuvasz.models.dto.monitor.DockerMonitorSummary
@@ -31,6 +32,10 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorSummary
 import com.kuvaszuptime.kuvasz.models.dto.monitor.IcmpMonitorSummary
 import com.kuvaszuptime.kuvasz.models.dto.monitor.PushMonitorSummary
 import com.kuvaszuptime.kuvasz.models.dto.monitor.TcpMonitorSummary
+import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDefaults
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIncidentDto
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.NumericMonitorID
 import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
@@ -46,6 +51,8 @@ import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowActions
 import com.kuvaszuptime.kuvasz.testutils.shouldBe
 import com.kuvaszuptime.kuvasz.testutils.shouldEqualRounded
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import com.kuvaszuptime.kuvasz.util.getDurationOfEvent
+import com.kuvaszuptime.kuvasz.util.getEffectiveEndOfEvent
 import io.kotest.inspectors.forAll
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldBeSortedBy
@@ -62,6 +69,9 @@ import java.time.Duration
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.temporal.ChronoUnit
+import kotlin.random.Random
 
 @MicronautTest(startApplication = false)
 class StatCalculatorTest(
@@ -79,8 +89,14 @@ class StatCalculatorTest(
     init {
 
         // The dashboard loads the maintenance windows once, and hands them over to the calculator
-        fun dashboardStats(period: Duration): DashboardUptimeStats =
-            statCalculator.calculateDashboardUptimeStats(period, maintenanceWindowActions.getMaintenanceWindows())
+        fun dashboardStats(period: Duration, now: OffsetDateTime? = null): DashboardUptimeStats {
+            val maintenanceWindows = maintenanceWindowActions.getMaintenanceWindows()
+            return if (now == null) {
+                statCalculator.calculateDashboardUptimeStats(period, maintenanceWindows)
+            } else {
+                statCalculator.calculateDashboardUptimeStats(period, maintenanceWindows, now)
+            }
+        }
 
         given("the repositories the calculator is relying on") {
 
@@ -3201,6 +3217,36 @@ class StatCalculatorTest(
                 }
             }
 
+            `when`("a monitor has more incidents than the ones listed") {
+
+                val monitor = createPushMonitor(pushMonitorRepository, enabled = true)
+                val yesterday = startOfDaysAgo(1)
+                val incidentCount = StatusPageDefaults.MAX_INCIDENTS_PER_MONITOR + 2
+                val incidents = (0 until incidentCount).map { index ->
+                    val startedAt = yesterday.plusMinutes(index * 30L)
+                    createTestEvent(
+                        monitorId = monitor.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = startedAt,
+                        endedAt = startedAt.plusMinutes(1),
+                        updatedAt = startedAt.plusMinutes(1),
+                    )
+                }
+
+                then("only the latest ones should be listed, but every one of them should be counted") {
+
+                    val overview = statCalculator
+                        .calculateUptimeOverviews(MonitorType.PUSH, Duration.ofDays(7), listOf(monitor.id))
+                        .getValue(monitor.id)
+                    val yesterdayEntry = overview.statusHistory.takeLast(2).first()
+
+                    overview.incidentCount shouldBe incidentCount
+                    yesterdayEntry.outageCnt shouldBe incidentCount
+                    yesterdayEntry.downtimeSeconds shouldBe Duration.ofMinutes(incidentCount.toLong()).seconds
+                    yesterdayEntry.incidents.map { it.id } shouldBe incidents.drop(2).map { it.id }
+                }
+            }
+
             `when`("an incident has notes") {
 
                 val monitor = createPushMonitor(pushMonitorRepository, enabled = true)
@@ -4029,6 +4075,153 @@ class StatCalculatorTest(
             }
         }
 
+        given("the uptime figures added up on the database side") {
+
+            `when`("an incident starts and ends exactly on the boundaries of the slots") {
+
+                val now = getCurrentTimestamp().truncatedTo(ChronoUnit.MICROS)
+                val period = Duration.ofDays(1)
+                val slotStarts = statCalculator.timelineSlotStarts(period, now)
+                val monitor = createHttpMonitor(httpMonitorRepository)
+                createHttpUptimeEventRecord(
+                    dslContext = dslContext,
+                    monitorId = monitor.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = slotStarts[2],
+                    endedAt = slotStarts[4],
+                )
+
+                val timeline = dashboardStats(period, now).timeline
+
+                then("it should only fill the slots it covered, and count in the one it started in") {
+                    timeline.map { it.downtimeSeconds } shouldBe timeline.indices.map { index ->
+                        if (index in 2..3) Duration.between(slotStarts[index], slotStarts[index + 1]).seconds else 0
+                    }
+                    timeline.map { it.incidents } shouldBe timeline.indices.map { index -> if (index == 2) 1 else 0 }
+                }
+            }
+
+            `when`("more monitors of a type are tied for the last place of the least reliable ones than the limit") {
+
+                val now = getCurrentTimestamp().truncatedTo(ChronoUnit.MICROS)
+                val names = listOf("G", "C", "A", "F", "B", "E", "D")
+                names.forEach { name ->
+                    val monitor = createTcpMonitor(tcpMonitorRepository, monitorName = name)
+                    createTcpUptimeEventRecord(
+                        dslContext = dslContext,
+                        monitorId = monitor.id,
+                        status = UptimeStatus.DOWN,
+                        startedAt = now.minusHours(2),
+                        endedAt = now.minusHours(1),
+                    )
+                }
+
+                val leastReliableMonitors = dashboardStats(Duration.ofDays(1), now).leastReliableMonitors
+
+                then("the ties should be broken by their names") {
+                    leastReliableMonitors.map { it.name } shouldBe listOf("A", "B", "C", "D", "E")
+                }
+            }
+
+            `when`("there is a long, random history of monitors of different types") {
+
+                val now = getCurrentTimestamp().truncatedTo(ChronoUnit.MICROS)
+                val random = Random(RANDOM_HISTORY_SEED)
+                val httpMonitors = (1..RANDOM_HISTORY_MONITORS_PER_TYPE).map { index ->
+                    createHttpMonitor(httpMonitorRepository, enabled = index != 1, monitorName = "HTTP $index")
+                }
+                val tcpMonitors = (1..RANDOM_HISTORY_MONITORS_PER_TYPE).map { index ->
+                    createTcpMonitor(tcpMonitorRepository, enabled = index != 1, monitorName = "TCP $index")
+                }
+                createMaintenanceWindow(
+                    dslContext = dslContext,
+                    monitors = listOf(MonitorID(MonitorType.TCP, tcpMonitors.last().name)),
+                )
+                val events = httpMonitors.flatMap { monitor ->
+                    randomHistory(random, now, MonitorType.HTTP_SSL, monitor.id, monitor.name, monitor.enabled)
+                        .map { event ->
+                            val record = createHttpUptimeEventRecord(
+                                dslContext = dslContext,
+                                monitorId = event.monitorId,
+                                status = event.status,
+                                startedAt = event.startedAt,
+                                endedAt = event.endedAt,
+                                updatedAt = event.updatedAt,
+                            )
+                            event.copy(id = record.id)
+                        }
+                } + tcpMonitors.flatMap { monitor ->
+                    randomHistory(random, now, MonitorType.TCP, monitor.id, monitor.name, monitor.enabled)
+                        .map { event ->
+                            val record = createTcpUptimeEventRecord(
+                                dslContext = dslContext,
+                                monitorId = event.monitorId,
+                                status = event.status,
+                                startedAt = event.startedAt,
+                                endedAt = event.endedAt,
+                                updatedAt = event.updatedAt,
+                            )
+                            event.copy(id = record.id)
+                        }
+                }
+                val maintainedMonitorIds = setOf(NumericMonitorID(MonitorType.TCP, tcpMonitors.last().id))
+
+                RANDOM_HISTORY_PERIODS.forEach { period ->
+
+                    then("the dashboard of $period should have the same figures as the in-memory calculation") {
+                        val stats = dashboardStats(period, now)
+                        val reference = ReferenceUptimeCalculation(
+                            events = events.filter { it.monitorEnabled },
+                            period = period,
+                            now = now,
+                            slotStarts = statCalculator.timelineSlotStarts(period, now),
+                        )
+
+                        stats.history shouldBe reference.mergedHistory()
+                        stats.incidents shouldBe reference.incidentStats(maintainedMonitorIds)
+                        stats.timeline shouldBe reference.timeline()
+                        stats.byType.forAll { typeStats ->
+                            typeStats.history shouldBe reference.history(typeStats.type)
+                            typeStats.timeline shouldBe reference.timeline(typeStats.type)
+                        }
+                        stats.leastReliableMonitors.map { it.name to it.history } shouldBe reference.leastReliable()
+                    }
+
+                    then("every monitor should have the same figures of $period as the in-memory calculation") {
+                        val monitors = httpMonitors.map { MonitorType.HTTP_SSL to it.id } +
+                            tcpMonitors.map { MonitorType.TCP to it.id }
+                        monitors.forAll { (type, monitorId) ->
+                            val reference = ReferenceUptimeCalculation(
+                                events = events.filter { it.monitorType == type && it.monitorId == monitorId },
+                                period = period,
+                                now = now,
+                                slotStarts = emptyList(),
+                            )
+                            statCalculator.calculateHistoricalUptimeStats(type, period, monitorId, now) shouldBe
+                                reference.history(type)
+                        }
+                    }
+
+                    then("every monitor should have the same status page overview of $period as before") {
+                        val monitors = httpMonitors.map { MonitorType.HTTP_SSL to it.id } +
+                            tcpMonitors.map { MonitorType.TCP to it.id }
+                        monitors.forAll { (type, monitorId) ->
+                            val reference = ReferenceUptimeCalculation(
+                                events = events.filter { it.monitorType == type && it.monitorId == monitorId },
+                                period = period,
+                                now = now,
+                                slotStarts = emptyList(),
+                            )
+                            val overview = statCalculator
+                                .calculateUptimeOverviews(type, period, listOf(monitorId), now)
+                                .getValue(monitorId)
+                            overview.copy(statusHistory = overview.statusHistory.inUtc()) shouldBe reference.overview()
+                        }
+                    }
+                }
+            }
+        }
+
         given("the fetchSummaries() method of the monitor repositories") {
 
             `when`("there are monitors of every type") {
@@ -4125,3 +4318,250 @@ class StatCalculatorTest(
 
 // An ongoing incident started 30 seconds before the assertions, with some slack for a slow machine
 private const val ONGOING_DOWNTIME_UPPER_BOUND = 120L
+
+private const val RANDOM_HISTORY_SEED = 20_261_018
+private const val RANDOM_HISTORY_MONITORS_PER_TYPE = 4
+private const val RANDOM_HISTORY_DAYS = 40L
+private val RANDOM_HISTORY_PERIODS =
+    listOf(Duration.ofHours(1), Duration.ofDays(1), Duration.ofDays(7), Duration.ofDays(30))
+
+private data class GeneratedEvent(
+    // Only known once the event is stored
+    val id: Long?,
+    val monitorType: MonitorType,
+    val monitorId: Long,
+    val monitorName: String,
+    val monitorEnabled: Boolean,
+    val status: UptimeStatus,
+    val startedAt: OffsetDateTime,
+    val endedAt: OffsetDateTime?,
+    val updatedAt: OffsetDateTime,
+)
+
+/**
+ * A chain of alternating UP and DOWN events of a monitor, from 40 days before [now]: some of them shorter than a
+ * second, some lasting minutes, some days, all with fractions of a second. The last one is still open, and the one of a
+ * paused monitor was last updated at a random point of it, sometimes even before the shorter periods start.
+ */
+private fun randomHistory(
+    random: Random,
+    now: OffsetDateTime,
+    monitorType: MonitorType,
+    monitorId: Long,
+    monitorName: String,
+    monitorEnabled: Boolean,
+): List<GeneratedEvent> {
+    val firstStatus = if (random.nextBoolean()) UptimeStatus.UP else UptimeStatus.DOWN
+    val otherStatus = if (firstStatus == UptimeStatus.UP) UptimeStatus.DOWN else UptimeStatus.UP
+    val firstStart = now.minusDays(RANDOM_HISTORY_DAYS).plus(randomSpan(random, Duration.ofHours(2)))
+    val starts = generateSequence(firstStart) { previousStart ->
+        val length = when (random.nextInt(3)) {
+            0 -> Duration.ofSeconds(1)
+            1 -> Duration.ofMinutes(90)
+            else -> Duration.ofDays(3)
+        }
+        previousStart.plus(randomSpan(random, length))
+    }.takeWhile { it.isBefore(now) }.toList()
+
+    return starts.mapIndexed { index, startedAt ->
+        val endedAt = starts.getOrNull(index + 1)
+        val updatedAt = when {
+            endedAt != null -> endedAt
+            monitorEnabled -> now.minusSeconds(random.nextLong(60))
+            else -> startedAt.plus(randomSpan(random, Duration.between(startedAt, now)))
+        }
+        GeneratedEvent(
+            id = null,
+            monitorType = monitorType,
+            monitorId = monitorId,
+            monitorName = monitorName,
+            monitorEnabled = monitorEnabled,
+            status = if (index % 2 == 0) firstStatus else otherStatus,
+            startedAt = startedAt,
+            endedAt = endedAt,
+            updatedAt = updatedAt,
+        )
+    }
+}
+
+// At least a microsecond, so the ends of two consecutive events of the same status never collide
+private fun randomSpan(random: Random, bound: Duration): Duration =
+    Duration.of(1 + random.nextLong(maxOf(1, bound.toNanos() / 1000)), ChronoUnit.MICROS)
+
+/**
+ * The in-memory calculation that the database side replaced, kept as the reference of the figures it has to produce:
+ * the events of the period are clipped to it, and measured exactly the way they used to be.
+ */
+private class ReferenceUptimeCalculation(
+    events: List<GeneratedEvent>,
+    private val period: Duration,
+    private val now: OffsetDateTime,
+    private val slotStarts: List<OffsetDateTime>,
+) {
+    private val periodStart = now.minus(period)
+    private val eventsOfPeriod = events.filter { event ->
+        !event.startedAt.isAfter(now) && event.endedAt?.isAfter(periodStart) != false
+    }
+
+    fun history(type: MonitorType): HistoricalUptimeStatsDto =
+        historyOf(eventsOfPeriod.filter { it.monitorType == type })
+
+    // Monitor IDs are only unique within a type, so the affected monitors are counted type by type
+    fun mergedHistory(): HistoricalUptimeStatsDto =
+        historyOf(eventsOfPeriod).copy(affectedMonitors = MonitorType.entries.sumOf { history(it).affectedMonitors })
+
+    fun incidentStats(monitorsInMaintenance: Set<NumericMonitorID>): DashboardIncidentStats {
+        val incidents = eventsOfPeriod.filter { it.status == UptimeStatus.DOWN }
+        val resolvedIncidents = incidents.mapNotNull { incident ->
+            incident.endedAt?.let { Duration.between(incident.startedAt, it).seconds }
+        }
+        val ongoingInMaintenance = incidents.count { incident ->
+            val monitorId = NumericMonitorID(incident.monitorType, incident.monitorId)
+            incident.endedAt == null && monitorId in monitorsInMaintenance
+        }
+        return DashboardIncidentStats(
+            ongoingOutsideMaintenance = incidents.count { it.endedAt == null } - ongoingInMaintenance,
+            ongoingInMaintenance = ongoingInMaintenance,
+            resolved = resolvedIncidents.size,
+            meanTimeToResolveSeconds = resolvedIncidents.takeIf { it.isNotEmpty() }?.average()?.toLong(),
+        )
+    }
+
+    fun timeline(type: MonitorType? = null): List<UptimeTimelineSlot> {
+        val slotEnds = slotStarts.drop(1) + now
+        val events = eventsOfPeriod.filter { type == null || it.monitorType == type }
+
+        fun slotIndexOf(instant: OffsetDateTime): Int {
+            val index = slotStarts.binarySearch { it.toInstant().compareTo(instant.toInstant()) }
+            return (if (index >= 0) index else -index - 2).coerceIn(0, slotStarts.lastIndex)
+        }
+
+        fun secondsInSlot(event: GeneratedEvent, slotIndex: Int, status: UptimeStatus): Long {
+            val start = maxOf(event.startedAt, periodStart)
+            val end = minOf(getEffectiveEndOfEvent(event.monitorEnabled, event.endedAt, event.updatedAt, now), now)
+            if (event.status != status || !end.isAfter(start)) return 0
+            return Duration.between(maxOf(start, slotStarts[slotIndex]), minOf(end, slotEnds[slotIndex]))
+                .seconds
+                .coerceAtLeast(0)
+        }
+
+        return slotStarts.indices.map { slotIndex ->
+            UptimeTimelineSlot(
+                start = slotStarts[slotIndex],
+                end = slotEnds[slotIndex],
+                uptimeSeconds = events.sumOf { secondsInSlot(it, slotIndex, UptimeStatus.UP) },
+                downtimeSeconds = events.sumOf { secondsInSlot(it, slotIndex, UptimeStatus.DOWN) },
+                incidents = events.count { event ->
+                    event.status == UptimeStatus.DOWN && slotIndexOf(maxOf(event.startedAt, periodStart)) == slotIndex
+                },
+            )
+        }
+    }
+
+    fun leastReliable(): List<Pair<String, HistoricalUptimeStatsDto>> =
+        eventsOfPeriod
+            .groupBy { it.monitorType to it.monitorId }
+            .values
+            .map { monitorEvents -> monitorEvents.first().monitorName to historyOf(monitorEvents) }
+            .filter { (_, history) -> history.incidents > 0 }
+            .sortedWith(
+                compareByDescending<Pair<String, HistoricalUptimeStatsDto>> { it.second.totalDowntimeSeconds }
+                    .thenByDescending { it.second.incidents }
+                    .thenBy { it.first }
+            )
+            .take(StatCalculator.LEAST_RELIABLE_MONITORS_LIMIT)
+
+    /**
+     * The uptime ratio and the daily status history of a status page, every timestamp in UTC. Only the latest
+     * incidents of the history are listed on the days, but every one of them is counted.
+     */
+    fun overview(): UptimeOverview {
+        val zone = ZoneId.systemDefault()
+        val days = generateSequence(periodStart.toLocalDate().plusDays(1)) { it.plusDays(1) }
+            .takeWhile { !it.isAfter(now.toLocalDate()) }
+            .toList()
+        fun startOf(date: LocalDate) = date.atStartOfDay(zone).toOffsetDateTime()
+        fun GeneratedEvent.wasEffectiveOn(date: LocalDate) =
+            startedAt.isBefore(startOf(date.plusDays(1))) && !(endedAt ?: updatedAt).isBefore(startOf(date))
+        val incidentsOfHistory = eventsOfPeriod.filter { event ->
+            event.status == UptimeStatus.DOWN && days.any { date -> event.wasEffectiveOn(date) }
+        }
+        val listedIncidentIds = incidentsOfHistory
+            .sortedWith(compareByDescending<GeneratedEvent> { it.startedAt }.thenByDescending { it.id })
+            .take(StatusPageDefaults.MAX_INCIDENTS_PER_MONITOR)
+            .map { it.id }
+            .toSet()
+        val statusHistory = days.map { date ->
+            val dayStart = startOf(date)
+            val dayEnd = startOf(date.plusDays(1))
+            val effectiveEvents = eventsOfPeriod.filter { event -> event.wasEffectiveOn(date) }
+            if (effectiveEvents.isEmpty()) {
+                StatusHistoryDto(date = date, outageCnt = null)
+            } else {
+                val outages = effectiveEvents.filter { it.status == UptimeStatus.DOWN }.sortedBy { it.startedAt }
+                StatusHistoryDto(
+                    date = date,
+                    outageCnt = outages.size,
+                    downtimeSeconds = outages.sumOf { outage ->
+                        val start = maxOf(outage.startedAt, dayStart)
+                        val effectiveEnd = getEffectiveEndOfEvent(
+                            outage.monitorEnabled,
+                            outage.endedAt,
+                            outage.updatedAt,
+                            now,
+                        )
+                        val end = minOf(effectiveEnd, dayEnd)
+                        if (end.isAfter(start)) Duration.between(start, end).seconds else 0
+                    },
+                    incidents = outages.filter { it.id in listedIncidentIds }.map { outage ->
+                        StatusPageIncidentDto(
+                            id = checkNotNull(outage.id),
+                            startedAt = outage.startedAt,
+                            endedAt = outage.endedAt,
+                            status = if (outage.endedAt == null) IncidentStatus.ONGOING else IncidentStatus.RESOLVED,
+                        )
+                    },
+                )
+            }
+        }
+        return UptimeOverview(
+            uptimeRatio = historyOf(eventsOfPeriod).uptimeRatio,
+            statusHistory = statusHistory.inUtc(),
+            incidentCount = incidentsOfHistory.size,
+        )
+    }
+
+    private fun historyOf(events: List<GeneratedEvent>): HistoricalUptimeStatsDto {
+        val effectiveEvents = events.filter { it.monitorEnabled || !it.updatedAt.isBefore(periodStart) }
+        fun durationOf(event: GeneratedEvent) = getDurationOfEvent(
+            isMonitorEnabled = event.monitorEnabled,
+            startedAt = maxOf(event.startedAt, periodStart),
+            endedAt = event.endedAt,
+            updatedAt = event.updatedAt,
+            now = now,
+        )
+        val uptimeSeconds = effectiveEvents.filter { it.status == UptimeStatus.UP }.sumOf(::durationOf)
+        val incidents = effectiveEvents.filter { it.status == UptimeStatus.DOWN }
+        val downtimeSeconds = incidents.sumOf(::durationOf)
+        val totalMeasuredSeconds = uptimeSeconds + downtimeSeconds
+        return HistoricalUptimeStatsDto(
+            period = period.toString(),
+            incidents = incidents.size,
+            affectedMonitors = incidents.map { it.monitorId }.distinct().size,
+            uptimeRatio = if (totalMeasuredSeconds > 0) uptimeSeconds.toDouble() / totalMeasuredSeconds else null,
+            totalDowntimeSeconds = downtimeSeconds,
+        )
+    }
+}
+
+// The timestamps read from the database are in UTC, unlike the generated ones
+private fun List<StatusHistoryDto>.inUtc(): List<StatusHistoryDto> = map { day ->
+    day.copy(
+        incidents = day.incidents.map { incident ->
+            incident.copy(
+                startedAt = incident.startedAt.withOffsetSameInstant(ZoneOffset.UTC),
+                endedAt = incident.endedAt?.withOffsetSameInstant(ZoneOffset.UTC),
+            )
+        },
+    )
+}

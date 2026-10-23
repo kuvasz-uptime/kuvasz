@@ -28,8 +28,6 @@ internal fun FlowContent.maintenanceWindowCreateUpdateModal(
         "durationRequired" to Messages.errorMaintenanceWindowDurationRequired(),
         "durationInvalid" to Messages.errorMaintenanceWindowDurationInvalid(),
     ).asJsonString()
-    val configuredMonitors = globals.configuredMonitors()
-    val serializedMonitors = configuredMonitors.asJsonString()
     val modalClosedEvent = "maintenance-window-upsert-modal-closed"
     val monitorsSelectId = "maintenance-window-monitors-select"
     val categoriesSelectId = "maintenance-window-categories-select"
@@ -43,7 +41,6 @@ internal fun FlowContent.maintenanceWindowCreateUpdateModal(
                 |$serializedWindow,
                 |$serializedErrorMessages,
                 |'$monitorsSelectId',
-                |$serializedMonitors,
                 |'$categoriesSelectId')
             """.trimMargin()
         )

@@ -14,7 +14,12 @@ const {
     fetchCategories,
     loadCategoryOptions,
     resetCategorySelect,
-    resetCategoryMultiSelect,
+    resetMultiSelect,
+    fetchMonitors,
+    loadMonitorOptions,
+    addSearchHint,
+    listQuery,
+    LIST_QUERY_CHANGE_EVENT,
     monitorListItem,
     statusPageListItem,
     maintenanceWindowListItem,
@@ -42,6 +47,13 @@ const {
     dockerMetricsBlock,
     buildIncidentAnnotations,
     buildRestartAnnotations,
+    metricsChartTooltip,
+    inclusiveRangeEnd,
+    MIN_AUTO_REFRESH_SECONDS,
+    metricsRangeErrors,
+    zoomedMetricsRange,
+    metricsRangeDayLimits,
+    metricsRangePicker,
     formatChartTimestamp,
     toDateTimeLocalValue,
     anchorPopupToModal,
@@ -75,7 +87,7 @@ test('isValidHttpHeaderName', () => {
 // --------- #2: buildRequestBody type -> field mapping (maintenance windows) ---------
 
 test('buildRequestBody nulls out non-MANUAL fields for a MANUAL window', () => {
-    const form = upsertMaintenanceWindowForm(null, {}, 'select', []);
+    const form = upsertMaintenanceWindowForm(null, {}, 'select');
     Object.assign(form, {
         type: MAINTENANCE_WINDOW_TYPES.MANUAL,
         name: 'MW', description: 'desc', enabled: true, global: false, showOnStatusPages: true,
@@ -95,7 +107,7 @@ test('buildRequestBody nulls out non-MANUAL fields for a MANUAL window', () => {
 });
 
 test('buildRequestBody keeps cron and duration but drops start for a CRON window', () => {
-    const form = upsertMaintenanceWindowForm(null, {}, 'select', []);
+    const form = upsertMaintenanceWindowForm(null, {}, 'select');
     Object.assign(form, {
         type: MAINTENANCE_WINDOW_TYPES.CRON,
         name: 'MW', cron: '0 0 * * *', pickedDate: '2024-01-01', pickedTime: '10:00', duration: 'PT2H',
@@ -108,7 +120,7 @@ test('buildRequestBody keeps cron and duration but drops start for a CRON window
 });
 
 test('buildRequestBody converts start to ISO and drops cron for a SINGLE window', () => {
-    const form = upsertMaintenanceWindowForm(null, {}, 'select', []);
+    const form = upsertMaintenanceWindowForm(null, {}, 'select');
     Object.assign(form, {
         type: MAINTENANCE_WINDOW_TYPES.SINGLE,
         name: 'MW', cron: '0 0 * * *', pickedDate: '2024-01-01', pickedTime: '10:00', duration: 'PT30M',
@@ -122,7 +134,7 @@ test('buildRequestBody converts start to ISO and drops cron for a SINGLE window'
 });
 
 test('buildRequestBody leaves start null for a SINGLE window without a date or a time', () => {
-    const form = upsertMaintenanceWindowForm(null, {}, 'select', []);
+    const form = upsertMaintenanceWindowForm(null, {}, 'select');
     Object.assign(form, {
         type: MAINTENANCE_WINDOW_TYPES.SINGLE, name: 'MW', pickedDate: '', pickedTime: '10:00', duration: 'PT30M',
         selectedMonitors: [], integrations: [],
@@ -134,7 +146,7 @@ test('buildRequestBody leaves start null for a SINGLE window without a date or a
 });
 
 test('validateDateTime requires a valid date and time, only for a SINGLE window', () => {
-    const form = upsertMaintenanceWindowForm(null, {startRequired: 'REQUIRED', startInvalid: 'INVALID'}, 'select', []);
+    const form = upsertMaintenanceWindowForm(null, {startRequired: 'REQUIRED', startInvalid: 'INVALID'}, 'select');
     Object.assign(form, {type: MAINTENANCE_WINDOW_TYPES.SINGLE, pickedDate: '', pickedTime: '', errors: {}});
 
     form.validateDateTime();
@@ -163,7 +175,7 @@ test('validateDateTime requires a valid date and time, only for a SINGLE window'
 });
 
 test('onTypeChange clears the start date and time when leaving a SINGLE window', () => {
-    const form = upsertMaintenanceWindowForm(null, {}, 'select', []);
+    const form = upsertMaintenanceWindowForm(null, {}, 'select');
     Object.assign(form, {
         type: MAINTENANCE_WINDOW_TYPES.CRON, name: 'MW', cron: '0 0 * * *', pickedDate: '2030-01-01',
         pickedTime: '10:00', duration: 'PT1H', errors: {},
@@ -174,7 +186,7 @@ test('onTypeChange clears the start date and time when leaving a SINGLE window',
 });
 
 test('populateFrom splits the start of a SINGLE window into a local date and time', () => {
-    const form = upsertMaintenanceWindowForm(null, {}, 'monitor-select', [], 'categories-select');
+    const form = upsertMaintenanceWindowForm(null, {}, 'monitor-select', 'categories-select');
     const start = '2030-01-01T10:30:00Z';
     form.populateFrom({name: 'MW', start, duration: 'PT1H'});
 
@@ -264,7 +276,7 @@ test('anchorPopupToModal moves the datepicker popup into the modal, translating 
 });
 
 test('onDateTimeTyped splits the typed start into a date and a time, and validates them', () => {
-    const form = upsertMaintenanceWindowForm(null, {startRequired: 'REQUIRED', startInvalid: 'INVALID'}, 'select', []);
+    const form = upsertMaintenanceWindowForm(null, {startRequired: 'REQUIRED', startInvalid: 'INVALID'}, 'select');
     Object.assign(form, {type: MAINTENANCE_WINDOW_TYPES.SINGLE, pickedDate: '', pickedTime: '', errors: {}});
 
     form.onDateTimeTyped(' 2030-01-05 10:30 ');
@@ -322,7 +334,7 @@ test('initDateTimePicker keeps the Tabler datepicker and the start in sync', asy
     const listeners = {};
     const element = {addEventListener: (name, listener) => listeners[name] = listener, closest: () => modal};
     const watchers = {};
-    const form = upsertMaintenanceWindowForm(null, {startRequired: 'REQUIRED'}, 'select', []);
+    const form = upsertMaintenanceWindowForm(null, {startRequired: 'REQUIRED'}, 'select');
     Object.assign(form, {
         type: MAINTENANCE_WINDOW_TYPES.SINGLE, pickedDate: '', pickedTime: '', errors: {},
         $watch: (property, callback) => watchers[property] = callback,
@@ -486,7 +498,7 @@ const stubDatepicker = (t, parsedDates) => {
 // A maintenance window form with a loaded start, and the watchers it registered
 const startFormOf = (pickedDate, pickedTime) => {
     const watchers = {};
-    const form = upsertMaintenanceWindowForm(null, {}, 'select', []);
+    const form = upsertMaintenanceWindowForm(null, {}, 'select');
     Object.assign(form, {
         type: MAINTENANCE_WINDOW_TYPES.SINGLE, pickedDate, pickedTime, errors: {},
         $watch: (property, callback) => watchers[property] = callback,
@@ -549,6 +561,46 @@ test('initDateTimePicker does not take over the time of a previous session of a 
     assert.equal(form.pickedTime, '00:00');
 });
 
+test('initDateTimePicker limits the days that can be picked, following the given limits', (t) => {
+    const datepickers = stubDatepicker(t, []);
+    const {form, watchers} = startFormOf('', '');
+    const watchedFunctions = [];
+    form.$watch = (property, callback) => {
+        if (typeof property === 'function') watchedFunctions.push([property, callback]);
+        else watchers[property] = callback;
+    };
+    const limits = {min: '2030-01-05', max: undefined};
+
+    form.initDateTimePicker({}, () => limits);
+    const [datepicker] = datepickers;
+    assert.equal(datepicker.calendar.dateMin, '2030-01-05');
+    // Without a limit, the defaults of the calendar apply
+    assert.equal(datepicker.calendar.dateMax, '2470-12-31');
+
+    const [[limitsOf, applyLimits]] = watchedFunctions;
+    applyLimits({min: undefined, max: '2030-02-01'});
+    assert.equal(datepicker.calendar.dateMin, '1970-01-01');
+    assert.equal(datepicker.calendar.dateMax, '2030-02-01');
+    assert.equal(limitsOf(), limits);
+
+    // The same limits again (e.g. while the other end's time is dragged) don't re-render the calendar, which would
+    // drop the knob of its time picker
+    let updates = 0;
+    datepicker.calendar.update = () => updates++;
+    applyLimits({min: undefined, max: '2030-02-01'});
+    assert.equal(updates, 0);
+    applyLimits({min: undefined, max: '2030-02-02'});
+    assert.equal(updates, 1);
+});
+
+test('initDateTimePicker leaves the days unlimited without any limits', (t) => {
+    const datepickers = stubDatepicker(t, []);
+    const {form} = startFormOf('', '');
+
+    form.initDateTimePicker({});
+    assert.equal(datepickers[0].calendar.dateMin, undefined);
+});
+
 // --------- #3: metrics blocks ---------
 
 const CHART_LABELS = {
@@ -562,16 +614,29 @@ const CHART_LABELS = {
     memoryLimit: 'Memory limit',
     containerRestarted: 'The container has been restarted',
     containerRestartedDetails: 'Restarts since the last check: {delta} (total: {total})',
+    latencyRange: 'Latency (lowest–highest)',
+    packetLossRange: 'Packet loss (lowest–highest)',
+    cpuUsageRange: 'CPU (lowest–highest)',
+    memoryUsageRange: 'Memory (lowest–highest)',
 };
 const MARKER_COLORS = {started: 'red', resolved: 'green', restarted: 'yellow'};
-const METRICS_LOGS_OF_AN_HOUR = [
-    {createdAt: '2024-01-01T00:00:00Z', latencyInMs: 10},
-    {createdAt: '2024-01-01T01:00:00Z', latencyInMs: 20},
-];
 const NOW = Date.parse('2024-01-01T02:00:00Z');
 const ONE_DAY_IN_MILLIS = 24 * 60 * 60 * 1000;
+// The latency series of a chart where every point is a single check, with no band around it
+const aLatencySeries = (timestamps, latencies) => ({
+    timestamps,
+    latencies,
+    lowestLatencies: latencies,
+    highestLatencies: latencies,
+});
+// The latency series of two checks, an hour apart
+const LATENCY_SERIES_OF_AN_HOUR = aLatencySeries(
+    [Date.parse('2024-01-01T00:00:00Z'), Date.parse('2024-01-01T01:00:00Z')],
+    [10, 20],
+);
+const NO_LATENCY_SERIES = aLatencySeries([], []);
 
-// A metrics block that sees the given moment as the current time
+// A metrics block that sees the given moment as the current time, showing the last day by default
 const metricsBlockAt = (factory, now) => {
     const block = factory(1, true, 60, CHART_LABELS, 'PT24H');
     block.markerColors = MARKER_COLORS;
@@ -590,64 +655,122 @@ const stubFetch = (t, implementation) => {
     });
 };
 
-test('httpMetricsBlock.transformData maps latency logs to a single series', () => {
+test('httpMetricsBlock.transformData draws the latency with a band from its lowest to its highest reading', () => {
     const block = httpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
+    const [first, second] = LATENCY_SERIES_OF_AN_HOUR.timestamps;
     const result = block.transformData({
-        latencyLogs: [
-            {createdAt: '2024-01-01T00:00:00Z', latencyInMs: '123'},
-            {createdAt: '2024-01-01T00:01:00Z', latencyInMs: 200},
-        ],
-    }, []);
-    assert.equal(result.labels.length, 2);
-    assert.equal(result.series.length, 1);
-    assert.equal(result.series[0].name, 'Latency');
-    assert.deepEqual(result.series[0].data, [123, 200]);
+        series: {
+            ...LATENCY_SERIES_OF_AN_HOUR,
+            lowestLatencies: [5, 20],
+            highestLatencies: [90, 20],
+        },
+        incidents: [],
+    });
+    assert.deepEqual(result.series.map(series => [series.name, series.type]), [
+        ['Latency', 'area'],
+        ['Latency (lowest–highest)', 'rangeArea'],
+    ]);
+    assert.deepEqual(result.series[0].data, [{x: first, y: 10}, {x: second, y: 20}]);
+    assert.deepEqual(result.series[1].data, [{x: first, y: [5, 90]}, {x: second, y: [20, 20]}]);
     assert.deepEqual(result.annotations, {xaxis: [], points: []});
 });
 
-test('icmpMetricsBlock.transformData merges latency and packet loss into a single chart', () => {
+test('icmpMetricsBlock.transformData merges latency and packet loss, and their bands, into a single chart', () => {
     const block = icmpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
     const result = block.transformData({
-        metricsLogs: [
-            {createdAt: '2024-01-01T00:00:00Z', latencyInMs: null, packetLossPercentage: '50'},
-            {createdAt: '2024-01-01T00:01:00Z', latencyInMs: '80', packetLossPercentage: 0},
-        ],
-    }, []);
-    assert.equal(result.labels.length, 2);
-    // Both series share the same labels, but are rendered differently, on an axis of their own
-    assert.deepEqual(result.series.map(series => series.name), ['Latency', 'Packet loss']);
-    assert.deepEqual(result.series.map(series => series.type), ['area', 'line']);
-    // Null latency must stay null (a gap in the chart), not become NaN
-    assert.deepEqual(result.series[0].data, [null, 80]);
-    assert.deepEqual(result.series[1].data, [50, 0]);
+        series: {
+            ...aLatencySeries([1000, 2000], [null, 80]),
+            lowestLatencies: [null, 70],
+            highestLatencies: [null, 95],
+            packetLossPercentages: [50, 0],
+            lowestPacketLossPercentages: [0, 0],
+            highestPacketLossPercentages: [100, 0],
+        },
+        incidents: [],
+    });
+    // The measurements come first, and the bands last, always all of them
+    assert.deepEqual(result.series.map(series => [series.name, series.type]), [
+        ['Latency', 'area'],
+        ['Packet loss', 'line'],
+        ['Latency (lowest–highest)', 'rangeArea'],
+        ['Packet loss (lowest–highest)', 'rangeArea'],
+    ]);
+    // A null latency stays null, a gap in the chart, and so does its band
+    assert.deepEqual(result.series[0].data, [{x: 1000, y: null}, {x: 2000, y: 80}]);
+    assert.deepEqual(result.series[1].data, [{x: 1000, y: 50}, {x: 2000, y: 0}]);
+    assert.deepEqual(result.series[2].data, [{x: 1000, y: null}, {x: 2000, y: [70, 95]}]);
+    assert.deepEqual(result.series[3].data, [{x: 1000, y: [0, 100]}, {x: 2000, y: [0, 0]}]);
+});
+
+test('icmpMetricsBlock.transformData keeps the series of a chart where nothing has a latency', () => {
+    // A host that is down for the whole period: only its bands of packet loss have anything to show
+    const block = icmpMetricsBlock(1, true, 60, CHART_LABELS, 'PT168H');
+    const result = block.transformData({
+        series: {
+            ...aLatencySeries([1000], [null]),
+            packetLossPercentages: [100],
+            lowestPacketLossPercentages: [100],
+            highestPacketLossPercentages: [100],
+        },
+        incidents: [],
+    });
+    assert.deepEqual(result.series.map(series => series.name), [
+        'Latency', 'Packet loss', 'Latency (lowest–highest)', 'Packet loss (lowest–highest)',
+    ]);
+    assert.deepEqual(result.series[2].data, [{x: 1000, y: null}]);
 });
 
 test('tcpMetricsBlock.transformData preserves null latency and has no packet-loss series', () => {
     const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
-    const result = block.transformData({
-        metricsLogs: [
-            {createdAt: '2024-01-01T00:00:00Z', latencyInMs: null},
-            {createdAt: '2024-01-01T00:01:00Z', latencyInMs: '80'},
-        ],
-    }, []);
-    // Null latency must stay null (a gap in the chart), not become NaN
-    assert.deepEqual(result.series[0].data, [null, 80]);
-    assert.equal(result.labels.length, 2);
-    // TCP monitors track latency only - there is no packet-loss series
-    assert.equal(result.series.length, 1);
+    const result = block.transformData({series: aLatencySeries([1000, 2000], [null, 80]), incidents: []});
+    assert.deepEqual(result.series.map(series => series.name), ['Latency', 'Latency (lowest–highest)']);
+    assert.deepEqual(result.series[0].data, [{x: 1000, y: null}, {x: 2000, y: 80}]);
 });
 
-test('transformData marks the incidents of the whole selected period, not only of the range of the logs', () => {
-    const block = metricsBlockAt(tcpMetricsBlock, NOW);
-    const result = block.transformData({metricsLogs: METRICS_LOGS_OF_AN_HOUR}, [
-        {incidentType: 'TCP', startedAt: '2024-01-01T00:10:00Z', endedAt: '2024-01-01T00:20:00Z', details: null},
-        // Resolved before the first log
-        {incidentType: 'TCP', startedAt: '2023-12-31T23:00:00Z', endedAt: '2023-12-31T23:30:00Z', details: null},
-        // Started after the last log, and still ongoing
-        {incidentType: 'TCP', startedAt: '2024-01-01T01:00:00.004Z', endedAt: null, details: null},
-        // Started before the selected period, so only its end is marked
-        {incidentType: 'TCP', startedAt: '2023-12-31T01:00:00Z', endedAt: '2024-01-01T00:05:00Z', details: null},
+test('dockerMetricsBlock.transformData shows the memory in MiB, and a missing CPU reading as a gap', () => {
+    const block = metricsBlockAt(dockerMetricsBlock, NOW);
+    const result = block.transformData({
+        series: {
+            timestamps: [1000, 2000],
+            cpuUsagePercentages: [1.5, null],
+            lowestCpuUsagePercentages: [1, null],
+            highestCpuUsagePercentages: [2, null],
+            memoryUsageBytes: [1048576, null],
+            lowestMemoryUsageBytes: [1048576, null],
+            highestMemoryUsageBytes: [3145728, null],
+            memoryLimitBytes: [8388608, null],
+        },
+        restarts: [],
+        incidents: [],
+    });
+    assert.deepEqual(result.series.map(series => [series.name, series.type]), [
+        ['CPU', 'area'],
+        ['Memory', 'line'],
+        ['Memory limit', 'line'],
+        ['CPU (lowest–highest)', 'rangeArea'],
+        ['Memory (lowest–highest)', 'rangeArea'],
     ]);
+    assert.deepEqual(result.series[0].data, [{x: 1000, y: 1.5}, {x: 2000, y: null}]);
+    assert.deepEqual(result.series[1].data, [{x: 1000, y: 1}, {x: 2000, y: null}]);
+    assert.deepEqual(result.series[2].data, [{x: 1000, y: 8}, {x: 2000, y: null}]);
+    assert.deepEqual(result.series[3].data, [{x: 1000, y: [1, 2]}, {x: 2000, y: null}]);
+    assert.deepEqual(result.series[4].data, [{x: 1000, y: [1, 3]}, {x: 2000, y: null}]);
+});
+
+test('transformData marks the incidents of the whole selected period, not only of the range of the series', () => {
+    const block = metricsBlockAt(tcpMetricsBlock, NOW);
+    const result = block.transformData({
+        series: LATENCY_SERIES_OF_AN_HOUR,
+        incidents: [
+            {startedAt: Date.parse('2024-01-01T00:10:00Z'), endedAt: Date.parse('2024-01-01T00:20:00Z'), details: null},
+            // Resolved before the first check
+            {startedAt: Date.parse('2023-12-31T23:00:00Z'), endedAt: Date.parse('2023-12-31T23:30:00Z'), details: null},
+            // Started after the last check, and still ongoing
+            {startedAt: Date.parse('2024-01-01T01:00:00.004Z'), endedAt: null, details: null},
+            // Started before the selected period, so only its end is marked
+            {startedAt: Date.parse('2023-12-31T01:00:00Z'), endedAt: Date.parse('2024-01-01T00:05:00Z'), details: null},
+        ],
+    });
     assert.deepEqual(result.range, {start: NOW - ONE_DAY_IN_MILLIS, end: NOW});
     assert.deepEqual(
         result.annotations.xaxis.map(annotation => [annotation.x, annotation.borderColor]),
@@ -665,28 +788,53 @@ test('transformData marks the incidents of the whole selected period, not only o
 test('transformData marks the incidents of an HTTP monitor without any latency logs in the selected period', () => {
     // An HTTP monitor only logs the latency of its successful checks, so there are no logs while it's down
     const block = metricsBlockAt(httpMetricsBlock, NOW);
-    const result = block.transformData({latencyLogs: []}, [
-        {incidentType: 'HTTP', startedAt: '2023-12-31T12:00:00Z', endedAt: null, details: 'Connection refused'},
-    ]);
+    const startedAt = Date.parse('2023-12-31T12:00:00Z');
+    const result = block.transformData({
+        series: NO_LATENCY_SERIES,
+        incidents: [{startedAt, endedAt: null, details: 'Connection refused'}],
+    });
     assert.deepEqual(result.series[0].data, []);
     assert.deepEqual(result.range, {start: NOW - ONE_DAY_IN_MILLIS, end: NOW});
-    assert.deepEqual(result.annotations.points.map(point => point.x), [Date.parse('2023-12-31T12:00:00Z')]);
+    assert.deepEqual(result.annotations.points.map(point => point.x), [startedAt]);
 });
 
-test('transformData extends the range to the data newer than the local clock', () => {
+test('transformData extends the end of a period to the data newer than the local clock', () => {
     const block = metricsBlockAt(dnsMetricsBlock, NOW);
-    const result = block.transformData({metricsLogs: [{createdAt: '2024-01-01T02:00:01Z', latencyInMs: 5}]}, [
-        {incidentType: 'DNS', startedAt: '2024-01-01T02:00:01.004Z', endedAt: '2024-01-01T02:00:02Z', details: null},
-    ]);
+    const result = block.transformData({
+        series: aLatencySeries([Date.parse('2024-01-01T02:00:01Z')], [5]),
+        incidents: [{
+            startedAt: Date.parse('2024-01-01T02:00:01.004Z'),
+            endedAt: Date.parse('2024-01-01T02:00:02Z'),
+            details: null,
+        }],
+    });
     assert.deepEqual(result.range, {start: NOW - ONE_DAY_IN_MILLIS, end: Date.parse('2024-01-01T02:00:02Z')});
     assert.equal(result.annotations.points.length, 2);
 });
 
 test('transformData displays the selected period up to the current time', () => {
     const block = metricsBlockAt(icmpMetricsBlock, NOW);
-    block.period = 'PT720H';
-    const result = block.transformData({metricsLogs: []}, []);
+    block.query = {period: 'PT720H'};
+    const result = block.transformData({series: NO_LATENCY_SERIES, incidents: []});
     assert.deepEqual(result.range, {start: NOW - 30 * ONE_DAY_IN_MILLIS, end: NOW});
+});
+
+test('transformData displays a custom range as it is, even with newer data', () => {
+    const block = metricsBlockAt(icmpMetricsBlock, NOW);
+    block.query = {from: '2023-12-01T00:00:00.000Z', to: '2023-12-02T00:00:00.000Z'};
+    const result = block.transformData({
+        series: {
+            ...aLatencySeries([NOW + 1000], [1]),
+            packetLossPercentages: [0],
+            lowestPacketLossPercentages: [0],
+            highestPacketLossPercentages: [0],
+        },
+        incidents: [],
+    });
+    assert.deepEqual(
+        result.range,
+        {start: Date.parse('2023-12-01T00:00:00Z'), end: Date.parse('2023-12-02T00:00:00Z')},
+    );
 });
 
 // Stubs the theme colors (hex values, by their CSS custom property), and the canvas they're resolved with
@@ -712,11 +860,8 @@ const stubThemeColors = (t, colors) => {
     });
 };
 
-test('a metrics chart takes the colors of the theme again, when it is switched between dark and light', (t) => {
-    // The inverted accent, in the light mode
-    const colors = {'--tblr-primary': '#1f2937', '--tblr-orange': '#f76707', '--tblr-purple': '#ae3ec9'};
-    stubThemeColors(t, colors);
-    stubThemeEnvironment(t);
+// Stubs the window and ApexCharts, returning the charts created by the metrics blocks
+const stubChartEnvironment = (t) => {
     const originalWindow = globalThis.window;
     const originalApexCharts = globalThis.ApexCharts;
     const windowListeners = {};
@@ -738,29 +883,74 @@ test('a metrics chart takes the colors of the theme again, when it is switched b
         globalThis.window = originalWindow;
         globalThis.ApexCharts = originalApexCharts;
     });
+    return charts;
+};
+
+test('a metrics chart takes the colors of the theme again, when it is switched between dark and light', (t) => {
+    // The inverted accent, in the light mode
+    const colors = {'--tblr-primary': '#1f2937', '--tblr-orange': '#f76707', '--tblr-purple': '#ae3ec9'};
+    stubThemeColors(t, colors);
+    stubThemeEnvironment(t);
+    const charts = stubChartEnvironment(t);
     stubFetch(t, () => new Promise(() => {}));
 
     const block = icmpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
     block.$watch = () => {};
     block.init();
     const [chart] = charts;
-    assert.deepEqual(chart.options.colors, ['#1f2937', '#f76707']);
+    assert.deepEqual(chart.options.colors, ['#1f2937', '#f76707', '#1f2937', '#f76707']);
 
     colors['--tblr-primary'] = '#fafafa';
     setTheme('dark');
-    assert.deepEqual(chart.updates, [{colors: ['#fafafa', '#f76707'], fill: {type: 'solid', opacity: [0.16, 1]}}]);
+    assert.deepEqual(chart.updates, [{
+        colors: ['#fafafa', '#f76707', '#fafafa', '#f76707'],
+        fill: {type: 'solid', opacity: [0.16, 1, 0.3, 0.3]},
+    }]);
+});
+
+test('selecting an interval on a metrics chart narrows the period down to it, in whole seconds', (t) => {
+    stubThemeColors(t, {});
+    const charts = stubChartEnvironment(t);
+    stubFetch(t, () => new Promise(() => {}));
+    const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
+    block.$watch = () => {};
+    block.init();
+    const [chart] = charts;
+    assert.deepEqual(chart.options.chart.zoom, {enabled: true, type: 'x'});
+    block.rangeErrors = {from: true};
+
+    chart.options.chart.events.zoomed(chart, {
+        xaxis: {min: Date.parse('2024-01-01T00:00:00.400Z'), max: Date.parse('2024-01-01T01:00:00.200Z')},
+    });
+
+    // The custom range is shown in the pickers, and the period selector is cleared
+    const zoomed = {from: '2024-01-01T00:00:00.000Z', to: '2024-01-01T01:00:01.000Z'};
+    assert.deepEqual(block.query, zoomed);
+    assert.deepEqual(block.rangeDraft, zoomed);
+    assert.deepEqual(block.rangeErrors, {});
+    assert.equal(block.period, '');
+});
+
+test('a selection on a chart without a valid interval leaves the period as it is', () => {
+    const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
+    const query = block.query;
+
+    block.zoomTo(undefined, undefined);
+    block.zoomTo(1000, 1000);
+
+    assert.equal(block.query, query);
+    assert.equal(block.period, 'PT24H');
 });
 
 test('updateChart spans the time axis over the displayed range', () => {
     const block = metricsBlockAt(tcpMetricsBlock, NOW);
     const updates = [];
     block.chart = {updateOptions: (options) => updates.push(options)};
-    const data = block.transformData({metricsLogs: METRICS_LOGS_OF_AN_HOUR}, []);
+    const data = block.transformData({series: LATENCY_SERIES_OF_AN_HOUR, incidents: []});
 
     block.updateChart(data);
 
     assert.deepEqual(updates, [{
-        labels: data.labels,
         series: data.series,
         annotations: data.annotations,
         xaxis: {min: NOW - ONE_DAY_IN_MILLIS, max: NOW},
@@ -772,26 +962,23 @@ const RANGE_END = Date.parse('2024-01-01T12:00:00Z');
 const buildAnnotations = (incidents) =>
     buildIncidentAnnotations(incidents, RANGE_START, RANGE_END, CHART_LABELS, MARKER_COLORS);
 const anIncident = (overrides) => ({
-    incidentType: 'HTTP',
-    startedAt: '2024-01-01T01:00:00Z',
-    endedAt: '2024-01-01T02:00:00Z',
+    startedAt: Date.parse('2024-01-01T01:00:00Z'),
+    endedAt: Date.parse('2024-01-01T02:00:00Z'),
     details: null,
     ...overrides,
 });
 
-const CONTAINER_CREATED_AT = '2023-12-01T00:00:00.914442Z';
-const aDockerLog = (createdAt, restartCount, containerCreatedAt = CONTAINER_CREATED_AT) => ({
-    createdAt, restartCount, containerCreatedAt, cpuUsagePercent: 1, memoryUsageBytes: 1024, memoryLimitBytes: 2048,
-});
-const buildRestarts = (logs) => buildRestartAnnotations(logs, RANGE_START, RANGE_END, CHART_LABELS, MARKER_COLORS);
+const CONTAINER_CREATED_AT = Date.parse('2023-12-01T00:00:00.914Z');
+const aRestartPoint = (timestamp, restartCount, containerCreatedAt = CONTAINER_CREATED_AT) =>
+    ({timestamp: Date.parse(timestamp), restartCount, containerCreatedAt});
+const buildRestarts = (points) => buildRestartAnnotations(points, RANGE_START, RANGE_END, CHART_LABELS, MARKER_COLORS);
 
 test('buildRestartAnnotations marks the checks that found the restart count increased', () => {
-    // Newest first, the way the API returns them
+    // The oldest first, the way the API returns them
     const result = buildRestarts([
-        aDockerLog('2024-01-01T04:00:00Z', 5),
-        aDockerLog('2024-01-01T03:00:00Z', 2),
-        aDockerLog('2024-01-01T02:00:00Z', 2),
-        aDockerLog('2024-01-01T01:00:00Z', 1),
+        aRestartPoint('2024-01-01T01:00:00Z', 1),
+        aRestartPoint('2024-01-01T02:00:00Z', 2),
+        aRestartPoint('2024-01-01T04:00:00Z', 5),
     ]);
 
     assert.deepEqual(result.xaxis.map(line => line.x), [
@@ -807,8 +994,8 @@ test('buildRestartAnnotations marks the checks that found the restart count incr
 
 test('buildRestartAnnotations does not mark a count reset to zero by a manual restart', () => {
     const result = buildRestarts([
-        aDockerLog('2024-01-01T01:00:00Z', 4),
-        aDockerLog('2024-01-01T02:00:00Z', 0),
+        aRestartPoint('2024-01-01T01:00:00Z', 4),
+        aRestartPoint('2024-01-01T02:00:00Z', 0),
     ]);
 
     assert.deepEqual(result, {xaxis: [], points: []});
@@ -816,8 +1003,8 @@ test('buildRestartAnnotations does not mark a count reset to zero by a manual re
 
 test('buildRestartAnnotations counts the restarts after a manual restart from zero', () => {
     const result = buildRestarts([
-        aDockerLog('2024-01-01T01:00:00Z', 4),
-        aDockerLog('2024-01-01T02:00:00Z', 1),
+        aRestartPoint('2024-01-01T01:00:00Z', 4),
+        aRestartPoint('2024-01-01T02:00:00Z', 1),
     ]);
 
     assert.deepEqual(result.xaxis.map(line => line.x), [Date.parse('2024-01-01T02:00:00Z')]);
@@ -825,10 +1012,11 @@ test('buildRestartAnnotations counts the restarts after a manual restart from ze
 });
 
 test('buildRestartAnnotations does not compare the counts of a recreated container with the old one', () => {
+    const recreatedAt = Date.parse('2024-01-01T01:30:00.123Z');
     const result = buildRestarts([
-        aDockerLog('2024-01-01T01:00:00Z', 1),
-        aDockerLog('2024-01-01T02:00:00Z', 3, '2024-01-01T01:30:00.123456Z'),
-        aDockerLog('2024-01-01T03:00:00Z', 4, '2024-01-01T01:30:00.123456Z'),
+        aRestartPoint('2024-01-01T01:00:00Z', 1),
+        aRestartPoint('2024-01-01T02:00:00Z', 3, recreatedAt),
+        aRestartPoint('2024-01-01T03:00:00Z', 4, recreatedAt),
     ]);
 
     assert.deepEqual(result.xaxis.map(line => line.x), [Date.parse('2024-01-01T03:00:00Z')]);
@@ -837,28 +1025,18 @@ test('buildRestartAnnotations does not compare the counts of a recreated contain
 
 test('buildRestartAnnotations does not mark a count without the creation time of its container', () => {
     const result = buildRestarts([
-        aDockerLog('2024-01-01T01:00:00Z', 1, null),
-        aDockerLog('2024-01-01T02:00:00Z', 2, null),
+        aRestartPoint('2024-01-01T01:00:00Z', 1, null),
+        aRestartPoint('2024-01-01T02:00:00Z', 2, null),
     ]);
 
     assert.deepEqual(result, {xaxis: [], points: []});
 });
 
-test('buildRestartAnnotations compares across the logs without a restart count', () => {
+test('buildRestartAnnotations only marks the restarts within the range, but compares against an earlier point', () => {
     const result = buildRestarts([
-        aDockerLog('2024-01-01T01:00:00Z', 1),
-        aDockerLog('2024-01-01T02:00:00Z', null),
-        aDockerLog('2024-01-01T03:00:00Z', 2),
-    ]);
-
-    assert.deepEqual(result.xaxis.map(line => line.x), [Date.parse('2024-01-01T03:00:00Z')]);
-});
-
-test('buildRestartAnnotations only marks the restarts within the range, but compares against an earlier log', () => {
-    const result = buildRestarts([
-        aDockerLog('2023-12-31T23:00:00Z', 1),
-        aDockerLog('2024-01-01T01:00:00Z', 2),
-        aDockerLog('2024-01-01T13:00:00Z', 3),
+        aRestartPoint('2023-12-31T23:00:00Z', 1),
+        aRestartPoint('2024-01-01T01:00:00Z', 2),
+        aRestartPoint('2024-01-01T13:00:00Z', 3),
     ]);
 
     assert.deepEqual(result.xaxis.map(line => line.x), [Date.parse('2024-01-01T01:00:00Z')]);
@@ -867,8 +1045,19 @@ test('buildRestartAnnotations only marks the restarts within the range, but comp
 test('dockerMetricsBlock.transformData shows the restart markers alongside the incident markers', () => {
     const block = metricsBlockAt(dockerMetricsBlock, NOW);
     const result = block.transformData({
-        metricsLogs: [aDockerLog('2024-01-01T01:30:00Z', 2), aDockerLog('2024-01-01T01:00:00Z', 1)],
-    }, [anIncident({startedAt: '2024-01-01T01:10:00Z', endedAt: null})]);
+        series: {
+            timestamps: [],
+            cpuUsagePercentages: [],
+            lowestCpuUsagePercentages: [],
+            highestCpuUsagePercentages: [],
+            memoryUsageBytes: [],
+            lowestMemoryUsageBytes: [],
+            highestMemoryUsageBytes: [],
+            memoryLimitBytes: [],
+        },
+        restarts: [aRestartPoint('2024-01-01T01:00:00Z', 1), aRestartPoint('2024-01-01T01:30:00Z', 2)],
+        incidents: [anIncident({startedAt: Date.parse('2024-01-01T01:10:00Z'), endedAt: null})],
+    });
 
     assert.deepEqual(result.annotations.points.map(point => point.marker.fillColor), ['red', 'yellow']);
 });
@@ -897,7 +1086,7 @@ test('buildIncidentAnnotations marks both ends of an incident within the range',
 });
 
 test('buildIncidentAnnotations only marks the end of an incident that started before the range', () => {
-    const result = buildAnnotations([anIncident({startedAt: '2023-12-31T23:00:00Z'})]);
+    const result = buildAnnotations([anIncident({startedAt: Date.parse('2023-12-31T23:00:00Z')})]);
     assert.equal(result.points.length, 1);
     assert.equal(result.points[0].marker.fillColor, 'green');
 });
@@ -910,14 +1099,10 @@ test('buildIncidentAnnotations only marks the start of an ongoing incident', () 
 
 test('buildIncidentAnnotations ignores the incidents outside of the range', () => {
     const result = buildAnnotations([
-        anIncident({startedAt: '2024-01-01T13:00:00Z', endedAt: null}),
-        anIncident({startedAt: '2023-12-31T10:00:00Z', endedAt: '2023-12-31T11:00:00Z'}),
+        anIncident({startedAt: Date.parse('2024-01-01T13:00:00Z'), endedAt: null}),
+        anIncident({startedAt: Date.parse('2023-12-31T10:00:00Z'), endedAt: Date.parse('2023-12-31T11:00:00Z')}),
     ]);
     assert.deepEqual(result, {xaxis: [], points: []});
-});
-
-test('buildIncidentAnnotations ignores SSL incidents', () => {
-    assert.deepEqual(buildAnnotations([anIncident({incidentType: 'SSL'})]), {xaxis: [], points: []});
 });
 
 test('buildIncidentAnnotations escapes the details of an incident in the tooltip', () => {
@@ -935,22 +1120,244 @@ test('formatChartTimestamp pads every part of the date to two digits', () => {
     assert.equal(formatChartTimestamp(new Date(2024, 0, 2, 3, 4, 5)), '2024/01/02 03:04:05');
 });
 
-test('the metrics blocks fetch their stats and incidents for the selected period', () => {
+test('the metrics blocks fetch the chart of the selected period, or of the custom range', () => {
     const cases = [
-        [httpMetricsBlock, 'http-monitors'],
-        [icmpMetricsBlock, 'icmp-monitors'],
-        [tcpMetricsBlock, 'tcp-monitors'],
-        [dnsMetricsBlock, 'dns-monitors'],
+        [httpMetricsBlock, 'http'],
+        [icmpMetricsBlock, 'icmp'],
+        [tcpMetricsBlock, 'tcp'],
+        [dnsMetricsBlock, 'dns'],
+        [dockerMetricsBlock, 'docker'],
     ];
-    for (const [factory, statsPath] of cases) {
+    for (const [factory, chartPath] of cases) {
         const block = factory(42, true, 60, CHART_LABELS, 'PT24H');
-        assert.equal(block.statsUrl(), `/api/v2/${statsPath}/42/stats?period=PT24H`);
-        assert.equal(block.incidentsUrl(), '/api/v2/incidents?monitorId=42&period=PT24H&includeResolved=true');
+        const chartsPath = `/api/internal/monitor-charts/${chartPath}/42`;
+        assert.equal(block.chartUrl(), `${chartsPath}?period=PT24H`);
 
-        block.period = 'PT168H';
-        assert.equal(block.statsUrl(), `/api/v2/${statsPath}/42/stats?period=PT168H`);
-        assert.equal(block.incidentsUrl(), '/api/v2/incidents?monitorId=42&period=PT168H&includeResolved=true');
+        block.query = {from: '2024-01-01T00:00:00.000Z', to: '2024-01-02T00:00:00.000Z'};
+        assert.equal(block.chartUrl(), `${chartsPath}?from=2024-01-01T00%3A00%3A00.000Z&to=2024-01-02T00%3A00%3A00.000Z`);
     }
+});
+
+// The parts of a tooltip of a metrics chart that are read: the title and the label and the value of every row
+const withUnit = (unit) => (value) => value === null ? '-' : `${value}${unit}`;
+const tooltipTextOf = (html) => [...html.matchAll(/apexcharts-tooltip-(?:title|text-y-label|text-y-value)">([^<]*)</g)]
+    .map(match => match[1]);
+const tooltipOf = (series, dataPointIndex, collapsedSeriesIndices = []) => metricsChartTooltip(
+    series.map(() => withUnit(' ms')),
+)({
+    dataPointIndex,
+    w: {config: {series}, globals: {collapsedSeriesIndices, colors: series.map(() => 'blue')}},
+});
+
+test('metricsChartTooltip shows a value for a series, and the lowest and the highest reading for a band', () => {
+    const x = new Date(2024, 0, 2, 3, 4, 5).getTime();
+    const html = tooltipOf([
+        {name: 'Latency', type: 'area', data: [{x, y: 40}]},
+        {name: 'Latency <range>', type: 'rangeArea', data: [{x, y: [10, 90]}]},
+    ], 0);
+
+    // The names are escaped
+    assert.deepEqual(tooltipTextOf(html), [
+        '2024/01/02 03:04:05', 'Latency: ', '40 ms', 'Latency &lt;range&gt;: ', '10 ms – 90 ms',
+    ]);
+    assert.match(html, /color: blue/);
+});
+
+test('metricsChartTooltip formats a missing reading, and leaves out the collapsed series and the missing points', () => {
+    const x = new Date(2024, 0, 2, 3, 4, 5).getTime();
+    const html = tooltipOf([
+        {name: 'Latency', type: 'area', data: [{x, y: null}]},
+        {name: 'Packet loss', type: 'line', data: [{x, y: 5}]},
+        {name: 'Latency (range)', type: 'rangeArea', data: [{x, y: null}]},
+        {name: 'Missing', type: 'line', data: []},
+    ], 0, [1]);
+
+    assert.deepEqual(tooltipTextOf(html), [
+        '2024/01/02 03:04:05', 'Latency: ', '-', 'Latency (range): ', '-',
+    ]);
+});
+
+test('inclusiveRangeEnd makes an end without seconds the end of its minute, and leaves the others as they are', () => {
+    assert.equal(inclusiveRangeEnd('2024-01-02T10:30:00.000Z'), '2024-01-02T10:30:59.999Z');
+    assert.equal(inclusiveRangeEnd('2024-01-02T10:30:07.000Z'), '2024-01-02T10:30:07.000Z');
+    assert.equal(inclusiveRangeEnd('2024-01-02T10:30:00.250Z'), '2024-01-02T10:30:00.250Z');
+});
+
+test('a metrics block refreshes at most every 30 seconds, and as often as the monitor is checked otherwise', () => {
+    assert.equal(MIN_AUTO_REFRESH_SECONDS, 30);
+    assert.equal(tcpMetricsBlock(1, true, 5, CHART_LABELS, 'PT24H').pollInterval, 30_000);
+    assert.equal(tcpMetricsBlock(1, true, 30, CHART_LABELS, 'PT24H').pollInterval, 30_000);
+    assert.equal(tcpMetricsBlock(1, true, 300, CHART_LABELS, 'PT24H').pollInterval, 300_000);
+});
+
+test('the auto-refresh skips a custom range that is over, and refreshes the others', (t) => {
+    t.mock.timers.enable({apis: ['setInterval']});
+    const block = metricsBlockAt(tcpMetricsBlock, NOW);
+    let polls = 0;
+    block.pollEndpoint = () => {
+        polls++;
+    };
+    block.startPolling();
+    assert.equal(polls, 1);
+
+    t.mock.timers.tick(block.pollInterval);
+    assert.equal(polls, 2);
+
+    block.query = {from: '2023-12-01T00:00:00.000Z', to: '2023-12-02T00:00:00.000Z'};
+    t.mock.timers.tick(block.pollInterval);
+    assert.equal(polls, 2);
+
+    // A range that is not over yet is refreshed
+    block.query = {from: '2023-12-01T00:00:00.000Z', to: '2024-01-01T03:00:00.000Z'};
+    t.mock.timers.tick(block.pollInterval);
+    assert.equal(polls, 3);
+    block.stopPolling();
+});
+
+test('a metrics block starts with the default period, without a custom range', () => {
+    const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT1H');
+    assert.equal(block.period, 'PT1H');
+    assert.deepEqual(block.query, {period: 'PT1H'});
+    assert.deepEqual(block.rangeDraft, {from: null, to: null});
+});
+
+test('metricsRangeErrors requires both ends of a range valid, and its start before its end', () => {
+    const errorsOf = metricsRangeErrors;
+    const start = '2024-01-01T00:00:00.000Z';
+    const end = '2024-01-01T01:00:00.000Z';
+    assert.deepEqual(errorsOf(start, end), {from: false, to: false, range: false});
+    assert.deepEqual(errorsOf(start, null), {from: false, to: true, range: false});
+    assert.deepEqual(errorsOf(null, end), {from: true, to: false, range: false});
+    assert.deepEqual(errorsOf(end, start), {from: false, to: false, range: true});
+    assert.deepEqual(errorsOf(start, start), {from: false, to: false, range: true});
+    assert.deepEqual(errorsOf(undefined, end), {from: true, to: false, range: false});
+    assert.deepEqual(errorsOf(start, undefined), {from: false, to: true, range: false});
+});
+
+test('a picked range is shown once it is valid, and the pickers stop changing, clearing the period selector', (t) => {
+    t.mock.timers.enable({apis: ['setTimeout']});
+    const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
+    const start = '2024-01-01T00:00:00.000Z';
+
+    // Until both ends are picked, the range is reported, and the period stays as it is
+    block.pickRangeEnd('from', start);
+    assert.equal(block.rangeErrors.to, true);
+    t.mock.timers.tick(1000);
+    assert.deepEqual(block.query, {period: 'PT24H'});
+
+    // ...just like an end before the start
+    block.pickRangeEnd('to', '2023-12-31T00:00:00.000Z');
+    assert.equal(block.rangeErrors.range, true);
+    t.mock.timers.tick(1000);
+    assert.deepEqual(block.query, {period: 'PT24H'});
+
+    // A valid range clears the errors right away, but it's only shown once the pickers stop changing (e.g. while the
+    // time picker is dragged), so it's fetched only once
+    block.pickRangeEnd('to', '2024-01-02T00:00:00.000Z');
+    assert.deepEqual(block.rangeErrors, {from: false, to: false, range: false});
+    t.mock.timers.tick(999);
+    block.pickRangeEnd('to', '2024-01-02T00:05:00.000Z');
+    t.mock.timers.tick(999);
+    assert.deepEqual(block.query, {period: 'PT24H'});
+    t.mock.timers.tick(1);
+    assert.deepEqual(block.query, {from: start, to: '2024-01-02T00:05:59.999Z'});
+    assert.equal(block.period, '');
+
+    // Picking the same range again doesn't change it (so it isn't fetched again)
+    const query = block.query;
+    block.pickRangeEnd('to', '2024-01-02T00:05:00.000Z');
+    t.mock.timers.tick(1000);
+    assert.equal(block.query, query);
+
+    // An invalid value picked in the meantime cancels the pending change
+    block.pickRangeEnd('to', '2024-01-03T00:00:00.000Z');
+    block.pickRangeEnd('from', undefined);
+    assert.equal(block.rangeErrors.from, true);
+    t.mock.timers.tick(1000);
+    assert.equal(block.query, query);
+});
+
+test('a range picked while the calendar of a picker is open is only shown a while after it is closed', (t) => {
+    t.mock.timers.enable({apis: ['setTimeout']});
+    const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
+    block.setRangeCalendarOpen(true);
+
+    block.pickRangeEnd('from', '2024-01-01T00:00:00.000Z');
+    block.pickRangeEnd('to', '2024-01-02T00:00:00.000Z');
+    t.mock.timers.tick(5000);
+    assert.deepEqual(block.query, {period: 'PT24H'});
+
+    // Opening the other picker right after closing one keeps waiting
+    block.setRangeCalendarOpen(false);
+    t.mock.timers.tick(500);
+    block.setRangeCalendarOpen(true);
+    t.mock.timers.tick(5000);
+    assert.deepEqual(block.query, {period: 'PT24H'});
+
+    block.setRangeCalendarOpen(false);
+    t.mock.timers.tick(999);
+    assert.deepEqual(block.query, {period: 'PT24H'});
+    t.mock.timers.tick(1);
+    // The picked end stands for the end of its minute
+    assert.deepEqual(block.query, {from: '2024-01-01T00:00:00.000Z', to: '2024-01-02T00:00:59.999Z'});
+});
+
+test('a calendar opened and closed without a valid range leaves the period alone', (t) => {
+    t.mock.timers.enable({apis: ['setTimeout']});
+    const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
+
+    block.setRangeCalendarOpen(true);
+    block.setRangeCalendarOpen(false);
+    t.mock.timers.tick(1000);
+
+    assert.deepEqual(block.query, {period: 'PT24H'});
+    assert.equal(block.period, 'PT24H');
+});
+
+test('a period selected on the chart cancels the pending change of the pickers', (t) => {
+    t.mock.timers.enable({apis: ['setTimeout']});
+    const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
+
+    block.pickRangeEnd('from', '2023-12-31T00:00:00.000Z');
+    block.pickRangeEnd('to', new Date().toISOString());
+    block.zoomTo(Date.parse('2024-01-01T00:00:00Z'), Date.parse('2024-01-01T01:00:00Z'));
+    t.mock.timers.tick(1000);
+
+    assert.deepEqual(block.query, {from: '2024-01-01T00:00:00.000Z', to: '2024-01-01T01:00:00.000Z'});
+});
+
+test('the end of a zoom on a whole minute is exact, and opening a calendar afterwards does not widen it', (t) => {
+    t.mock.timers.enable({apis: ['setTimeout']});
+    const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
+    block.zoomTo(Date.parse('2024-01-01T00:00:00Z'), Date.parse('2024-01-01T01:00:00Z'));
+    const query = block.query;
+
+    block.setRangeCalendarOpen(true);
+    block.setRangeCalendarOpen(false);
+    t.mock.timers.tick(1000);
+
+    assert.equal(block.query, query);
+    assert.equal(block.chartUrl().includes('to=2024-01-01T01%3A00%3A00.000Z'), true);
+});
+
+test('selecting a period clears the custom range, its errors and its pending change', (t) => {
+    t.mock.timers.enable({apis: ['setTimeout']});
+    const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
+    block.zoomTo(Date.parse('2024-01-01T00:00:00Z'), Date.parse('2024-01-01T01:00:00Z'));
+    block.pickRangeEnd('to', '2024-01-01T02:00:00.000Z');
+
+    block.period = 'PT168H';
+    block.selectPeriod('PT168H');
+    t.mock.timers.tick(1000);
+
+    assert.deepEqual(block.query, {period: 'PT168H'});
+    assert.deepEqual(block.rangeDraft, {from: null, to: null});
+    assert.deepEqual(block.rangeErrors, {});
+
+    // Clearing the period selector for a custom range leaves the shown period alone
+    const query = block.query;
+    block.selectPeriod('');
+    assert.equal(block.query, query);
 });
 
 test('changing the period drops the previous data and polls the metrics right away', (t) => {
@@ -973,27 +1380,28 @@ test('changing the period drops the previous data and polls the metrics right aw
     const pollsAfterInit = polls;
 
     block.previousData = {labels: []};
-    block.period = 'PT168H';
-    watchers.period();
+    block.query = {period: 'PT168H'};
+    watchers.query();
 
     assert.equal(block.previousData, null);
     assert.equal(block.isPeriodLoading, true);
     assert.equal(polls, pollsAfterInit + 1);
 });
 
-test('pollEndpoint renders the fetched metrics along with the incidents, but only once they change', async (t) => {
+test('pollEndpoint renders the fetched metrics along with their incidents, but only once they change', async (t) => {
     let now = NOW;
-    const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
+    const block = metricsBlockAt(tcpMetricsBlock, NOW);
     block.now = () => now;
     const rendered = [];
     block.updateChart = (data) => rendered.push(data);
-    const stats = {metricsLogs: METRICS_LOGS_OF_AN_HOUR};
-    stubFetch(t, async (url) => url.startsWith('/api/v2/incidents')
-        ? jsonResponse([{incidentType: 'TCP', startedAt: '2024-01-01T00:30:00Z', endedAt: null, details: null}])
-        : jsonResponse(stats));
+    const chart = {
+        series: LATENCY_SERIES_OF_AN_HOUR,
+        incidents: [{startedAt: Date.parse('2024-01-01T00:30:00Z'), endedAt: null, details: null}],
+    };
+    stubFetch(t, async () => jsonResponse(chart));
 
     await block.pollEndpoint();
-    assert.equal(block.lastResponse, stats);
+    assert.equal(block.lastResponse, chart);
     assert.equal(rendered.length, 1);
     assert.equal(rendered[0].annotations.points.length, 1);
 
@@ -1003,9 +1411,8 @@ test('pollEndpoint renders the fetched metrics along with the incidents, but onl
     assert.equal(rendered.length, 1);
 });
 
-test('pollEndpoint still renders the metrics when the incidents cannot be fetched', async (t) => {
+test('pollEndpoint renders nothing when the chart cannot be fetched', async (t) => {
     t.mock.method(console, 'error', () => {});
-    const stats = {metricsLogs: METRICS_LOGS_OF_AN_HOUR};
     const failures = [
         async () => ({ok: false, status: 500}),
         async () => {
@@ -1016,45 +1423,29 @@ test('pollEndpoint still renders the metrics when the incidents cannot be fetche
         const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
         const rendered = [];
         block.updateChart = (data) => rendered.push(data);
-        stubFetch(t, async (url) => url.startsWith('/api/v2/incidents') ? failure() : jsonResponse(stats));
+        stubFetch(t, failure);
 
         await block.pollEndpoint();
 
-        assert.equal(block.lastResponse, stats);
-        assert.equal(rendered.length, 1);
-        assert.deepEqual(rendered[0].annotations, {xaxis: [], points: []});
+        assert.equal(block.lastResponse, null);
+        assert.equal(rendered.length, 0);
     }
-});
-
-test('pollEndpoint renders nothing when the stats cannot be fetched', async (t) => {
-    t.mock.method(console, 'error', () => {});
-    const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
-    const rendered = [];
-    block.updateChart = (data) => rendered.push(data);
-    stubFetch(t, async (url) => url.startsWith('/api/v2/incidents') ? jsonResponse([]) : {ok: false, status: 500});
-
-    await block.pollEndpoint();
-
-    assert.equal(block.lastResponse, null);
-    assert.equal(rendered.length, 0);
 });
 
 test('pollEndpoint discards the response of a period that has been changed in the meantime', async (t) => {
     const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
     const rendered = [];
     block.updateChart = (data) => rendered.push(data);
-    let resolveStats;
-    stubFetch(t, (url) => url.startsWith('/api/v2/incidents')
-        ? Promise.resolve(jsonResponse([]))
-        : new Promise(resolve => {
-            resolveStats = resolve;
-        }));
+    let resolveChart;
+    stubFetch(t, () => new Promise(resolve => {
+        resolveChart = resolve;
+    }));
 
     const polling = block.pollEndpoint();
     // What the watcher of the period does
-    block.period = 'PT168H';
+    block.query = {period: 'PT168H'};
     block.isPeriodLoading = true;
-    resolveStats(jsonResponse({metricsLogs: METRICS_LOGS_OF_AN_HOUR}));
+    resolveChart(jsonResponse({series: LATENCY_SERIES_OF_AN_HOUR, incidents: []}));
     await polling;
 
     // The loading of the newly selected period is still in progress
@@ -1067,26 +1458,24 @@ test('pollEndpoint discards the response of a period that has been changed in th
 test('changing the period shows the loading state until the response of the new period is handled', async (t) => {
     t.mock.method(console, 'error', () => {});
     const cases = [
-        [jsonResponse({metricsLogs: METRICS_LOGS_OF_AN_HOUR}), 1],
+        [jsonResponse({series: LATENCY_SERIES_OF_AN_HOUR, incidents: []}), 1],
         // A failed request must not leave the block loading forever
         [{ok: false, status: 500}, 0],
     ];
-    for (const [statsResponse, expectedRenderCount] of cases) {
+    for (const [chartResponse, expectedRenderCount] of cases) {
         const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
         const rendered = [];
         block.updateChart = (data) => rendered.push(data);
-        let resolveStats;
-        stubFetch(t, (url) => url.startsWith('/api/v2/incidents')
-            ? Promise.resolve(jsonResponse([]))
-            : new Promise(resolve => {
-                resolveStats = resolve;
-            }));
+        let resolveChart;
+        stubFetch(t, () => new Promise(resolve => {
+            resolveChart = resolve;
+        }));
 
-        block.period = 'PT168H';
+        block.query = {period: 'PT168H'};
         const refreshing = block.refreshPeriod();
         assert.equal(block.isPeriodLoading, true);
 
-        resolveStats(statsResponse);
+        resolveChart(chartResponse);
         await refreshing;
 
         assert.equal(block.isPeriodLoading, false);
@@ -1098,17 +1487,116 @@ test('the auto-refresh never shows the loading state', async (t) => {
     const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
     block.updateChart = () => {};
     const loadingStatesDuringRequests = [];
-    stubFetch(t, async (url) => {
+    stubFetch(t, async () => {
         loadingStatesDuringRequests.push(block.isPeriodLoading);
-        return url.startsWith('/api/v2/incidents')
-            ? jsonResponse([])
-            : jsonResponse({metricsLogs: METRICS_LOGS_OF_AN_HOUR});
+        return jsonResponse({series: LATENCY_SERIES_OF_AN_HOUR, incidents: []});
     });
 
     await block.pollEndpoint();
 
-    assert.deepEqual(loadingStatesDuringRequests, [false, false]);
+    assert.deepEqual(loadingStatesDuringRequests, [false]);
     assert.equal(block.isPeriodLoading, false);
+});
+
+test('metricsRangeDayLimits keeps the days of the two pickers of a period apart, in the local time zone', () => {
+    const range = {from: '2024-01-05T10:00:00.000Z', to: '2024-01-07T10:00:00.000Z'};
+    assert.deepEqual(metricsRangeDayLimits('from', range), {max: toDateTimeLocalValue(range.to).split('T')[0]});
+    assert.deepEqual(metricsRangeDayLimits('to', range), {min: toDateTimeLocalValue(range.from).split('T')[0]});
+    // An open or an invalid end doesn't limit the other one
+    assert.deepEqual(metricsRangeDayLimits('from', {from: range.from, to: null}), {max: undefined});
+    assert.deepEqual(metricsRangeDayLimits('to', {from: undefined, to: range.to}), {min: undefined});
+});
+
+test('zoomedMetricsRange widens the selected interval to whole seconds', () => {
+    assert.deepEqual(zoomedMetricsRange(1500, 2500), {from: '1970-01-01T00:00:01.000Z', to: '1970-01-01T00:00:03.000Z'});
+});
+
+// A picker of an end of the period, nested into the given metrics block the way Alpine.js merges their scopes
+const rangePickerIn = (block, end) => {
+    const watchers = {};
+    const picker = metricsRangePicker(end);
+    const scope = new Proxy(picker, {
+        get: (target, name) => (name in target ? target : block)[name],
+        set: (target, name, value) => {
+            (name in target ? target : block)[name] = value;
+            return true;
+        },
+    });
+    picker.$watch = (property, callback) => watchers[property] = callback;
+    // The methods are called on the merged scope, like Alpine.js does
+    Object.keys(picker).filter(name => typeof picker[name] === 'function' && name !== '$watch')
+        .forEach(name => picker[name] = picker[name].bind(scope));
+    return {picker, scope, watchers};
+};
+
+test('a range picker tells its block when its calendar is shown and hidden', () => {
+    const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
+    const {picker} = rangePickerIn(block, 'to');
+    const initCalls = [];
+    picker.initDateTimePicker = (element, dayLimitsOf) => initCalls.push([element, dayLimitsOf()]);
+    const listeners = {};
+    const element = {addEventListener: (name, listener) => listeners[name] = listener};
+
+    picker.initRangePicker(element);
+    assert.deepEqual(initCalls, [[element, {min: undefined}]]);
+
+    listeners['shown.bs.datepicker']();
+    assert.equal(block.isRangeCalendarOpen, true);
+    listeners['hidden.bs.datepicker']();
+    assert.equal(block.isRangeCalendarOpen, false);
+});
+
+test('the pickers of a metrics block load its range, and hand what is picked or typed over to it', (t) => {
+    t.mock.timers.enable({apis: ['setTimeout']});
+    const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
+    block.rangeDraft = {from: new Date(2024, 0, 5, 10, 30).toISOString(), to: null};
+    const from = rangePickerIn(block, 'from');
+    const to = rangePickerIn(block, 'to');
+
+    from.picker.init();
+    to.picker.init();
+    assert.deepEqual([from.picker.pickedDate, from.picker.pickedTime], ['2024-01-05', '10:30']);
+    assert.deepEqual([to.picker.pickedDate, to.picker.pickedTime], ['', '']);
+
+    // A typed end completes the range, which is shown then
+    to.picker.onDateTimeTyped('2024-01-06 08:00:15');
+    t.mock.timers.tick(1000);
+    assert.equal(block.query.to, new Date(2024, 0, 6, 8, 0, 15).toISOString());
+    // ...and limits the days of the other picker
+    assert.deepEqual(from.picker.dayLimits(), {max: '2024-01-06'});
+    assert.deepEqual(to.picker.dayLimits(), {min: '2024-01-05'});
+
+    // An invalid value is reported, but the range is kept
+    to.picker.onDateTimeTyped('2024-01-06 8');
+    assert.equal(block.rangeErrors.to, true);
+    // ...just like a cleared one
+    to.picker.onDateTimeTyped('');
+    assert.equal(block.rangeErrors.to, true);
+    t.mock.timers.tick(1000);
+    assert.equal(block.query.to, new Date(2024, 0, 6, 8, 0, 15).toISOString());
+});
+
+test('the pickers of a metrics block follow a range selected on the chart, or cleared by a period', () => {
+    const block = tcpMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
+    block.rangeDraft = {from: new Date(2024, 0, 4, 10, 30, 15, 123).toISOString(), to: null};
+    const from = rangePickerIn(block, 'from');
+    from.picker.init();
+    const typedFrom = block.rangeDraft.from;
+
+    // What was just picked in it is left alone (its loaded value keeps the fractions of a second)
+    from.watchers['rangeDraft.from'](typedFrom);
+    assert.equal(from.picker.pickedDateTimeAsIso(), typedFrom);
+    // ...just like an invalid value, which the picker shows as it was typed
+    from.picker.pickedTime = '1';
+    from.watchers['rangeDraft.from'](undefined);
+    assert.equal(from.picker.pickedTime, '1');
+
+    const zoomed = new Date(2024, 0, 5, 10, 30, 15).toISOString();
+    from.watchers['rangeDraft.from'](zoomed);
+    assert.deepEqual([from.picker.pickedDate, from.picker.pickedTime], ['2024-01-05', '10:30:15']);
+
+    from.watchers['rangeDraft.from'](null);
+    assert.deepEqual([from.picker.pickedDate, from.picker.pickedTime], ['', '']);
 });
 
 // --------- #4: numeric-boundary validators ---------
@@ -1674,17 +2162,10 @@ test('TCP populateFrom copies a source and falls back to defaults', () => {
 
 test('dnsMetricsBlock.transformData preserves null latency and has no packet-loss series', () => {
     const block = dnsMetricsBlock(1, true, 60, CHART_LABELS, 'PT24H');
-    const result = block.transformData({
-        metricsLogs: [
-            {createdAt: '2024-01-01T00:00:00Z', latencyInMs: null},
-            {createdAt: '2024-01-01T00:01:00Z', latencyInMs: '42'},
-        ],
-    }, []);
-    // Null latency must stay null (a gap in the chart), not become NaN
-    assert.deepEqual(result.series[0].data, [null, 42]);
-    assert.equal(result.labels.length, 2);
-    // DNS monitors track latency only - there is no packet-loss series
-    assert.equal(result.series.length, 1);
+    const result = block.transformData({series: aLatencySeries([1000, 2000], [null, 42]), incidents: []});
+    // Null latency must stay null (a gap in the chart), not become NaN, and there is no packet-loss series
+    assert.deepEqual(result.series.map(series => series.name), ['Latency', 'Latency (lowest–highest)']);
+    assert.deepEqual(result.series[0].data, [{x: 1000, y: null}, {x: 2000, y: 42}]);
 });
 
 // --------- DNS: numeric-boundary validators ---------
@@ -2005,11 +2486,11 @@ test('resetCategorySelect no-ops before TomSelect is initialized', () => {
     assert.doesNotThrow(() => resetCategorySelect('category-select', 'Drive storage'));
 });
 
-test('resetCategoryMultiSelect re-adds and selects every category of the form', () => {
+test('resetMultiSelect re-adds and selects every value of the form', () => {
     const tomSelect = fakeTomSelect();
-    withCategorySelect(tomSelect, () => resetCategoryMultiSelect('categories-select', ['Payments', 'Search']));
+    withCategorySelect(tomSelect, () => resetMultiSelect('categories-select', ['Payments', 'Search']));
     assert.equal(tomSelect.cleared, 1);
-    // Same reason as above: an option the endpoint does not offer is dropped when the selection is cleared
+    // Same reason as above: an option the endpoint does not offer (yet) is dropped when the selection is cleared
     assert.deepEqual(tomSelect.options, [
         {value: 'Payments', text: 'Payments'},
         {value: 'Search', text: 'Search'},
@@ -2017,19 +2498,37 @@ test('resetCategoryMultiSelect re-adds and selects every category of the form', 
     assert.deepEqual(tomSelect.items, ['Payments', 'Search']);
 });
 
-test('resetCategoryMultiSelect only clears when the form has no categories', () => {
+test('resetMultiSelect only clears when the form has no values', () => {
     const tomSelect = fakeTomSelect();
-    withCategorySelect(tomSelect, () => resetCategoryMultiSelect('categories-select', []));
+    withCategorySelect(tomSelect, () => resetMultiSelect('categories-select', []));
     assert.equal(tomSelect.cleared, 1);
     assert.deepEqual(tomSelect.options, []);
     assert.deepEqual(tomSelect.items, []);
 });
 
-test('resetCategoryMultiSelect tolerates a missing category list', () => {
+test('resetMultiSelect tolerates a missing list of values', () => {
     const tomSelect = fakeTomSelect();
-    withCategorySelect(tomSelect, () => resetCategoryMultiSelect('categories-select', undefined));
+    withCategorySelect(tomSelect, () => resetMultiSelect('categories-select', undefined));
     assert.equal(tomSelect.cleared, 1);
     assert.deepEqual(tomSelect.items, []);
+});
+
+const statusPageWithMonitors = {id: 2, title: 'Status', slug: 'status', monitors: ['http:Site', 'tcp:DB']};
+const maintenanceWindowWithMonitors = {id: 2, name: 'Window', monitors: ['http:Site', 'tcp:DB']};
+
+[
+    ['status page', () => upsertStatusPageForm(statusPageWithMonitors, {}, 'monitor-select', 'categories-select')],
+    ['maintenance window', () => upsertMaintenanceWindowForm(maintenanceWindowWithMonitors, {}, 'monitor-select', 'categories-select')],
+].forEach(([entity, createForm]) => {
+    test(`the ${entity} form renders only its own monitors as options, and offers them even before the rest arrive`, () => {
+        const form = createForm();
+        assert.deepEqual(form.initialMonitors, ['http:Site', 'tcp:DB']);
+
+        const tomSelect = fakeTomSelect();
+        withCategorySelect(tomSelect, () => form.resetState());
+        assert.deepEqual(tomSelect.options.map(option => option.value), ['http:Site', 'tcp:DB']);
+        assert.deepEqual(tomSelect.items, ['http:Site', 'tcp:DB']);
+    });
 });
 
 // Runs [body] with a stubbed global `fetch`, restoring the original afterwards.
@@ -2111,6 +2610,83 @@ test('loadCategoryOptions refreshes a field that was opened before the categorie
 
     assert.deepEqual(tomSelect.options, [{value: 'alerting', text: 'alerting'}]);
     assert.equal(tomSelect.refreshed, 1);
+});
+
+test('loadMonitorOptions offers the monitors once the modal is shown', async () => {
+    const tomSelect = fakeTomSelect();
+    const listeners = {};
+    Object.assign(tomSelect, {
+        input: {closest: () => ({addEventListener: (event, listener) => listeners[event] = listener})},
+        addOptions: (options) => options.forEach(tomSelect.addOption),
+    });
+    loadMonitorOptions(tomSelect);
+    assert.deepEqual(tomSelect.options, []);
+
+    const requestedUrls = [];
+    await withFetch(async (url) => {
+        requestedUrls.push(url);
+        return {ok: true, json: async () => ['tcp:Alpha', 'http:Bravo']};
+    }, listeners['show.bs.modal']);
+
+    assert.deepEqual(requestedUrls, ['/api/internal/monitors']);
+    assert.deepEqual(tomSelect.options, [
+        {value: 'tcp:Alpha', text: 'tcp:Alpha'},
+        {value: 'http:Bravo', text: 'http:Bravo'},
+    ]);
+});
+
+test('fetchMonitors fails open', async (t) => {
+    t.mock.method(console, 'error', () => {});
+    const failures = [
+        async () => ({ok: false, json: async () => ['http:Site']}),
+        async () => {
+            throw new Error('network down');
+        },
+    ];
+    for (const failure of failures) {
+        assert.deepEqual(await withFetch(failure, () => fetchMonitors()), []);
+    }
+});
+
+// A TomSelect stub with a dropdown and the hooks of its methods, and the hint added to it
+const tomSelectWithSearchHint = (t, maxOptions) => {
+    const originalCreateElement = globalThis.document.createElement;
+    globalThis.document.createElement = () => ({dataset: {}});
+    t.after(() => {
+        globalThis.document.createElement = originalCreateElement;
+    });
+    const appended = [];
+    const hooks = [];
+    const tomSelect = {
+        settings: {maxOptions},
+        currentResults: null,
+        dropdown: {append: (element) => appended.push(element)},
+        hook: (when, method, callback) => hooks.push({when, method, callback}),
+        refreshOptions() {
+            hooks.filter(hook => hook.method === 'refreshOptions').forEach(hook => hook.callback());
+        },
+    };
+    addSearchHint(tomSelect, 'Type to search');
+    return {tomSelect, hint: appended[0], hooks};
+};
+
+test('the search hint is shown only while more options match than the dropdown shows', (t) => {
+    const {tomSelect, hint, hooks} = tomSelectWithSearchHint(t, 2);
+    assert.equal(hint.textContent, 'Type to search');
+    assert.equal(hint.dataset.testid, 'select-search-hint');
+    assert.equal(hint.hidden, true);
+    assert.deepEqual(hooks.map(({when, method}) => [when, method]), [['after', 'refreshOptions']]);
+
+    const cases = [
+        [[1, 2, 3], false],
+        [[1, 2], true],
+        [[], true],
+    ];
+    for (const [matches, isHidden] of cases) {
+        tomSelect.currentResults = {items: matches};
+        tomSelect.refreshOptions();
+        assert.equal(hint.hidden, isHidden, `${matches.length} matches`);
+    }
 });
 
 // --------- Upsert forms ---------
@@ -2204,7 +2780,7 @@ test('upsert flags the conflicting fields of each entity', async (t) => {
     };
     const dnsForm = upsertDnsMonitorForm(null, messages, 'category-select', false, 0);
     const pushForm = upsertPushMonitorForm(null, messages, 'category-select', false, 0);
-    const statusPageForm = upsertStatusPageForm(null, messages, 'monitor-select', [], 'categories-select');
+    const statusPageForm = upsertStatusPageForm(null, messages, 'monitor-select', 'categories-select');
 
     for (const form of [dnsForm, pushForm, statusPageForm]) {
         form.resetState();
@@ -2227,7 +2803,7 @@ test('upsert shows the rejected name change of a monitor on its field, every oth
     );
     const messages = {nameCannotBeChanged: 'IMMUTABLE'};
     const monitorForm = upsertHttpMonitorForm({id: 1, name: 'site'}, messages, 'category-select', false, 'select', [], 'proxy-select', [], '(not configured)', 0);
-    const maintenanceWindowForm = upsertMaintenanceWindowForm(null, messages, 'select', []);
+    const maintenanceWindowForm = upsertMaintenanceWindowForm(null, messages, 'select');
 
     monitorForm.resetState();
     await monitorForm.upsert();
@@ -2248,7 +2824,7 @@ test('upsert shows the rejected name change of a monitor on its field, every oth
 test('upsert alerts on an unexpected response and on a failed request', async (t) => {
     const browser = stubBrowser(t);
     stubRequests(t, errorResponse(500), new Error('network down'));
-    const form = upsertStatusPageForm({id: 2, title: 'Status', slug: 'status'}, {}, 'monitor-select', [], 'categories-select');
+    const form = upsertStatusPageForm({id: 2, title: 'Status', slug: 'status'}, {}, 'monitor-select', 'categories-select');
     form.resetState();
 
     await form.upsert();
@@ -2265,7 +2841,7 @@ test('submitForm only sends a valid form', async (t) => {
     stubBrowser(t);
     const requests = stubRequests(t, jsonResponse({id: 3}), jsonResponse({id: 4}));
     const monitorForm = upsertIcmpMonitorForm(null, {nameRequired: 'NAME', hostRequired: 'HOST'}, 'category-select', false, 0);
-    const maintenanceWindowForm = upsertMaintenanceWindowForm(null, {nameRequired: 'NAME'}, 'select', []);
+    const maintenanceWindowForm = upsertMaintenanceWindowForm(null, {nameRequired: 'NAME'}, 'select');
 
     monitorForm.resetState();
     monitorForm.submitForm();
@@ -2521,7 +3097,7 @@ test('the status page form sends the picked gray palette', (t) => {
     stubBrowser(t);
     const form = upsertStatusPageForm(
         {id: 2, title: 'Status', slug: 'status', themeBase: 'SLATE'},
-        {}, 'monitor-select', [], 'categories-select', 'GRAY',
+        {}, 'monitor-select', 'categories-select', 'GRAY',
     );
     form.resetState();
     assert.equal(form.buildRequestBody().themeBase, 'SLATE');
@@ -2536,7 +3112,7 @@ test('the status page form sends the picked gray palette', (t) => {
 const listEditedEntities = {
     'status-pages': {
         createForm: (entity = null) => upsertStatusPageForm(
-            entity, {}, 'monitor-select', [], 'categories-select', 'GRAY',
+            entity, {}, 'monitor-select', 'categories-select', 'GRAY',
         ),
         clonedFields: {title: 'Copy of Source', slug: 'source-copy', public: false},
         source: {
@@ -2568,7 +3144,7 @@ const listEditedEntities = {
         assertRendered: (form) => assert.equal(form.title, 'Rendered'),
     },
     'maintenance-windows': {
-        createForm: (entity = null) => upsertMaintenanceWindowForm(entity, {}, 'monitor-select', [], 'categories-select'),
+        createForm: (entity = null) => upsertMaintenanceWindowForm(entity, {}, 'monitor-select', 'categories-select'),
         clonedFields: {name: 'Copy of Source', enabled: false},
         source: {
             id: 7,
@@ -3369,3 +3945,149 @@ test('refreshStatusPageIncidentsModal leaves a closed modal alone', (t) => {
     assert.deepEqual(filled, []);
 });
 
+// --------- Paged lists ---------
+
+// A listQuery the way Alpine.js sets it up. The watcher of its filters is called explicitly, as there is no Alpine.js
+// to call it on a change, and the requests of its list are recorded
+const createListQuery = (t, {filters = {}, emptyFilters = {}, navigation = {}} = {}) => {
+    const component = listQuery({
+        filters,
+        emptyFilters,
+        navigation: {page: null, size: null, sortedBy: null, sortOrder: null, ...navigation},
+    });
+    const watchers = {};
+    component.$watch = (property, callback) => watchers[property] = callback;
+    component.$refs = {list: {id: 'the-list'}};
+    const reloads = [];
+    const originalHtmx = globalThis.htmx;
+    globalThis.htmx = {trigger: (element, eventName) => reloads.push({element: element.id, eventName})};
+    t.after(() => { globalThis.htmx = originalHtmx; });
+    component.init();
+    return {component, reloads, filtersChanged: () => watchers.filters()};
+};
+
+const requestPathOf = (component, path) => {
+    const event = {detail: {path}};
+    component.configureRequest(event);
+    return event.detail.path;
+};
+
+const clickOn = (href, modifiers = {}) => {
+    let isDefaultPrevented = false;
+    const event = {
+        button: 0,
+        ctrlKey: false,
+        metaKey: false,
+        shiftKey: false,
+        altKey: false,
+        ...modifiers,
+        currentTarget: {href},
+        preventDefault: () => isDefaultPrevented = true,
+    };
+    return {event, isDefaultPrevented: () => isDefaultPrevented};
+};
+
+test('listQuery requests its list with the current filters and navigation, replacing the query of the request', (t) => {
+    const {component} = createListQuery(t, {
+        filters: {name: 'a & b', category: '', enabled: null, uptimeStatus: ['UP', 'DOWN']},
+        navigation: {page: '2', sortedBy: 'NAME', sortOrder: 'DESC'},
+    });
+
+    // The empty category stands for the monitors without a category, so unlike the null ones, it's kept
+    assert.equal(
+        requestPathOf(component, '/http-monitors/fragments/list?name=old&page=9'),
+        '/http-monitors/fragments/list?name=a+%26+b&category=&uptimeStatus=UP&uptimeStatus=DOWN' +
+        '&page=2&sortedBy=NAME&sortOrder=DESC',
+    );
+});
+
+test('listQuery requests its list on its plain path, when nothing is set', (t) => {
+    const {component} = createListQuery(t, {filters: {enabled: null, uptimeStatus: []}});
+
+    assert.equal(requestPathOf(component, '/http-monitors/fragments/list?page=3'), '/http-monitors/fragments/list');
+});
+
+test('listQuery starts over from the first page when its filters change', (t) => {
+    const {component, reloads, filtersChanged} = createListQuery(t, {
+        filters: {name: ''},
+        navigation: {page: '3', size: '50', sortedBy: 'NAME'},
+    });
+
+    component.filters.name = 'api';
+    filtersChanged();
+
+    assert.deepEqual(component.navigation, {page: null, size: '50', sortedBy: 'NAME', sortOrder: null});
+    assert.deepEqual(reloads, [{element: 'the-list', eventName: LIST_QUERY_CHANGE_EVENT}]);
+});
+
+test('listQuery takes the navigation of a clicked link, keeping its filters', (t) => {
+    const {component, reloads} = createListQuery(t, {
+        filters: {name: 'typed since the link was rendered'},
+        navigation: {page: '3', size: '50'},
+    });
+    const click = clickOn('http://localhost/http-monitors?name=old&sortedBy=UPTIME_STATUS&sortOrder=DESC&size=10');
+
+    component.followLink(click.event);
+
+    assert.equal(click.isDefaultPrevented(), true);
+    // What the link leaves out is the default, so the page is the first one again
+    assert.deepEqual(component.navigation, {page: null, size: '10', sortedBy: 'UPTIME_STATUS', sortOrder: 'DESC'});
+    assert.deepEqual(component.filters, {name: 'typed since the link was rendered'});
+    assert.deepEqual(reloads, [{element: 'the-list', eventName: LIST_QUERY_CHANGE_EVENT}]);
+});
+
+test('listQuery leaves a click with a modifier key or another button to the browser', (t) => {
+    const {component, reloads} = createListQuery(t, {navigation: {page: '3'}});
+    const clicks = [
+        {ctrlKey: true},
+        {metaKey: true},
+        {shiftKey: true},
+        {altKey: true},
+        {button: 1},
+    ].map(modifiers => clickOn('http://localhost/http-monitors?page=5', modifiers));
+
+    clicks.forEach(click => component.followLink(click.event));
+
+    assert.equal(clicks.some(click => click.isDefaultPrevented()), false);
+    assert.equal(component.navigation.page, '3');
+    assert.deepEqual(reloads, []);
+});
+
+test('listQuery starts over from the first page on a new page size', (t) => {
+    const {component, reloads} = createListQuery(t, {navigation: {page: '4', sortedBy: 'NAME'}});
+
+    component.setSize('100');
+
+    assert.deepEqual(component.navigation, {page: null, size: '100', sortedBy: 'NAME', sortOrder: null});
+    assert.equal(reloads.length, 1);
+});
+
+test('listQuery clears its filters to a copy of the empty ones', (t) => {
+    const emptyFilters = {name: '', category: null, uptimeStatus: []};
+    const {component} = createListQuery(t, {
+        filters: {name: 'api', category: '', uptimeStatus: ['DOWN']},
+        emptyFilters,
+    });
+
+    component.clearFilters();
+    component.filters.uptimeStatus.push('UP');
+    component.clearFilters();
+
+    assert.deepEqual(component.filters, {name: '', category: null, uptimeStatus: []});
+    assert.deepEqual(emptyFilters, {name: '', category: null, uptimeStatus: []});
+});
+
+test('listQuery takes the page shown by the list, which is the last one when the requested page is past the end', (t) => {
+    const {component, reloads} = createListQuery(t, {navigation: {page: '7'}});
+    const listShowing = (page) => ({
+        querySelector: (selector) => selector === '[data-list-page]' ? {dataset: {listPage: page}} : null,
+    });
+
+    component.syncFromList(listShowing('5'));
+    assert.equal(component.navigation.page, '5');
+
+    // A list without a page, e.g. an error message, changes nothing
+    component.syncFromList({querySelector: () => null});
+    assert.equal(component.navigation.page, '5');
+    assert.deepEqual(reloads, []);
+});

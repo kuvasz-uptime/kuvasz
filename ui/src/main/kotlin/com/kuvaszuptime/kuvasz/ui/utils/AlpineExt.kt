@@ -94,3 +94,7 @@ internal fun HTMLTag.xFor(loopDef: String) {
 internal fun HTMLTag.xShow(value: String) {
     attributes["x-show"] = value
 }
+
+internal fun HTMLTag.xRef(name: String) {
+    attributes["x-ref"] = name
+}

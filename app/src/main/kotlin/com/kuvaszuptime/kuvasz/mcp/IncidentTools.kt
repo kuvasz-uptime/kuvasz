@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.mcp.schemas.IncidentListSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.IncidentNoteCreatorSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.IncidentSchema
 import com.kuvaszuptime.kuvasz.models.IncidentType
+import com.kuvaszuptime.kuvasz.models.pagination.ListDefaults
 import com.kuvaszuptime.kuvasz.repositories.IncidentRepository
 import com.kuvaszuptime.kuvasz.services.incident.IncidentActions
 import com.kuvaszuptime.kuvasz.validation.throwIfNotEmpty
@@ -17,10 +18,7 @@ import io.micronaut.mcp.annotations.ToolArg
 import io.micronaut.validation.validator.Validator
 import jakarta.inject.Singleton
 import jakarta.validation.ValidationException
-import java.time.Duration
 
-private const val INCIDENTS_PERIOD_DAYS = 7L
-private val DEFAULT_INCIDENTS_PERIOD = Duration.ofDays(INCIDENTS_PERIOD_DAYS)
 // Has to be a constant to be used in the annotations, every IncidentType has to be listed here
 private const val INCIDENT_TYPES = "'HTTP', 'SSL', 'PUSH', 'ICMP', 'TCP', 'DNS', 'DOCKER'"
 
@@ -33,10 +31,11 @@ class IncidentTools(
 
     @Tool(
         name = LIST_INCIDENTS,
-        description = "Lists incidents across all monitor types (HTTP, SSL, Push, ICMP, TCP, DNS, Docker). " +
-            "Defaults to the last 7 days including resolved incidents. " +
-            "Optionally filter by monitor ID. An incident is identified by its 'incidentType' and 'eventId' " +
-            "together, use them with the $GET_INCIDENT_DETAILS tool to get its notes and notified integrations.",
+        description = "Lists incidents across all monitor types (HTTP, SSL, Push, ICMP, TCP, DNS, Docker), the " +
+            "latest started first by default. Defaults to the last 7 days including resolved incidents. " +
+            "Optionally filter by monitor ID, monitor name or incident type. An incident is identified by its " +
+            "'incidentType' and 'eventId' together, use them with the $GET_INCIDENT_DETAILS tool to get its notes " +
+            "and notified integrations." + ListToolArgs.PAGINATION_NOTE,
         annotations = Tool.ToolAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = false)
     )
     fun listIncidents(
@@ -46,14 +45,31 @@ class IncidentTools(
         period: String? = null,
         @ToolArg(description = "Whether to include resolved incidents alongside ongoing ones. Defaults to true.")
         includeResolved: Boolean? = null,
-    ): IncidentListSchema =
-        IncidentListSchema(
-            incidents = incidentRepository.getIncidents(
-                monitorId = monitorId,
-                period = period.asDuration() ?: DEFAULT_INCIDENTS_PERIOD,
-                includeResolved = includeResolved ?: true,
-            ).map { IncidentSchema.fromDto(it) }
+        @ToolArg(description = "Filter by the type of the incidents, one of: $INCIDENT_TYPES. Omit for every type.")
+        incidentType: String? = null,
+        @ToolArg(description = ListToolArgs.INCIDENT_MONITOR_NAME) name: String? = null,
+        @ToolArg(description = ListToolArgs.PAGE) page: Int? = null,
+        @ToolArg(description = ListToolArgs.SIZE) size: Int? = null,
+        @ToolArg(description = ListToolArgs.SORTED_BY) sortedBy: String? = null,
+        @ToolArg(description = ListToolArgs.SORT_ORDER) sortOrder: String? = null,
+    ): IncidentListSchema {
+        val incidents = incidentRepository.getIncidentsPage(
+            monitorId = monitorId,
+            period = period.asDuration() ?: ListDefaults.INCIDENT_PERIOD,
+            includeResolved = includeResolved ?: ListDefaults.INCIDENT_INCLUDE_RESOLVED,
+            type = incidentType?.ifBlank { null }?.toIncidentType(),
+            name = name,
+            sorting = sortingOf(sortedBy, sortOrder, default = ListDefaults.INCIDENT_SORTING),
+            pageRequest = pageRequestOf(page, size),
         )
+        return IncidentListSchema(
+            incidents = incidents.result.map { IncidentSchema.fromDto(it) },
+            page = incidents.page,
+            size = incidents.size,
+            totalCount = incidents.totalCount,
+            totalPages = incidents.totalPages,
+        )
+    }
 
     @Tool(
         name = GET_INCIDENT_DETAILS,

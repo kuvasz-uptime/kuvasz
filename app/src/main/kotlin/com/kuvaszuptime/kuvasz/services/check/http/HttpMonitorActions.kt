@@ -6,17 +6,22 @@ import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.pojos.HttpMonitor
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.MonitorNotFoundException
+import com.kuvaszuptime.kuvasz.models.dto.event.EventSortField
 import com.kuvaszuptime.kuvasz.models.dto.event.HttpUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.dto.event.SSLEventDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorCreateDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorSortField
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorId
 import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorsWithCategory
+import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageHttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
+import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.repositories.HttpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.SSLEventRepository
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
@@ -92,28 +97,37 @@ class HttpMonitorActions(
         sslCheckEnabled: Boolean? = null,
         sortedBy: SortField<*>? = null,
         categoryFilter: CategoryFilter? = null,
-    ): List<HttpMonitorDetailsDto> {
-        val monitors = monitorRepository.getMonitorsWithDetails(
+    ): List<HttpMonitorDetailsDto> =
+        monitorRepository.getMonitorsWithDetails(
             enabled = enabled,
             uptimeStatus = uptimeStatus,
             sslStatus = sslStatus,
             sslCheckEnabled = sslCheckEnabled,
             sortedBy = sortedBy,
             categoryFilter = categoryFilter,
-        )
-        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(monitors.monitorsWithCategory())
+        ).withListDetails()
 
-        return monitors.map { detailsDto ->
-            val windows = windowsByMonitor[detailsDto.monitorId()].orEmpty()
-            detailsDto.copy(
-                nextUptimeCheck = checkScheduler.getNextCheck(detailsDto.id),
-                nextSSLCheck = checkScheduler.getNextSSLCheck(detailsDto.id),
-                effectiveIntegrations = integrationRepository.getEffectiveIntegrations(detailsDto.integrations)
-                    .toSet(),
-                maintenanceWindows = windows,
-                inMaintenance = windows.any { it.active },
-            )
-        }
+    fun getMonitorsPage(
+        enabled: Boolean?,
+        uptimeStatus: List<UptimeStatus>,
+        sslStatus: List<SslStatus>,
+        sslCheckEnabled: Boolean?,
+        categoryFilter: CategoryFilter?,
+        name: String?,
+        sorting: Sorting<HttpMonitorSortField>,
+        pageRequest: PageRequest,
+    ): PagedResult<HttpMonitorDetailsDto> {
+        val page = monitorRepository.getMonitorsPage(
+            enabled = enabled,
+            uptimeStatus = uptimeStatus,
+            sslStatus = sslStatus,
+            sslCheckEnabled = sslCheckEnabled,
+            categoryFilter = categoryFilter,
+            name = name,
+            sorting = sorting,
+            pageRequest = pageRequest,
+        )
+        return page.withResult(page.result.withListDetails())
     }
 
     fun createMonitor(monitorCreateDto: HttpMonitorCreateDto): HttpMonitorRecord {
@@ -165,12 +179,30 @@ class HttpMonitorActions(
                 uptimeEventRepository.getEventsByMonitorId(monitor.id, limit)
             }
 
+    fun getUptimeEventsPage(
+        monitorId: Long,
+        sorting: Sorting<EventSortField>,
+        pageRequest: PageRequest,
+    ): PagedResult<HttpUptimeEventDto> =
+        monitorRepository.findById(monitorId, null)
+            .orThrowNotFound(monitorId)
+            .let { monitor -> uptimeEventRepository.getEventsPage(monitor.id, sorting, pageRequest) }
+
     fun getSSLEventsByMonitorId(monitorId: Long, limit: Int? = null): List<SSLEventDto> =
         monitorRepository.findById(monitorId, null)
             .orThrowNotFound(monitorId)
             .let { monitor ->
                 sslEventRepository.getEventsByMonitorId(monitor.id, limit)
             }
+
+    fun getSSLEventsPage(
+        monitorId: Long,
+        sorting: Sorting<EventSortField>,
+        pageRequest: PageRequest,
+    ): PagedResult<SSLEventDto> =
+        monitorRepository.findById(monitorId, null)
+            .orThrowNotFound(monitorId)
+            .let { monitor -> sslEventRepository.getEventsPage(monitor.id, sorting, pageRequest) }
 
     fun getMonitorStats(monitorId: Long, period: Duration): HttpMonitorStatsDto =
         withUptimeHistory(monitorId, period) { monitor, uptimeHistory ->
@@ -202,21 +234,38 @@ class HttpMonitorActions(
             period = period,
             monitorIds = monitorIds,
             categories = categories,
-        ) { monitor, uptime ->
-            val latencyMetrics = if (monitor.latencyHistoryEnabled) {
-                latencyLogRepository.getLatencyMetrics(monitor.id, period)
-            } else {
-                null
-            }
+            prefetch = { monitors ->
+                latencyLogRepository.getAverageLatencies(
+                    monitorIds = monitors.filter { it.latencyHistoryEnabled }.map { it.id },
+                    period = period,
+                )
+            },
+        ) { monitor, uptime, averageLatencies ->
             StatusPageHttpMonitorDetailsDto(
                 name = monitor.name,
                 lastCheck = monitor.lastUptimeCheck,
-                averageLatencyInMs = latencyMetrics?.avg,
+                averageLatencyInMs = averageLatencies[monitor.id],
                 uptimeRatio = uptime.uptimeRatio,
                 uptimeStatus = monitor.uptimeStatus,
                 uptimeStatusHistory = uptime.uptimeStatusHistory,
+                incidentCount = uptime.incidentCount,
                 inMaintenance = uptime.inMaintenance,
                 category = monitor.category,
             )
         }
+
+    private fun List<HttpMonitorDetailsDto>.withListDetails(): List<HttpMonitorDetailsDto> {
+        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(monitorsWithCategory())
+        return map { detailsDto ->
+            val windows = windowsByMonitor[detailsDto.monitorId()].orEmpty()
+            detailsDto.copy(
+                nextUptimeCheck = checkScheduler.getNextCheck(detailsDto.id),
+                nextSSLCheck = checkScheduler.getNextSSLCheck(detailsDto.id),
+                effectiveIntegrations = integrationRepository.getEffectiveIntegrations(detailsDto.integrations)
+                    .toSet(),
+                maintenanceWindows = windows,
+                inMaintenance = windows.any { it.active },
+            )
+        }
+    }
 }

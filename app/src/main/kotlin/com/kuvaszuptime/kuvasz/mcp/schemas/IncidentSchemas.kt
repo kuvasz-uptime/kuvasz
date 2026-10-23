@@ -15,7 +15,13 @@ import java.time.OffsetDateTime
 
 @JsonSchema
 @Introspected
-data class IncidentListSchema(val incidents: List<IncidentSchema>)
+data class IncidentListSchema(
+    val incidents: List<IncidentSchema>,
+    val page: Int,
+    val size: Int,
+    val totalCount: Long,
+    val totalPages: Int,
+)
 
 @Introspected
 @JsonInclude(JsonInclude.Include.NON_NULL)

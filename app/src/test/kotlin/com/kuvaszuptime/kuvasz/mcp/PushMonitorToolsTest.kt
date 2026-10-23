@@ -40,6 +40,25 @@ class PushMonitorToolsTest(
     init {
         given("the list-push-monitors tool") {
 
+            `when`("list-push-monitors is called with paging, sorting and a name filter") {
+                listOf("a-x", "b-x", "c").forEach { createPushMonitor(pushMonitorRepository, monitorName = it) }
+                val response = callToolWithMcpClient(
+                    LIST_PUSH_MONITORS,
+                    mapOf("name" to "X", "size" to 1, "sortedBy" to "name", "sortOrder" to "desc"),
+                )
+
+                then("it should return the requested page of the matching ones, with the totals") {
+                    response.isError shouldBe false
+
+                    val list = response.structuredContentAs<PushMonitorListSchema>().shouldNotBeNull()
+                    list.monitors.map { it.name } shouldBe listOf("b-x")
+                    list.page shouldBe 1
+                    list.size shouldBe 1
+                    list.totalCount shouldBe 2
+                    list.totalPages shouldBe 2
+                }
+            }
+
             `when`("list-push-monitors is called with monitors in the DB") {
                 val monitor = createPushMonitor(pushMonitorRepository)
                 val response = callToolWithMcpClient(LIST_PUSH_MONITORS)

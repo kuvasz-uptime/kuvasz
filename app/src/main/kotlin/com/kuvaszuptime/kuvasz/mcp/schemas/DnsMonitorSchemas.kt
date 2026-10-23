@@ -182,6 +182,10 @@ data class DnsMonitorSummarySchema(
 @Introspected
 data class DnsMonitorListSchema(
     val monitors: List<DnsMonitorSummarySchema>,
+    val page: Int,
+    val size: Int,
+    val totalCount: Long,
+    val totalPages: Int,
 )
 
 @JsonSchema

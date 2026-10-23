@@ -23,7 +23,13 @@ import java.time.OffsetDateTime
 
 @JsonSchema
 @Introspected
-data class StatusPageListSchema(val statusPages: List<StatusPageSchema>)
+data class StatusPageListSchema(
+    val statusPages: List<StatusPageSchema>,
+    val page: Int,
+    val size: Int,
+    val totalCount: Long,
+    val totalPages: Int,
+)
 
 @Introspected
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -101,6 +107,7 @@ data class StatusPageMonitorSchema(
     val uptimeRatio: Double?,
     val lastCheck: OffsetDateTime?,
     val uptimeStatusHistory: List<StatusHistorySchema>,
+    val incidentCount: Int,
     val averageLatencyInMs: Int?,
     val lastHeartbeat: OffsetDateTime?,
     val lastPacketLossPercentage: Int?,
@@ -113,6 +120,7 @@ data class StatusPageMonitorSchema(
             uptimeRatio = dto.uptimeRatio,
             lastCheck = dto.lastCheck,
             uptimeStatusHistory = dto.uptimeStatusHistory.map { StatusHistorySchema.fromDto(it) },
+            incidentCount = dto.incidentCount,
             averageLatencyInMs = if (dto is WithLatency) dto.averageLatencyInMs else null,
             lastHeartbeat = if (dto is StatusPagePushMonitorDetailsDto) dto.lastHeartbeat else null,
             lastPacketLossPercentage = if (dto is StatusPageIcmpMonitorDetailsDto) {

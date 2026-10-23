@@ -24,10 +24,16 @@ import tools.jackson.databind.node.ObjectNode
 
 interface StatusPageOperations {
 
-    @Operation(summary = "Get all status pages")
+    @Operation(
+        summary = "Get all status pages",
+        description = "Deprecated: use GET /api/v3/status-pages instead, which returns them page by page",
+        deprecated = true,
+    )
     @Get("/")
     fun getStatusPages(
-        @QueryValue("public") // Need to specify explicitly because of an internal bug in Micronaut
+        // Named explicitly: "public" is a Java keyword, so kapt renames the parameter (e.g. to "p0_1658771764")
+        // in the Java stubs that Micronaut reads the parameter names from
+        @QueryValue("public")
         @Parameter(required = false)
         public: Boolean?,
     ): List<StatusPageDto>

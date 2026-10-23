@@ -1,33 +1,38 @@
-from kbench.disksize import TABLES, delete_day_sql, insert_day_sql, rows_per_day
+from kbench.disksize import EPOCH, TABLES, delete_day_sql, insert_day_sql, monitor_table_sql, monitors_of
 
 
-def test_rows_per_day():
-    # 8.15 rows/s per 1,000 monitors
-    assert rows_per_day("http", 1000) == round(8.15 * 86400)
-    assert rows_per_day("http", 2000) == round(2 * 8.15 * 86400)
+def test_monitors_of_the_generated_set():
+    monitors = monitors_of("balanced", 1000)
+    assert len(monitors) == 1000
+    by_type = {}
+    for m in monitors:
+        by_type.setdefault(m.monitor_type, []).append(m)
+    assert {t: len(ms) for t, ms in by_type.items()} == {
+        "http": 450, "push": 150, "tcp": 100, "icmp": 100, "dns": 100, "docker": 100}
+    # Ids are counted per type, like the tables of Kuvasz count them
+    assert [m.id for m in by_type["tcp"]] == list(range(1, 101))
+    assert not any(m.metrics for m in by_type["push"])
+    assert all(m.metrics for m in by_type["http"])
+    # Docker monitors write rows only with their metrics history on (30% of them)
+    assert 25 <= sum(m.metrics for m in by_type["docker"]) <= 35
 
 
-def test_insert_day_sql():
-    sql = insert_day_sql("icmp", 1000, day=3)
-    assert sql.startswith("INSERT INTO icmp_metrics_log (monitor_id, latency_ms, packet_loss_percentage, created_at)")
-    assert f"generate_series(0, {rows_per_day('icmp', 1000) - 1})" in sql
-    assert "make_interval(days => 3)" in sql
-    # 100 ICMP monitors per 1,000
-    assert "1 + floor(random() * 100)::bigint" in sql
+def test_insert_day_sql_fills_every_table_with_one_day():
+    sql = insert_day_sql(day=3, history_end=EPOCH + 10 * 86400)
+    for table in TABLES.values():
+        assert f"INSERT INTO {table} " in sql
+    assert f"ceil(({EPOCH + 3 * 86400} - m.phase)" in sql
+    assert f"floor(({EPOCH + 4 * 86400} - 1 - m.phase)" in sql
+    assert "%(" not in sql
 
 
-def test_insert_day_sql_for_every_table():
-    for monitor_type, table in TABLES.items():
-        assert f"INSERT INTO {table} " in insert_day_sql(monitor_type, 500, day=0)
+def test_monitor_table_sql():
+    sql = monitor_table_sql(monitors_of("balanced", 100))
+    assert sql.count("('http', ") == 45
+    assert "CREATE TABLE bf_monitor" in sql
 
 
 def test_delete_day_sql():
     sql = delete_day_sql(0)
     for table in TABLES.values():
-        assert f"DELETE FROM {table} WHERE created_at < timestamptz '2026-01-01' + make_interval(days => 1);" in sql
-
-
-def test_docker_rows_fill_the_restart_tracking_columns():
-    sql = insert_day_sql("docker", 1000, day=0)
-    assert "restart_count, container_created_at) SELECT" in sql
-    assert ", 0, timestamptz '2025-12-01' FROM" in sql
+        assert f"DELETE FROM {table} WHERE created_at < to_timestamp({EPOCH + 86400});" in sql

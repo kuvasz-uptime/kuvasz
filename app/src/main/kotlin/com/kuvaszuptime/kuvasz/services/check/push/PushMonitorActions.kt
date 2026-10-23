@@ -7,18 +7,23 @@ import com.kuvaszuptime.kuvasz.jooq.tables.pojos.PushMonitor
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.models.MonitorDuplicatedException
 import com.kuvaszuptime.kuvasz.models.MonitorNotFoundException
+import com.kuvaszuptime.kuvasz.models.dto.event.EventSortField
 import com.kuvaszuptime.kuvasz.models.dto.event.PushUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.PushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorId
 import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorsWithCategory
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorCreateDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorSortField
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorUpdateDto
+import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPagePushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.PushMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
+import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.repositories.PushUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
@@ -115,24 +120,31 @@ class PushMonitorActions(
         uptimeStatus: List<UptimeStatus> = emptyList(),
         sortedBy: SortField<*>? = null,
         categoryFilter: CategoryFilter? = null,
-    ): List<PushMonitorDetailsDto> {
-        val monitors = monitorRepository.getMonitorsWithDetails(
+    ): List<PushMonitorDetailsDto> =
+        monitorRepository.getMonitorsWithDetails(
             enabled = enabled,
             uptimeStatus = uptimeStatus,
             sortedBy = sortedBy,
             categoryFilter = categoryFilter,
+        ).withListDetails()
+
+    fun getMonitorsPage(
+        enabled: Boolean?,
+        uptimeStatus: List<UptimeStatus>,
+        categoryFilter: CategoryFilter?,
+        name: String?,
+        sorting: Sorting<PushMonitorSortField>,
+        pageRequest: PageRequest,
+    ): PagedResult<PushMonitorDetailsDto> {
+        val page = monitorRepository.getMonitorsPage(
+            enabled = enabled,
+            uptimeStatus = uptimeStatus,
+            categoryFilter = categoryFilter,
+            name = name,
+            sorting = sorting,
+            pageRequest = pageRequest,
         )
-        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(monitors.monitorsWithCategory())
-        return monitors.map { detailsDto ->
-            val windows = windowsByMonitor[detailsDto.monitorId()].orEmpty()
-            detailsDto.copy(
-                effectiveIntegrations = integrationRepository
-                    .getEffectiveIntegrations(detailsDto.integrations)
-                    .toSet(),
-                maintenanceWindows = windows,
-                inMaintenance = windows.any { it.active },
-            )
-        }
+        return page.withResult(page.result.withListDetails())
     }
 
     fun createMonitor(monitorCreateDto: PushMonitorCreateDto): PushMonitorRecord {
@@ -166,6 +178,15 @@ class PushMonitorActions(
                 uptimeEventRepository.getEventsByMonitorId(monitor.id, limit)
             }
 
+    fun getUptimeEventsPage(
+        monitorId: Long,
+        sorting: Sorting<EventSortField>,
+        pageRequest: PageRequest,
+    ): PagedResult<PushUptimeEventDto> =
+        monitorRepository.findById(monitorId, null)
+            .orThrowNotFound(monitorId)
+            .let { monitor -> uptimeEventRepository.getEventsPage(monitor.id, sorting, pageRequest) }
+
     fun getMonitorStats(monitorId: Long, period: Duration): PushMonitorStatsDto =
         withUptimeHistory(monitorId, period) { monitor, uptimeHistory ->
             PushMonitorStatsDto(
@@ -185,13 +206,15 @@ class PushMonitorActions(
             period = period,
             monitorIds = monitorIds,
             categories = categories,
-        ) { monitor, uptime ->
+            prefetch = {},
+        ) { monitor, uptime, _ ->
             StatusPagePushMonitorDetailsDto(
                 name = monitor.name,
                 lastCheck = monitor.lastUptimeCheck,
                 uptimeRatio = uptime.uptimeRatio,
                 uptimeStatus = monitor.uptimeStatus,
                 uptimeStatusHistory = uptime.uptimeStatusHistory,
+                incidentCount = uptime.incidentCount,
                 inMaintenance = uptime.inMaintenance,
                 category = monitor.category,
                 lastHeartbeat = monitor.lastHeartbeat,
@@ -221,5 +244,19 @@ class PushMonitorActions(
         monitorWithEvent?.second?.let { event -> eventDispatcher.dispatch(event) }
 
         return monitorWithEvent?.first
+    }
+
+    private fun List<PushMonitorDetailsDto>.withListDetails(): List<PushMonitorDetailsDto> {
+        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(monitorsWithCategory())
+        return map { detailsDto ->
+            val windows = windowsByMonitor[detailsDto.monitorId()].orEmpty()
+            detailsDto.copy(
+                effectiveIntegrations = integrationRepository
+                    .getEffectiveIntegrations(detailsDto.integrations)
+                    .toSet(),
+                maintenanceWindows = windows,
+                inMaintenance = windows.any { it.active },
+            )
+        }
     }
 }

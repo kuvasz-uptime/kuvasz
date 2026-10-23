@@ -27,8 +27,16 @@ class IcmpMonitorDetailsPage(private val page: Page) {
         page.locator("#icmp-monitor-details-metrics-chart .apexcharts-point-annotation-marker")
     val incidentMarkerTooltip: Locator get() = page.locator(".apexcharts-annotation-tooltip")
 
-    // The period selector of the metrics block, changing it refreshes the metrics without reloading the page
+    // The period selector of the metrics, and the pickers of the start and the end of a custom range
     val metricsPeriodSelector: Locator get() = page.getByTestId("metrics-period-selector")
+    val metricsRangeFrom: Locator get() = page.getByTestId("metrics-range-from")
+    val metricsRangeTo: Locator get() = page.getByTestId("metrics-range-to")
+
+    // The calendar of the open picker, which is attached to the body
+    val openCalendar: Locator get() = page.locator("[data-vc=calendar][data-vc-input]:not([data-vc-calendar-hidden])")
+
+    // The plot area of the chart, an interval of which can be selected with the mouse
+    val metricsChartPlotArea: Locator get() = page.locator("#icmp-monitor-details-metrics-chart .apexcharts-graphical")
 
     // The overlay covering the metrics while the ones of a newly selected period are loading
     val metricsLoadingOverlay: Locator get() = page.getByTestId("metrics-loading-overlay")
@@ -51,6 +59,12 @@ class IcmpMonitorDetailsPage(private val page: Page) {
     val toggleButton: Locator get() = page.getByTestId("toggle-monitor-button")
     val pauseControl: Locator get() = toggleButton.locator(".icon-tabler-player-pause")
     val resumeControl: Locator get() = toggleButton.locator(".icon-tabler-player-play")
+
+    // Typing is applied when the input changes (i.e. on blur or Enter), just like in the browser
+    fun typeRangeEnd(picker: Locator, value: String) {
+        picker.fill(value)
+        picker.dispatchEvent("change")
+    }
 
     fun navigate(monitorId: Long) {
         page.navigate("/icmp-monitors/$monitorId")

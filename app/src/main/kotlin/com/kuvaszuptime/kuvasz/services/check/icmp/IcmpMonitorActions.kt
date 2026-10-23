@@ -5,16 +5,21 @@ import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.pojos.IcmpMonitor
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.MonitorNotFoundException
+import com.kuvaszuptime.kuvasz.models.dto.event.EventSortField
 import com.kuvaszuptime.kuvasz.models.dto.event.IcmpUptimeEventDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.IcmpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorCreateDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorSortField
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorUpdateDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorId
 import com.kuvaszuptime.kuvasz.models.dto.monitor.monitorsWithCategory
+import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIcmpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
+import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.repositories.IcmpUptimeEventRepository
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.repositories.toStatsDto
@@ -86,26 +91,31 @@ class IcmpMonitorActions(
         uptimeStatus: List<UptimeStatus> = emptyList(),
         sortedBy: SortField<*>? = null,
         categoryFilter: CategoryFilter? = null,
-    ): List<IcmpMonitorDetailsDto> {
-        val monitors = monitorRepository.getMonitorsWithDetails(
+    ): List<IcmpMonitorDetailsDto> =
+        monitorRepository.getMonitorsWithDetails(
             enabled = enabled,
             uptimeStatus = uptimeStatus,
             sortedBy = sortedBy,
             categoryFilter = categoryFilter,
-        )
-        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(monitors.monitorsWithCategory())
+        ).withListDetails()
 
-        return monitors.map { detailsDto ->
-            val windows = windowsByMonitor[detailsDto.monitorId()].orEmpty()
-            detailsDto.copy(
-                nextUptimeCheck = checkScheduler.getNextCheck(detailsDto.id),
-                effectiveIntegrations = integrationRepository
-                    .getEffectiveIntegrations(detailsDto.integrations)
-                    .toSet(),
-                maintenanceWindows = windows,
-                inMaintenance = windows.any { it.active },
-            )
-        }
+    fun getMonitorsPage(
+        enabled: Boolean?,
+        uptimeStatus: List<UptimeStatus>,
+        categoryFilter: CategoryFilter?,
+        name: String?,
+        sorting: Sorting<IcmpMonitorSortField>,
+        pageRequest: PageRequest,
+    ): PagedResult<IcmpMonitorDetailsDto> {
+        val page = monitorRepository.getMonitorsPage(
+            enabled = enabled,
+            uptimeStatus = uptimeStatus,
+            categoryFilter = categoryFilter,
+            name = name,
+            sorting = sorting,
+            pageRequest = pageRequest,
+        )
+        return page.withResult(page.result.withListDetails())
     }
 
     fun createMonitor(monitorCreateDto: IcmpMonitorCreateDto): IcmpMonitorRecord {
@@ -146,6 +156,15 @@ class IcmpMonitorActions(
                 uptimeEventRepository.getEventsByMonitorId(monitor.id, limit)
             }
 
+    fun getUptimeEventsPage(
+        monitorId: Long,
+        sorting: Sorting<EventSortField>,
+        pageRequest: PageRequest,
+    ): PagedResult<IcmpUptimeEventDto> =
+        monitorRepository.findById(monitorId, null)
+            .orThrowNotFound(monitorId)
+            .let { monitor -> uptimeEventRepository.getEventsPage(monitor.id, sorting, pageRequest) }
+
     fun getMonitorStats(monitorId: Long, period: Duration): IcmpMonitorStatsDto =
         withUptimeHistory(monitorId, period) { monitor, uptimeHistory ->
             val statsDto = IcmpMonitorStatsDto(
@@ -177,22 +196,42 @@ class IcmpMonitorActions(
             period = period,
             monitorIds = monitorIds,
             categories = categories,
-        ) { monitor, uptime ->
-            val latencyMetrics = monitor.metricsHistoryEnabled.takeIf { it }
-                ?.let { metricsLogRepository.getLatencyMetrics(monitor.id, period) }
-            val packetLossMetrics = monitor.metricsHistoryEnabled.takeIf { it }
-                ?.let { metricsLogRepository.getPacketLossMetrics(monitor.id, period) }
-
+            prefetch = { monitors ->
+                val monitorIdsWithHistory = monitors.filter { it.metricsHistoryEnabled }.map { it.id }
+                IcmpAverages(
+                    latencies = metricsLogRepository.getAverageLatencies(monitorIdsWithHistory, period),
+                    packetLosses = metricsLogRepository.getAveragePacketLosses(monitorIdsWithHistory, period),
+                )
+            },
+        ) { monitor, uptime, averages ->
             StatusPageIcmpMonitorDetailsDto(
                 name = monitor.name,
                 lastCheck = monitor.lastUptimeCheck,
-                averageLatencyInMs = latencyMetrics?.avg,
-                lastPacketLossPercentage = packetLossMetrics?.avg,
+                averageLatencyInMs = averages.latencies[monitor.id],
+                lastPacketLossPercentage = averages.packetLosses[monitor.id],
                 uptimeRatio = uptime.uptimeRatio,
                 uptimeStatus = monitor.uptimeStatus,
                 uptimeStatusHistory = uptime.uptimeStatusHistory,
+                incidentCount = uptime.incidentCount,
                 inMaintenance = uptime.inMaintenance,
                 category = monitor.category,
             )
         }
+
+    private fun List<IcmpMonitorDetailsDto>.withListDetails(): List<IcmpMonitorDetailsDto> {
+        val windowsByMonitor = maintenanceWindowService.getWindowsForMonitors(monitorsWithCategory())
+        return map { detailsDto ->
+            val windows = windowsByMonitor[detailsDto.monitorId()].orEmpty()
+            detailsDto.copy(
+                nextUptimeCheck = checkScheduler.getNextCheck(detailsDto.id),
+                effectiveIntegrations = integrationRepository
+                    .getEffectiveIntegrations(detailsDto.integrations)
+                    .toSet(),
+                maintenanceWindows = windows,
+                inMaintenance = windows.any { it.active },
+            )
+        }
+    }
 }
+
+private data class IcmpAverages(val latencies: Map<Long, Int>, val packetLosses: Map<Long, Int>)

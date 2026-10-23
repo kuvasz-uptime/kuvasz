@@ -255,6 +255,10 @@ data class HttpMonitorSummarySchema(
 @Introspected
 data class HttpMonitorListSchema(
     val monitors: List<HttpMonitorSummarySchema>,
+    val page: Int,
+    val size: Int,
+    val totalCount: Long,
+    val totalPages: Int,
 )
 
 @Introspected

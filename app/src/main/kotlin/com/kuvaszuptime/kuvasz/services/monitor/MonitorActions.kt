@@ -176,13 +176,16 @@ abstract class MonitorActions<R, D : MonitorDetailsDto>(
 
     /**
      * Collects the status page data of the enabled monitors, calculating everything that is common across the monitor
-     * types, and letting the caller enrich the result with the type specific details.
+     * types, and letting the caller enrich the result with the type specific details. The type specific figures of
+     * every monitor of the page are fetched at once by [prefetch], instead of monitor by monitor, then handed to
+     * [buildDetails] along with each monitor.
      */
-    protected fun <S : StatusPageMonitorDetailsDto> buildStatusPageData(
+    protected fun <S : StatusPageMonitorDetailsDto, P> buildStatusPageData(
         period: Duration,
         monitorIds: List<MonitorID>?,
         categories: List<String>?,
-        buildDetails: (monitor: D, uptime: StatusPageUptimeData) -> S,
+        prefetch: (monitors: List<D>) -> P,
+        buildDetails: (monitor: D, uptime: StatusPageUptimeData, prefetched: P) -> S,
     ): List<S> {
         val monitorNames = monitorIds?.filter { it.type == monitorType }?.map { it.name }
         val enabledMonitors = monitorRepository.fetchAllWithDetails(
@@ -196,15 +199,17 @@ abstract class MonitorActions<R, D : MonitorDetailsDto>(
             period = period,
             monitorIds = enabledMonitors.map { it.id },
         )
+        val prefetched = prefetch(enabledMonitors)
 
         return enabledMonitors.map { monitor ->
             val overview = overviewsByMonitor.getValue(monitor.id)
             val uptimeData = StatusPageUptimeData(
                 uptimeRatio = overview.uptimeRatio,
                 uptimeStatusHistory = overview.statusHistory,
+                incidentCount = overview.incidentCount,
                 inMaintenance = windowsByMonitor[monitor.monitorId()].orEmpty().any { it.active },
             )
-            buildDetails(monitor, uptimeData)
+            buildDetails(monitor, uptimeData, prefetched)
         }
     }
 
@@ -213,6 +218,7 @@ abstract class MonitorActions<R, D : MonitorDetailsDto>(
     protected data class StatusPageUptimeData(
         val uptimeRatio: Double?,
         val uptimeStatusHistory: List<StatusHistoryDto>,
+        val incidentCount: Int,
         val inMaintenance: Boolean,
     )
 }

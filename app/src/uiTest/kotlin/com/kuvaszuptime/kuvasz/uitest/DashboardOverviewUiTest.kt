@@ -19,6 +19,7 @@ import com.kuvaszuptime.kuvasz.models.monitor.NumericMonitorID
 import com.kuvaszuptime.kuvasz.services.ui.DashboardDataProvider
 import com.kuvaszuptime.kuvasz.uitest.pages.DashboardPage
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import com.microsoft.playwright.Page
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import com.microsoft.playwright.options.AriaRole
 import io.micronaut.test.annotation.MockBean
@@ -44,9 +45,12 @@ class DashboardOverviewUiTest(
     // Resolving the mock while the spec itself is being instantiated would be a circular dependency
     private fun provider() = getMock(dashboardDataProvider)
 
-    private fun showDashboard(overview: (Duration) -> DashboardOverview): DashboardPage {
+    private fun showDashboard(
+        page: Page = newPage(),
+        overview: (Duration) -> DashboardOverview,
+    ): DashboardPage {
         every { provider().getOverview(any()) } answers { overview(firstArg()) }
-        val dashboard = DashboardPage(newPage())
+        val dashboard = DashboardPage(page)
         dashboard.navigate()
         assertThat(dashboard.monitorTypesCard).isVisible()
         return dashboard
@@ -72,6 +76,29 @@ class DashboardOverviewUiTest(
                 assertThat(counts.getByLabel("Maintenance: 4")).hasText("4")
             }
             assertThat(dashboard.statusDetails.getByLabel("No incidents")).hasText("-")
+        }
+
+        "only the down and the maintenance counts are in the rows of the types on small screens" {
+            val page = newPage()
+            val dashboard = showDashboard(page) { period ->
+                dashboardOverview(
+                    period,
+                    dashboardActualStats(total = 8, up = 4, down = 2, inProgress = 2, inMaintenance = 4, paused = 1),
+                    inMaintenance = MonitorStateCounts(up = 2, down = 1, pending = 1),
+                )
+            }
+            val row = dashboard.monitorTypeRow("push")
+
+            listOf("Up: 2", "Down: 1", "Maintenance: 4", "Paused: 1", "Pending: 1").forEach {
+                assertThat(row.getByLabel(it)).isVisible()
+            }
+
+            page.setViewportSize(SMALL_SCREEN_WIDTH, SMALL_SCREEN_HEIGHT)
+
+            listOf("Down: 1", "Maintenance: 4").forEach { assertThat(row.getByLabel(it)).isVisible() }
+            listOf("Up: 2", "Paused: 1", "Pending: 1").forEach { assertThat(row.getByLabel(it)).isHidden() }
+            // The header shows every count on every screen
+            assertThat(dashboard.statusDetails.getByLabel("Up: 2")).isVisible()
         }
 
         "the incidents card counts the ongoing incidents, only the ones outside maintenance in red" {
@@ -200,5 +227,7 @@ class DashboardOverviewUiTest(
         const val CERTIFICATE_MONITOR_ID = 42L
         const val UNRELIABLE_MONITOR_ID = 7L
         const val HOUR = 3600L
+        const val SMALL_SCREEN_WIDTH = 390
+        const val SMALL_SCREEN_HEIGHT = 844
     }
 }

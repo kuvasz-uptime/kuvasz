@@ -44,6 +44,11 @@ body {
     font-feature-settings: "cv11" 0 !important;
 }
 
+/* Tabler 1.7 made the table header background translucent, so inheriting it in the sort link paints it twice */
+.table-sort {
+    background: transparent;
+}
+
 /* TomSelect clear button */
 div.ts-wrapper.form-select.plugin-clear_button > div.ts-control > div.clear-button {
     border: none !important;
@@ -354,4 +359,10 @@ div.ts-wrapper.form-select.plugin-clear_button > div.ts-control > div.clear-butt
 /* Keeps the line breaks of free-form, plain text content (e.g. incident notes), while still wrapping long lines */
 .text-pre-line {
     white-space: pre-line;
+}
+
+/* Tabler removes the bottom border of the last row of a card table only from its td cells, which leaves a stub under
+   the th ones (e.g. the IDs of the status pages) above the pagination of the list */
+.card-table tbody tr:last-child th {
+    border-bottom: 0;
 }

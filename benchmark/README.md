@@ -196,20 +196,36 @@ All of these must hold (the thresholds are in `config/profiles.yml`):
   most 1% of the checks are missed, and every monitor gets checked.
 - No false DOWN, no undetected DOWN.
 - Heartbeats: p99 below 1s, no errors.
-- UI/API requests: p95 below 2s, none above 10s, no errors.
+- UI/API requests: p95 below 2s, none above 10s, no errors. Reports, which add up the history of many monitors (the
+  dashboard's refreshed part, the status pages and the per-type stats API), get p95 below 5s and none above 15s.
 - No DB connection timeouts.
 
 A step also gets a warning if a stub target was busy (>80% CPU), since then the target might have been the bottleneck.
 
+## A filled database
+
+A knee or UI load block can load a history before the step (`--history-days`), as if the monitors had been running
+for that long, so the run measures an installation that has been in use for a while, instead of an empty one:
+
+```shell
+uv run python -m kbench.run uiload --profile S --heap xmx512 --scale 30 --history-days 7
+uv run python -m kbench.run uiload --profile S1536-PG4 --heap xmx768 --scale 50 --history-days 30 --ui-period P30D
+```
+
+The history follows the behaviors of the targets, like real monitors would have written it
+([`kbench/backfill.py`](kbench/backfill.py)): a flapping monitor flaps in episodes (twice a week, for 2 hours), a
+healthy one has a 10-minute outage every 2 weeks, and a failing one stays down.
+
 ## Disk space
 
 The disk space of the per-check history is measured separately, without running Kuvasz: a scratch Postgres gets the
-per-check tables (same columns and indexes as the migrations), filled with the history of N monitors for the retention
-period, then the daily cleanup is replayed a few times, so the tables reach the size they settle at in a long-running
-installation.
+per-check tables (same columns and indexes as the migrations), filled with the history of N monitors of a mix for the
+retention period (the same history as the one of a filled database), then the daily cleanup is replayed a few times,
+so the tables reach the size they settle at in a long-running installation.
 
 ```shell
 uv run python -m kbench.disksize --monitors 1000 --retention-days 7 --out results/disksize.json
+uv run python -m kbench.disksize --mix web-agency --monitors 1000 --retention-days 7
 ```
 
 ## Tests

@@ -46,6 +46,8 @@ class StackSettings:
     virtual_threads: bool
     kuvasz_tag: str
     gc_log_dir: Path
+    latency_retention_days: int = 7
+    db_pool_size: int = 10
 
     def env(self, profiles: dict) -> dict:
         profile = profiles["profiles"][self.profile]
@@ -58,6 +60,8 @@ class StackSettings:
             "KUVASZ_JAVA_OPTS": java_opts,
             "KUVASZ_VIRTUAL_THREADS": str(self.virtual_threads).lower(),
             "KUVASZ_GC_LOG_DIR": str(self.gc_log_dir),
+            "KUVASZ_LATENCY_RETENTION_DAYS": str(self.latency_retention_days),
+            "KUVASZ_DB_POOL_SIZE": str(self.db_pool_size),
             "PG_CPUS": str(postgres["cpus"]),
             "PG_MEM": postgres["mem"],
             "PG_SHARED_BUFFERS": postgres["shared_buffers"],
@@ -102,6 +106,14 @@ class Stack:
 
     def stop_kuvasz(self):
         self.compose("stop", "--timeout", "30", "kuvasz", check=False)
+
+    def resize_postgres(self, cpus: float, mem: str):
+        """Changes the limits of the running database container, e.g. to load a long history faster than its profile
+        would allow. Restarted afterwards, so it starts with an empty cache, like after any restart of the box."""
+        subprocess.run(["docker", "update", "--cpus", str(cpus), "--memory", mem, "--memory-swap", mem,
+                        POSTGRES_CONTAINER], check=True, capture_output=True)
+        subprocess.run(["docker", "restart", POSTGRES_CONTAINER], check=True, capture_output=True)
+        self.compose("up", "-d", "--wait", "postgres")
 
     def kuvasz_logs(self) -> str:
         return subprocess.run(

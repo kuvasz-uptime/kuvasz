@@ -57,3 +57,21 @@ object ToolNames {
     const val LIST_DOCKER_HOSTS = "list-docker-hosts"
     const val LIST_PROXIES = "list-proxies"
 }
+
+object ListToolArgs {
+    const val PAGE = "The number of the page to return, starting from 1. Defaults to 1."
+    const val SIZE = "The number of items on a page. Defaults to 25."
+    const val SORTED_BY =
+        "The field to sort by, e.g. 'NAME' or 'ID'. An unknown field is rejected with the list of the allowed ones."
+    const val SORT_ORDER = "'ASC' or 'DESC'. Defaults to 'ASC' if 'sortedBy' is given."
+    const val MONITOR_NAME =
+        "Returns only the monitors whose name contains this text, ignoring the case of the letters."
+    const val INCIDENT_MONITOR_NAME =
+        "Returns only the incidents whose monitor's name contains this text, ignoring the case of the letters."
+    const val STATUS_PAGE_TITLE =
+        "Returns only the status pages whose title contains this text, ignoring the case of the letters."
+    const val MAINTENANCE_WINDOW_NAME =
+        "Returns only the maintenance windows whose name contains this text, ignoring the case of the letters."
+    const val PAGINATION_NOTE = " The result is one page (25 items by default); it tells the total number of " +
+        "items and pages, use 'page' to get the next ones."
+}

@@ -187,14 +187,12 @@ private fun PublicTimelineNode.isResolvedNote() =
     this is PublicTimelineNode.Note && note.status == InvestigationStatus.RESOLVED
 
 /**
- * The badge of a monitor card counting the incidents of its history, which opens the incidents modal, filled from the
- * template of the monitor, see [monitorIncidentsTemplate]. Nothing is rendered without incidents.
+ * The badge of a monitor card counting every incident of its history, even if only the latest ones are listed, which
+ * opens the incidents modal, filled from the template of the monitor, see [monitorIncidentsTemplate]. Nothing is
+ * rendered without incidents.
  */
-internal fun FlowContent.monitorIncidentsBadge(
-    monitor: StatusPageMonitorDetailsDto,
-    incidents: List<StatusPageIncidentDto>,
-) {
-    if (incidents.isEmpty()) return
+internal fun FlowContent.monitorIncidentsBadge(monitor: StatusPageMonitorDetailsDto) {
+    if (monitor.incidentCount == 0) return
     a(href = "#") {
         classes(TEXT_RESET)
         testId("monitor-incidents-badge")
@@ -202,7 +200,7 @@ internal fun FlowContent.monitorIncidentsBadge(
         attributes["data-incidents-of"] = monitor.incidentsKey
         onClick = "showStatusPageIncidents(this.dataset.incidentsOf)"
         inlineBadge(
-            text = incidents.size.toString(),
+            text = monitor.incidentCount.toString(),
             icon = Icon.FLAME,
         )
     }
@@ -236,6 +234,13 @@ internal fun FlowContent.monitorIncidentsTemplate(
         div {
             classes(MODAL_BODY, D_FLEX, FLEX_COLUMN, GAP_3, PX_1, PX_SM_2, PX_MD_4)
             testId("status-page-incidents-modal-body")
+            if (monitor.incidentCount > incidents.size) {
+                div {
+                    classes(TEXT_SECONDARY)
+                    testId("status-page-incidents-latest-only")
+                    +Messages.statusPageLatestIncidentsOnly(incidents.size.toString(), monitor.incidentCount.toString())
+                }
+            }
             incidents.forEach { incident ->
                 statusCard(
                     statusColor = monitor.incidentStatusColor(incident.isOngoing),

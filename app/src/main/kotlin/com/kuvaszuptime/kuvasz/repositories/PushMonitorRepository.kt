@@ -9,24 +9,33 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.PushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.PushMonitorSummary
+import com.kuvaszuptime.kuvasz.models.dto.monitor.push.PushMonitorSortField
+import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
 import com.kuvaszuptime.kuvasz.models.monitor.push.idWithName
+import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
+import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
+import com.kuvaszuptime.kuvasz.util.fetchPage
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import com.kuvaszuptime.kuvasz.util.sortedIn
 import jakarta.inject.Singleton
+import java.time.OffsetDateTime
+import org.jooq.Condition
 import org.jooq.DSLContext
 import org.jooq.Field
 import org.jooq.Record
+import org.jooq.Record1
+import org.jooq.Select
 import org.jooq.SelectConditionStep
 import org.jooq.SortField
 import org.jooq.Table
 import org.jooq.exception.DataAccessException
 import org.jooq.impl.DSL
 import org.jooq.impl.SQLDataType
-import java.time.OffsetDateTime
 
 @Singleton
 @Suppress("TooManyFunctions")
@@ -95,7 +104,7 @@ class PushMonitorRepository(
         .where(PUSH_MONITOR.ID.eq(monitorId))
         .execute()
 
-    @Suppress("IgnoredReturnValue", "UnsafeCallOnNullableType")
+    @Suppress("IgnoredReturnValue")
     fun getMonitorsWithDetails(
         enabled: Boolean? = null,
         uptimeStatus: List<UptimeStatus> = emptyList(),
@@ -105,16 +114,78 @@ class PushMonitorRepository(
         categoryFilter: CategoryFilter? = null,
     ): List<PushMonitorDetailsDto> =
         monitorDetailsSelect()
+            .and(filterCondition(enabled, uptimeStatus, categoryFilter))
             .apply {
-                enabled?.let { and(PUSH_MONITOR.ENABLED.eq(it)) }
-                uptimeStatus.takeIf { it.isNotEmpty() }?.let {
-                    and(latestUptimeEventSelect.field(PUSH_UPTIME_EVENT.STATUS)!!.`in`(it))
-                }
                 selectionCondition(PUSH_MONITOR.NAME, PUSH_MONITOR.CATEGORY, monitorNames, categories)?.let { and(it) }
-                categoryFilterCondition(PUSH_MONITOR.CATEGORY, categoryFilter)?.let { and(it) }
                 sortedBy?.let { orderBy(it, PUSH_MONITOR.ID.asc()) }
             }
             .fetchInto(PushMonitorDetailsDto::class.java)
+
+    fun getMonitorsPage(
+        enabled: Boolean?,
+        uptimeStatus: List<UptimeStatus>,
+        categoryFilter: CategoryFilter?,
+        name: String?,
+        sorting: Sorting<PushMonitorSortField>,
+        pageRequest: PageRequest,
+    ): PagedResult<PushMonitorDetailsDto> {
+        val condition = DSL.and(
+            filterCondition(enabled, uptimeStatus, categoryFilter),
+            containsIgnoreCaseCondition(PUSH_MONITOR.NAME, name),
+        )
+        return monitorDetailsSelect()
+            .and(condition)
+            .fetchPage(
+                countQuery = countSelect(uptimeStatus, condition),
+                pageRequest = pageRequest,
+                orderBy = listOf(sorting.field.toField().sortedIn(sorting.order), PUSH_MONITOR.ID.asc()),
+                type = PushMonitorDetailsDto::class.java,
+            )
+    }
+
+    private fun filterCondition(
+        enabled: Boolean?,
+        uptimeStatus: List<UptimeStatus>,
+        categoryFilter: CategoryFilter?,
+    ): Condition = DSL.and(
+        listOfNotNull(
+            enabled?.let { PUSH_MONITOR.ENABLED.eq(it) },
+            uptimeStatus.takeIf { it.isNotEmpty() }
+                ?.let { checkNotNull(latestUptimeEventSelect.field(PUSH_UPTIME_EVENT.STATUS)).`in`(it) },
+            categoryFilterCondition(PUSH_MONITOR.CATEGORY, categoryFilter),
+        )
+    )
+
+    /**
+     * Counts the monitors [condition] selects, joining only what it can refer to: the latest uptime event only when it
+     * filters by the uptime status. The status pages can't change the number of the rows, so they are never joined.
+     */
+    private fun countSelect(uptimeStatus: List<UptimeStatus>, condition: Condition): Select<Record1<Int>> {
+        val monitors = if (uptimeStatus.isEmpty()) {
+            PUSH_MONITOR
+        } else {
+            PUSH_MONITOR.leftJoin(DSL.lateral(latestUptimeEventSelect)).on(DSL.trueCondition())
+        }
+        return dslContext
+            .selectCount()
+            .from(monitors)
+            .where(condition)
+    }
+
+    private fun PushMonitorSortField.toField(): Field<*> = when (this) {
+        PushMonitorSortField.ID -> PUSH_MONITOR.ID
+        PushMonitorSortField.NAME -> PUSH_MONITOR.NAME
+        PushMonitorSortField.ENABLED -> PUSH_MONITOR.ENABLED
+        PushMonitorSortField.UPTIME_STATUS -> checkNotNull(latestUptimeEventSelect.field(PUSH_UPTIME_EVENT.STATUS))
+        PushMonitorSortField.UPTIME_STATUS_STARTED_AT ->
+            checkNotNull(latestUptimeEventSelect.field(PUSH_UPTIME_EVENT.STARTED_AT))
+        PushMonitorSortField.LAST_UPTIME_CHECK ->
+            checkNotNull(latestUptimeEventSelect.field(PUSH_UPTIME_EVENT.UPDATED_AT))
+        PushMonitorSortField.HEARTBEAT_INTERVAL -> PUSH_MONITOR.HEARTBEAT_INTERVAL
+        PushMonitorSortField.LAST_HEARTBEAT -> PUSH_MONITOR.LAST_HEARTBEAT
+        PushMonitorSortField.CREATED_AT -> PUSH_MONITOR.CREATED_AT
+        PushMonitorSortField.UPDATED_AT -> PUSH_MONITOR.UPDATED_AT
+    }
 
     fun getMonitorWithDetails(monitorId: Long): PushMonitorDetailsDto? =
         monitorDetailsSelect()

@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.security.api
 
 import com.kuvaszuptime.kuvasz.config.ApiKeyConfig
 import com.kuvaszuptime.kuvasz.controllers.API_V2_PREFIX
+import com.kuvaszuptime.kuvasz.controllers.API_V3_PREFIX
 import com.kuvaszuptime.kuvasz.controllers.MCP_PATH
 import com.kuvaszuptime.kuvasz.security.Role
 import com.kuvaszuptime.kuvasz.util.constantTimeEquals
@@ -37,7 +38,7 @@ class ApiKeyTokenValidator(
 
         return when {
             // The REST API is protected by the regular API key, granting ROLE_API
-            path.startsWith(API_V2_PREFIX) && !apiKeyConfig.isApiKeyDisabled() &&
+            (path.startsWith(API_V2_PREFIX) || path.startsWith(API_V3_PREFIX)) && !apiKeyConfig.isApiKeyDisabled() &&
                 token.constantTimeEquals(apiKeyConfig.apiKey) ->
                 Publishers.just(Authentication.build("api-user", listOf(Role.API.alias)))
 

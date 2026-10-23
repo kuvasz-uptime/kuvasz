@@ -69,6 +69,8 @@ markdown_extensions:
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.arithmatex:
+      generic: true
 plugins:
   - search
   - social:
@@ -97,8 +99,14 @@ extra:
 hooks:
   - overrides/hooks/shortcodes.py
   - overrides/hooks/image_dimensions.py
+  - overrides/hooks/katex.py
+extra_javascript:
+  - javascripts/katex.js
+  - vendor/katex/katex.min.js
+  - vendor/katex/contrib/auto-render.min.js
 extra_css:
   - stylesheets/custom.css
+  - vendor/katex/katex.min.css
 nav:
   - Introduction: index.md
   - Live demo: demo.md

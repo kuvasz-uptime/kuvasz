@@ -3,20 +3,25 @@ package com.kuvaszuptime.kuvasz.repositories
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpMonitor.HTTP_MONITOR
 import com.kuvaszuptime.kuvasz.jooq.tables.HttpUptimeEvent.HTTP_UPTIME_EVENT
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
+import com.kuvaszuptime.kuvasz.models.dto.event.EventSortField
 import com.kuvaszuptime.kuvasz.models.dto.event.HttpUptimeEventDto
+import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpUptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
-import com.kuvaszuptime.kuvasz.services.UptimeEventCalculationContext
+import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
+import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
+import com.kuvaszuptime.kuvasz.util.fetchPage
+import com.kuvaszuptime.kuvasz.util.sortedIn
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
 import java.time.OffsetDateTime
 
 @Singleton
-class HttpUptimeEventRepository(private val dslContext: DSLContext) : UptimeEventRepository {
+class HttpUptimeEventRepository(dslContext: DSLContext) : UptimeEventRepository(dslContext) {
 
-    private val uptimeEventColumns = UptimeEventColumns(
+    override val uptimeEventColumns = UptimeEventColumns(
         eventId = HTTP_UPTIME_EVENT.ID,
         eventMonitorId = HTTP_UPTIME_EVENT.MONITOR_ID,
         status = HTTP_UPTIME_EVENT.STATUS,
@@ -102,7 +107,35 @@ class HttpUptimeEventRepository(private val dslContext: DSLContext) : UptimeEven
         .execute()
 
     @Suppress("IgnoredReturnValue")
-    fun getEventsByMonitorId(monitorId: Long, limit: Int? = null): List<HttpUptimeEventDto> = dslContext
+    fun getEventsByMonitorId(monitorId: Long, limit: Int? = null): List<HttpUptimeEventDto> =
+        eventDtoSelect(monitorId)
+            .orderBy(HTTP_UPTIME_EVENT.STARTED_AT.desc())
+            .apply {
+                if (limit != null) {
+                    limit(limit)
+                }
+            }
+            .fetchInto(HttpUptimeEventDto::class.java)
+
+    fun getEventsPage(
+        monitorId: Long,
+        sorting: Sorting<EventSortField>,
+        pageRequest: PageRequest,
+    ): PagedResult<HttpUptimeEventDto> =
+        eventDtoSelect(monitorId).fetchPage(
+            countQuery = dslContext
+                .selectCount()
+                .from(HTTP_UPTIME_EVENT)
+                .where(HTTP_UPTIME_EVENT.MONITOR_ID.eq(monitorId)),
+            pageRequest = pageRequest,
+            orderBy = listOf(
+                sorting.field.toField(uptimeEventColumns).sortedIn(sorting.order),
+                HTTP_UPTIME_EVENT.ID.asc(),
+            ),
+            type = HttpUptimeEventDto::class.java,
+        )
+
+    private fun eventDtoSelect(monitorId: Long) = dslContext
         .select(
             HTTP_UPTIME_EVENT.ID.`as`(HttpUptimeEventDto::id.name),
             HTTP_UPTIME_EVENT.STATUS.`as`(HttpUptimeEventDto::status.name),
@@ -113,27 +146,4 @@ class HttpUptimeEventRepository(private val dslContext: DSLContext) : UptimeEven
         )
         .from(HTTP_UPTIME_EVENT)
         .where(HTTP_UPTIME_EVENT.MONITOR_ID.eq(monitorId))
-        .orderBy(HTTP_UPTIME_EVENT.STARTED_AT.desc())
-        .apply {
-            if (limit != null) {
-                limit(limit)
-            }
-        }
-        .fetchInto(HttpUptimeEventDto::class.java)
-
-    override fun fetchAllInPeriod(
-        periodStart: OffsetDateTime,
-        periodEnd: OffsetDateTime,
-        monitorIds: List<Long>?,
-        onlyEnabledMonitors: Boolean,
-    ): List<UptimeEventCalculationContext> = dslContext.fetchUptimeEventsInPeriod(
-        uptimeEventColumns,
-        periodStart,
-        periodEnd,
-        monitorIds,
-        onlyEnabledMonitors,
-    )
-
-    override fun fetchLatestIncidentTimestamp(): OffsetDateTime? =
-        dslContext.fetchLatestUptimeIncidentTimestamp(uptimeEventColumns)
 }

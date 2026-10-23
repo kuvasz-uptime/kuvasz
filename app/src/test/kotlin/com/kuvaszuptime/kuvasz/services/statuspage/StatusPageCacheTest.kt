@@ -44,6 +44,7 @@ class StatusPageCacheTest(
                     averageLatencyInMs = null,
                     uptimeRatio = null,
                     uptimeStatus = null,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList()
                 ),
                 StatusPageHttpMonitorDetailsDto(
@@ -52,6 +53,7 @@ class StatusPageCacheTest(
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9234,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = listOf(
                         StatusHistoryDto(
                             date = getCurrentTimestamp().minusDays(1).toLocalDate(),
@@ -66,6 +68,7 @@ class StatusPageCacheTest(
                     lastCheck = null,
                     uptimeRatio = null,
                     uptimeStatus = null,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList(),
                     lastHeartbeat = null,
                 ),
@@ -75,6 +78,7 @@ class StatusPageCacheTest(
                     lastHeartbeat = null,
                     uptimeRatio = 0.9123,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = listOf(
                         StatusHistoryDto(
                             date = getCurrentTimestamp().minusDays(2).toLocalDate(),
@@ -159,6 +163,7 @@ class StatusPageCacheTest(
                     averageLatencyInMs = null,
                     uptimeRatio = null,
                     uptimeStatus = null,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList()
                 ),
                 StatusPageHttpMonitorDetailsDto(
@@ -167,6 +172,7 @@ class StatusPageCacheTest(
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9234,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = listOf(
                         StatusHistoryDto(
                             date = getCurrentTimestamp().minusDays(1).toLocalDate(),
@@ -182,6 +188,7 @@ class StatusPageCacheTest(
                     lastHeartbeat = null,
                     uptimeRatio = null,
                     uptimeStatus = null,
+                    incidentCount = 0,
                     uptimeStatusHistory = emptyList()
                 ),
                 StatusPagePushMonitorDetailsDto(
@@ -190,6 +197,7 @@ class StatusPageCacheTest(
                     lastHeartbeat = null,
                     uptimeRatio = 0.9123,
                     uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
                     uptimeStatusHistory = listOf(
                         StatusHistoryDto(
                             date = getCurrentTimestamp().minusDays(2).toLocalDate(),

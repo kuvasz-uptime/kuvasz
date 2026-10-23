@@ -2,24 +2,25 @@ package com.kuvaszuptime.kuvasz.controllers.ui
 
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.models.IncidentType
+import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentDto
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentStatus
+import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
 import com.kuvaszuptime.kuvasz.repositories.IncidentRepository
 import com.kuvaszuptime.kuvasz.security.ui.WebSecured
 import com.kuvaszuptime.kuvasz.services.incident.IncidentActions
+import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
 import com.kuvaszuptime.kuvasz.ui.pages.*
 import com.kuvaszuptime.kuvasz.ui.pages.incident.*
-import com.kuvaszuptime.kuvasz.util.UIDefaults
+import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.PathVariable
 import io.micronaut.http.annotation.Produces
-import io.micronaut.http.annotation.QueryValue
 import io.micronaut.scheduling.TaskExecutors
 import io.micronaut.scheduling.annotation.ExecuteOn
 import io.swagger.v3.oas.annotations.Hidden
-import java.time.Duration
 
 @Controller("/incidents")
 @Hidden
@@ -32,22 +33,36 @@ class WebUIIncidentController(
     @Get("/")
     @WebSecured
     @Produces(MediaType.TEXT_HTML)
-    fun incidents(@QueryValue period: Duration?, @QueryValue type: IncidentType?): String =
-        renderIncidentsPage(globals = appGlobals, period = period.orDefaultIncidentsPeriod(), selectedType = type)
+    fun incidents(request: HttpRequest<*>): String =
+        renderIncidentsPage(globals = appGlobals, query = incidentListQuery(request.queryParams()))
 
     @Get("/fragments/list")
     @WebSecured
     @Produces(MediaType.TEXT_HTML)
     @ExecuteOn(TaskExecutors.BLOCKING)
-    fun incidentList(@QueryValue period: Duration?, @QueryValue type: IncidentType?): String =
-        renderIncidentList(
-            incidentRepository.getIncidents(
-                monitorId = null,
-                period = period.orDefaultIncidentsPeriod(),
-                includeResolved = true,
-                types = type?.let { setOf(it) },
-            )
-        )
+    fun incidentList(request: HttpRequest<*>): HttpResponse<String> {
+        val query = incidentListQuery(request.queryParams())
+        val incidents = fetchIncidents(query)
+        return pagedListFragment(query, incidents) { shownQuery -> renderIncidentList(incidents, shownQuery) }
+    }
+
+    /**
+     * The incidents of [incidentType] of a monitor on its details page. Their page is not put into the URL, since it's
+     * the one of the details page.
+     */
+    @Get("/fragments/monitor/{incidentType}/{monitorId}")
+    @WebSecured
+    @Produces(MediaType.TEXT_HTML)
+    @ExecuteOn(TaskExecutors.BLOCKING)
+    fun monitorIncidentList(
+        @PathVariable incidentType: IncidentType,
+        @PathVariable monitorId: Long,
+        request: HttpRequest<*>,
+    ): String {
+        val query = monitorIncidentListQuery(request.queryParams(), incidentType, monitorId)
+        val incidents = fetchIncidents(query)
+        return renderIncidents(incidents, query.withPage(incidents.page))
+    }
 
     @Get("/{incidentType}/{eventId}")
     @WebSecured
@@ -78,8 +93,20 @@ class WebUIIncidentController(
         }
     }
 
-    private fun Duration?.orDefaultIncidentsPeriod(): Duration =
-        this ?: Duration.ofDays(UIDefaults.INCIDENTS_PERIOD_DAYS)
+    private fun fetchIncidents(query: IncidentListQuery): PagedResult<IncidentDto> {
+        val filters = query.filters
+        return fetchListPage(query.pageRequest) { pageRequest ->
+            incidentRepository.getIncidentsPage(
+                monitorId = filters.monitorId.value,
+                period = filters.period.value,
+                includeResolved = filters.includeResolved.value,
+                type = filters.type.value,
+                name = filters.name.value,
+                sorting = query.sorting,
+                pageRequest = pageRequest,
+            )
+        }
+    }
 
     companion object {
         private const val HTMX_STOP_POLLING_STATUS = 286

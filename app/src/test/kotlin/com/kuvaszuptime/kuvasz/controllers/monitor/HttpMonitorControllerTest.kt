@@ -2623,7 +2623,7 @@ class HttpMonitorControllerTest(
             `when`("a monitor is created, then renamed, then deleted") {
                 every { getMock(statCalculator).calculateUptimeOverviews(any(), any(), any()) } answers {
                     thirdArg<List<Long>>().associateWith {
-                        UptimeOverview(uptimeRatio = null, statusHistory = emptyList())
+                        UptimeOverview(uptimeRatio = null, statusHistory = emptyList(), incidentCount = 0)
                     }
                 }
                 // Starts from a known state and populates the cache with the current, empty set of monitors, so a

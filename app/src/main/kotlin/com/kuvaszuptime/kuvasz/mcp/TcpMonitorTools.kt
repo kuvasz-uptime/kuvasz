@@ -12,6 +12,7 @@ import com.kuvaszuptime.kuvasz.mcp.schemas.TcpMonitorSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.TcpMonitorStatsSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.TcpMonitorSummarySchema
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitorDto
+import com.kuvaszuptime.kuvasz.models.pagination.ListDefaults
 import com.kuvaszuptime.kuvasz.services.check.tcp.TcpMonitorActions
 import com.kuvaszuptime.kuvasz.validation.throwIfNotEmpty
 import io.micronaut.mcp.annotations.Tool
@@ -27,13 +28,34 @@ class TcpMonitorTools(
 
     @Tool(
         name = ToolNames.LIST_TCP_MONITORS,
-        description = "Lists all TCP port monitors configured in Kuvasz with their current uptime status",
+        description = "Lists the TCP port monitors configured in Kuvasz with their current uptime status, sorted by " +
+            "their name by default." +
+            ListToolArgs.PAGINATION_NOTE,
         annotations = Tool.ToolAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true)
     )
-    fun listTcpMonitors(): TcpMonitorListSchema =
-        TcpMonitorListSchema(
-            monitors = tcpMonitorActions.getMonitorsWithDetails().map { TcpMonitorSummarySchema.fromDto(it) }
+    fun listTcpMonitors(
+        @ToolArg(description = ListToolArgs.MONITOR_NAME) name: String? = null,
+        @ToolArg(description = ListToolArgs.PAGE) page: Int? = null,
+        @ToolArg(description = ListToolArgs.SIZE) size: Int? = null,
+        @ToolArg(description = ListToolArgs.SORTED_BY) sortedBy: String? = null,
+        @ToolArg(description = ListToolArgs.SORT_ORDER) sortOrder: String? = null,
+    ): TcpMonitorListSchema {
+        val monitors = tcpMonitorActions.getMonitorsPage(
+            enabled = null,
+            uptimeStatus = emptyList(),
+            categoryFilter = null,
+            name = name,
+            sorting = sortingOf(sortedBy, sortOrder, default = ListDefaults.TCP_MONITOR_SORTING),
+            pageRequest = pageRequestOf(page, size),
         )
+        return TcpMonitorListSchema(
+            monitors = monitors.result.map { TcpMonitorSummarySchema.fromDto(it) },
+            page = monitors.page,
+            size = monitors.size,
+            totalCount = monitors.totalCount,
+            totalPages = monitors.totalPages,
+        )
+    }
 
     @Tool(
         name = ToolNames.GET_TCP_MONITOR_DETAILS,

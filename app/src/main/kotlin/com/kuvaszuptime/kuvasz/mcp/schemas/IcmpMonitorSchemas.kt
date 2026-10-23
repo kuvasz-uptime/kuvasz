@@ -151,6 +151,10 @@ data class IcmpMonitorSummarySchema(
 @Introspected
 data class IcmpMonitorListSchema(
     val monitors: List<IcmpMonitorSummarySchema>,
+    val page: Int,
+    val size: Int,
+    val totalCount: Long,
+    val totalPages: Int,
 )
 
 @JsonSchema

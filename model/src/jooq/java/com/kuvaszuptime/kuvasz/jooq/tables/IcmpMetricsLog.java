@@ -155,7 +155,7 @@ public class IcmpMetricsLog extends TableImpl<IcmpMetricsLogRecord> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.asList(Indexes.ICMP_METRICS_LOG_CREATED_AT_IDX, Indexes.ICMP_METRICS_LOG_MONITOR_ID_IDX);
+        return Arrays.asList(Indexes.ICMP_METRICS_LOG_CREATED_AT_IDX);
     }
 
     @Override

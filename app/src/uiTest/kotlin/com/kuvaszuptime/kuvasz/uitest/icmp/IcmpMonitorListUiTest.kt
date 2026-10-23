@@ -8,8 +8,10 @@ import com.kuvaszuptime.kuvasz.mocks.createMaintenanceWindow
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
+import com.kuvaszuptime.kuvasz.uitest.MonitorListUiTestConfig
 import com.kuvaszuptime.kuvasz.uitest.PlaywrightSupport
 import com.kuvaszuptime.kuvasz.uitest.UiTestSpec
+import com.kuvaszuptime.kuvasz.uitest.monitorListQueryTests
 import com.kuvaszuptime.kuvasz.uitest.pages.icmp.IcmpMonitorListPage
 import com.microsoft.playwright.assertions.LocatorAssertions
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
@@ -30,7 +32,7 @@ class IcmpMonitorListUiTest(private val icmpMonitorRepository: IcmpMonitorReposi
             // Add a monitor straight into the DB *after* the page has rendered — no navigation, no manual refresh.
             createIcmpMonitor(icmpMonitorRepository, monitorName = "Auto Refreshed")
 
-            // The list polls its fragment every 15s, so the row appears on the next poll.
+            // The list polls its fragment every 30s, so the row appears on the next poll.
             assertThat(list.rowByName("Auto Refreshed"))
                 .isVisible(LocatorAssertions.IsVisibleOptions().setTimeout(AUTO_REFRESH_TIMEOUT_MS))
         }
@@ -104,9 +106,22 @@ class IcmpMonitorListUiTest(private val icmpMonitorRepository: IcmpMonitorReposi
             assertThat(list.rows).hasCount(names.size)
             list.names shouldBe listOf("alpha", "bravo", "Charlie", "Delta")
         }
+
+        monitorListQueryTests(
+            MonitorListUiTestConfig(
+                slug = "icmp",
+                createMonitor = { name, category, enabled ->
+                    createIcmpMonitor(icmpMonitorRepository, monitorName = name, category = category, enabled = enabled)
+                },
+                startUptimeStatus = { name, status, startedAt ->
+                    val monitorId = checkNotNull(icmpMonitorRepository.findByName(name)).id
+                    createIcmpUptimeEventRecord(dslContext, monitorId, status, startedAt, endedAt = null)
+                },
+            )
+        )
     }
 
     companion object {
-        private const val AUTO_REFRESH_TIMEOUT_MS = 20_000.0
+        private const val AUTO_REFRESH_TIMEOUT_MS = 35_000.0
     }
 }

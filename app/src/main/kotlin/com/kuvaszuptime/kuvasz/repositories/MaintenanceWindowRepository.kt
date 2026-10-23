@@ -6,13 +6,20 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.MaintenanceWindowRecord
 import com.kuvaszuptime.kuvasz.models.DuplicationException
 import com.kuvaszuptime.kuvasz.models.MaintenanceWindowDuplicatedException
 import com.kuvaszuptime.kuvasz.models.PersistenceException
+import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowSortField
+import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
+import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
+import com.kuvaszuptime.kuvasz.util.fetchPage
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import com.kuvaszuptime.kuvasz.util.sortedIn
 import com.kuvaszuptime.kuvasz.util.toPersistenceException
 import jakarta.inject.Singleton
 import org.jooq.DSLContext
+import org.jooq.Field
 import org.jooq.SortField
 import org.jooq.exception.DataAccessException
 import org.jooq.impl.DSL
@@ -32,6 +39,40 @@ class MaintenanceWindowRepository(private val dslContext: DSLContext) {
         .selectFrom(MAINTENANCE_WINDOW)
         .apply { sortedBy?.let { orderBy(it, MAINTENANCE_WINDOW.ID.asc()) } }
         .fetch()
+
+    fun fetchPage(
+        enabled: Boolean?,
+        name: String?,
+        sorting: Sorting<MaintenanceWindowSortField>,
+        pageRequest: PageRequest,
+    ): PagedResult<MaintenanceWindowRecord> {
+        val condition = DSL.and(
+            listOfNotNull(
+                enabled?.let { MAINTENANCE_WINDOW.ENABLED.eq(it) },
+                containsIgnoreCaseCondition(MAINTENANCE_WINDOW.NAME, name),
+            )
+        )
+        return dslContext
+            .selectFrom(MAINTENANCE_WINDOW)
+            .where(condition)
+            .fetchPage(
+                countQuery = dslContext.selectCount().from(MAINTENANCE_WINDOW).where(condition),
+                pageRequest = pageRequest,
+                orderBy = listOf(sorting.field.toField().sortedIn(sorting.order), MAINTENANCE_WINDOW.ID.asc()),
+                type = MaintenanceWindowRecord::class.java,
+            )
+    }
+
+    private fun MaintenanceWindowSortField.toField(): Field<*> = when (this) {
+        MaintenanceWindowSortField.ID -> MAINTENANCE_WINDOW.ID
+        MaintenanceWindowSortField.NAME -> MAINTENANCE_WINDOW.NAME
+        MaintenanceWindowSortField.ENABLED -> MAINTENANCE_WINDOW.ENABLED
+        MaintenanceWindowSortField.GLOBAL -> MAINTENANCE_WINDOW.GLOBAL
+        MaintenanceWindowSortField.SHOW_ON_STATUS_PAGES -> MAINTENANCE_WINDOW.SHOW_ON_STATUS_PAGES
+        MaintenanceWindowSortField.START -> MAINTENANCE_WINDOW.START
+        MaintenanceWindowSortField.CREATED_AT -> MAINTENANCE_WINDOW.CREATED_AT
+        MaintenanceWindowSortField.UPDATED_AT -> MAINTENANCE_WINDOW.UPDATED_AT
+    }
 
     fun fetchByEnabled(enabled: Boolean): List<MaintenanceWindowRecord> = dslContext
         .selectFrom(MAINTENANCE_WINDOW)

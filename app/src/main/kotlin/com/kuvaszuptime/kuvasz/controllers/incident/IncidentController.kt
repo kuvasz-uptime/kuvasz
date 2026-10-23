@@ -10,6 +10,7 @@ import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentDto
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentNoteCreateDto
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentNoteDocs.INCIDENT_NOTES_405_REASON
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentNoteDto
+import com.kuvaszuptime.kuvasz.models.pagination.ListDefaults
 import com.kuvaszuptime.kuvasz.repositories.IncidentRepository
 import com.kuvaszuptime.kuvasz.services.incident.IncidentActions
 import io.micronaut.http.HttpStatus
@@ -59,8 +60,8 @@ class IncidentController(
     ): List<IncidentDto> =
         incidentRepository.getIncidents(
             monitorId = monitorId,
-            period = period ?: Duration.ofDays(INCIDENTS_PERIOD_DEFAULT_DAYS),
-            includeResolved = includeResolved ?: INCLUDE_RESOLVED_DEFAULT,
+            period = period ?: ListDefaults.INCIDENT_PERIOD,
+            includeResolved = includeResolved ?: ListDefaults.INCIDENT_INCLUDE_RESOLVED,
         )
 
     @ApiResponses(
@@ -157,9 +158,4 @@ class IncidentController(
     @ExecuteOn(TaskExecutors.BLOCKING)
     @CheckIncidentNotesWritable
     override fun deleteIncidentNote(incidentNoteId: Long) = incidentActions.deleteNote(incidentNoteId)
-
-    companion object {
-        private const val INCIDENTS_PERIOD_DEFAULT_DAYS = 7L
-        private const val INCLUDE_RESOLVED_DEFAULT = true
-    }
 }

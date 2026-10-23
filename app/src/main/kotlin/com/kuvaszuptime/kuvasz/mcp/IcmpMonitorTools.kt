@@ -11,6 +11,7 @@ import com.kuvaszuptime.kuvasz.mcp.schemas.IcmpMonitorSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.IcmpMonitorStatsSchema
 import com.kuvaszuptime.kuvasz.mcp.schemas.IcmpMonitorSummarySchema
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorDto
+import com.kuvaszuptime.kuvasz.models.pagination.ListDefaults
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpMonitorActions
 import com.kuvaszuptime.kuvasz.validation.throwIfNotEmpty
 import io.micronaut.mcp.annotations.Tool
@@ -26,13 +27,34 @@ class IcmpMonitorTools(
 
     @Tool(
         name = ToolNames.LIST_ICMP_MONITORS,
-        description = "Lists all ICMP (ping) monitors configured in Kuvasz with their current uptime status",
+        description = "Lists the ICMP (ping) monitors configured in Kuvasz with their current uptime status, " +
+            "sorted by their name by default." +
+            ListToolArgs.PAGINATION_NOTE,
         annotations = Tool.ToolAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true)
     )
-    fun listIcmpMonitors(): IcmpMonitorListSchema =
-        IcmpMonitorListSchema(
-            monitors = icmpMonitorActions.getMonitorsWithDetails().map { IcmpMonitorSummarySchema.fromDto(it) }
+    fun listIcmpMonitors(
+        @ToolArg(description = ListToolArgs.MONITOR_NAME) name: String? = null,
+        @ToolArg(description = ListToolArgs.PAGE) page: Int? = null,
+        @ToolArg(description = ListToolArgs.SIZE) size: Int? = null,
+        @ToolArg(description = ListToolArgs.SORTED_BY) sortedBy: String? = null,
+        @ToolArg(description = ListToolArgs.SORT_ORDER) sortOrder: String? = null,
+    ): IcmpMonitorListSchema {
+        val monitors = icmpMonitorActions.getMonitorsPage(
+            enabled = null,
+            uptimeStatus = emptyList(),
+            categoryFilter = null,
+            name = name,
+            sorting = sortingOf(sortedBy, sortOrder, default = ListDefaults.ICMP_MONITOR_SORTING),
+            pageRequest = pageRequestOf(page, size),
         )
+        return IcmpMonitorListSchema(
+            monitors = monitors.result.map { IcmpMonitorSummarySchema.fromDto(it) },
+            page = monitors.page,
+            size = monitors.size,
+            totalCount = monitors.totalCount,
+            totalPages = monitors.totalPages,
+        )
+    }
 
     @Tool(
         name = ToolNames.GET_ICMP_MONITOR_DETAILS,

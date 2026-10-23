@@ -1,5 +1,6 @@
 package com.kuvaszuptime.kuvasz.uitest.pages.statuspage
 
+import com.kuvaszuptime.kuvasz.uitest.pages.common.PagedListView
 import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
 
@@ -9,6 +10,19 @@ class StatusPageListPage(private val page: Page) {
     val addButton: Locator get() = page.getByTestId("add-new-button")
 
     val rows: Locator get() = page.getByTestId("status-page-row")
+
+    // The row of the default status page, which is pinned to the top of the first page
+    val defaultRow: Locator get() = page.getByTestId("default-status-page-row")
+
+    // Shown instead of its preview link when it's not available, because there are too many enabled monitors
+    val defaultRowUnavailableBadge: Locator get() = defaultRow.getByTestId("default-status-page-unavailable-badge")
+
+    val defaultRowUnavailablePreview: Locator get() = defaultRow.getByTestId("default-status-page-preview-unavailable")
+
+    val defaultRowPreviewLink: Locator get() = defaultRow.locator("a[href='/status/']")
+
+    // The filters, the sorting and the pages of the list
+    val pagedList = PagedListView(page, "status-page-list")
 
     val titles: List<String> get() = rows.locator("td:first-of-type").allInnerTexts().map { it.trim() }
 

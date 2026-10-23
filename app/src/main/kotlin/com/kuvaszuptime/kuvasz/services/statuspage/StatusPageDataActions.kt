@@ -13,6 +13,7 @@ import com.kuvaszuptime.kuvasz.models.dto.statuspage.themeBaseOrDefault
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.statuspage.SystemStatus
 import com.kuvaszuptime.kuvasz.repositories.MaintenanceWindowRepository
+import com.kuvaszuptime.kuvasz.repositories.SharedMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.StatusPageRepository
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceInterval
 import com.kuvaszuptime.kuvasz.services.maintenance.MaintenanceWindowCalculator
@@ -29,6 +30,7 @@ class StatusPageDataActions(
     private val defaultStatusPageConfig: DefaultStatusPageConfig,
     private val maintenanceWindowRepository: MaintenanceWindowRepository,
     private val maintenanceWindowCalculator: MaintenanceWindowCalculator,
+    private val sharedMonitorRepository: SharedMonitorRepository,
     appConfig: AppConfig,
 ) {
     companion object {
@@ -42,6 +44,14 @@ class StatusPageDataActions(
     private val historyDays: Int = minOf(StatusPageDefaults.HISTORY_DAYS, appConfig.eventDataRetentionDays)
 
     private val historyPeriod: Duration = Duration.ofDays(historyDays.toLong())
+
+    /**
+     * The default status page shows every enabled monitor, so it isn't available at all, public or not, above
+     * [StatusPageDefaults.DEFAULT_PAGE_MAX_MONITORS] of them. It's checked before its cached data is served, so a page
+     * cached while there were fewer monitors isn't served either.
+     */
+    fun isDefaultStatusPageAvailable(): Boolean =
+        sharedMonitorRepository.countEnabled() <= StatusPageDefaults.DEFAULT_PAGE_MAX_MONITORS
 
     @Cacheable(DEFAULT_PAGE_CACHE_NAME)
     fun getCachedDefaultStatusPageData() = getDefaultStatusPageData()

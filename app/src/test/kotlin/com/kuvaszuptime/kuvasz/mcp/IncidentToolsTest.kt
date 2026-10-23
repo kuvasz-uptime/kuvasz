@@ -56,6 +56,59 @@ class IncidentToolsTest(
 
         given("the list-incidents tool") {
 
+            `when`("list-incidents is called with a type filter and paging") {
+                val monitor = createHttpMonitor(monitorRepository, monitorName = "shop")
+                createHttpUptimeEventRecord(
+                    dslContext,
+                    monitorId = monitor.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = getCurrentTimestamp().minusHours(1),
+                    endedAt = null,
+                )
+                val sslEvent = createSSLEventRecord(
+                    dslContext,
+                    monitorId = monitor.id,
+                    status = SslStatus.INVALID,
+                    startedAt = getCurrentTimestamp().minusMinutes(30),
+                    endedAt = null,
+                )
+                val firstPage = callToolWithMcpClient(LIST_INCIDENTS, mapOf("name" to "SHO", "size" to 1))
+                val sslOnly = callToolWithMcpClient(LIST_INCIDENTS, mapOf("incidentType" to "SSL"))
+
+                then("it should return the requested page, the latest started incident first, with the totals") {
+                    val list = firstPage.structuredContentAs<IncidentListSchema>().shouldNotBeNull()
+                    list.incidents.map { it.incidentType to it.eventId } shouldBe
+                        listOf(IncidentType.SSL to sslEvent.id)
+                    list.totalCount shouldBe 2
+                    list.totalPages shouldBe 2
+                }
+
+                then("it should return the incidents of the given type only") {
+                    val list = sslOnly.structuredContentAs<IncidentListSchema>().shouldNotBeNull()
+                    list.incidents.map { it.incidentType to it.eventId } shouldBe
+                        listOf(IncidentType.SSL to sslEvent.id)
+                    list.totalCount shouldBe 1
+                }
+            }
+
+            `when`("list-incidents is called with a blank type and period") {
+                val monitor = createHttpMonitor(monitorRepository)
+                val event = createHttpUptimeEventRecord(
+                    dslContext,
+                    monitorId = monitor.id,
+                    status = UptimeStatus.DOWN,
+                    startedAt = getCurrentTimestamp().minusDays(2),
+                    endedAt = null,
+                )
+                val response = callToolWithMcpClient(LIST_INCIDENTS, mapOf("incidentType" to "", "period" to " "))
+
+                then("it should ignore them, and return the incidents of every type in the last 7 days") {
+                    response.isError shouldBe false
+                    val list = response.structuredContentAs<IncidentListSchema>().shouldNotBeNull()
+                    list.incidents.map { it.incidentType to it.eventId } shouldBe listOf(IncidentType.HTTP to event.id)
+                }
+            }
+
             `when`("list-incidents is called with an ongoing incident in the DB") {
                 val monitor = createHttpMonitor(monitorRepository)
                 val event = createHttpUptimeEventRecord(

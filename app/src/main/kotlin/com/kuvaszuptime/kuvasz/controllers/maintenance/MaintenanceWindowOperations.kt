@@ -22,7 +22,11 @@ import tools.jackson.databind.node.ObjectNode
 
 interface MaintenanceWindowOperations {
 
-    @Operation(summary = "Get all maintenance windows")
+    @Operation(
+        summary = "Get all maintenance windows",
+        description = "Deprecated: use GET /api/v3/maintenance-windows instead, which returns them page by page",
+        deprecated = true,
+    )
     @Get("/")
     fun getMaintenanceWindows(): List<MaintenanceWindowDetailsDto>
 

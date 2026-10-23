@@ -11,17 +11,27 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorSummary
+import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorSortField
+import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.http.idWithName
 import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
+import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
+import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
+import com.kuvaszuptime.kuvasz.util.fetchPage
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.kuvaszuptime.kuvasz.util.nullIfBlank
+import com.kuvaszuptime.kuvasz.util.sortedIn
 import jakarta.inject.Singleton
+import org.jooq.Condition
 import org.jooq.DSLContext
+import org.jooq.Field
 import org.jooq.Record
+import org.jooq.Record1
+import org.jooq.Select
 import org.jooq.SelectConditionStep
 import org.jooq.SortField
 import org.jooq.Table
@@ -98,7 +108,7 @@ class HttpMonitorRepository(
         .where(HTTP_MONITOR.ID.eq(monitorId))
         .execute()
 
-    @Suppress("IgnoredReturnValue", "UnsafeCallOnNullableType")
+    @Suppress("IgnoredReturnValue")
     fun getMonitorsWithDetails(
         enabled: Boolean? = null,
         uptimeStatus: List<UptimeStatus> = emptyList(),
@@ -110,18 +120,36 @@ class HttpMonitorRepository(
         categoryFilter: CategoryFilter? = null,
     ): List<HttpMonitorDetailsDto> =
         monitorDetailsSelect()
+            .and(filterCondition(enabled, uptimeStatus, sslStatus, sslCheckEnabled, categoryFilter))
             .apply {
-                enabled?.let { and(HTTP_MONITOR.ENABLED.eq(it)) }
-                uptimeStatus.takeIf { it.isNotEmpty() }?.let {
-                    and(latestUptimeEventSelect.field(HTTP_UPTIME_EVENT.STATUS)!!.`in`(it))
-                }
-                sslStatus.takeIf { it.isNotEmpty() }?.let { and(SSL_EVENT.STATUS.`in`(it)) }
-                sslCheckEnabled?.let { and(HTTP_MONITOR.SSL_CHECK_ENABLED.eq(it)) }
                 selectionCondition(HTTP_MONITOR.NAME, HTTP_MONITOR.CATEGORY, monitorNames, categories)?.let { and(it) }
-                categoryFilterCondition(HTTP_MONITOR.CATEGORY, categoryFilter)?.let { and(it) }
                 sortedBy?.let { orderBy(it, HTTP_MONITOR.ID.asc()) }
             }
             .fetchInto(HttpMonitorDetailsDto::class.java)
+
+    fun getMonitorsPage(
+        enabled: Boolean?,
+        uptimeStatus: List<UptimeStatus>,
+        sslStatus: List<SslStatus>,
+        sslCheckEnabled: Boolean?,
+        categoryFilter: CategoryFilter?,
+        name: String?,
+        sorting: Sorting<HttpMonitorSortField>,
+        pageRequest: PageRequest,
+    ): PagedResult<HttpMonitorDetailsDto> {
+        val condition = DSL.and(
+            filterCondition(enabled, uptimeStatus, sslStatus, sslCheckEnabled, categoryFilter),
+            containsIgnoreCaseCondition(HTTP_MONITOR.NAME, name),
+        )
+        return monitorDetailsSelect()
+            .and(condition)
+            .fetchPage(
+                countQuery = countSelect(uptimeStatus, condition),
+                pageRequest = pageRequest,
+                orderBy = listOf(sorting.field.toField().sortedIn(sorting.order), HTTP_MONITOR.ID.asc()),
+                type = HttpMonitorDetailsDto::class.java,
+            )
+    }
 
     fun getMonitorWithDetails(monitorId: Long): HttpMonitorDetailsDto? =
         monitorDetailsSelect()
@@ -204,6 +232,62 @@ class HttpMonitorRepository(
             .returning(HTTP_MONITOR.ID, HTTP_MONITOR.NAME)
             .fetch()
             .map { it.idWithName() }
+
+    private fun filterCondition(
+        enabled: Boolean?,
+        uptimeStatus: List<UptimeStatus>,
+        sslStatus: List<SslStatus>,
+        sslCheckEnabled: Boolean?,
+        categoryFilter: CategoryFilter?,
+    ): Condition = DSL.and(
+        listOfNotNull(
+            enabled?.let { HTTP_MONITOR.ENABLED.eq(it) },
+            uptimeStatus.takeIf { it.isNotEmpty() }
+                ?.let { checkNotNull(latestUptimeEventSelect.field(HTTP_UPTIME_EVENT.STATUS)).`in`(it) },
+            sslStatus.takeIf { it.isNotEmpty() }?.let { SSL_EVENT.STATUS.`in`(it) },
+            sslCheckEnabled?.let { HTTP_MONITOR.SSL_CHECK_ENABLED.eq(it) },
+            categoryFilterCondition(HTTP_MONITOR.CATEGORY, categoryFilter),
+        )
+    )
+
+    /**
+     * Counts the monitors [condition] selects, joining only what it can refer to: the latest uptime event only when it
+     * filters by the uptime status. The status pages can't change the number of the rows, so they are never joined.
+     * The open SSL event is joined anyway: nothing in the schema prevents a monitor from having more than one, and the
+     * count has to match the rows of the details query even then.
+     */
+    private fun countSelect(uptimeStatus: List<UptimeStatus>, condition: Condition): Select<Record1<Int>> {
+        val monitors = if (uptimeStatus.isEmpty()) {
+            HTTP_MONITOR
+        } else {
+            HTTP_MONITOR.leftJoin(DSL.lateral(latestUptimeEventSelect)).on(DSL.trueCondition())
+        }
+        return dslContext
+            .selectCount()
+            .from(
+                monitors
+                    .leftJoin(SSL_EVENT)
+                    .on(HTTP_MONITOR.ID.eq(SSL_EVENT.MONITOR_ID).and(SSL_EVENT.ENDED_AT.isNull))
+            )
+            .where(condition)
+    }
+
+    private fun HttpMonitorSortField.toField(): Field<*> = when (this) {
+        HttpMonitorSortField.ID -> HTTP_MONITOR.ID
+        HttpMonitorSortField.NAME -> HTTP_MONITOR.NAME
+        HttpMonitorSortField.ENABLED -> HTTP_MONITOR.ENABLED
+        HttpMonitorSortField.UPTIME_STATUS -> checkNotNull(latestUptimeEventSelect.field(HTTP_UPTIME_EVENT.STATUS))
+        HttpMonitorSortField.UPTIME_STATUS_STARTED_AT ->
+            checkNotNull(latestUptimeEventSelect.field(HTTP_UPTIME_EVENT.STARTED_AT))
+        HttpMonitorSortField.LAST_UPTIME_CHECK ->
+            checkNotNull(latestUptimeEventSelect.field(HTTP_UPTIME_EVENT.UPDATED_AT))
+        HttpMonitorSortField.UPTIME_CHECK_INTERVAL -> HTTP_MONITOR.UPTIME_CHECK_INTERVAL
+        HttpMonitorSortField.URL -> HTTP_MONITOR.URL
+        HttpMonitorSortField.SSL_STATUS -> SSL_EVENT.STATUS
+        HttpMonitorSortField.SSL_VALID_UNTIL -> SSL_EVENT.SSL_EXPIRY_DATE
+        HttpMonitorSortField.CREATED_AT -> HTTP_MONITOR.CREATED_AT
+        HttpMonitorSortField.UPDATED_AT -> HTTP_MONITOR.UPDATED_AT
+    }
 
     val latestUptimeEventSelect: Table<HttpUptimeEventRecord?> = DSL.table(
         DSL.selectFrom(HTTP_UPTIME_EVENT)
