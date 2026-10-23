@@ -121,6 +121,10 @@
 
 The default status page is a special, built-in status page that **automatically includes all enabled monitors**. It cannot be deleted or created manually, but you can unpublish it (i.e. make it private) if you don't want to use it.
 
+!!! warning "Up to 100 monitors"
+
+    The default status page is only available as long as you have **100 enabled monitors or fewer**. A page with more monitors than that would be too slow to load and too long to read. Above 100, the default status page can't be opened at all, not even if it's public or you're logged in: `/status` and `/api/v2/status-pages/0/details` answer with _404 Not Found_, and the list of the status pages on the Web UI shows it as unavailable. Create [custom status pages](#custom-status-pages) with the monitors or the categories that you want to show instead. The limit can't be changed.
+
 ### Title
 
 <!-- md:version 3.1.0 -->
@@ -167,7 +171,7 @@ The **visible title** of the default status page, it will be displayed in the br
     PUBLISH_DEFAULT_STATUS_PAGE=false
     ```
 
-Determines whether the default status page is **publicly accessible** or not. If set to `false`, only authenticated users will be able to access it.
+Determines whether the default status page is **publicly accessible** or not. If set to `false`, only authenticated users will be able to access it. With more than 100 enabled monitors, the default status page is [not available](#the-default-status-page) at all, whatever this setting is.
 
 ### Custom logo URL
 

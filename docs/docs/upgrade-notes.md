@@ -1,3 +1,22 @@
+## Upgrade to v4.6.0
+
+!!!tip
+
+    You don't need to change your configuration to upgrade to version 4.6.0. The notes below describe what behaves differently, and what to keep an eye on during the upgrade. See the [**changelog**](changelog.md#4.6.0) for every change.
+
+### The first start takes longer if you have a lot of data
+
+The tables that keep the response times and the other metrics of the checks get new indexes, which are built when _Kuvasz_ starts for the first time after the upgrade. With a lot of history and monitors (roughly above a 1,000), this can take a while: about **30 seconds for 28 million rows** on a single CPU in our tests. _Kuvasz_ doesn't run any checks until it's done, so don't stop it in the meantime. If you use the [Helm chart](setup/helm-deployment.md) and keep a very long history, raise `livenessProbe.initialDelaySeconds` for the upgrade, as the liveness probe waits only about 3 minutes before it restarts _Kuvasz_.
+
+### Status pages <!-- md:config management/status-pages.md -->
+
+- **The default status page is limited to 100 monitors**: above 100 enabled monitors, the [default status page](management/status-pages.md#the-default-status-page) can't be opened anymore, whether it's public or not, and `GET /api/v2/status-pages/0/details` returns `404`. Use [custom status pages](management/status-pages.md#custom-status-pages) with selected monitors or categories instead.
+- **Only the latest 20 incidents of each monitor are listed**: on the status pages, in the status page details of the REST API, and in the `get-status-page-details` tool of the [MCP server](features/mcp-server.md). The number of incidents and the downtime of each day still count every incident. No property was removed from the responses, there is a new one instead: `incidentCount`, the number of every incident of each monitor.
+
+### API
+
+The full lists of `/api/v2` (e.g. `GET /api/v2/http-monitors` or `GET /api/v2/incidents`) keep working as before, but they are **deprecated**. Please switch to the new `/api/v3` lists, which return the items page by page (the `size` parameter doesn't have an upper limit, so you can achieve v2's unbounded returns by providing a huge number there). The list tools of the MCP server return one page at a time already (25 items by default).
+
 ## Upgrade from v3.x.x to v4.x.x
 
 !!!tip

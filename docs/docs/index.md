@@ -22,61 +22,21 @@ title: The developer- and cloud-friendly uptime monitor
 
 <div class="grid cards" markdown>
 
--   :green_circle:{ .lg .card-header-icon } __HTTP monitoring__
+-   :material-binoculars:{ .lg .card-header-icon } __Monitor whatever you want__
 
     ---
 
-    With flexible configuration, adjustable intervals, headers, keyword matching, expected response status codes, response time checks, and more.
+    You can use _Kuvasz_ to monitor a wide variety of endpoints: HTTP, SSL, Docker, DNS, TCP, ICMP (ping), push (cron), just name it, and you're covered!
 
-    [:octicons-arrow-right-24: HTTP monitoring](features/http-monitoring.md)
+    [:octicons-arrow-right-24: Managing monitors](management/managing-monitors/index.md)
 
--   :lock:{ .lg .card-header-icon } __SSL monitoring__
-
-    ---
-
-    Kuvasz checks your SSL certificates every day, and notifies you before they expire.
-
-    [:octicons-arrow-right-24: SSL monitoring](features/ssl-monitoring.md)
-
--   :heartbeat:{ .lg .card-header-icon } __Push (a.k.a. "cron") monitors__
+-   :muscle:{ .lg .card-header-icon } __Built to scale__
 
     ---
 
-    Kuvasz supports to monitor your cron jobs, backups, and other scheduled tasks in a push-based manner.
+    **You can have 5 or 5,000 monitors, it doesn't make a difference!** _Kuvasz_ was built to perform in various scenarios, **up until 1,000 monitors** you'll be fine with the default configuration out of the box, and we have **official recipes** – _proved by actual benchmarks_ – for everything above that. 
 
-    [:octicons-arrow-right-24: Push monitors](features/push-monitoring.md)
-
--   :ping_pong:{ .lg .card-header-icon } __Ping (ICMP) monitors__
-
-    ---
-
-    Check the reachability and latency of any host by sending ICMP echo requests (pings) to it.
-
-    [:octicons-arrow-right-24: ICMP monitors](features/icmp-monitoring.md)
-
--   :material-network-pos:{ .lg .card-header-icon } __TCP port monitoring__
-
-    ---
-
-    Check whether any TCP service - databases, SMTP, SSH, brokers, and more - accepts connections, and track connect latency.
-
-    [:octicons-arrow-right-24: TCP monitors](features/tcp-monitoring.md)
-
--   :material-dns:{ .lg .card-header-icon } __DNS monitoring__
-
-    ---
-
-    Check that a name resolves, that it resolves to the right records, and get notified when the answer changes behind your back.
-
-    [:octicons-arrow-right-24: DNS monitors](features/dns-monitoring.md)
-
--   :material-docker:{ .lg .card-header-icon } __Docker monitoring__
-
-    ---
-
-    Check whether your containers are actually running and healthy - not just whether they hold a port - right through the Docker daemon, locally or remotely.
-
-    [:octicons-arrow-right-24: Docker monitors](features/docker-monitoring.md)
+    [:octicons-arrow-right-24: Sizing guide](setup/sizing.md)
 
 -   :bell:{ .lg .card-header-icon } __Notifications__
 

@@ -662,6 +662,8 @@ The number of days to keep the finished events in the database. After this time,
 
 The number of days to keep the latency data in the database. After this time, **latency data will be cleaned up** to spare space in the database. The **minimum is 1 day**.
 
+A longer history needs more disk, and with thousands of monitors, more CPU and memory for the database too. See [keeping the history for longer](sizing.md#keeping-the-history-for-longer).
+
 ### Event logging
 
 <!-- md:default true -->
