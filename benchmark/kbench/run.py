@@ -310,16 +310,8 @@ class Runner:
         generate.write_step(GENERATED_DIR, block.mix, scale)
         expectations = json.loads((GENERATED_DIR / "expectations.json").read_text())
         log(f"{block.name}: importing the monitors to load {block.history_days} days of history")
-        stack.start_kuvasz()
-        stack.stop_kuvasz()
-        docker_cpus = int(subprocess.run(["docker", "info", "--format", "{{.NCPU}}"], capture_output=True, text=True,
-                                         check=True).stdout.strip())
-        stack.resize_postgres(cpus=min(6, docker_cpus), mem="3g")
-        try:
-            result = backfill.run(expectations, block.history_days, log)
-        finally:
-            postgres = self.profiles["profiles"][block.profile]["postgres"]
-            stack.resize_postgres(cpus=postgres["cpus"], mem=postgres["mem"])
+        result = backfill.load_into(stack, expectations, block.history_days,
+                                    self.profiles["profiles"][block.profile]["postgres"], log)
         (block_dir / "history.json").write_text(json.dumps(result, indent=1))
         log(f"  history loaded in {result['seconds']}s: {result['database_mb']:,} MB, "
             f"{result['uptime_events']:,} uptime events")

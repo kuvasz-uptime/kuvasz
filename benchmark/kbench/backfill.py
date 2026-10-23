@@ -5,6 +5,7 @@ behaviors). A run on top of it measures an installation that has been running fo
 The secondary indexes of the per-check tables are dropped during the load and rebuilt afterwards, like a restore of a
 dump would do, because inserting 100+ million rows through them would take hours."""
 
+import subprocess
 import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -12,7 +13,7 @@ from datetime import datetime, timezone
 
 from kbench import schema
 from kbench.generate import flap_period
-from kbench.stack import db
+from kbench.stack import Stack, db
 
 # Days loaded in parallel, each through its own connection
 WORKERS = 4
@@ -259,6 +260,20 @@ def load_chunk(chunk: tuple[int, int], statements: list[str], history_end: int):
         conn.execute("SET synchronous_commit = off")
         for statement in statements:
             conn.execute(statement, {"chunk_start": chunk[0], "chunk_end": chunk[1], "history_end": history_end})
+
+
+def load_into(stack: Stack, expectations: dict, days: int, postgres: dict, log=print) -> dict:
+    """Imports the monitor set with a short start of Kuvasz, then loads its history (see run()). The database gets more
+    resources for the load, then it's restarted with the given ones (those of the profile)."""
+    stack.start_kuvasz()
+    stack.stop_kuvasz()
+    docker_cpus = int(subprocess.run(["docker", "info", "--format", "{{.NCPU}}"], capture_output=True, text=True,
+                                     check=True).stdout.strip())
+    stack.resize_postgres(cpus=min(6, docker_cpus), mem="3g")
+    try:
+        return run(expectations, days, log)
+    finally:
+        stack.resize_postgres(cpus=postgres["cpus"], mem=postgres["mem"])
 
 
 def run(expectations: dict, days: int, log=print) -> dict:
