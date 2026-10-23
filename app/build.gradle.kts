@@ -303,6 +303,8 @@ jib {
         )
         environment = mapOf(
             "JAVA_TOOL_OPTIONS" to "-Xms64M -Xmx192M",
+            // Read after JAVA_TOOL_OPTIONS, so it stays when an operator replaces that one to change the heap size
+            "JDK_JAVA_OPTIONS" to "-XX:+UseCompactObjectHeaders",
             "MICRONAUT_CONFIG_FILES" to "/config/kuvasz.yml"
         )
     }
