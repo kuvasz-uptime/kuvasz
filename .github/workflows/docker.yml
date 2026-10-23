@@ -42,13 +42,10 @@ jobs:
         id: version
         run: |
           echo "version=$(./gradlew -q :app:properties --property version | sed -n 's/^version: //p')" >> "$GITHUB_OUTPUT"
-      # tar keeps the fixed timestamps of the files, which the AOT cache checks, and which keep the layers reusable
-      - name: Pack the files of the image
-        run: tar -cf docker-layers.tar -C app/build/docker layers
       - uses: actions/upload-artifact@v7
         with:
           name: docker-layers
-          path: docker-layers.tar
+          path: app/build/docker/layers
           if-no-files-found: error
           retention-days: 1
 
@@ -68,10 +65,7 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: docker-layers
-      - name: Unpack the files of the image
-        run: |
-          mkdir -p app/build/docker
-          tar -xf docker-layers.tar -C app/build/docker
+          path: app/build/docker/layers
       - uses: docker/setup-buildx-action@v4
       - uses: docker/login-action@v4
         with:
@@ -88,14 +82,8 @@ jobs:
             REVISION=${{ github.sha }}
           load: true
           tags: kuvasz:candidate
-      - name: Check that Java can use the AOT cache
-        run: |
-          docker run --rm --entrypoint sh kuvasz:candidate -c \
-            'java -XX:AOTMode=on -XX:AOTCache=/home/app/kuvasz.aot -cp "$(sed -n "s/^-cp //p" /home/app/jvm-args)" -version'
-      - name: Check that the training tools didn't get into the image
-        run: |
-          docker run --rm --entrypoint sh kuvasz:candidate -c \
-            'for tool in postgres initdb psql curl; do if command -v "$tool"; then exit 1; fi; done; test ! -e /training'
+      - name: Check the image
+        run: app/docker/check-image.sh kuvasz:candidate
       # Comes from the build cache of the previous step, so it's only pushed, not built again
       - name: Push the image by its digest
         id: push
@@ -140,11 +128,12 @@ jobs:
         working-directory: ${{ runner.temp }}/digests
         env:
           VERSION: ${{ needs.layers.outputs.version }}
-          # Releases (tag pushes) are always the latest, manual runs only when asked
-          LATEST: ${{ github.event_name == 'push' || inputs.latest }}
+          EVENT: ${{ github.event_name }}
+          LATEST_INPUT: ${{ inputs.latest }}
+        # Tag pushes of final releases (e.g. 4.6.0, not 4.6.0-rc) are the latest, manual runs only when asked
         run: |
           tags=(-t "$IMAGE:$VERSION")
-          if [ "$LATEST" = "true" ]; then
+          if { [ "$EVENT" = "push" ] && [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; } || [ "$LATEST_INPUT" = "true" ]; then
             tags+=(-t "$IMAGE:latest")
           fi
           images=()

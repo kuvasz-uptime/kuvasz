@@ -170,14 +170,8 @@ jobs:
           platforms: linux/amd64
           load: true
           tags: kuvasz:candidate
-      - name: Check that Java can use the AOT cache
-        run: |
-          docker run --rm --entrypoint sh kuvasz:candidate -c \
-            'java -XX:AOTMode=on -XX:AOTCache=/home/app/kuvasz.aot -cp "$(sed -n "s/^-cp //p" /home/app/jvm-args)" -version'
-      - name: Check that the training tools didn't get into the image
-        run: |
-          docker run --rm --entrypoint sh kuvasz:candidate -c \
-            'for tool in postgres initdb psql curl; do if command -v "$tool"; then exit 1; fi; done; test ! -e /training'
+      - name: Check the image
+        run: app/docker/check-image.sh kuvasz:candidate
 
   ui-tests:
     name: Run UI test suite (unit + E2E)

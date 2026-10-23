@@ -1,7 +1,7 @@
 # The context is the app folder, after `./gradlew :app:dockerLayers` (see docker-build.sh in the root of the repo).
 # The default target trains a JDK AOT cache during the build, so the image starts faster and uses less memory.
 # `--target base` skips the training, for quick local builds.
-# The layers are ordered from the least to the most often changing ones, so the unchanged ones can be reused.
+# The layers are ordered from the least to the most often changing ones, so the build cache can reuse unchanged ones.
 FROM eclipse-temurin:25-jre-alpine AS jre
 # JDK_JAVA_OPTIONS is read after JAVA_TOOL_OPTIONS, so it stays when an operator replaces that one to change the heap
 ENV JAVA_TOOL_OPTIONS="-Xms64M -Xmx192M" \

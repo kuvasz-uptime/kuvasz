@@ -284,7 +284,6 @@ val dockerLayers by tasks.registering(Sync::class) {
         .artifactView { componentFilter { it is ProjectComponentIdentifier } }.files
     val mainClassName = application.mainClass
     val layersDir = layout.buildDirectory.dir("docker/layers")
-    val fixedTimestamp = 1000L // 1970-01-01T00:00:01Z, the same as Jib uses
     inputs.property("mainClass", mainClassName)
     from(tasks.jar) { rename { "application.jar" } }
     from(runtimeJars.minus(projectJars)) { into("libs") }
@@ -294,13 +293,9 @@ val dockerLayers by tasks.registering(Sync::class) {
         val projectJarNames = projectJars.files.map { it.name }.toSet()
         val classpath = listOf("application.jar") +
             runtimeJars.files.map { "${if (it.name in projectJarNames) "project-libs" else "libs"}/${it.name}" }
-        val root = layersDir.get().asFile
-        root.resolve("jvm-args").writeText(
+        layersDir.get().asFile.resolve("jvm-args").writeText(
             "-cp ${classpath.joinToString(":") { "/home/app/$it" }}\n${mainClassName.get()}\n"
         )
-        // Fixed timestamps (like Jib), so a layer is the same between builds when its files are, and users don't
-        // download it again. It must happen before the image is built: the AOT cache checks the timestamps of the jars
-        root.walk().forEach { it.setLastModified(fixedTimestamp) }
     }
 }
 

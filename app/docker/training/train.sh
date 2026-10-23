@@ -48,20 +48,39 @@ done
 healthy=$(date +%s)
 echo "Kuvasz is healthy after $((healthy - started))s"
 
-ui() { curl -fsS -o /dev/null -b "$COOKIES" "$BASE_URL$1" || fail "GET $1"; }
-fragment() { curl -fsS -o /dev/null -b "$COOKIES" -H "HX-Request: true" "$BASE_URL$1" || fail "GET $1 (fragment)"; }
-api() { curl -fsS -o /dev/null -H "X-API-KEY: $API_KEY" "$BASE_URL$1" || fail "GET $1 (API)"; }
+# Only the expected status counts: without a valid session, pages answer with a redirect to the login page, which
+# curl -f would accept
+request() {
+  expected=$1
+  path=$2
+  shift 2
+  status=$(curl -sS -o /dev/null -w '%{http_code}' "$@" "$BASE_URL$path") || fail "$path: no response"
+  [ "$status" = "$expected" ] || fail "$path: $status instead of $expected"
+}
+ui() { request 200 "$1" -b "$COOKIES"; }
+fragment() { request 200 "$1" -b "$COOKIES" -H "HX-Request: true"; }
+api() { request 200 "$1" -H "X-API-KEY: $API_KEY"; }
 
 monitor_id() {
-  curl -fsS -H "X-API-KEY: $API_KEY" "$BASE_URL/api/v2/$1-monitors" | grep -o '"id":[0-9]*' | head -n 1 | cut -d: -f2
+  id=$(curl -fsS -H "X-API-KEY: $API_KEY" "$BASE_URL/api/v3/$1-monitors" | grep -o '"id":[0-9]*' | head -n 1 | cut -d: -f2)
+  [ -n "$id" ] || fail "no $1 monitor found"
+  echo "$id"
+}
+
+id_of() {
+  case "$1" in
+    http) echo "$http_id" ;;
+    tcp) echo "$tcp_id" ;;
+    push) echo "$push_id" ;;
+    dns) echo "$dns_id" ;;
+  esac
 }
 
 pass() {
   ui /
   fragment /fragments/dashboard
   for type in http tcp push dns; do
-    id=$(monitor_id "$type")
-    [ -n "$id" ] || fail "no $type monitor found"
+    id=$(id_of "$type")
     ui "/$type-monitors"
     fragment "/$type-monitors/fragments/list"
     ui "/$type-monitors/$id"
@@ -70,32 +89,44 @@ pass() {
     api "/api/v2/$type-monitors"
     api "/api/v2/$type-monitors/$id"
     api "/api/v2/$type-monitors/stats"
+    api "/api/v3/$type-monitors?sort=name"
+    api "/api/v3/$type-monitors/$id/uptime-events"
   done
   for type in http tcp dns; do
-    ui "/api/internal/monitor-charts/$type/$(monitor_id "$type")?period=P1D"
+    id=$(id_of "$type")
+    ui "/api/internal/monitor-charts/$type/$id?period=P1D"
   done
-  fragment "/incidents/fragments/monitor/ssl/$(monitor_id http)"
-  fragment "/dns-monitors/fragments/snapshot/$(monitor_id dns)"
+  fragment "/incidents/fragments/monitor/ssl/$http_id"
+  fragment "/dns-monitors/fragments/snapshot/$dns_id"
+  api "/api/v3/http-monitors/$http_id/ssl-events"
   ui /icmp-monitors
   ui /docker-monitors
   ui /incidents
   fragment /incidents/fragments/list
   api /api/v2/incidents
+  api /api/v3/incidents
+  api /api/v3/incidents/http
   ui /status-pages
   fragment /status-pages/fragments/list
   ui /status
   ui /status/training
   api /api/v2/status-pages
   api /api/v2/status-pages/0/details
+  api /api/v3/status-pages
   ui /maintenance-windows
+  api /api/v3/maintenance-windows
   ui /integrations
   ui /settings
   ui /api/v2/monitors/export/yaml
-  curl -fsS -o /dev/null -X POST "$BASE_URL/api/v2/push-monitors/heartbeats/$PUSH_SECRET" || fail "push heartbeat"
+  request 202 "/api/v2/push-monitors/heartbeats/$PUSH_SECRET" -X POST
 }
 
 curl -fsS -o /dev/null -c "$COOKIES" -d "username=training&password=training-password" "$BASE_URL/auth/login" \
   || fail "login"
+http_id=$(monitor_id http)
+tcp_id=$(monitor_id tcp)
+push_id=$(monitor_id push)
+dns_id=$(monitor_id dns)
 round=0
 while [ "$round" -lt "$ROUNDS" ] || [ $(($(date +%s) - healthy)) -lt "$SECONDS_TOTAL" ]; do
   pass
@@ -108,3 +139,14 @@ wait "$KUVASZ_PID" || true
 su postgres -s /bin/sh -c "pg_ctl -D $PGDATA -m fast -w stop >/dev/null"
 [ -s "$CACHE" ] || fail "the AOT cache wasn't written"
 echo "AOT cache written in $(($(date +%s) - started))s: $(du -h "$CACHE" | cut -f1)"
+
+# Fails the build if Java can't use the cache, with the GC of small machines (Serial, below 2 CPUs or 1792 MB of memory)
+# and with the one of bigger ones (G1). Without -XX:AOTMode=on, Java would only print a warning and start without it.
+classpath=$(sed -n 's/^-cp //p' /home/app/jvm-args)
+for gc in -XX:+UseSerialGC -XX:+UseG1GC; do
+  if ! output=$(java "$gc" -XX:AOTMode=on -XX:AOTCache="$CACHE" -cp "$classpath" -version 2>&1); then
+    echo "$output" >&2
+    fail "Java can't use the AOT cache with $gc"
+  fi
+done
+echo "Java can use the AOT cache with the Serial and the G1 GC"
