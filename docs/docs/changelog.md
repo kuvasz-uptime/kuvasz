@@ -38,6 +38,8 @@ In the **API**, the new `/api/v3` endpoints return the monitors of every type, t
 
 - **Dashboard and status pages that stay fast with a lot of history**: the uptime figures of the dashboard, the statistics of the monitors and the uptime history of the status pages are now added up by the database. Before, _Kuvasz_ loaded every uptime event of the period into its memory first. With 5,000 monitors and a month of history, a few people looking at the 30-day dashboard at the same time could fill the memory of _Kuvasz_ and stop it from checking the monitors. The figures themselves are exactly the same as before.
 
+- **Faster restarts with a startup cache in the Docker image**: the image now contains a cache, which is made while the image is built, by starting _Kuvasz_ and opening its pages. With it, _Kuvasz_ starts about **twice as fast**: with 1,500 monitors, about **10 seconds instead of 21** with 1 CPU, and about **40 seconds instead of 72** with half a CPU in our tests.
+
 - **Lighter status page and maintenance window pages with a lot of monitors**: the forms of the status pages and the maintenance windows load the list of the monitors when you open them. The monitor and category pickers of the forms show the first 100 matches, and tell you when there are more. Type to find the rest: the search still covers every monitor and category.
 
 ## 4.5.0 <small>2026-10-14</small> { id="4.5.0" data-toc-label="4.5.0" }

@@ -8,7 +8,7 @@ import time
 
 import httpx
 
-from kbench import generate, schema
+from kbench import backfill, generate, schema
 from kbench.analyze import due_for_down
 from kbench.stack import KUVASZ_URL, ROOT, Stack, StackSettings, db, load_profiles
 
@@ -66,6 +66,10 @@ def main():
     parser.add_argument("--scale", type=int, default=1)
     parser.add_argument("--wait", type=int, default=420, help="seconds to let the checks run before evaluating")
     parser.add_argument("--keep", action="store_true", help="leave the stack running afterwards")
+    parser.add_argument("--kuvasz-tag", help="the image under test (kuvaszmonitoring/kuvasz:<tag>), pulled or built "
+                                             "locally, defaults to the one in config/profiles.yml")
+    parser.add_argument("--history-days", type=int, default=0,
+                        help="days of uptime events and metrics to load before the start (see kbench/backfill.py)")
     args = parser.parse_args()
 
     out = ROOT / "generated"
@@ -76,13 +80,19 @@ def main():
 
     profiles = load_profiles()
     stack = Stack(
-        StackSettings(args.profile, profiles["defaults"]["heap"], False, profiles["defaults"]["kuvasz_tag"],
-                      out / "gc"),
+        StackSettings(args.profile, profiles["defaults"]["heap"], False,
+                      args.kuvasz_tag or profiles["defaults"]["kuvasz_tag"], out / "gc",
+                      latency_retention_days=backfill.retention_days(args.history_days)),
         profiles,
     )
     print(f"Monitors: {summary['stub_monitors']} stub + {summary['real_slice_monitors']} real")
     stack.reset()
     stack.up_dependencies()
+    if args.history_days:
+        history = backfill.load_into(stack, expectations, args.history_days,
+                                     profiles["profiles"][args.profile]["postgres"])
+        print(f"History of {args.history_days} days loaded in {history['seconds']}s: {history['database_mb']:,} MB, "
+              f"{history['uptime_events']:,} uptime events")
     startup = stack.start_kuvasz()
     # Wall clock on purpose: the monotonic clock of macOS stops while the machine sleeps
     started = time.time()

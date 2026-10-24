@@ -6,7 +6,6 @@ dnsjava = "3.6.5"
 flywayPlugin = "13.10.3"
 gitVersion = "5.1.0"
 i18n4k = "0.11.2"
-jib = "3.5.4"
 jooq = "3.21.9"
 jooqPlugin = "10.2.1"
 keycloakTestcontainers = "4.4.0"
@@ -62,13 +61,11 @@ detekt = { id = "dev.detekt", version.ref = "detekt" }
 flyway = { id = "org.flywaydb.flyway", version.ref = "flywayPlugin" }
 git-version = { id = "com.palantir.git-version", version.ref = "gitVersion" }
 i18n4k = { id = "de.comahe.i18n4k", version.ref = "i18n4k" }
-jib = { id = "com.google.cloud.tools.jib", version.ref = "jib" }
 jooq = { id = "nu.studer.jooq", version.ref = "jooqPlugin" }
 kotlin-allopen = { id = "org.jetbrains.kotlin.plugin.allopen", version.ref = "kotlin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
-micronaut-docker = { id = "io.micronaut.docker", version.ref = "micronautGradlePlugin" }
 micronaut-minimal-application = { id = "io.micronaut.minimal.application", version.ref = "micronautGradlePlugin" }
 micronaut-minimal-library = { id = "io.micronaut.minimal.library", version.ref = "micronautGradlePlugin" }
 minify = { id = "org.gradlewebtools.minify", version.ref = "minify" }
