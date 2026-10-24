@@ -262,6 +262,11 @@ def load_chunk(chunk: tuple[int, int], statements: list[str], history_end: int):
             conn.execute(statement, {"chunk_start": chunk[0], "chunk_end": chunk[1], "history_end": history_end})
 
 
+def retention_days(history_days: int) -> int:
+    """The latency data retention that keeps a loaded history of `history_days` from the nightly cleanup during a run."""
+    return max(7, history_days + 1)
+
+
 def load_into(stack: Stack, expectations: dict, days: int, postgres: dict, log=print) -> dict:
     """Imports the monitor set with a short start of Kuvasz, then loads its history (see run()). The database gets more
     resources for the load, then it's restarted with the given ones (those of the profile)."""

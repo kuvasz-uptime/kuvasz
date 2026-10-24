@@ -1,16 +1,12 @@
 #!/bin/sh
 # Trains the JDK AOT cache of the image: starts a throwaway PostgreSQL and Kuvasz with -XX:AOTCacheOutput, sends a fixed
 # list of UI and API requests, then stops Kuvasz gracefully, which is when the JVM writes the cache.
-# Java starts the same way as in the ENTRYPOINT of the image (@/home/app/jvm-args) and with the same environment,
-# otherwise it doesn't use the cache at runtime.
+# Java starts the same way as in the ENTRYPOINT of the image (the same JVM options, @/home/app/jvm-args and the main
+# class) and with the same environment, otherwise it doesn't use the cache at runtime.
 set -eu
 
-CACHE="${AOT_CACHE:-/home/app/kuvasz.aot}"
-# At least this many passes over the request list, repeated until TRAINING_SECONDS have passed since Kuvasz is healthy.
-# Measured on 2026-10-23: a cache trained for 30 seconds starts faster on slow machines than one trained with a single
-# pass, while longer trainings gained nothing.
-ROUNDS="${TRAINING_ROUNDS:-1}"
-SECONDS_TOTAL="${TRAINING_SECONDS:-30}"
+CACHE=/home/app/kuvasz.aot
+TRAINING_SECONDS=30
 PGDATA=/tmp/training-pg
 KUVASZ_LOG=/tmp/training-kuvasz.log
 COOKIES=/tmp/training-cookies
@@ -36,7 +32,8 @@ JDK_AOT_VM_OPTIONS="-XX:+UnlockDiagnosticVMOptions -XX:-AOTAdapterCaching" \
   DATABASE_HOST=localhost DATABASE_USER=kuvasz DATABASE_PASSWORD=training \
   ADMIN_USER=training ADMIN_PASSWORD=training-password ADMIN_API_KEY="$API_KEY" \
   ENABLE_CHECK_UPDATES=false MICRONAUT_CONFIG_FILES=/training/kuvasz.yml \
-  java -XX:AOTCacheOutput="$CACHE" @/home/app/jvm-args >"$KUVASZ_LOG" 2>&1 &
+  java -XX:+UseCompactObjectHeaders -XX:AOTCacheOutput="$CACHE" @/home/app/jvm-args com.kuvaszuptime.kuvasz.Application \
+  >"$KUVASZ_LOG" 2>&1 &
 KUVASZ_PID=$!
 
 started=$(date +%s)
@@ -128,7 +125,7 @@ tcp_id=$(monitor_id tcp)
 push_id=$(monitor_id push)
 dns_id=$(monitor_id dns)
 round=0
-while [ "$round" -lt "$ROUNDS" ] || [ $(($(date +%s) - healthy)) -lt "$SECONDS_TOTAL" ]; do
+while [ "$round" -eq 0 ] || [ $(($(date +%s) - healthy)) -lt "$TRAINING_SECONDS" ]; do
   pass
   round=$((round + 1))
 done
@@ -139,14 +136,3 @@ wait "$KUVASZ_PID" || true
 su postgres -s /bin/sh -c "pg_ctl -D $PGDATA -m fast -w stop >/dev/null"
 [ -s "$CACHE" ] || fail "the AOT cache wasn't written"
 echo "AOT cache written in $(($(date +%s) - started))s: $(du -h "$CACHE" | cut -f1)"
-
-# Fails the build if Java can't use the cache, with the GC of small machines (Serial, below 2 CPUs or 1792 MB of memory)
-# and with the one of bigger ones (G1). Without -XX:AOTMode=on, Java would only print a warning and start without it.
-classpath=$(sed -n 's/^-cp //p' /home/app/jvm-args)
-for gc in -XX:+UseSerialGC -XX:+UseG1GC; do
-  if ! output=$(java "$gc" -XX:AOTMode=on -XX:AOTCache="$CACHE" -cp "$classpath" -version 2>&1); then
-    echo "$output" >&2
-    fail "Java can't use the AOT cache with $gc"
-  fi
-done
-echo "Java can use the AOT cache with the Serial and the G1 GC"

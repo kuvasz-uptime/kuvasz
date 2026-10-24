@@ -5,14 +5,13 @@
 set -euo pipefail
 IMAGE=$1
 
-# -XX:AOTMode=on makes Java fail instead of starting without the cache
-check_cache="java -Xlog:gc -XX:AOTMode=on -XX:AOTCache=/home/app/kuvasz.aot \
-  -cp \"\$(sed -n 's/^-cp //p' /home/app/jvm-args)\" -version"
 check_cache_with() {
   local gc=$1
   shift
   local output
-  if ! output=$(docker run --rm "$@" --entrypoint sh "$IMAGE" -c "$check_cache" 2>&1); then
+  # The JVM options of the entrypoint, and -XX:AOTMode=on, which makes Java fail instead of starting without the cache
+  if ! output=$(docker run --rm "$@" --entrypoint java "$IMAGE" -Xlog:gc -XX:+UseCompactObjectHeaders \
+    -XX:AOTMode=on -XX:AOTCache=/home/app/kuvasz.aot @/home/app/jvm-args -version 2>&1); then
     echo "$output" >&2
     echo "Java can't use the AOT cache of $IMAGE with the $gc GC" >&2
     exit 1

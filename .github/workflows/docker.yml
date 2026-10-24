@@ -26,6 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
+      latest: ${{ steps.version.outputs.latest }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -40,8 +41,23 @@ jobs:
         run: ./gradlew :app:dockerLayers
       - name: Get the version
         id: version
+        env:
+          EVENT: ${{ github.event_name }}
+          TAG: ${{ github.ref_name }}
+          LATEST_INPUT: ${{ inputs.latest }}
         run: |
-          echo "version=$(./gradlew -q :app:properties --property version | sed -n 's/^version: //p')" >> "$GITHUB_OUTPUT"
+          if [ "$EVENT" = "push" ]; then
+            # The pushed tag, even if the commit has another one too (e.g. the release candidate before it)
+            version=$TAG
+            # Only the highest final release is the latest, not a release candidate or a patch of an older version
+            highest=$(git tag --list | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)
+            latest=$([ "$version" = "$highest" ] && echo true || echo false)
+          else
+            version=$(./gradlew -q :app:properties --property version | sed -n 's/^version: //p')
+            latest=$LATEST_INPUT
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "latest=$latest" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v7
         with:
           name: docker-layers
@@ -128,12 +144,10 @@ jobs:
         working-directory: ${{ runner.temp }}/digests
         env:
           VERSION: ${{ needs.layers.outputs.version }}
-          EVENT: ${{ github.event_name }}
-          LATEST_INPUT: ${{ inputs.latest }}
-        # Tag pushes of final releases (e.g. 4.6.0, not 4.6.0-rc) are the latest, manual runs only when asked
+          LATEST: ${{ needs.layers.outputs.latest }}
         run: |
           tags=(-t "$IMAGE:$VERSION")
-          if { [ "$EVENT" = "push" ] && [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; } || [ "$LATEST_INPUT" = "true" ]; then
+          if [ "$LATEST" = "true" ]; then
             tags+=(-t "$IMAGE:latest")
           fi
           images=()

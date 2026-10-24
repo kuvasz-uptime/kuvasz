@@ -82,8 +82,7 @@ def main():
     stack = Stack(
         StackSettings(args.profile, profiles["defaults"]["heap"], False,
                       args.kuvasz_tag or profiles["defaults"]["kuvasz_tag"], out / "gc",
-                      # A loaded history longer than the default retention must survive the nightly cleanup
-                      latency_retention_days=max(7, args.history_days + 1)),
+                      latency_retention_days=backfill.retention_days(args.history_days)),
         profiles,
     )
     print(f"Monitors: {summary['stub_monitors']} stub + {summary['real_slice_monitors']} real")

@@ -206,9 +206,8 @@ class Runner:
         self.kuvasz_tag = kuvasz_tag
 
     def settings(self, block: Block, gc_dir: Path) -> StackSettings:
-        # A loaded history longer than the default retention must survive the nightly cleanup during the run
-        retention = max(7, block.history_days + 1)
-        return StackSettings(block.profile, block.heap, block.virtual_threads, self.kuvasz_tag, gc_dir, retention,
+        return StackSettings(block.profile, block.heap, block.virtual_threads, self.kuvasz_tag, gc_dir,
+                             backfill.retention_days(block.history_days),
                              block.db_pool_size)
 
     def prepare_step(self, block: Block, block_dir: Path, scale: int) -> tuple[Path, dict, list, dict]:

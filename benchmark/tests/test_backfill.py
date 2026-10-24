@@ -124,3 +124,9 @@ def test_load_into_gives_the_database_its_resources_back_when_the_load_fails(mon
     assert stack.calls[-1] == ("resize", 0.5, "512m")
     assert ("resize", 4, "3g") in stack.calls
 
+
+def test_a_loaded_history_survives_the_nightly_cleanup():
+    assert backfill.retention_days(0) == 7
+    assert backfill.retention_days(7) == 8
+    assert backfill.retention_days(30) == 31
+

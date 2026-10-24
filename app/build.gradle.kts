@@ -282,9 +282,9 @@ val dockerLayers by tasks.registering(Sync::class) {
     val runtimeJars: FileCollection = configurations.runtimeClasspath.get()
     val projectJars = configurations.runtimeClasspath.get().incoming
         .artifactView { componentFilter { it is ProjectComponentIdentifier } }.files
-    val mainClassName = application.mainClass
     val layersDir = layout.buildDirectory.dir("docker/layers")
-    inputs.property("mainClass", mainClassName)
+    // The order of the jars matters for the class path, but Gradle checks the copied files without their order
+    inputs.property("classpathOrder", provider { runtimeJars.files.map { it.name } })
     from(tasks.jar) { rename { "application.jar" } }
     from(runtimeJars.minus(projectJars)) { into("libs") }
     from(projectJars) { into("project-libs") }
@@ -293,9 +293,7 @@ val dockerLayers by tasks.registering(Sync::class) {
         val projectJarNames = projectJars.files.map { it.name }.toSet()
         val classpath = listOf("application.jar") +
             runtimeJars.files.map { "${if (it.name in projectJarNames) "project-libs" else "libs"}/${it.name}" }
-        layersDir.get().asFile.resolve("jvm-args").writeText(
-            "-cp ${classpath.joinToString(":") { "/home/app/$it" }}\n${mainClassName.get()}\n"
-        )
+        layersDir.get().asFile.resolve("jvm-args").writeText("-cp ${classpath.joinToString(":") { "/home/app/$it" }}\n")
     }
 }
 
