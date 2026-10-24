@@ -57,7 +57,6 @@ data class ApplicationSettingsSchema(
     val updateChecksEnabled: Boolean,
     val httpCheckTimeoutSeconds: Long,
     val httpCheckMaxRedirects: Int,
-    val virtualThreadSchedulingEnabled: Boolean,
     val editabilityState: EditabilityStateSchema,
 ) {
     companion object {
@@ -70,7 +69,6 @@ data class ApplicationSettingsSchema(
             updateChecksEnabled = dto.updateChecksEnabled,
             httpCheckTimeoutSeconds = dto.httpCheckTimeoutSeconds,
             httpCheckMaxRedirects = dto.httpCheckMaxRedirects,
-            virtualThreadSchedulingEnabled = dto.virtualThreadSchedulingEnabled,
             editabilityState = EditabilityStateSchema.fromDto(dto.editabilityState),
         )
     }

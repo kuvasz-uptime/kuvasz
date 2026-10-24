@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.services
 
-import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.services.check.UptimeCheckLockRegistry
 import com.kuvaszuptime.kuvasz.services.check.http.HttpCheckScheduler
 import com.kuvaszuptime.kuvasz.services.check.icmp.IcmpCheckScheduler
@@ -33,9 +32,6 @@ import kotlin.time.Duration.Companion.seconds
 
 class DispatcherFactoryTest : BehaviorSpec({
 
-    fun dispatchers(useVirtualThreadScheduling: Boolean) =
-        ScheduledCheckDispatchers(AppConfig().apply { this.useVirtualThreadScheduling = useVirtualThreadScheduling })
-
     suspend fun CoroutineDispatcher.currentThread(): Thread = withContext(this) { Thread.currentThread() }
 
     fun CoroutineDispatcher.executor() =
@@ -43,23 +39,10 @@ class DispatcherFactoryTest : BehaviorSpec({
 
     given("the ScheduledCheckDispatchers") {
 
-        `when`("the virtual thread scheduling is disabled") {
-
-            then("every check should run on the IO dispatcher, and closing it should be a no-op") {
-                val dispatchers = dispatchers(useVirtualThreadScheduling = false)
-
-                dispatchers.default.toString() shouldBe IO_DISPATCHER_NAME
-                dispatchers.icmp.toString() shouldBe IO_DISPATCHER_NAME
-
-                dispatchers.close()
-                dispatchers.default.currentThread().isVirtual.shouldBeFalse()
-            }
-        }
-
-        `when`("the virtual thread scheduling is enabled") {
+        `when`("it is created") {
 
             then("it should run everything on named, separate virtual threads until it is closed") {
-                val dispatchers = dispatchers(useVirtualThreadScheduling = true)
+                val dispatchers = ScheduledCheckDispatchers()
 
                 val firstThread = dispatchers.default.currentThread()
                 val secondThread = dispatchers.default.currentThread()
@@ -75,7 +58,7 @@ class DispatcherFactoryTest : BehaviorSpec({
             }
 
             then("only a limited number of ICMP checks should run at the same time") {
-                val dispatchers = dispatchers(useVirtualThreadScheduling = true)
+                val dispatchers = ScheduledCheckDispatchers()
                 val maxChecks = ScheduledCheckDispatchers.MAX_CONCURRENT_ICMP_CHECKS
                 val running = AtomicInteger()
                 val maxRunning = AtomicInteger()
@@ -107,25 +90,13 @@ class DispatcherFactoryTest : BehaviorSpec({
 
     given("the application context") {
 
-        `when`("the virtual thread scheduling is disabled by default") {
-
-            then("the injected dispatchers should be the IO dispatcher") {
-                val ctx = testAppContext()
-
-                ctx.getBean<AppConfig>().useVirtualThreadScheduling.shouldBeFalse()
-                ctx.getBean<CoroutineDispatcher>().toString() shouldBe IO_DISPATCHER_NAME
-                ctx.getIcmpCheckDispatcher().toString() shouldBe IO_DISPATCHER_NAME
-            }
-        }
-
-        `when`("the virtual thread scheduling is enabled via the config") {
+        `when`("the context is started") {
 
             then("the injected dispatchers should use virtual threads, and the ICMP checks should get a limited one") {
-                val ctx = testAppContext(mapOf("app-config.use-virtual-thread-scheduling" to "TRUE"))
+                val ctx = testAppContext()
                 val dispatchers = ctx.getBean<ScheduledCheckDispatchers>()
                 val dispatcher = ctx.getBean<CoroutineDispatcher>()
 
-                ctx.getBean<AppConfig>().useVirtualThreadScheduling.shouldBeTrue()
                 dispatcher shouldBeSameInstanceAs dispatchers.default
                 dispatcher.currentThread().isVirtual.shouldBeTrue()
                 ctx.getIcmpCheckDispatcher() shouldBeSameInstanceAs dispatchers.icmp
@@ -137,7 +108,7 @@ class DispatcherFactoryTest : BehaviorSpec({
             }
 
             then("the dispatcher should be shut down only after the schedulers drained the in-flight checks") {
-                val ctx = testAppContext(mapOf("app-config.use-virtual-thread-scheduling" to true))
+                val ctx = testAppContext()
                 val lockRegistry = ctx.getBean<UptimeCheckLockRegistry>()
                 // A scheduler has to exist, it's the one draining the registry on shutdown
                 ctx.getBean<HttpCheckScheduler>()
@@ -167,5 +138,4 @@ class DispatcherFactoryTest : BehaviorSpec({
 private fun ApplicationContext.getIcmpCheckDispatcher(): CoroutineDispatcher =
     getBean(CoroutineDispatcher::class.java, Qualifiers.byName(DispatcherFactory.ICMP_CHECK_DISPATCHER))
 
-private const val IO_DISPATCHER_NAME = "Dispatchers.IO"
 private const val IN_FLIGHT_MONITOR_ID = -1L
