@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.uitest.pages.tcp.TcpMonitorFormModal
 import com.kuvaszuptime.kuvasz.uitest.pages.tcp.TcpMonitorListPage
 import com.kuvaszuptime.kuvasz.uitest.shouldAcceptAfterFixing
 import com.kuvaszuptime.kuvasz.uitest.shouldRejectWith
+import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 
 // Exercises the Alpine.js validation in the TCP monitor create modal.
@@ -38,6 +39,21 @@ class TcpMonitorFormValidationUiTest : UiTestSpec() {
 
             modal.setPort("443")
             modal shouldAcceptAfterFixing Messages.errorPortInvalid()
+        }
+
+        "the number input buttons step the port within its range" {
+            val modal = openCreateModal()
+
+            modal.setPort("443")
+            modal.portIncrementButton.click()
+            assertThat(modal.portInput).hasValue("444")
+            modal.portDecrementButton.click()
+            modal.portDecrementButton.click()
+            assertThat(modal.portInput).hasValue("442")
+
+            modal.setPort("65535")
+            modal.portInput.blur()
+            assertThat(modal.portIncrementButton).isDisabled()
         }
 
         "an invalid latency threshold is flagged and blocks saving" {

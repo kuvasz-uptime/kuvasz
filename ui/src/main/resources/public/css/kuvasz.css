@@ -366,3 +366,25 @@ div.ts-wrapper.form-select.plugin-clear_button > div.ts-control > div.clear-butt
 .card-table tbody tr:last-child th {
     border-bottom: 0;
 }
+
+/* The fixed width of the field of a Tabler number input is too narrow for the 5-digit values (ports, milliseconds) */
+.number-input {
+    --tblr-number-input-input-width: 6rem;
+}
+
+.number-input-sm {
+    --tblr-number-input-input-width: 5rem;
+}
+
+/* On small screens a number input fills the width of its container */
+@media (max-width: 767.98px) {
+    .number-input {
+        display: flex;
+        width: 100%;
+    }
+
+    .number-input > .form-control {
+        flex: 1 1 auto;
+        width: auto;
+    }
+}

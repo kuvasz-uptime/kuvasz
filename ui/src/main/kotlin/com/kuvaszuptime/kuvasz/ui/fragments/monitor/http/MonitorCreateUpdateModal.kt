@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.models.checks.KnownHttpHeaders
 import com.kuvaszuptime.kuvasz.models.checks.SupportedExpectedHttpStatusCodes
+import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
@@ -176,6 +177,7 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
                         required = true,
                         onInput = "validateFailureCountThreshold()",
                         disabledIf = "$isReadOnlyMode",
+                        numberRange = NumberRange(1),
                     )
                 }
                 // Expected Keyword
@@ -222,6 +224,7 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
                         onInput = "validateResponseTimeThreshold()",
                         disabledIf = "$isReadOnlyMode",
                         isNumber = true,
+                        numberRange = NumberRange(1, Validation.MAX_RESPONSE_TIME_THRESHOLD_MILLIS, step = 100),
                     )
                 }
                 // Expected headers
@@ -264,6 +267,7 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
                     required = true,
                     onInput = "validateSslExpiryThreshold()",
                     disabledIf = "$isReadOnlyMode || !sslCheckEnabled",
+                    numberRange = NumberRange(0),
                 )
             }
         },
@@ -299,6 +303,7 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
                 required = true,
                 onInput = "validateUptimeCheckInterval()",
                 disabledIf = "$isReadOnlyMode",
+                numberRange = NumberRange(Validation.MIN_UPTIME_CHECK_INTERVAL, step = 10),
             )
         }
         // Latency History

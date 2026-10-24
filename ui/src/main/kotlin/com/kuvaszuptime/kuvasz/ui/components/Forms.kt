@@ -64,6 +64,7 @@ internal fun FlowContent.validatedInput(
     onBlur: String? = null,
     disabledIf: String? = null,
     isNumber: Boolean = false,
+    numberRange: NumberRange? = null,
     dataListItems: Set<String> = emptySet(),
     smallControl: Boolean = false,
     descriptionShownIf: String? = null,
@@ -79,18 +80,27 @@ internal fun FlowContent.validatedInput(
             descriptionShownIf = descriptionShownIf,
         )
     }
-    input(type = InputType.text) {
-        val classes = mutableSetOf(FORM_CONTROL).addIf(smallControl, FORM_CONTROL_SM)
-        classes(classes)
-        id = inputName
-        name = inputName
-        placeholder?.let { this.placeholder = it }
-        xBindErrorClass(propName)
-        onInput?.let { xOnInput(it) }
-        onBlur?.let { xOnBlur(it) }
-        disabledIf?.let { xBindDisabled(it) }
-        if (isNumber) xModelNumber(propName) else xModel(propName)
-        if (dataListItems.isNotEmpty()) list = dataListId
+    val renderInput: FlowContent.() -> Unit = {
+        input(type = InputType.text) {
+            val classes = mutableSetOf(FORM_CONTROL).addIf(smallControl, FORM_CONTROL_SM)
+            classes(classes)
+            id = inputName
+            name = inputName
+            placeholder?.let { this.placeholder = it }
+            xBindErrorClass(propName)
+            onInput?.let { xOnInput(it) }
+            onBlur?.let { xOnBlur(it) }
+            disabledIf?.let { xBindDisabled(it) }
+            if (isNumber) xModelNumber(propName) else xModel(propName)
+            if (dataListItems.isNotEmpty()) list = dataListId
+        }
+    }
+    if (numberRange != null) {
+        numberInputWrapper(numberRange, small = smallControl, disabledIf = disabledIf) {
+            renderInput()
+        }
+    } else {
+        renderInput()
     }
     if (dataListItems.isNotEmpty()) {
         dataList {
@@ -108,6 +118,41 @@ internal fun FlowContent.validatedInput(
             classes(INVALID_FEEDBACK)
             xText("errors.$propName")
         }
+    }
+}
+
+/** The bounds and the step of a Tabler number input. A missing [max] means that the field has no upper limit. */
+internal data class NumberRange(val min: Long, val max: Long? = null, val step: Long = 1)
+
+/**
+ * Wraps the input rendered by [block] in a Tabler number input with the increment and decrement buttons. It is
+ * initialized by initNumberInput() in kuvasz.js, not by Tabler's data API, as that one would attach its listeners
+ * before the ones of the former.
+ */
+internal fun FlowContent.numberInputWrapper(
+    range: NumberRange,
+    small: Boolean = false,
+    disabledIf: String? = null,
+    block: FlowContent.() -> Unit,
+) {
+    div {
+        classes(mutableSetOf(NUMBER_INPUT).addIf(small, NUMBER_INPUT_SM))
+        attributes["data-tblr-min"] = range.min.toString()
+        range.max?.let { attributes["data-tblr-max"] = it.toString() }
+        attributes["data-tblr-step"] = range.step.toString()
+        xInit("initNumberInput(\$el)")
+        numberInputButton("decrement", Messages.numberInputDecrease(), disabledIf)
+        block()
+        numberInputButton("increment", Messages.numberInputIncrease(), disabledIf)
+    }
+}
+
+private fun FlowContent.numberInputButton(action: String, label: String, disabledIf: String?) {
+    button(type = ButtonType.button) {
+        classes(setOf(BTN, BTN_ICON))
+        attributes["data-tblr-number-input-action"] = action
+        attributes["aria-label"] = label
+        disabledIf?.let { xBindDisabled(it) }
     }
 }
 

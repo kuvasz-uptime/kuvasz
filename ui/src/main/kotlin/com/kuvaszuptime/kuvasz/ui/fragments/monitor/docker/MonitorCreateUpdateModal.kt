@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.ui.fragments.monitor.docker
 
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
+import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.dto.monitor.DockerMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
@@ -65,6 +66,7 @@ internal fun FlowContent.dockerMonitorCreateUpdateModal(
                 required = true,
                 onInput = "validateUptimeCheckInterval()",
                 disabledIf = "$isReadOnlyMode",
+                numberRange = NumberRange(Validation.MIN_UPTIME_CHECK_INTERVAL, step = 10),
             )
         }
         // Timeout (ms)
@@ -78,6 +80,7 @@ internal fun FlowContent.dockerMonitorCreateUpdateModal(
                 required = true,
                 onInput = "validateTimeoutMs()",
                 disabledIf = "$isReadOnlyMode",
+                numberRange = NumberRange(Validation.MIN_TIMEOUT_MILLIS, Validation.MAX_TIMEOUT_MILLIS, step = 100),
             )
         }
         // Failure count threshold
@@ -91,6 +94,7 @@ internal fun FlowContent.dockerMonitorCreateUpdateModal(
                 required = true,
                 onInput = "validateFailureCountThreshold()",
                 disabledIf = "$isReadOnlyMode",
+                numberRange = NumberRange(1),
             )
         }
         // Metrics History

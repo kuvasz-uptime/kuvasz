@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.ui.fragments.monitor.push
 
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
+import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.dto.monitor.PushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
@@ -43,6 +44,7 @@ internal fun FlowContent.pushMonitorCreateUpdateModal(
                 required = true,
                 onInput = "validateHeartbeatInterval()",
                 disabledIf = "$isReadOnlyMode",
+                numberRange = NumberRange(Validation.MIN_HEARTBEAT_INTERVAL, step = 10),
             )
         }
         // Grace period
@@ -56,6 +58,7 @@ internal fun FlowContent.pushMonitorCreateUpdateModal(
                 required = true,
                 onInput = "validateGracePeriod()",
                 disabledIf = "$isReadOnlyMode",
+                numberRange = NumberRange(0, step = 10),
             )
         }
         //Failure count threshold
@@ -69,6 +72,7 @@ internal fun FlowContent.pushMonitorCreateUpdateModal(
                 required = true,
                 onInput = "validateFailureCountThreshold()",
                 disabledIf = "$isReadOnlyMode",
+                numberRange = NumberRange(1),
             )
         }
         // Client secret

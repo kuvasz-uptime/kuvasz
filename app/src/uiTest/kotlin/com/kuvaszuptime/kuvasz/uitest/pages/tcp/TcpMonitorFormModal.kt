@@ -10,8 +10,13 @@ class TcpMonitorFormModal(page: Page) : ModalView(page) {
     val nameInput: Locator get() = modal.locator("#tcp-name-input")
     val hostInput: Locator get() = modal.locator("#tcp-host-input")
     val portInput: Locator get() = modal.locator("#tcp-port-input")
+    val portIncrementButton: Locator get() = portButton("increment")
+    val portDecrementButton: Locator get() = portButton("decrement")
     val uptimeCheckIntervalInput: Locator get() = modal.locator("#tcp-uptimeCheckInterval-input")
     val latencyThresholdInput: Locator get() = modal.locator("#tcp-latencyThresholdMs-input")
+
+    private fun portButton(action: String): Locator =
+        portInput.locator("xpath=..").locator("[data-tblr-number-input-action=$action]")
 
     fun setName(value: String): TcpMonitorFormModal {
         nameInput.fill(value)

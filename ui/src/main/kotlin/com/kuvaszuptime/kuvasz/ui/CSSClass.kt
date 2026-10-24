@@ -275,6 +275,8 @@ internal enum class CSSClass(val className: String) {
     NAV_LINK("nav-link"),
     NAV_LINK_ICON("nav-link-icon"),
     NAV_LINK_TITLE("nav-link-title"),
+    NUMBER_INPUT("number-input"),
+    NUMBER_INPUT_SM("number-input-sm"),
     ORDER_MD_LAST("order-md-last"),
     PAGE("page"),
     PAGE_BODY("page-body"),

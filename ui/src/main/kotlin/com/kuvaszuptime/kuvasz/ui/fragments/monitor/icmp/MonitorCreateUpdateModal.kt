@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.ui.fragments.monitor.icmp
 
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
+import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.dto.monitor.IcmpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
@@ -57,6 +58,7 @@ internal fun FlowContent.icmpMonitorCreateUpdateModal(
                 required = true,
                 onInput = "validateUptimeCheckInterval()",
                 disabledIf = "$isReadOnlyMode",
+                numberRange = NumberRange(Validation.MIN_UPTIME_CHECK_INTERVAL, step = 10),
             )
         }
         // Packet count
@@ -70,6 +72,7 @@ internal fun FlowContent.icmpMonitorCreateUpdateModal(
                 required = true,
                 onInput = "validatePacketCount()",
                 disabledIf = "$isReadOnlyMode",
+                numberRange = NumberRange(Validation.MIN_PACKET_COUNT, Validation.MAX_PACKET_COUNT),
             )
         }
         // Timeout seconds
@@ -83,6 +86,7 @@ internal fun FlowContent.icmpMonitorCreateUpdateModal(
                 required = true,
                 onInput = "validateTimeoutSeconds()",
                 disabledIf = "$isReadOnlyMode",
+                numberRange = NumberRange(Validation.MIN_TIMEOUT_SECONDS, Validation.MAX_TIMEOUT_SECONDS),
             )
         }
         // Packet loss threshold
@@ -96,6 +100,7 @@ internal fun FlowContent.icmpMonitorCreateUpdateModal(
                 required = true,
                 onInput = "validatePacketLossThreshold()",
                 disabledIf = "$isReadOnlyMode",
+                numberRange = NumberRange(Validation.MIN_PACKET_LOSS_THRESHOLD, Validation.MAX_PACKET_LOSS_THRESHOLD),
             )
         }
         // Failure count threshold
@@ -109,6 +114,7 @@ internal fun FlowContent.icmpMonitorCreateUpdateModal(
                 required = true,
                 onInput = "validateFailureCountThreshold()",
                 disabledIf = "$isReadOnlyMode",
+                numberRange = NumberRange(1),
             )
         }
         // Metrics History
