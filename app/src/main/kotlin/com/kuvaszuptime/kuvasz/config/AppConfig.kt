@@ -55,8 +55,6 @@ class AppConfig {
     @PositiveOrZero(message = ValidationMessages.APP_CONFIG_HTTP_CHECK_MAX_REDIRECTS_POSITIVE_OR_ZERO)
     var httpCheckMaxRedirects: Int = DEFAULT_HTTP_CHECK_MAX_REDIRECTS
 
-    var useVirtualThreadScheduling: Boolean = false
-
     var incidentNotesEnabled: Boolean = true
 
     fun disableHttpMonitorExternalWrite() {

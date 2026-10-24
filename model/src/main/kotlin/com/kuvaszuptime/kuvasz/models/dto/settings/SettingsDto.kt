@@ -75,8 +75,10 @@ data class SettingsDto(
         )
         val httpCheckMaxRedirects: Int,
         @param:Schema(
-            description = "Whether the scheduled checks run on virtual threads (experimental)",
+            description = "Always true, the scheduled checks always run on virtual threads. " +
+                "Kept for backward compatibility only",
             required = true,
+            deprecated = true,
         )
         val virtualThreadSchedulingEnabled: Boolean,
     ) {

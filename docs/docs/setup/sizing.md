@@ -27,9 +27,6 @@ you numbers that we measured, and shows the one setting you need to change if yo
 - **Memory for the database** is what the database had in our tests, with 30 days of history in it, while the users
   looked at the last 30 days on the dashboard, the incidents and the status pages, see
   [keeping the history for longer](#keeping-the-history-for-longer).
-- With **more than 100 monitors**, we recommend turning on
-  [virtual thread scheduling](configuration.md#virtual-thread-scheduling). All
-  the numbers on this page were measured with it.
 
 !!! tip "Memory is what matters"
 
@@ -201,7 +198,6 @@ itself, and `-Xmx` is the one that sets the maximum size of the heap: `-Xmx512M`
         mem_limit: 1g
         environment:
           JAVA_TOOL_OPTIONS: "-Xmx512M"
-          USE_VIRTUAL_THREAD_SCHEDULING: "true"
           # ... the rest of your settings
     ```
 
@@ -210,7 +206,6 @@ itself, and `-Xmx` is the one that sets the maximum size of the heap: `-Xmx512M`
     ```bash
     docker run --memory 1g \
       -e JAVA_TOOL_OPTIONS="-Xmx512M" \
-      -e USE_VIRTUAL_THREAD_SCHEDULING=true \
       kuvaszmonitoring/kuvasz:latest
     ```
 
@@ -228,8 +223,6 @@ itself, and `-Xmx` is the one that sets the maximum size of the heap: `-Xmx512M`
     extraEnv:
       - name: JAVA_TOOL_OPTIONS
         value: "-Xmx512M"
-      - name: USE_VIRTUAL_THREAD_SCHEDULING
-        value: "true"
     ```
 
 !!! note

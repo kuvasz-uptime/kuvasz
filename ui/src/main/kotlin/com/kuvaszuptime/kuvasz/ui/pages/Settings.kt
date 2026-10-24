@@ -109,10 +109,6 @@ fun renderSettings(
                         value = settings.app.httpCheckMaxRedirects.toString()
                     )
                     settingsToggle(label = Messages.eventLogging(), checked = settings.app.eventLoggingEnabled)
-                    settingsToggle(
-                        label = Messages.virtualThreadScheduling(),
-                        checked = settings.app.virtualThreadSchedulingEnabled,
-                    )
                 }
             }
             // Editability

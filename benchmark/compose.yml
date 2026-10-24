@@ -60,7 +60,8 @@ services:
       ADMIN_PASSWORD: bench-password
       ADMIN_API_KEY: kbench-api-key-0123456789
       ENABLE_CHECK_UPDATES: "false"
-      USE_VIRTUAL_THREAD_SCHEDULING: ${KUVASZ_VIRTUAL_THREADS:-false}
+      # Needed by the images up to 4.5.0, where it's still an option. Newer ones always use virtual threads and ignore it
+      USE_VIRTUAL_THREAD_SCHEDULING: "true"
       # Raised only when a history longer than the default 7 days is loaded before the run (see kbench/backfill.py)
       LATENCY_DATA_RETENTION_DAYS: ${KUVASZ_LATENCY_RETENTION_DAYS:-7}
       # The database connections of Kuvasz, 10 like the image's own default, unless a run raises it

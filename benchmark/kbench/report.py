@@ -125,8 +125,7 @@ STEP_COLUMNS = STEP_HEADER.splitlines()[0].count("|") - 1
 
 def describe(block: dict) -> str:
     b = block["block"]
-    return (f"profile **{b['profile']}**, mix `{b['mix']}`, heap `{b['heap']}`, "
-            f"{'virtual threads' if b['virtual_threads'] else 'default thread pool'}")
+    return f"profile **{b['profile']}**, mix `{b['mix']}`, heap `{b['heap']}`"
 
 
 def summary_table(blocks: list[dict], profiles_of: dict) -> str:

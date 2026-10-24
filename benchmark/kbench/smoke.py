@@ -80,7 +80,7 @@ def main():
 
     profiles = load_profiles()
     stack = Stack(
-        StackSettings(args.profile, profiles["defaults"]["heap"], False,
+        StackSettings(args.profile, profiles["defaults"]["heap"],
                       args.kuvasz_tag or profiles["defaults"]["kuvasz_tag"], out / "gc",
                       latency_retention_days=backfill.retention_days(args.history_days)),
         profiles,

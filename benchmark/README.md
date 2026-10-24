@@ -105,10 +105,6 @@ the whole process keeps stalling.
 The CPUs are the cores of the machine that runs the benchmark: half a core of a modern laptop is a lot more than half a
 core of a Raspberry Pi, so the results of a slow machine can be a lot lower.
 
-Every run uses virtual thread scheduling (`USE_VIRTUAL_THREAD_SCHEDULING=true`), because it's planned to become the
-default. Pass `--no-virtual-threads` to a single block to measure the shared thread pool instead, e.g. as a baseline:
-`uv run python -m kbench.run storm --profile M --scale 40 --no-virtual-threads`.
-
 ## Smoke test
 
 Boots the whole stack with a small set, lets the checks run for a while, then verifies that every stub monitor reports
@@ -147,7 +143,7 @@ sleeping Mac pauses the Docker VM too. Single blocks can be run too, e.g. while 
 ```shell
 uv run python -m kbench.run ramp --profile M --ladder 1,5,15
 uv run python -m kbench.run knee --profile M --scale 40 --heap stock
-uv run python -m kbench.run storm --profile M --scale 40 --no-virtual-threads
+uv run python -m kbench.run storm --profile M --scale 40
 uv run python -m kbench.run uiload --profile XS --heap stock --scale 15 --users 5
 uv run python -m kbench.run --warmup 30 --measure 60 ramp --profile S --ladder 1,2   # a quick dry run
 ```

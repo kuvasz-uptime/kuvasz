@@ -32,6 +32,8 @@ In the **API**, the new `/api/v3` endpoints return the monitors of every type, t
 
 ### Improvements
 
+- **Virtual thread scheduling is always on**: the scheduled checks run on [**virtual threads**](setup/sizing.md#good-to-know) for everyone now, so the `USE_VIRTUAL_THREAD_SCHEDULING` (`app-config.use-virtual-thread-scheduling`) setting is not needed anymore, and it's ignored if it's still set. The `virtualThreadSchedulingEnabled` field of the settings API response is deprecated and always `true`, and it is removed from the MCP settings tool and the **Settings** page.
+
 - **Charts that stay fast with a lot of history**: a chart shows at most about 1,000 points, however long the period or the range is, and however often the monitor is checked. The checks of a period are grouped into equal time slots, and a point is the **average** of its slot, with a band around it from the **lowest** to the **highest** reading, so a short spike stays visible on a long period too.
 
 - **Faster monitor details pages, status pages and daily cleanup with a lot of history**: the tables that keep the response times and the other metrics of every check got better indexes. With about 1,000 monitors and a month of history, the details page of an HTTP monitor loaded about **4 times faster** in our tests, the ones of the TCP, ICMP, DNS and Docker monitors about **20 times faster**, and the nightly cleanup of the HTTP history went from almost 4 seconds to a quarter of a second. With 5,000 monitors and a month of history, the 30-day averages of 25 monitors on a status page took about **0.2 seconds instead of up to 6 seconds**, and the 30-day statistics of a single HTTP monitor about **15 milliseconds instead of 3 seconds**.

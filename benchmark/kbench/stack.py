@@ -43,7 +43,6 @@ def load_profiles() -> dict:
 class StackSettings:
     profile: str
     heap: str
-    virtual_threads: bool
     kuvasz_tag: str
     gc_log_dir: Path
     latency_retention_days: int = 7
@@ -58,7 +57,6 @@ class StackSettings:
             "KUVASZ_CPUS": str(kuvasz["cpus"]),
             "KUVASZ_MEM": kuvasz["mem"],
             "KUVASZ_JAVA_OPTS": java_opts,
-            "KUVASZ_VIRTUAL_THREADS": str(self.virtual_threads).lower(),
             "KUVASZ_GC_LOG_DIR": str(self.gc_log_dir),
             "KUVASZ_LATENCY_RETENTION_DAYS": str(self.latency_retention_days),
             "KUVASZ_DB_POOL_SIZE": str(self.db_pool_size),

@@ -31,7 +31,6 @@ class Block:
     profile: str
     mix: str
     heap: str
-    virtual_threads: bool
     scales: tuple[int, ...]
     ui_users: int = 0  # emulated UI/API users during the measurement (uiload blocks)
     history_days: int = 0  # days of uptime events and metrics loaded before the step (knee and uiload blocks)
@@ -46,7 +45,6 @@ class Block:
             profile=config["profile"],
             mix=config.get("mix", defaults["mix"]),
             heap=config.get("heap", defaults["heap"]),
-            virtual_threads=config.get("virtual_threads", defaults["virtual_threads"]),
             scales=scales,
             ui_users=config.get("users", 0),
             history_days=config.get("history_days", 0),
@@ -206,7 +204,7 @@ class Runner:
         self.kuvasz_tag = kuvasz_tag
 
     def settings(self, block: Block, gc_dir: Path) -> StackSettings:
-        return StackSettings(block.profile, block.heap, block.virtual_threads, self.kuvasz_tag, gc_dir,
+        return StackSettings(block.profile, block.heap, self.kuvasz_tag, gc_dir,
                              backfill.retention_days(block.history_days),
                              block.db_pool_size)
 
@@ -481,13 +479,11 @@ def main():
     for kind in ("ramp", "knee", "storm", "uiload"):
         p = sub.add_parser(kind)
         p.add_argument("--profile", required=True, choices=sorted(profiles["profiles"]))
-        p.add_argument("--block-name", help="defaults to <kind>-<profile>[-pool]-<heap>; reuse a block's name to add "
+        p.add_argument("--block-name", help="defaults to <kind>-<profile>-<heap>; reuse a block's name to add "
                                             "steps to it (e.g. the missing steps of an interrupted ramp, with --ladder): "
                                             "its other steps are kept, the re-run ones are replaced")
         p.add_argument("--mix", default=defaults["mix"])
         p.add_argument("--heap", default=defaults["heap"], choices=sorted(profiles["heap_modes"]))
-        p.add_argument("--virtual-threads", action=argparse.BooleanOptionalAction,
-                       default=defaults["virtual_threads"])
         p.add_argument("--db-pool-size", type=int, default=10, help="the database connections of Kuvasz")
         if kind == "ramp":
             p.add_argument("--ladder", default=",".join(map(str, defaults["ladder"])))
@@ -515,9 +511,8 @@ def main():
         run_campaign(runner, profiles)
     else:
         scales = tuple(int(s) for s in args.ladder.split(",")) if args.command == "ramp" else (args.scale,)
-        name = args.block_name or (
-            f"{args.command}-{args.profile}" + ("" if args.virtual_threads else "-pool") + f"-{args.heap}")
-        block = Block(name, args.command, args.profile, args.mix, args.heap, args.virtual_threads, scales,
+        name = args.block_name or f"{args.command}-{args.profile}-{args.heap}"
+        block = Block(name, args.command, args.profile, args.mix, args.heap, scales,
                       getattr(args, "users", 0), getattr(args, "history_days", 0), getattr(args, "ui_period", None),
                       args.db_pool_size)
         result = runner.run_block(block)

@@ -57,8 +57,6 @@ defaults:
   kuvasz_tag: "4.5.0"
   mix: balanced
   heap: ram75
-  # Virtual thread scheduling (USE_VIRTUAL_THREAD_SCHEDULING) is meant to become the default, so that's what's measured
-  virtual_threads: true
   # Multipliers of the 100-monitor base set. Capped at 5,000 monitors: beyond that, the target audience of the sizing
   # guide is not affected (a knee/storm block never goes above the last step either)
   ladder: [ 1, 5, 15, 40, 50 ]

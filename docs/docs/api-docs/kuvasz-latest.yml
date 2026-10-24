@@ -9374,7 +9374,9 @@ components:
           format: int32
         virtualThreadSchedulingEnabled:
           type: boolean
-          description: Whether the scheduled checks run on virtual threads (experimental)
+          description: "Always true, the scheduled checks always run on virtual threads.\
+            \ Kept for backward compatibility only"
+          deprecated: true
     SettingsDto.AppSettingsDto.EditabilityStateDto:
       required:
       - areDnsMonitorsReadOnly

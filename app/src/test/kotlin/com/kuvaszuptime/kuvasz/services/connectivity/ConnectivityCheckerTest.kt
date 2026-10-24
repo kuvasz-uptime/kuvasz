@@ -1,6 +1,5 @@
 package com.kuvaszuptime.kuvasz.services.connectivity
 
-import com.kuvaszuptime.kuvasz.config.AppConfig
 import com.kuvaszuptime.kuvasz.config.ConnectivityCheckConfig
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.settings.ConnectivityState
@@ -32,7 +31,7 @@ class ConnectivityCheckerTest : BehaviorSpec({
     val resolver = BoundedHostnameResolver(SystemHostnameResolver())
     val executor = TcpConnectExecutor(resolver, ProxyTunnel(resolver))
     // The very dispatcher the application injects into the checker
-    val dispatcher = ScheduledCheckDispatchers(AppConfig()).default
+    val dispatcher = ScheduledCheckDispatchers().default
 
     lateinit var openTarget: ClientAndServer
     var closedPort = 0

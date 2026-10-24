@@ -41,7 +41,7 @@ def write_block(campaign: Path, name: str, kind: str, profile: str, steps: list[
         (block_dir / f"n{m['scale']:03d}").mkdir(parents=True)
         (block_dir / f"n{m['scale']:03d}" / "metrics.json").write_text(json.dumps(m))
     block = {"name": name, "kind": kind, "profile": profile, "mix": "balanced", "heap": "ram75",
-             "virtual_threads": kind == "storm", "scales": [m["scale"] for m in steps]}
+             "scales": [m["scale"] for m in steps]}
     (block_dir / "block.json").write_text(json.dumps(
         {"block": block, "steps": [], "last_pass": last_pass, "first_fail": first_fail}))
 
