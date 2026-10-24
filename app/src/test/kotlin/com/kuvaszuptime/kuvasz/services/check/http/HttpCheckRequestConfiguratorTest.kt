@@ -8,6 +8,9 @@ import io.kotest.data.forAll
 import io.kotest.data.headers
 import io.kotest.data.row
 import io.kotest.data.table
+import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.micronaut.http.HttpHeaders
 import tools.jackson.databind.node.JsonNodeFactory
@@ -114,7 +117,7 @@ class HttpCheckRequestConfiguratorTest : ShouldSpec({
                 }
                 val requestUri = "https://example.com".toUri()
 
-                val request = configurator.fromMonitor(monitor, requestUri)
+                val request = configurator.fromMonitor(monitor, requestUri, HttpCheckCookieJar())
 
                 request.method shouldBe testExpectation.expectedMethod
                 request.uri.toString() shouldBe testExpectation.expectedUri
@@ -150,7 +153,7 @@ class HttpCheckRequestConfiguratorTest : ShouldSpec({
             }
             val requestUri = "https://example.com".toUri()
 
-            val request = configurator.fromMonitor(monitor, requestUri)
+            val request = configurator.fromMonitor(monitor, requestUri, HttpCheckCookieJar())
 
             request.headers.get("X-Custom-Header") shouldBe "CustomValue"
             request.headers.get("X-Another-Header") shouldBe "AnotherValue"
@@ -203,7 +206,7 @@ class HttpCheckRequestConfiguratorTest : ShouldSpec({
                     }
                 }
 
-                val request = configurator.fromMonitor(monitor, requestUri.toUri())
+                val request = configurator.fromMonitor(monitor, requestUri.toUri(), HttpCheckCookieJar())
 
                 if (expectCustomHeaders) {
                     request.headers.get(HttpHeaders.AUTHORIZATION) shouldBe "Bearer secret"
@@ -215,6 +218,120 @@ class HttpCheckRequestConfiguratorTest : ShouldSpec({
                 }
                 request.headers.get(HttpHeaders.ACCEPT) shouldBe "*/*"
                 request.headers.get(HttpHeaders.CACHE_CONTROL) shouldBe "no-cache"
+            }
+        }
+    }
+
+    context("the configurator logic - cookies set during the check") {
+
+        fun monitorWithRequestHeaders(vararg requestHeaders: Pair<String, String>) = HttpMonitorRecord().apply {
+            url = "https://example.com"
+            requestMethod = HttpMethod.GET
+            forceNoCache = false
+            crossOriginHeaderPropagation = false
+            this.requestHeaders = JsonNodeFactory.instance.objectNode().apply {
+                requestHeaders.forEach { (name, value) -> put(name, value) }
+            }
+        }
+
+        fun cookieJarWith(setByUri: String, vararg setCookies: String) = HttpCheckCookieJar().apply {
+            storeFrom(responseSettingCookies(*setCookies), setByUri.toUri())
+        }
+
+        fun String?.cookiePairs() = this.orEmpty().split("; ").filter { it.isNotEmpty() }
+
+        should("not add a Cookie header if the jar has nothing for the URI") {
+            val request = configurator.fromMonitor(
+                monitorWithRequestHeaders(),
+                "https://example.com".toUri(),
+                cookieJarWith("https://other.com", "session=abc"),
+            )
+
+            request.headers.get(HttpHeaders.COOKIE) shouldBe null
+        }
+
+        should("keep the custom Cookie header as it is if the jar has nothing for the URI") {
+            val request = configurator.fromMonitor(
+                monitorWithRequestHeaders(HttpHeaders.COOKIE to "custom=1; other=2"),
+                "https://example.com".toUri(),
+                HttpCheckCookieJar(),
+            )
+
+            request.headers.get(HttpHeaders.COOKIE) shouldBe "custom=1; other=2"
+        }
+
+        should("send the cookies of the jar") {
+            val request = configurator.fromMonitor(
+                monitorWithRequestHeaders(),
+                "https://example.com/path".toUri(),
+                cookieJarWith("https://example.com", "session=abc; Path=/", "other=1"),
+            )
+
+            request.headers.get(HttpHeaders.COOKIE).cookiePairs() shouldContainExactlyInAnyOrder
+                listOf("session=abc", "other=1")
+        }
+
+        should("merge the cookies of the jar into the custom Cookie header, and the jar should win on a clash") {
+            val request = configurator.fromMonitor(
+                monitorWithRequestHeaders(HttpHeaders.COOKIE to "custom=1; session=stale"),
+                "https://example.com".toUri(),
+                cookieJarWith("https://example.com", "session=fresh"),
+            )
+
+            request.headers.getAll(HttpHeaders.COOKIE) shouldHaveSize 1
+            request.headers.get(HttpHeaders.COOKIE).cookiePairs() shouldContainExactlyInAnyOrder
+                listOf("custom=1", "session=fresh")
+        }
+
+        should("keep the custom cookies that are not overridden by the jar without parsing and re-encoding them") {
+            val request = configurator.fromMonitor(
+                monitorWithRequestHeaders(HttpHeaders.COOKIE to "flag;token=\"abc; x=1\";  session=stale ;"),
+                "https://example.com".toUri(),
+                cookieJarWith("https://example.com", "session=fresh"),
+            )
+
+            request.headers.get(HttpHeaders.COOKIE) shouldBe "flag; token=\"abc; x=1\"; session=fresh"
+        }
+
+        should("send only the cookies of the jar to a different origin, the custom Cookie header is withheld") {
+            val request = configurator.fromMonitor(
+                monitorWithRequestHeaders(HttpHeaders.COOKIE to "custom=1"),
+                "https://other.com".toUri(),
+                cookieJarWith("https://other.com", "session=abc"),
+            )
+
+            request.headers.get(HttpHeaders.COOKIE) shouldBe "session=abc"
+        }
+
+        should("find the custom Cookie header regardless of the case of its name") {
+            val request = configurator.fromMonitor(
+                monitorWithRequestHeaders("cookie" to "custom=1"),
+                "https://example.com".toUri(),
+                cookieJarWith("https://example.com", "session=abc"),
+            )
+
+            request.headers.getAll(HttpHeaders.COOKIE) shouldBe listOf("custom=1; session=abc")
+        }
+
+        should("record the Cookie header of the request in the jar") {
+            table(
+                headers("customCookieHeader", "requestUri", "expectedCookieHeader"),
+                row(null, "https://example.com/path", "session=abc"),
+                row("custom=1", "https://example.com/path", "custom=1; session=abc"),
+                // The custom Cookie header is withheld from a different origin
+                row("custom=1", "https://other.com", null),
+                row(null, "https://other.com", null),
+            ).forAll { customCookieHeader, requestUri, expectedCookieHeader ->
+                val monitor = customCookieHeader
+                    ?.let { monitorWithRequestHeaders(HttpHeaders.COOKIE to it) }
+                    ?: monitorWithRequestHeaders()
+                val cookieJar = cookieJarWith("https://example.com", "session=abc")
+
+                val request = configurator.fromMonitor(monitor, requestUri.toUri(), cookieJar)
+
+                request.headers.get(HttpHeaders.COOKIE) shouldBe expectedCookieHeader
+                cookieJar.wasSentTo(requestUri.toUri(), expectedCookieHeader).shouldBeTrue()
+                configurator.cookieHeaderFor(monitor, requestUri.toUri(), cookieJar) shouldBe expectedCookieHeader
             }
         }
     }
@@ -245,7 +362,7 @@ class HttpCheckRequestConfiguratorTest : ShouldSpec({
                 }
                 val requestUri = "https://example.com".toUri()
 
-                val request = configurator.fromMonitor(monitor, requestUri)
+                val request = configurator.fromMonitor(monitor, requestUri, HttpCheckCookieJar())
 
                 request.method shouldBe expectedMethod
                 request.getBody(String::class.java).orElse(null) shouldBe expectedBody

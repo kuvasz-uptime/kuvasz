@@ -111,7 +111,7 @@ class HttpCheckSchedulerTest(
             `when`("an uptime check is executed") {
                 val monitor = createHttpMonitor(monitorRepository, uptimeCheckInterval = 1)
                 val uptimeCheckerMock = getMock(uptimeChecker)
-                coEvery { uptimeCheckerMock.check(monitor, any(), any(), any()) } just Runs
+                coEvery { uptimeCheckerMock.check(monitor, any(), any(), any(), any()) } just Runs
                 val lockRegistryMock = getMock(uptimeCheckLockRegistry)
                 coEvery { lockRegistryMock.tryAcquire(monitor.id) } returns true
                 coEvery { lockRegistryMock.release(monitor.id) } just Runs
@@ -122,7 +122,7 @@ class HttpCheckSchedulerTest(
                 then("it should delegate the check to the HTTP uptime checker") {
                     coVerifyOrder {
                         lockRegistryMock.tryAcquire(monitor.id)
-                        uptimeCheckerMock.check(monitor, any(), any(), any())
+                        uptimeCheckerMock.check(monitor, any(), any(), any(), any())
                         lockRegistryMock.release(monitor.id)
                     }
                 }
@@ -322,7 +322,7 @@ class HttpCheckSchedulerCloseTest(
                 val checkFinished = CompletableDeferred<Unit>()
                 val lockReleased = CountDownLatch(1)
                 val uptimeCheckerMock = getMock(uptimeChecker)
-                coEvery { uptimeCheckerMock.check(monitor, any(), any(), captureLambda()) } coAnswers {
+                coEvery { uptimeCheckerMock.check(monitor, any(), any(), any(), captureLambda()) } coAnswers {
                     checkStarted.complete(Unit)
                     checkFinished.await()
                     lambda<(HttpMonitorRecord) -> Unit>().captured.invoke(monitor)

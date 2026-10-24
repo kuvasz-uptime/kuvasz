@@ -44,6 +44,7 @@ data class HttpResponseCheckContext(
     val monitor: HttpMonitorRecord,
     val response: HttpCheckResponse,
     val visitedUrls: MutableList<URI>,
+    val cookieJar: HttpCheckCookieJar,
 ) {
     /**
      * The URI that actually produced [response]. The checker appends every hop to [visitedUrls] right before it

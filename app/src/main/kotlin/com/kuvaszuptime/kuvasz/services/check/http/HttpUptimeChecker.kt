@@ -49,6 +49,7 @@ class HttpUptimeChecker(
         monitor: HttpMonitorRecord,
         uriOverride: URI? = null,
         visitedUrls: MutableList<URI> = mutableListOf(),
+        cookieJar: HttpCheckCookieJar = HttpCheckCookieJar(),
         doAfter: ((monitor: HttpMonitorRecord) -> Unit)? = null,
     ) {
         if (uriOverride == null) {
@@ -60,9 +61,11 @@ class HttpUptimeChecker(
             val effectiveUrl = uriOverride ?: URI(monitor.url)
             visitedUrls.add(effectiveUrl)
 
-            val checkResponse = sendHttpRequest(monitor, uri = effectiveUrl)
-            when (val result = checkResponseEvaluator.evaluateResponse(monitor, checkResponse, visitedUrls)) {
-                is HttpCheckResult.Redirected -> check(monitor, result.redirectionUri, result.visitedUrls)
+            val checkResponse = sendHttpRequest(monitor, uri = effectiveUrl, cookieJar = cookieJar)
+            cookieJar.storeFrom(checkResponse.httpResponse, requestUri = effectiveUrl)
+            val result = checkResponseEvaluator.evaluateResponse(monitor, checkResponse, visitedUrls, cookieJar)
+            when (result) {
+                is HttpCheckResult.Redirected -> check(monitor, result.redirectionUri, result.visitedUrls, cookieJar)
                 HttpCheckResult.Continue -> {
                     logger.warn("HTTP uptime check for monitor with ID: ${monitor.id} returned Continue unexpectedly")
                 }
@@ -92,10 +95,14 @@ class HttpUptimeChecker(
         multiplier = "$RETRY_BACKOFF_MULTIPLIER",
         includes = [HttpException::class],
     )
-    suspend fun sendHttpRequest(monitor: HttpMonitorRecord, uri: URI): HttpCheckResponse {
+    suspend fun sendHttpRequest(
+        monitor: HttpMonitorRecord,
+        uri: URI,
+        cookieJar: HttpCheckCookieJar,
+    ): HttpCheckResponse {
         logger.debug("Sending HTTP request to $uri (${monitor.name})")
         val client = clientFor(monitor)
-        val request = checkRequestConfigurator.fromMonitor(monitor, uri)
+        val request = checkRequestConfigurator.fromMonitor(monitor, uri, cookieJar)
         val start = System.currentTimeMillis()
         val httpResponse = client.exchange(
             request,

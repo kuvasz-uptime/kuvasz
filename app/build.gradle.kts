@@ -57,6 +57,7 @@ dependencies {
     implementation(mn.micronaut.validation)
     implementation(mn.logback.classic)
     implementation(mn.micronaut.http.client)
+    implementation(mn.netty.codec.http)
     implementation(mn.micronaut.rxjava3)
     implementation(mn.micronaut.retry)
     implementation(mn.micronaut.security.jwt)

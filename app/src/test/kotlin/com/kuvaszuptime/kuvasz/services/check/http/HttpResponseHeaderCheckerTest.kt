@@ -54,7 +54,7 @@ class HttpResponseHeaderCheckerTest : ShouldSpec({
             val mockMonitor = mockMonitor()
             val response = mockResponse(emptyMap())
 
-            val result = checker.evaluate(HttpResponseCheckContext(mockMonitor, response, mutableListOf()))
+            val result = checker.evaluate(responseCheckContext(mockMonitor, response, mutableListOf()))
 
             result shouldBe HttpCheckResult.Continue
             upSubscriber.assertNoValues()
@@ -86,7 +86,7 @@ class HttpResponseHeaderCheckerTest : ShouldSpec({
                 )
             )
 
-            val result = checker.evaluate(HttpResponseCheckContext(mockMonitor, response, mutableListOf()))
+            val result = checker.evaluate(responseCheckContext(mockMonitor, response, mutableListOf()))
 
             result shouldBe HttpCheckResult.Continue
             upSubscriber.assertNoValues()
@@ -114,7 +114,7 @@ class HttpResponseHeaderCheckerTest : ShouldSpec({
                 )
             )
 
-            val result = checker.evaluate(HttpResponseCheckContext(mockMonitor, response, mutableListOf()))
+            val result = checker.evaluate(responseCheckContext(mockMonitor, response, mutableListOf()))
 
             result shouldBe HttpCheckResult.Continue
             upSubscriber.assertNoValues()
@@ -142,7 +142,7 @@ class HttpResponseHeaderCheckerTest : ShouldSpec({
                 )
             )
 
-            val result = checker.evaluate(HttpResponseCheckContext(mockMonitor, response, mutableListOf()))
+            val result = checker.evaluate(responseCheckContext(mockMonitor, response, mutableListOf()))
 
             result shouldBe HttpCheckResult.Continue
             upSubscriber.assertNoValues()
@@ -173,7 +173,7 @@ class HttpResponseHeaderCheckerTest : ShouldSpec({
                 )
             )
 
-            val result = checker.evaluate(HttpResponseCheckContext(mockMonitor, response, mutableListOf()))
+            val result = checker.evaluate(responseCheckContext(mockMonitor, response, mutableListOf()))
 
             result shouldBe HttpCheckResult.Finished
             upSubscriber.assertNoValues()

@@ -44,7 +44,7 @@ class HttpResponseBodyCheckerTest : ShouldSpec({
                 expectedKeywordCaseSensitive = false,
                 expectedKeywordNegated = false
             )
-            val ctx = HttpResponseCheckContext(monitor, response, mutableListOf())
+            val ctx = responseCheckContext(monitor, response, mutableListOf())
 
             val result = checker.evaluate(ctx)
 
@@ -67,7 +67,7 @@ class HttpResponseBodyCheckerTest : ShouldSpec({
                 expectedKeywordCaseSensitive = true,
                 expectedKeywordNegated = false
             )
-            val ctx = HttpResponseCheckContext(monitor, response, mutableListOf())
+            val ctx = responseCheckContext(monitor, response, mutableListOf())
 
             val result = checker.evaluate(ctx)
 
@@ -90,7 +90,7 @@ class HttpResponseBodyCheckerTest : ShouldSpec({
                 expectedKeywordCaseSensitive = false,
                 expectedKeywordNegated = true
             )
-            val ctx = HttpResponseCheckContext(monitor, response, mutableListOf())
+            val ctx = responseCheckContext(monitor, response, mutableListOf())
 
             val result = checker.evaluate(ctx)
 
@@ -115,7 +115,7 @@ class HttpResponseBodyCheckerTest : ShouldSpec({
                 expectedKeywordCaseSensitive = true,
                 expectedKeywordNegated = true
             )
-            val ctx = HttpResponseCheckContext(monitor, response, mutableListOf())
+            val ctx = responseCheckContext(monitor, response, mutableListOf())
 
             val result = checker.evaluate(ctx)
 
@@ -140,7 +140,7 @@ class HttpResponseBodyCheckerTest : ShouldSpec({
                 expectedKeywordCaseSensitive = false,
                 expectedKeywordNegated = false
             )
-            val ctx = HttpResponseCheckContext(monitor, response, mutableListOf())
+            val ctx = responseCheckContext(monitor, response, mutableListOf())
 
             val result = checker.evaluate(ctx)
 
@@ -165,7 +165,7 @@ class HttpResponseBodyCheckerTest : ShouldSpec({
                 expectedKeywordCaseSensitive = true,
                 expectedKeywordNegated = false
             )
-            val ctx = HttpResponseCheckContext(monitor, response, mutableListOf())
+            val ctx = responseCheckContext(monitor, response, mutableListOf())
 
             val result = checker.evaluate(ctx)
 
@@ -190,7 +190,7 @@ class HttpResponseBodyCheckerTest : ShouldSpec({
                 expectedKeywordCaseSensitive = false,
                 expectedKeywordNegated = true
             )
-            val ctx = HttpResponseCheckContext(monitor, response, mutableListOf())
+            val ctx = responseCheckContext(monitor, response, mutableListOf())
 
             val result = checker.evaluate(ctx)
 
@@ -213,7 +213,7 @@ class HttpResponseBodyCheckerTest : ShouldSpec({
                 expectedKeywordCaseSensitive = true,
                 expectedKeywordNegated = true
             )
-            val ctx = HttpResponseCheckContext(monitor, response, mutableListOf())
+            val ctx = responseCheckContext(monitor, response, mutableListOf())
 
             val result = checker.evaluate(ctx)
 
@@ -236,7 +236,7 @@ class HttpResponseBodyCheckerTest : ShouldSpec({
                 expectedKeywordCaseSensitive = false,
                 expectedKeywordNegated = false
             )
-            val ctx = HttpResponseCheckContext(monitor, response, mutableListOf())
+            val ctx = responseCheckContext(monitor, response, mutableListOf())
 
             val result = checker.evaluate(ctx)
 
@@ -261,7 +261,7 @@ class HttpResponseBodyCheckerTest : ShouldSpec({
                 expectedKeywordCaseSensitive = false,
                 expectedKeywordNegated = false
             )
-            val ctx = HttpResponseCheckContext(monitor, response, mutableListOf())
+            val ctx = responseCheckContext(monitor, response, mutableListOf())
 
             val result = checker.evaluate(ctx)
 
@@ -288,7 +288,7 @@ class HttpResponseBodyCheckerTest : ShouldSpec({
                 expectedKeywordCaseSensitive = false,
                 expectedKeywordNegated = false
             )
-            val ctx = HttpResponseCheckContext(monitor, response, mutableListOf())
+            val ctx = responseCheckContext(monitor, response, mutableListOf())
 
             val result = checker.evaluate(ctx)
 
@@ -314,7 +314,7 @@ class HttpResponseBodyCheckerTest : ShouldSpec({
                 expectedKeywordCaseSensitive = false,
                 expectedKeywordNegated = false
             )
-            val ctx = HttpResponseCheckContext(monitor, response, mutableListOf())
+            val ctx = responseCheckContext(monitor, response, mutableListOf())
 
             val result = checker.evaluate(ctx)
 
