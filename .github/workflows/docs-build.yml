@@ -19,12 +19,16 @@ jobs:
         with:
           python-version: 3.14
       - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
+      # The optimize plugin's cache is deliberately not cached: on a cache hit, its worker thread rewrites file.src_path
+      # while the main thread is still calling files.remove(file) -> intermittent "not in collection" ValueError
       - uses: actions/cache@v6
         with:
-          key: mkdocs-material-${{ env.cache_id }}
-          path: docs/.cache
+          key: mkdocs-material-v2-${{ env.cache_id }}
+          path: |
+            docs/.cache/plugin/social
+            docs/.cache/plugin/privacy
           restore-keys: |
-            mkdocs-material-
+            mkdocs-material-v2-
       - run: sudo apt-get update && sudo apt-get install -y pngquant
       - run: pip install -r requirements.txt
         working-directory: docs
