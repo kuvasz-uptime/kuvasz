@@ -3,8 +3,6 @@ package com.kuvaszuptime.kuvasz.uitest.pages.dns
 import com.kuvaszuptime.kuvasz.uitest.pages.common.ModalView
 import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
-import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
-import java.util.regex.Pattern
 
 // The Alpine.js-driven create/update modal for DNS monitors.
 class DnsMonitorFormModal(page: Page) : ModalView(page) {
@@ -35,11 +33,13 @@ class DnsMonitorFormModal(page: Page) : ModalView(page) {
     }
 
     fun setResolverHost(value: String): DnsMonitorFormModal {
+        openAccordion(RESOLVER_SETTINGS_ID)
         resolverHostInput.fill(value)
         return this
     }
 
     fun setResolverPort(value: String): DnsMonitorFormModal {
+        openAccordion(RESOLVER_SETTINGS_ID)
         resolverPortInput.fill(value)
         return this
     }
@@ -50,6 +50,7 @@ class DnsMonitorFormModal(page: Page) : ModalView(page) {
     }
 
     fun setLatencyThreshold(value: String): DnsMonitorFormModal {
+        openAccordion(ASSERTION_SETTINGS_ID)
         latencyThresholdInput.fill(value)
         return this
     }
@@ -59,13 +60,11 @@ class DnsMonitorFormModal(page: Page) : ModalView(page) {
 
     // Expands the collapsible "assertion settings" accordion that holds the record-matcher editor.
     fun openAssertionSettings(): DnsMonitorFormModal {
-        if (!newMatcherValueInput.isVisible) {
-            modal.getByTestId("accordion-toggle-dns-monitor-assertion-settings").click()
-            // Bootstrap only sets `show` once the expansion ends, and a click on a field that is still moving misses
-            assertThat(modal.locator("#dns-monitor-assertion-settings")).hasClass(Pattern.compile(".*\\bshow\\b.*"))
-        }
+        openAccordion(ASSERTION_SETTINGS_ID)
         return this
     }
+
+    val resolverSettingsErrorIcon: Locator get() = accordionErrorIcon(RESOLVER_SETTINGS_ID)
 
     fun setNewMatcherValue(value: String): DnsMonitorFormModal {
         newMatcherValueInput.fill(value)
@@ -119,5 +118,10 @@ class DnsMonitorFormModal(page: Page) : ModalView(page) {
 
     fun save() {
         saveButton.click()
+    }
+
+    private companion object {
+        const val ASSERTION_SETTINGS_ID = "dns-monitor-assertion-settings"
+        const val RESOLVER_SETTINGS_ID = "dns-monitor-resolver-settings"
     }
 }

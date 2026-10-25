@@ -52,12 +52,12 @@ class HttpMonitorFormModal(page: Page) : ModalView(page) {
     }
 
     fun expandRequestSettings(): HttpMonitorFormModal {
-        modal.getByTestId("accordion-toggle-http-monitor-request-settings").click()
+        openAccordion("http-monitor-request-settings")
         return this
     }
 
     fun expandEvaluationSettings(): HttpMonitorFormModal {
-        modal.getByTestId("accordion-toggle-http-monitor-evaluation-settings").click()
+        openAccordion("http-monitor-evaluation-settings")
         return this
     }
 

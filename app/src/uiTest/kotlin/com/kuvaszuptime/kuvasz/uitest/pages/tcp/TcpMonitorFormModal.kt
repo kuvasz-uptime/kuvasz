@@ -10,8 +10,13 @@ class TcpMonitorFormModal(page: Page) : ModalView(page) {
     val nameInput: Locator get() = modal.locator("#tcp-name-input")
     val hostInput: Locator get() = modal.locator("#tcp-host-input")
     val portInput: Locator get() = modal.locator("#tcp-port-input")
+    val portIncrementButton: Locator get() = portButton("increment")
+    val portDecrementButton: Locator get() = portButton("decrement")
     val uptimeCheckIntervalInput: Locator get() = modal.locator("#tcp-uptimeCheckInterval-input")
     val latencyThresholdInput: Locator get() = modal.locator("#tcp-latencyThresholdMs-input")
+
+    private fun portButton(action: String): Locator =
+        portInput.locator("xpath=..").locator("[data-tblr-number-input-action=$action]")
 
     fun setName(value: String): TcpMonitorFormModal {
         nameInput.fill(value)
@@ -39,6 +44,7 @@ class TcpMonitorFormModal(page: Page) : ModalView(page) {
     }
 
     fun setLatencyThreshold(value: String): TcpMonitorFormModal {
+        openAccordion(EVALUATION_SETTINGS_ID)
         latencyThresholdInput.fill(value)
         return this
     }
@@ -53,7 +59,21 @@ class TcpMonitorFormModal(page: Page) : ModalView(page) {
         return this
     }
 
+    val evaluationSettingsErrorIcon: Locator get() = accordionErrorIcon(EVALUATION_SETTINGS_ID)
+
+    val portColumn: Locator get() = portInput.locator("xpath=ancestor::div[contains(@class, 'col-lg-3')]")
+    val hostColumn: Locator get() = hostInput.locator("xpath=ancestor::div[contains(@class, 'col-lg-9')]")
+
+    fun closeEvaluationSettings() {
+        modal.getByTestId("accordion-toggle-$EVALUATION_SETTINGS_ID").click()
+        assertAccordionClosed(EVALUATION_SETTINGS_ID)
+    }
+
     fun save() {
         saveButton.click()
+    }
+
+    private companion object {
+        const val EVALUATION_SETTINGS_ID = "tcp-monitor-evaluation-settings"
     }
 }

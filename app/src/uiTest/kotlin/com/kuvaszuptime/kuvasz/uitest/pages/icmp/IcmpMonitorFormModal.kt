@@ -31,7 +31,19 @@ class IcmpMonitorFormModal(page: Page) : ModalView(page) {
         return this
     }
 
+    val evaluationSettingsErrorIcon: Locator get() = accordionErrorIcon(EVALUATION_SETTINGS_ID)
+
+    fun setPacketCount(value: String): IcmpMonitorFormModal {
+        openAccordion(EVALUATION_SETTINGS_ID)
+        modal.locator("#icmp-packetCount-input").fill(value)
+        return this
+    }
+
     fun save() {
         saveButton.click()
+    }
+
+    private companion object {
+        const val EVALUATION_SETTINGS_ID = "icmp-monitor-evaluation-settings"
     }
 }

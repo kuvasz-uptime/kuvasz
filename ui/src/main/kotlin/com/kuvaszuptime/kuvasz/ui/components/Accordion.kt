@@ -40,6 +40,11 @@ internal fun FlowContent.accordionItem(
                 titleIcon?.let { icon(it) }
                 +title
                 additionalTitleContent()
+                span {
+                    classes(ACCORDION_ERROR_ICON, TEXT_DANGER, MS_2)
+                    testId("accordion-error-$id")
+                    icon(Icon.CIRCLE_EXCLAMATION)
+                }
                 div {
                     classes(ACCORDION_BUTTON_TOGGLE)
                     icon(Icon.CHEVRON_DOWN)

@@ -3,7 +3,9 @@ package com.kuvaszuptime.kuvasz.uitest.pages.common
 import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.TimeoutError
+import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import com.microsoft.playwright.options.WaitForSelectorState
+import java.util.regex.Pattern
 
 // Base for page objects scoped to the currently-open (`.modal.show`) modal dialog.
 abstract class ModalView(protected val page: Page) {
@@ -25,6 +27,24 @@ abstract class ModalView(protected val page: Page) {
     fun dismiss() {
         dismissButton.click()
         page.locator(".modal.show").waitFor(Locator.WaitForOptions().setState(WaitForSelectorState.DETACHED))
+    }
+
+    // Expands the accordion with the given element ID, unless it's open already. Bootstrap only sets `show` once the
+    // expansion ends, and a click on a field that is still moving misses.
+    fun openAccordion(id: String) {
+        val panel = modal.locator("#$id")
+        if (panel.evaluate("panel => panel.classList.contains('show')") != true) {
+            modal.getByTestId("accordion-toggle-$id").click()
+            assertThat(panel).hasClass(Pattern.compile(".*\\bshow\\b.*"))
+        }
+    }
+
+    // The icon in the header of the accordion, which is shown while a field inside it is invalid
+    fun accordionErrorIcon(id: String): Locator = modal.getByTestId("accordion-error-$id")
+
+    // Waits for the accordion with the given element ID to be settled in its closed state
+    fun assertAccordionClosed(id: String) {
+        assertThat(modal.locator("#$id")).not().hasClass(Pattern.compile(".*\\b(show|collapsing)\\b.*"))
     }
 
     // The Alpine.js client-side validation message carrying [message] (shown only while the field is invalid).

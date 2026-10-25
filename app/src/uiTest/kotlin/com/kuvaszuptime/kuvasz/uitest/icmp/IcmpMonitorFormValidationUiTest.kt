@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.uitest.pages.icmp.IcmpMonitorFormModal
 import com.kuvaszuptime.kuvasz.uitest.pages.icmp.IcmpMonitorListPage
 import com.kuvaszuptime.kuvasz.uitest.shouldAcceptAfterFixing
 import com.kuvaszuptime.kuvasz.uitest.shouldRejectWith
+import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 
 // Exercises the Alpine.js validation in the ICMP monitor create modal.
@@ -28,6 +29,18 @@ class IcmpMonitorFormValidationUiTest : UiTestSpec() {
 
             modal.setHost("127.0.0.1").save()
             modal shouldRejectWith Messages.errorNameRequired()
+        }
+
+        "the accordion with an invalid packet count is flagged with an icon" {
+            val modal = openCreateModal()
+
+            assertThat(modal.evaluationSettingsErrorIcon).isHidden()
+
+            modal.setName("ICMP Packets").setHost("127.0.0.1").setPacketCount("11")
+            assertThat(modal.evaluationSettingsErrorIcon).isVisible()
+
+            modal.setPacketCount("3")
+            assertThat(modal.evaluationSettingsErrorIcon).isHidden()
         }
 
         "an out-of-range uptime check interval is flagged and blocks saving" {

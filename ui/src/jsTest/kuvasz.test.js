@@ -25,6 +25,7 @@ const {
     distinctSeriesColor,
     resolveMaintenanceWindowType,
     createRandomSecret,
+    initNumberInput,
 } = require('../main/resources/js/kuvasz.js');
 
 const UUID_V4_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
@@ -268,3 +269,54 @@ test('createRandomSecret falls back to getRandomValues in non-secure contexts', 
     }
 });
 
+
+const numberInputFixture = (value, dataset = {tblrMin: '1', tblrMax: '10'}) => {
+    const listeners = {};
+    const input = {
+        value,
+        addEventListener: (type, listener) => listeners[type] = listener,
+    };
+    const initialized = [];
+    globalThis.tabler = {NumberInput: {getOrCreateInstance: (element) => initialized.push(element)}};
+    const wrapper = {querySelector: () => input, dataset};
+    initNumberInput(wrapper);
+    return {wrapper, listeners, initialized};
+};
+
+const isSwallowed = (listener) => {
+    let swallowed = false;
+    listener({stopImmediatePropagation: () => swallowed = true});
+    return swallowed;
+};
+
+test('initNumberInput creates the Tabler number input on the wrapper', () => {
+    const {wrapper, initialized} = numberInputFixture('5');
+    assert.deepEqual(initialized, [wrapper]);
+});
+
+test('initNumberInput swallows the change and blur events of a blank input', () => {
+    const {listeners} = numberInputFixture('  ');
+    assert.equal(isSwallowed(listeners.change), true);
+    assert.equal(isSwallowed(listeners.blur), true);
+});
+
+test('initNumberInput swallows the events of an input below its minimum or above its maximum', () => {
+    assert.equal(isSwallowed(numberInputFixture('0').listeners.change), true);
+    assert.equal(isSwallowed(numberInputFixture('11').listeners.change), true);
+});
+
+test('initNumberInput lets the events of an in-range input through', () => {
+    const {listeners} = numberInputFixture('10');
+    assert.equal(isSwallowed(listeners.change), false);
+    assert.equal(isSwallowed(listeners.blur), false);
+});
+
+test('initNumberInput treats an input without a maximum as unbounded above', () => {
+    const {listeners} = numberInputFixture('99999', {tblrMin: '1'});
+    assert.equal(isSwallowed(listeners.change), false);
+});
+
+test('initNumberInput lets the events of a non-numeric input through for the plugin to restore it', () => {
+    const {listeners} = numberInputFixture('abc');
+    assert.equal(isSwallowed(listeners.change), false);
+});

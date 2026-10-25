@@ -87,14 +87,15 @@ private fun FlowContent.filterControl(filter: ListFilter) {
 
         is NumberFilter -> {
             formLabel(filter.label, inputName = inputId)
-            input(type = InputType.number) {
-                classes(FORM_CONTROL)
-                id = inputId
-                min = "1"
-                autoComplete = "off"
-                value = filter.value?.toString().orEmpty()
-                testId(inputId)
-                attributes["x-model.debounce.300ms"] = stateValue
+            numberInputWrapper(NumberRange(min = 1)) {
+                input(type = InputType.text) {
+                    classes(FORM_CONTROL)
+                    id = inputId
+                    autoComplete = "off"
+                    value = filter.value?.toString().orEmpty()
+                    testId(inputId)
+                    attributes["x-model.debounce.300ms"] = stateValue
+                }
             }
         }
 

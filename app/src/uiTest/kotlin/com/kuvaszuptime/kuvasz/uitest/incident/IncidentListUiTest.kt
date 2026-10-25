@@ -166,6 +166,29 @@ class IncidentListUiTest(
             assertThat(incidents.pagedList.filter("monitorId")).hasValue("$monitorId")
         }
 
+        "the monitor ID filter can be typed, stepped and emptied" {
+            createIncidents()
+            val monitorId = httpMonitorRepository.findByName("HTTP Incident Monitor").shouldNotBeNull().id
+
+            val page = newPage()
+            val incidents = IncidentListPage(page)
+            incidents.navigate()
+            incidents.pagedList.openFilters()
+            val idFilter = incidents.pagedList.filter("monitorId")
+
+            idFilter.fill("$monitorId")
+            incidents.expectQuery("monitorId=$monitorId")
+            assertThat(incidents.rows).hasCount(1)
+
+            idFilter.locator("xpath=..").locator("[data-tblr-number-input-action=increment]").click()
+            incidents.expectQuery("monitorId=${monitorId + 1}")
+
+            idFilter.fill("")
+            idFilter.blur()
+            assertThat(idFilter).hasValue("")
+            incidents.expectQuery("")
+        }
+
         "the incidents are the latest started first, and they can be sorted by clicking the headers" {
             createIncidents()
             createResolvedHttpIncident("A Resolved Monitor", startedHoursAgo = 3)

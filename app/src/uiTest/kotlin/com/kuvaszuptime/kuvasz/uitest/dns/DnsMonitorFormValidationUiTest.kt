@@ -47,6 +47,18 @@ class DnsMonitorFormValidationUiTest(private val dnsMonitorRepository: DnsMonito
             modal shouldAcceptAfterFixing Messages.errorDnsResolverPortInvalid()
         }
 
+        "the accordion with an invalid resolver port is flagged with an icon" {
+            val modal = openCreateModal()
+
+            assertThat(modal.resolverSettingsErrorIcon).isHidden()
+
+            modal.setName("DNS Icon").setHost("example.com").setResolverPort("70000")
+            assertThat(modal.resolverSettingsErrorIcon).isVisible()
+
+            modal.setResolverPort("53")
+            assertThat(modal.resolverSettingsErrorIcon).isHidden()
+        }
+
         "an invalid latency threshold is flagged and blocks saving" {
             val modal = openCreateModal()
 

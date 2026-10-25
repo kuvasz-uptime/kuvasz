@@ -1389,6 +1389,26 @@ const rangeError = (value, min, max, message) =>
 
 const isBlankNumber = (value) => value === '' || value == null;
 
+// Tabler's number input restores the last value when its field is emptied, and clamps a typed one into its range. The
+// forms need both as they are to flag them with their own errors, so the change and blur events of such values are
+// swallowed before the plugin could see them. The buttons still keep to the range.
+const initNumberInput = (wrapper) => {
+    const input = wrapper.querySelector('input');
+    const {tblrMin, tblrMax} = wrapper.dataset;
+    const isUntouchable = () => {
+        const value = input.value.trim();
+        if (value === '') return true;
+        const number = Number(value);
+        return !isNaN(number) && (number < Number(tblrMin) || (tblrMax !== undefined && number > Number(tblrMax)));
+    };
+    ['change', 'blur'].forEach(type => input.addEventListener(type, event => {
+        if (isUntouchable()) {
+            event.stopImmediatePropagation();
+        }
+    }));
+    tabler.NumberInput.getOrCreateInstance(wrapper);
+};
+
 // Shared by the create/update forms of every entity, the forms provide resetState, populateFrom, validate and
 // buildRequestBody
 const upsertForm = ({api, entity, errorMessages, pagePath, entityLabel}) => ({
@@ -3505,6 +3525,7 @@ const applyStatusPageAccordionsState = (content) => {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         // Pure, DOM-free helpers
+        initNumberInput,
         MAINTENANCE_WINDOW_TYPES,
         sanitizeTextInput,
         splitWithLimit,

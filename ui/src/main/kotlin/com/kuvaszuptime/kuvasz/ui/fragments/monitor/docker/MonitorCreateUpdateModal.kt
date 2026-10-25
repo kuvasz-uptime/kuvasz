@@ -2,10 +2,12 @@ package com.kuvaszuptime.kuvasz.ui.fragments.monitor.docker
 
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
+import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.dto.monitor.DockerMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
 import com.kuvaszuptime.kuvasz.ui.fragments.monitor.*
+import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
 
@@ -41,6 +43,45 @@ internal fun FlowContent.dockerMonitorCreateUpdateModal(
             "timeoutMsInvalid" to Messages.errorTimeoutMsInvalid(),
             "failureCountThresholdInvalid" to Messages.errorFailureCountThresholdInvalid(),
         ),
+        extraSettings = { isReadOnlyMode, settingsAccordionId ->
+            accordionItem(
+                id = "docker-monitor-evaluation-settings",
+                parentId = settingsAccordionId,
+                title = Messages.evaluationSettingsLabel(),
+                titleIcon = Icon.LIST_CHECK,
+            ) {
+                formRow {
+                    formCol(COL_LG_6) {
+                        validatedInput(
+                            propName = "timeoutMs",
+                            label = Messages.dockerTimeoutMsLabel(),
+                            placeholder = null,
+                            description = Messages.dockerTimeoutMsDescription(),
+                            required = true,
+                            onInput = "validateTimeoutMs()",
+                            disabledIf = "$isReadOnlyMode",
+                            numberRange = NumberRange(
+                                Validation.MIN_TIMEOUT_MILLIS,
+                                Validation.MAX_TIMEOUT_MILLIS,
+                                step = 100,
+                            ),
+                        )
+                    }
+                    formCol(COL_LG_6) {
+                        validatedInput(
+                            propName = "failureCountThreshold",
+                            label = Messages.failureCountThresholdLabel(),
+                            description = Messages.failureCountThresholdDescription(),
+                            placeholder = null,
+                            required = true,
+                            onInput = "validateFailureCountThreshold()",
+                            disabledIf = "$isReadOnlyMode",
+                            numberRange = NumberRange(1),
+                        )
+                    }
+                }
+            }
+        },
     ) { isReadOnlyMode ->
         // Docker host
         div {
@@ -65,32 +106,7 @@ internal fun FlowContent.dockerMonitorCreateUpdateModal(
                 required = true,
                 onInput = "validateUptimeCheckInterval()",
                 disabledIf = "$isReadOnlyMode",
-            )
-        }
-        // Timeout (ms)
-        div {
-            classes(MB_3)
-            validatedInput(
-                propName = "timeoutMs",
-                label = Messages.dockerTimeoutMsLabel(),
-                placeholder = null,
-                description = Messages.dockerTimeoutMsDescription(),
-                required = true,
-                onInput = "validateTimeoutMs()",
-                disabledIf = "$isReadOnlyMode",
-            )
-        }
-        // Failure count threshold
-        div {
-            classes(MB_3)
-            validatedInput(
-                propName = "failureCountThreshold",
-                label = Messages.failureCountThresholdLabel(),
-                description = Messages.failureCountThresholdDescription(),
-                placeholder = null,
-                required = true,
-                onInput = "validateFailureCountThreshold()",
-                disabledIf = "$isReadOnlyMode",
+                numberRange = NumberRange(Validation.MIN_UPTIME_CHECK_INTERVAL, step = 10),
             )
         }
         // Metrics History

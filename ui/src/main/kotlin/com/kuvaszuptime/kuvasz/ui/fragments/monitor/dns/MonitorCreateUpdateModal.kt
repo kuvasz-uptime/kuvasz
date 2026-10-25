@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.DnsResponseCode
 import com.kuvaszuptime.kuvasz.jooq.enums.DnsTransport
+import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.dto.monitor.DnsMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsMatchType
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
@@ -48,6 +49,48 @@ internal fun FlowContent.dnsMonitorCreateUpdateModal(
                 title = Messages.evaluationSettingsLabel(),
                 titleIcon = Icon.LIST_CHECK,
             ) {
+                formRow {
+                    formCol(COL_LG_4) {
+                        validatedInput(
+                            propName = "timeoutMs",
+                            label = Messages.dnsTimeoutMsLabel(),
+                            placeholder = null,
+                            description = Messages.dnsTimeoutMsDescription(),
+                            required = true,
+                            onInput = "validateTimeoutMs()",
+                            disabledIf = "$isReadOnlyMode",
+                            numberRange = NumberRange(
+                                Validation.MIN_TIMEOUT_MILLIS,
+                                Validation.MAX_TIMEOUT_MILLIS,
+                                step = 100,
+                            ),
+                        )
+                    }
+                    formCol(COL_LG_4) {
+                        validatedInput(
+                            propName = "latencyThresholdMs",
+                            label = Messages.latencyThresholdLabel(),
+                            placeholder = null,
+                            description = Messages.dnsLatencyThresholdDescription(),
+                            required = false,
+                            onInput = "validateLatencyThreshold()",
+                            disabledIf = "$isReadOnlyMode",
+                            numberRange = NumberRange(Validation.MIN_LATENCY_THRESHOLD_MILLIS, step = 100),
+                        )
+                    }
+                    formCol(COL_LG_4) {
+                        validatedInput(
+                            propName = "failureCountThreshold",
+                            label = Messages.failureCountThresholdLabel(),
+                            description = Messages.failureCountThresholdDescription(),
+                            placeholder = null,
+                            required = true,
+                            onInput = "validateFailureCountThreshold()",
+                            disabledIf = "$isReadOnlyMode",
+                            numberRange = NumberRange(1),
+                        )
+                    }
+                }
                 // Record matchers
                 div {
                     classes(MB_3)
@@ -117,9 +160,54 @@ internal fun FlowContent.dnsMonitorCreateUpdateModal(
                 }
                 }
             }
+            accordionItem(
+                id = "dns-monitor-resolver-settings",
+                parentId = settingsAccordionId,
+                title = Messages.dnsResolverSettingsLabel(),
+                titleIcon = Icon.NETWORK,
+            ) {
+                formRow {
+                    formCol(COL_LG_9) {
+                        validatedInput(
+                            propName = "resolverHost",
+                            label = Messages.dnsResolverHostLabel(),
+                            placeholder = Messages.dnsResolverHostPlaceholder(),
+                            description = Messages.dnsResolverHostDescription(),
+                            required = false,
+                            onInput = null,
+                            disabledIf = "$isReadOnlyMode",
+                        )
+                    }
+                    formCol(COL_LG_3) {
+                        validatedInput(
+                            propName = "resolverPort",
+                            label = Messages.dnsResolverPortLabel(),
+                            placeholder = null,
+                            description = null,
+                            required = true,
+                            onInput = "validateResolverPort()",
+                            disabledIf = "$isReadOnlyMode",
+                            numberRange = NumberRange(Validation.MIN_PORT, Validation.MAX_PORT),
+                        )
+                    }
+                }
+                div {
+                    classes(MB_3)
+                    formLabel(
+                        label = Messages.dnsTransportLabel(),
+                        description = Messages.dnsTransportDescription(),
+                        required = true,
+                    )
+                    selectGroup(
+                        xModelName = "transport",
+                        readOnly = isReadOnlyMode,
+                        values = DnsTransport.entries.map { ValueAndLabel(it.literal, it.literal) },
+                    )
+                }
+            }
         },
     ) { isReadOnlyMode ->
-// Host (domain name)
+        // Host (domain name)
         div {
             classes(MB_3)
             validatedInput(
@@ -130,46 +218,6 @@ internal fun FlowContent.dnsMonitorCreateUpdateModal(
                 required = true,
                 onInput = "validateHost()",
                 disabledIf = "$isReadOnlyMode",
-            )
-        }
-        // Custom resolver host (optional)
-        div {
-            classes(MB_3)
-            validatedInput(
-                propName = "resolverHost",
-                label = Messages.dnsResolverHostLabel(),
-                placeholder = Messages.dnsResolverHostPlaceholder(),
-                description = Messages.dnsResolverHostDescription(),
-                required = false,
-                onInput = null,
-                disabledIf = "$isReadOnlyMode",
-            )
-        }
-        // Resolver port
-        div {
-            classes(MB_3)
-            validatedInput(
-                propName = "resolverPort",
-                label = Messages.dnsResolverPortLabel(),
-                placeholder = null,
-                description = null,
-                required = true,
-                onInput = "validateResolverPort()",
-                disabledIf = "$isReadOnlyMode",
-            )
-        }
-        // Transport
-        div {
-            classes(MB_3)
-            formLabel(
-                label = Messages.dnsTransportLabel(),
-                description = Messages.dnsTransportDescription(),
-                required = true,
-            )
-            selectGroup(
-                xModelName = "transport",
-                readOnly = isReadOnlyMode,
-                values = DnsTransport.entries.map { ValueAndLabel(it.literal, it.literal) },
             )
         }
         // Uptime check interval
@@ -183,45 +231,7 @@ internal fun FlowContent.dnsMonitorCreateUpdateModal(
                 required = true,
                 onInput = "validateUptimeCheckInterval()",
                 disabledIf = "$isReadOnlyMode",
-            )
-        }
-        // Timeout (ms)
-        div {
-            classes(MB_3)
-            validatedInput(
-                propName = "timeoutMs",
-                label = Messages.dnsTimeoutMsLabel(),
-                placeholder = null,
-                description = Messages.dnsTimeoutMsDescription(),
-                required = true,
-                onInput = "validateTimeoutMs()",
-                disabledIf = "$isReadOnlyMode",
-            )
-        }
-        // Latency threshold (optional)
-        div {
-            classes(MB_3)
-            validatedInput(
-                propName = "latencyThresholdMs",
-                label = Messages.latencyThresholdLabel(),
-                placeholder = null,
-                description = Messages.dnsLatencyThresholdDescription(),
-                required = false,
-                onInput = "validateLatencyThreshold()",
-                disabledIf = "$isReadOnlyMode",
-            )
-        }
-        // Failure count threshold
-        div {
-            classes(MB_3)
-            validatedInput(
-                propName = "failureCountThreshold",
-                label = Messages.failureCountThresholdLabel(),
-                description = Messages.failureCountThresholdDescription(),
-                placeholder = null,
-                required = true,
-                onInput = "validateFailureCountThreshold()",
-                disabledIf = "$isReadOnlyMode",
+                numberRange = NumberRange(Validation.MIN_UPTIME_CHECK_INTERVAL, step = 10),
             )
         }
         // Metrics History

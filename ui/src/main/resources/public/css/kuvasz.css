@@ -366,3 +366,34 @@ div.ts-wrapper.form-select.plugin-clear_button > div.ts-control > div.clear-butt
 .card-table tbody tr:last-child th {
     border-bottom: 0;
 }
+
+/* The fixed width of the field of a Tabler number input is too narrow for the 5-digit values (ports, milliseconds) */
+.number-input {
+    --tblr-number-input-input-width: 6rem;
+}
+
+.number-input-sm {
+    --tblr-number-input-input-width: 5rem;
+}
+
+/* On phones a number input fills the width of its container, the tablets keep the compact one */
+@media (max-width: 575.98px) {
+    .number-input {
+        display: flex;
+        width: 100%;
+    }
+
+    .number-input > .form-control {
+        flex: 1 1 auto;
+        width: auto;
+    }
+}
+
+/* An accordion that holds an invalid field says so with an icon, even while it's collapsed */
+.accordion-error-icon {
+    display: none;
+}
+
+.accordion-item:has(.is-invalid) .accordion-error-icon {
+    display: inline-flex;
+}
