@@ -1,4 +1,4 @@
-## 4.6.0 <small>unreleased</small> { id="4.6.0" data-toc-label="4.6.0" }
+## 4.6.0 <small>2026-10-25</small> { id="4.6.0" data-toc-label="4.6.0" }
 
 !!! question "Make your voice heard!"
 
