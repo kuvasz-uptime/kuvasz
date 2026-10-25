@@ -46,6 +46,10 @@ In the **API**, the new `/api/v3` endpoints return the monitors of every type, t
 
 - **Cookies are kept along the redirect chain**: when an HTTP monitor [follows redirects](management/http-monitors.md#follow-redirects), the cookies set by the responses of a check are sent back on the later hops of the same chain, like a browser would. Some sites (typically behind a CDN like _Cloudflare_) redirect a client without a cookie to the **very same URL** (or back to it through another one), setting e.g. a session cookie on the way, which was detected as a **redirect loop** so far. Such a revisit is followed **once more** with the new cookies now, instead of failing the check ([#546](https://github.com/kuvasz-uptime/kuvasz/issues/546)). The cookies are only sent back to the origin (scheme, host and port) that set them, and they're never kept between the checks.
 
+### Fixes
+
+- **OIDC login recovers when the provider was down at startup**: if the OIDC provider could not be reached while _Kuvasz_ was starting (e.g. both were restarted together, and the provider came up later), the OIDC login stayed broken until _Kuvasz_ was restarted too. Now it recovers by itself as soon as the provider becomes reachable, without a restart.
+
 ## 4.5.0 <small>2026-10-14</small> { id="4.5.0" data-toc-label="4.5.0" }
 
 ### Features
