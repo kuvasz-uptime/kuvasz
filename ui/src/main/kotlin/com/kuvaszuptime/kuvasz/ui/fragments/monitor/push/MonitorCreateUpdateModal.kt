@@ -33,47 +33,43 @@ internal fun FlowContent.pushMonitorCreateUpdateModal(
             "failureCountThresholdInvalid" to Messages.errorFailureCountThresholdInvalid(),
         ),
     ) { isReadOnlyMode ->
-// Heartbeat Interval
-        div {
-            classes(MB_3)
-            validatedInput(
-                propName = "heartbeatInterval",
-                label = Messages.heartbeatIntervalLabel(),
-                description = Messages.heartbeatIntervalDescription(),
-                placeholder = null,
-                required = true,
-                onInput = "validateHeartbeatInterval()",
-                disabledIf = "$isReadOnlyMode",
-                numberRange = NumberRange(Validation.MIN_HEARTBEAT_INTERVAL, step = 10),
-            )
-        }
-        // Grace period
-        div {
-            classes(MB_3)
-            validatedInput(
-                propName = "gracePeriod",
-                label = Messages.gracePeriodLabel(),
-                description = Messages.gracePeriodDescription(),
-                placeholder = null,
-                required = true,
-                onInput = "validateGracePeriod()",
-                disabledIf = "$isReadOnlyMode",
-                numberRange = NumberRange(0, step = 10),
-            )
-        }
-        //Failure count threshold
-        div {
-            classes(MB_3)
-            validatedInput(
-                propName = "failureCountThreshold",
-                label = Messages.failureCountThresholdLabel(),
-                description = Messages.failureCountThresholdDescription(),
-                placeholder = null,
-                required = true,
-                onInput = "validateFailureCountThreshold()",
-                disabledIf = "$isReadOnlyMode",
-                numberRange = NumberRange(1),
-            )
+        formRow {
+            formCol(COL_LG_4) {
+                validatedInput(
+                    propName = "heartbeatInterval",
+                    label = Messages.heartbeatIntervalLabel(),
+                    description = Messages.heartbeatIntervalDescription(),
+                    placeholder = null,
+                    required = true,
+                    onInput = "validateHeartbeatInterval()",
+                    disabledIf = "$isReadOnlyMode",
+                    numberRange = NumberRange(Validation.MIN_HEARTBEAT_INTERVAL, step = 10),
+                )
+            }
+            formCol(COL_LG_4) {
+                validatedInput(
+                    propName = "gracePeriod",
+                    label = Messages.gracePeriodLabel(),
+                    description = Messages.gracePeriodDescription(),
+                    placeholder = null,
+                    required = true,
+                    onInput = "validateGracePeriod()",
+                    disabledIf = "$isReadOnlyMode",
+                    numberRange = NumberRange(0, step = 10),
+                )
+            }
+            formCol(COL_LG_4) {
+                validatedInput(
+                    propName = "failureCountThreshold",
+                    label = Messages.failureCountThresholdLabel(),
+                    description = Messages.failureCountThresholdDescription(),
+                    placeholder = null,
+                    required = true,
+                    onInput = "validateFailureCountThreshold()",
+                    disabledIf = "$isReadOnlyMode",
+                    numberRange = NumberRange(1),
+                )
+            }
         }
         // Client secret
         div {

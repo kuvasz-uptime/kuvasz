@@ -51,6 +51,18 @@ class DockerMonitorFormValidationUiTest : UiTestSpec() {
             modal shouldAcceptAfterFixing Messages.errorTimeoutMsInvalid()
         }
 
+        "the accordion with an invalid timeout is flagged with an icon" {
+            val modal = openCreateModal()
+
+            assertThat(modal.evaluationSettingsErrorIcon).isHidden()
+
+            modal.setName("Docker Icon").setDockerHost("local").setContainer("my-app").setTimeoutMs("30001")
+            assertThat(modal.evaluationSettingsErrorIcon).isVisible()
+
+            modal.setTimeoutMs("5000")
+            assertThat(modal.evaluationSettingsErrorIcon).isHidden()
+        }
+
         "an out-of-range uptime check interval is flagged and blocks saving" {
             val modal = openCreateModal()
 

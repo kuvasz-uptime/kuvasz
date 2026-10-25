@@ -166,19 +166,32 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
                         isReadOnly = isReadOnlyMode,
                     )
                 }
-                //Failure count threshold
-                div {
-                    classes(MB_3)
-                    validatedInput(
-                        propName = "failureCountThreshold",
-                        label = Messages.failureCountThresholdLabel(),
-                        description = Messages.failureCountThresholdDescription(),
-                        placeholder = null,
-                        required = true,
-                        onInput = "validateFailureCountThreshold()",
-                        disabledIf = "$isReadOnlyMode",
-                        numberRange = NumberRange(1),
-                    )
+                formRow {
+                    formCol(COL_LG_6) {
+                        validatedInput(
+                            propName = "failureCountThreshold",
+                            label = Messages.failureCountThresholdLabel(),
+                            description = Messages.failureCountThresholdDescription(),
+                            placeholder = null,
+                            required = true,
+                            onInput = "validateFailureCountThreshold()",
+                            disabledIf = "$isReadOnlyMode",
+                            numberRange = NumberRange(1),
+                        )
+                    }
+                    formCol(COL_LG_6) {
+                        validatedInput(
+                            propName = "responseTimeThresholdMillis",
+                            label = Messages.responseTimeThresholdLabel(),
+                            description = Messages.responseTimeThresholdDescription(),
+                            placeholder = null,
+                            required = false,
+                            onInput = "validateResponseTimeThreshold()",
+                            disabledIf = "$isReadOnlyMode",
+                            isNumber = true,
+                            numberRange = NumberRange(1, Validation.MAX_RESPONSE_TIME_THRESHOLD_MILLIS, step = 100),
+                        )
+                    }
                 }
                 // Expected Keyword
                 div {
@@ -211,20 +224,6 @@ internal fun FlowContent.httpMonitorCreateUpdateModal(
                         label = Messages.negateExpectedKeywordLabel(),
                         description = Messages.negateExpectedKeywordDescription(),
                         isDisabled = isReadOnlyMode,
-                    )
-                }
-                // Response Time Threshold
-                div {
-                    validatedInput(
-                        propName = "responseTimeThresholdMillis",
-                        label = Messages.responseTimeThresholdLabel(),
-                        description = Messages.responseTimeThresholdDescription(),
-                        placeholder = null,
-                        required = false,
-                        onInput = "validateResponseTimeThreshold()",
-                        disabledIf = "$isReadOnlyMode",
-                        isNumber = true,
-                        numberRange = NumberRange(1, Validation.MAX_RESPONSE_TIME_THRESHOLD_MILLIS, step = 100),
                     )
                 }
                 // Expected headers

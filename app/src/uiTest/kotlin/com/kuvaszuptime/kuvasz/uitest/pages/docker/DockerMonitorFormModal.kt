@@ -22,6 +22,7 @@ class DockerMonitorFormModal(page: Page) : ModalView(page) {
 
     val uptimeCheckIntervalInput: Locator get() = modal.locator("#docker-uptimeCheckInterval-input")
     val timeoutMsInput: Locator get() = modal.locator("#docker-timeoutMs-input")
+    val evaluationSettingsErrorIcon: Locator get() = accordionErrorIcon(EVALUATION_SETTINGS_ID)
 
     private val dockerHostField: Locator get() = modal.getByTestId("docker-host-select")
     private val containerField: Locator get() = modal.getByTestId("docker-container-select")
@@ -81,6 +82,7 @@ class DockerMonitorFormModal(page: Page) : ModalView(page) {
     }
 
     fun setTimeoutMs(value: String): DockerMonitorFormModal {
+        openAccordion(EVALUATION_SETTINGS_ID)
         timeoutMsInput.fill(value)
         return this
     }
@@ -100,4 +102,7 @@ class DockerMonitorFormModal(page: Page) : ModalView(page) {
         return options.allTextContents().map { it.trim() }
     }
 
+    private companion object {
+        const val EVALUATION_SETTINGS_ID = "docker-monitor-evaluation-settings"
+    }
 }

@@ -376,8 +376,8 @@ div.ts-wrapper.form-select.plugin-clear_button > div.ts-control > div.clear-butt
     --tblr-number-input-input-width: 5rem;
 }
 
-/* On small screens a number input fills the width of its container */
-@media (max-width: 767.98px) {
+/* On phones a number input fills the width of its container, the tablets keep the compact one */
+@media (max-width: 575.98px) {
     .number-input {
         display: flex;
         width: 100%;
@@ -387,4 +387,13 @@ div.ts-wrapper.form-select.plugin-clear_button > div.ts-control > div.clear-butt
         flex: 1 1 auto;
         width: auto;
     }
+}
+
+/* An accordion that holds an invalid field says so with an icon, even while it's collapsed */
+.accordion-error-icon {
+    display: none;
+}
+
+.accordion-item:has(.is-invalid) .accordion-error-icon {
+    display: inline-flex;
 }

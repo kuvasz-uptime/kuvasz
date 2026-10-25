@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationType
 import com.kuvaszuptime.kuvasz.models.handlers.id
+import com.kuvaszuptime.kuvasz.ui.CSSClass
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
@@ -118,6 +119,25 @@ internal fun FlowContent.validatedInput(
             classes(INVALID_FEEDBACK)
             xText("errors.$propName")
         }
+    }
+}
+
+/** A row of form fields, which stack unless the screen is wide enough for the modal to be, see [formCol]. */
+internal fun FlowContent.formRow(block: FlowContent.() -> Unit) {
+    div {
+        classes(ROW)
+        block()
+    }
+}
+
+/**
+ * A field of a [formRow] with the given width on the large screens. The modals are only wide (800px) from there,
+ * below it they're 500px, which is too narrow for the fields to share a row.
+ */
+internal fun FlowContent.formCol(width: CSSClass, block: FlowContent.() -> Unit) {
+    div {
+        classes(width, MB_3)
+        block()
     }
 }
 

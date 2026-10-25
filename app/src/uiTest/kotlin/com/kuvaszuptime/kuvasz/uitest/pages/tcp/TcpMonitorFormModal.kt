@@ -44,6 +44,7 @@ class TcpMonitorFormModal(page: Page) : ModalView(page) {
     }
 
     fun setLatencyThreshold(value: String): TcpMonitorFormModal {
+        openAccordion(EVALUATION_SETTINGS_ID)
         latencyThresholdInput.fill(value)
         return this
     }
@@ -58,7 +59,21 @@ class TcpMonitorFormModal(page: Page) : ModalView(page) {
         return this
     }
 
+    val evaluationSettingsErrorIcon: Locator get() = accordionErrorIcon(EVALUATION_SETTINGS_ID)
+
+    val portColumn: Locator get() = portInput.locator("xpath=ancestor::div[contains(@class, 'col-lg-3')]")
+    val hostColumn: Locator get() = hostInput.locator("xpath=ancestor::div[contains(@class, 'col-lg-9')]")
+
+    fun closeEvaluationSettings() {
+        modal.getByTestId("accordion-toggle-$EVALUATION_SETTINGS_ID").click()
+        assertAccordionClosed(EVALUATION_SETTINGS_ID)
+    }
+
     fun save() {
         saveButton.click()
+    }
+
+    private companion object {
+        const val EVALUATION_SETTINGS_ID = "tcp-monitor-evaluation-settings"
     }
 }
