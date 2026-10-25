@@ -55,7 +55,7 @@ internal fun FlowContent.pushMonitorCreateUpdateModal(
                     required = true,
                     onInput = "validateGracePeriod()",
                     disabledIf = "$isReadOnlyMode",
-                    numberRange = NumberRange(0, step = 10),
+                    numberRange = NumberRange(0, step = 60),
                 )
             }
             formCol(COL_LG_4) {

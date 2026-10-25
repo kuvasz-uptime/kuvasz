@@ -80,6 +80,7 @@ internal fun FlowContent.icmpMonitorCreateUpdateModal(
                             numberRange = NumberRange(
                                 Validation.MIN_PACKET_LOSS_THRESHOLD,
                                 Validation.MAX_PACKET_LOSS_THRESHOLD,
+                                step = 5,
                             ),
                         )
                     }
