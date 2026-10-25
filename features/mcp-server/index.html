@@ -55,6 +55,8 @@
     
       <link rel="stylesheet" href="../../stylesheets/custom.css">
     
+      <link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+    
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -2395,6 +2397,10 @@
 <p>If you have configured your monitors via YAML, the corresponding <code>create-*</code>, <code>toggle-*</code>, and <code>delete-*</code> tools will return an error when called. The same applies to the <code>create-maintenance-window</code>, <code>toggle-maintenance-window</code>, and <code>delete-maintenance-window</code> tools when maintenance windows are configured via YAML. Additionally, <code>delete-*</code> tools will fail if the monitor is referenced by a read-only status page. The <code>list-*</code>, <code>get-*-details</code>, <code>get-*-stats</code>, <code>list-incidents</code>, <code>list-integrations</code>, <code>list-docker-hosts</code>, and <code>list-proxies</code> tools are always available regardless of read-only mode. Incident notes are never configured via YAML, so the incident note tools are always available too.</p>
 <p>This is the <strong>expected behavior</strong>, and works exactly the same as if you were to perform these operations via the REST API or dashboard.</p>
 </div>
+<div class="admonition info">
+<p class="admonition-title">Lists, page by page</p>
+<p>The tools that list monitors, status pages, maintenance windows and incidents return <strong>one page</strong> at a time: 25 items by default. The result tells how many items and pages there are in total, so the assistant can ask for the next page with <code>page</code>. These tools can also change the page size (<code>size</code>), search by name (<code>name</code>), and sort the items (<code>sortedBy</code>, <code>sortOrder</code>).</p>
+</div>
 <p>The MCP server exposes the following tools to connected clients:</p>
 <h3 id="http-monitors">HTTP monitors</h3>
 <p><span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#version" title="Minimum version"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21.41 11.58-9-9A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 .59 1.42l9 9A2 2 0 0 0 13 22a2 2 0 0 0 1.41-.59l7-7A2 2 0 0 0 22 13a2 2 0 0 0-.59-1.42M13 20l-9-9V4h7l9 9M6.5 5A1.5 1.5 0 1 1 5 6.5 1.5 1.5 0 0 1 6.5 5"/></svg></span></a></span><span class="mdx-badge__text"><a href="../../changelog/#4.0.0">4.0.0</a></span></span></p>
@@ -2628,7 +2634,7 @@
 </tr>
 <tr>
 <td><code>get-status-page-details</code></td>
-<td>Get full details of a specific status page including per-monitor uptime status, uptime ratio, and 30-day uptime history</td>
+<td>Get full details of a specific status page including per-monitor uptime status, uptime ratio, and 30-day uptime history. Like on the status pages, only the latest 20 incidents of each monitor are listed, and <code>incidentCount</code> tells how many there were in total</td>
 </tr>
 </tbody>
 </table>
@@ -2730,7 +2736,7 @@
 <tbody>
 <tr>
 <td><code>list-incidents</code></td>
-<td>List incidents across all monitor types, optionally filtered by monitor ID, with a configurable look-back window and resolved-flag filter</td>
+<td>List incidents across all monitor types, optionally filtered by monitor ID, monitor name or incident type, with a configurable look-back window and resolved-flag filter</td>
 </tr>
 <tr>
 <td><code>get-incident-details</code></td>
@@ -2918,6 +2924,12 @@
     
 
       <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../javascripts/katex.js"></script>
+      
+        <script src="../../vendor/katex/katex.min.js"></script>
+      
+        <script src="../../vendor/katex/contrib/auto-render.min.js"></script>
       
     
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon="{&quot;token&quot;: &quot;d7e0ee97fade40d5ab19fabc05b4502e&quot;}">

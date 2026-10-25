@@ -55,6 +55,8 @@
     
       <link rel="stylesheet" href="../../stylesheets/custom.css">
     
+      <link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+    
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -1031,13 +1033,52 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#disk-space" class="md-nav__link">
+  <a href="#disk-space-for-the-db" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Disk space
+        Disk space for the DB
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Disk space for the DB">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-to-calculate-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How to calculate it
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#where-the-numbers-come-from" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where the numbers come from
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#keeping-the-history-for-longer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Keeping the history for longer
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2083,13 +2124,52 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#disk-space" class="md-nav__link">
+  <a href="#disk-space-for-the-db" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Disk space
+        Disk space for the DB
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Disk space for the DB">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-to-calculate-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How to calculate it
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#where-the-numbers-come-from" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where the numbers come from
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#keeping-the-history-for-longer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Keeping the history for longer
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2254,8 +2334,8 @@
 <p>How much CPU, memory and disk does <em>Kuvasz</em> need? It mostly depends on <strong>how many monitors</strong> you have. This page gives
 you numbers that we measured, and shows the one setting you need to change if you have a lot of monitors.</p>
 <div class="admonition tip">
-<p class="admonition-title">Having less than 500 monitors?</p>
-<p>You don't need to worry about any of these details below, just make sure that Kuvasz has <strong>at least 768 MB of memory</strong>, and you'll be fine! The actual usage will be probably significantly lower unless you really have 500 monitors set up, but that's a safe bet for a stable setup.</p>
+<p class="admonition-title">Having up to 1,000 monitors?</p>
+<p>You don't need to worry about any of these details below, just make sure that Kuvasz has <strong>at least 768 MB of memory</strong> and <strong>1 CPU</strong>, and you'll be fine! The actual usage will be probably significantly lower unless you really have that many monitors set up, but that's a safe bet for a stable setup.</p>
 </div>
 <h2 id="short-answer">Short answer</h2>
 <table>
@@ -2264,35 +2344,33 @@ you numbers that we measured, and shows the one setting you need to change if yo
 <th>Number of monitors</th>
 <th>Memory for <em>Kuvasz</em></th>
 <th>Memory setting</th>
-<th>CPU for <em>Kuvasz</em></th>
-<th>Database (CPU / memory)</th>
-<th>Disk for the database (7 days of history)</th>
+<th>Memory for the database</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>up to 500</td>
+<td>up to 1,000</td>
 <td>768 MB</td>
 <td>none, the default is enough</td>
-<td>0.5 CPU</td>
-<td>0.5 CPU / 512 MB</td>
-<td>about 0.6 GB</td>
+<td>512 MB</td>
+</tr>
+<tr>
+<td>up to 1,500</td>
+<td>1 GB</td>
+<td><code>JAVA_TOOL_OPTIONS="-Xmx384M"</code></td>
+<td>512 MB</td>
 </tr>
 <tr>
 <td>up to 3,000</td>
 <td>1 GB</td>
 <td><code>JAVA_TOOL_OPTIONS="-Xmx512M"</code></td>
-<td>1 CPU</td>
-<td>1 CPU / 1 GB</td>
-<td>about 3.5 GB</td>
+<td>1 GB</td>
 </tr>
 <tr>
 <td>up to 5,000</td>
 <td>1.5 GB</td>
 <td><code>JAVA_TOOL_OPTIONS="-Xmx768M"</code></td>
-<td>1 CPU</td>
-<td>1 CPU / 1 GB</td>
-<td>about 6 GB</td>
+<td>1 GB</td>
 </tr>
 </tbody>
 </table>
@@ -2301,25 +2379,33 @@ you numbers that we measured, and shows the one setting you need to change if yo
   below for what it means and where to set it.</li>
 <li><strong>Memory</strong> means RAM. Swap doesn't count: if <em>Kuvasz</em> starts to use swap, it becomes very slow. Give it more memory
   instead.</li>
-<li><strong>Disk</strong> is what the database needs to keep the history of 7 days, which is the default. If you keep the history for
-  longer, you need more disk, see <a href="#disk-space">disk space</a> below.</li>
-<li>With <strong>more than 100 monitors</strong>, we recommend turning on
-  <a href="../configuration/#virtual-thread-scheduling">virtual thread scheduling</a>. All
-  the numbers on this page were measured with it.</li>
+<li><strong>CPU</strong>: <em>Kuvasz</em> needs little CPU on average, and the database even less. We recommend giving <em>Kuvasz</em> at least
+  1 CPU anyway, because it needs more for short times: when it starts, and when someone opens the dashboard or a status
+  page. On a slow machine, like a Raspberry Pi or a NAS, give <em>Kuvasz</em> and the database more CPU if they start slowly,
+  or if the pages of long periods load slowly.</li>
+<li><strong>Memory for the database</strong> is what the database had in our tests, with 30 days of history in it, while the users
+  looked at the last 30 days on the dashboard, the incidents and the status pages, see
+  <a href="#keeping-the-history-for-longer">keeping the history for longer</a>.</li>
 </ul>
 <div class="admonition tip">
-<p class="admonition-title">Memory, not CPU, is what matters</p>
-<p>Even with 5,000 monitors, <em>Kuvasz</em> used only about a third of one CPU in our tests. When <em>Kuvasz</em> runs out of
-resources, it's almost always the memory.</p>
+<p class="admonition-title">Memory is what matters</p>
+<p>When <em>Kuvasz</em> runs out of resources, it's almost always the memory.</p>
 </div>
 <h2 id="what-we-measured">What we measured</h2>
-<p>In every test below, all the monitors were checked on time, no monitor was reported as down by mistake, and <strong>5 virtual users used the web interface and the API at the same time</strong>.</p>
+<p>Before every test, we filled the database with 30 days of history of the monitors, as if they had been running for a
+month (see <a href="#how-we-tested">how we tested</a>). The CPU numbers below are cores of our test machine (an Apple M1 Pro,
+a fast processor), so they show how little CPU <em>Kuvasz</em> needed, not how much your machine needs. In every test below,
+all the monitors were checked on time, no monitor was reported as down by mistake, and <strong>5 virtual users used the web
+interface and the API at the same time</strong>, looking at the last 30 days on the dashboard, the incidents, the status pages
+and in the API, and at the last 24 hours on the charts of the monitors.</p>
 <table>
 <thead>
 <tr>
 <th style="text-align: right;">Monitors</th>
 <th style="text-align: right;">Memory limit</th>
 <th>Memory setting</th>
+<th>CPU</th>
+<th>Database</th>
 <th style="text-align: right;">Highest memory use</th>
 <th>Result</th>
 </tr>
@@ -2329,28 +2415,45 @@ resources, it's almost always the memory.</p>
 <td style="text-align: right;">500</td>
 <td style="text-align: right;">768 MB</td>
 <td>default</td>
-<td style="text-align: right;">513 MB</td>
+<td>0.5 CPU</td>
+<td>0.5 CPU / 512 MB</td>
+<td style="text-align: right;">522 MB</td>
+<td><img alt="✅" class="twemoji" src="../../assets/external/cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/2705.svg" title=":white_check_mark:"> worked well</td>
+</tr>
+<tr>
+<td style="text-align: right;">1,000</td>
+<td style="text-align: right;">768 MB</td>
+<td>default</td>
+<td>1 CPU</td>
+<td>0.5 CPU / 512 MB</td>
+<td style="text-align: right;">524 MB</td>
 <td><img alt="✅" class="twemoji" src="../../assets/external/cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/2705.svg" title=":white_check_mark:"> worked well</td>
 </tr>
 <tr>
 <td style="text-align: right;">1,500</td>
 <td style="text-align: right;">1 GB</td>
-<td><code>-Xmx512M</code></td>
-<td style="text-align: right;">719 MB</td>
+<td><code>-Xmx384M</code></td>
+<td>1 CPU</td>
+<td>0.5 CPU / 512 MB</td>
+<td style="text-align: right;">713 MB</td>
 <td><img alt="✅" class="twemoji" src="../../assets/external/cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/2705.svg" title=":white_check_mark:"> worked well</td>
 </tr>
 <tr>
 <td style="text-align: right;">3,000</td>
 <td style="text-align: right;">1 GB</td>
 <td><code>-Xmx512M</code></td>
-<td style="text-align: right;">857 MB</td>
+<td>1 CPU</td>
+<td>1 CPU / 1 GB</td>
+<td style="text-align: right;">801 MB</td>
 <td><img alt="✅" class="twemoji" src="../../assets/external/cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/2705.svg" title=":white_check_mark:"> worked well</td>
 </tr>
 <tr>
 <td style="text-align: right;">5,000</td>
 <td style="text-align: right;">1.5 GB</td>
 <td><code>-Xmx768M</code></td>
-<td style="text-align: right;">1,144 MB</td>
+<td>1 CPU</td>
+<td>1 CPU / 1 GB</td>
+<td style="text-align: right;">1,138 MB</td>
 <td><img alt="✅" class="twemoji" src="../../assets/external/cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/2705.svg" title=":white_check_mark:"> worked well</td>
 </tr>
 </tbody>
@@ -2371,7 +2474,7 @@ were at most 5 seconds.</p>
 <tr>
 <td>How late the checks ran (compared to their interval), for every monitor type</td>
 <td>p99 at most 5 seconds (10% of the interval above 50 s)</td>
-<td>2.1 seconds (Docker monitors), all other types below 1 second</td>
+<td>2.4 seconds (Docker monitors), all other types below 1.5 seconds</td>
 </tr>
 <tr>
 <td>Skipped checks</td>
@@ -2396,12 +2499,17 @@ were at most 5 seconds.</p>
 <tr>
 <td>Pages of the web interface and API requests</td>
 <td>p95 at most 2 seconds, none above 10 seconds, no errors</td>
-<td>p95 0.92 seconds, slowest 0.97 seconds</td>
+<td>less than 1.6 seconds</td>
+</tr>
+<tr>
+<td>The dashboard, the status pages and the statistics of the API, which add up the history of many monitors</td>
+<td>p95 at most 5 seconds, none above 15 seconds, no errors</td>
+<td>2.0 seconds</td>
 </tr>
 <tr>
 <td>Heartbeats of push monitors</td>
 <td>p99 at most 1 second, no errors</td>
-<td>0.16 seconds</td>
+<td>0.2 seconds</td>
 </tr>
 <tr>
 <td>Database connection timeouts</td>
@@ -2415,20 +2523,50 @@ were at most 5 seconds.</p>
 </tr>
 </tbody>
 </table>
-<p>The slowest page was always the list of HTTP monitors, which gets big with thousands of monitors (see
-<a href="#good-to-know">long monitor lists</a>).</p>
 <p>We also tested 3,000 monitors with three other kinds of setups: mostly HTTP monitors, mostly Docker monitors, and
-mostly ping, TCP and DNS monitors. All of them worked well with 1 GB of memory. The setup with many ping monitors used
-the most memory (946 MB), see <a href="#good-to-know">ping monitors</a> below.</p>
-<p>The database needed little: even with 5,000 monitors, it used less than one fifth of a CPU and about 150 MB of memory.</p>
-<h2 id="disk-space">Disk space</h2>
-<p>Most of the disk space goes to the <strong>history of the checks</strong> (the response times and other metrics of every check).
-<em>Kuvasz</em> keeps it for 7 days by default, but you can change this with the
-<a href="../configuration/#latency-data-retention">latency data retention</a> setting. The longer you keep it, the more disk you need:</p>
+mostly ping, TCP and DNS monitors. All of them worked well with 1 GB of memory, and used about the same amount of it
+(857 to 870 MB).</p>
+<p>CPU was never the problem: even with 5,000 monitors, <em>Kuvasz</em> used about a third of its CPU on average. The database
+needed even less: less than a fifth of its CPU on average (with short peaks to about 60%), and less than 400 MB of
+memory.</p>
+<h2 id="disk-space-for-the-db">Disk space for the DB</h2>
+<p>Most of the disk space goes to the <strong>history of the checks</strong> (the response time and the other metrics of every
+check). <em>Kuvasz</em> keeps it for 7 days by default, but you can change this with the
+<a href="../configuration/#latency-data-retention">latency data retention</a> setting.</p>
+<p>How much space it needs depends on <strong>how often your monitors are checked</strong>, not only on how many monitors you have:
+every check takes about <strong>200 bytes</strong> on the disk, and a check of a Docker monitor about <strong>330 bytes</strong>.</p>
+<p>The uptime events (when a monitor went up or down) need very little space, even if you keep them for a year.</p>
+<h3 id="how-to-calculate-it">How to calculate it</h3>
+<p>A day has 86,400 seconds, so a monitor that is checked every <span class="arithmatex">\(t\)</span> seconds is checked <span class="arithmatex">\(\frac{86{,}400}{t}\)</span> times a day.
+If you keep the history for <span class="arithmatex">\(d\)</span> days, and a check takes <span class="arithmatex">\(b\)</span> bytes, one monitor needs:</p>
+<div class="arithmatex">\[
+\text{disk space} = \frac{86{,}400}{t} \times (d + 1) \times b
+\]</div>
+<p>We count <strong>one more day</strong> than <span class="arithmatex">\(d\)</span>, because the old history is deleted only once a day: right before this cleanup, one
+more day is stored.</p>
+<p>For example, a monitor that is checked every minute (<span class="arithmatex">\(t = 60\)</span>), with the default 7 days (<span class="arithmatex">\(d = 7\)</span>) and 200 bytes per
+check (<span class="arithmatex">\(b = 200\)</span>), needs:</p>
+<div class="arithmatex">\[
+\frac{86{,}400}{60} \times (7 + 1) \times 200 = 1{,}440 \times 8 \times 200 = 2{,}304{,}000 \text{ bytes} \approx 2.3
+\text{ MB}
+\]</div>
+<p>So 1,000 monitors checked every minute need about <strong>2.3 GB</strong>. If your monitors are checked at different intervals,
+calculate each group, then add them up. For example, 200 monitors checked every 30 seconds, 700 every minute and 100
+every 5 minutes, with the default 7 days:</p>
+<div class="arithmatex">\[
+\begin{aligned}
+200 \times \frac{86{,}400}{30} \times 8 \times 200 &amp;\approx 922 \text{ MB} \\[6pt]
+700 \times \frac{86{,}400}{60} \times 8 \times 200 &amp;\approx 1{,}613 \text{ MB} \\[6pt]
+100 \times \frac{86{,}400}{300} \times 8 \times 200 &amp;\approx 46 \text{ MB} \\[6pt]
+\text{total} &amp;\approx 2.6 \text{ GB}
+\end{aligned}
+\]</div>
+<p>Here, 1 MB is 1,000,000 bytes, and 1 GB is 1,000 MB. The same calculation for one monitor (with 200 bytes per check):</p>
 <table>
 <thead>
 <tr>
-<th>Number of monitors</th>
+<th>Check interval</th>
+<th>Per day</th>
 <th>7 days (default)</th>
 <th>30 days</th>
 <th>90 days</th>
@@ -2436,38 +2574,76 @@ the most memory (946 MB), see <a href="#good-to-know">ping monitors</a> below.</
 </thead>
 <tbody>
 <tr>
-<td>500</td>
-<td>about 0.6 GB</td>
-<td>about 2.3 GB</td>
-<td>about 7 GB</td>
+<td>10 seconds</td>
+<td>1.7 MB</td>
+<td>14 MB</td>
+<td>54 MB</td>
+<td>157 MB</td>
 </tr>
 <tr>
-<td>3,000</td>
-<td>about 3.5 GB</td>
-<td>about 14 GB</td>
-<td>about 40 GB</td>
+<td>30 seconds</td>
+<td>0.58 MB</td>
+<td>4.6 MB</td>
+<td>18 MB</td>
+<td>52 MB</td>
 </tr>
 <tr>
-<td>5,000</td>
-<td>about 6 GB</td>
-<td>about 23 GB</td>
-<td>about 67 GB</td>
+<td>1 minute</td>
+<td>0.29 MB</td>
+<td>2.3 MB</td>
+<td>8.9 MB</td>
+<td>26 MB</td>
+</tr>
+<tr>
+<td>5 minutes</td>
+<td>0.06 MB</td>
+<td>0.46 MB</td>
+<td>1.8 MB</td>
+<td>5.2 MB</td>
+</tr>
+<tr>
+<td>15 minutes</td>
+<td>0.02 MB</td>
+<td>0.15 MB</td>
+<td>0.6 MB</td>
+<td>1.7 MB</td>
 </tr>
 </tbody>
 </table>
-<p>As a rule of thumb: about <strong>150 MB for every 1,000 monitors and every day</strong> of history. Add one more day to the
-retention when you calculate, because the old history is deleted only once a day. If most of your monitors are HTTP
-monitors, count with about 170 MB instead.</p>
-<p>The uptime events (when a monitor went up or down) need very little space, even if you keep them for a year.</p>
-<p>The web interface always shows the last 7 days, so keeping a longer history mostly needs more disk, not more memory or
-CPU.</p>
+<ul>
+<li><strong>Push monitors</strong> don't have such a history.</li>
+<li>HTTP monitors don't store anything for a failed check, so a monitor that is down needs less.</li>
+</ul>
+<h3 id="where-the-numbers-come-from">Where the numbers come from</h3>
+<p>The 200 and 330 bytes come from our tests (see <a href="#how-we-tested">how we tested</a>): a check took 196 to 211 bytes,
+depending on the type of the monitor, and a check of a Docker monitor 314 to 327 bytes. This includes everything that
+the database stores for a check, and also the space that stays in the files after the daily cleanup.</p>
+<p>In these tests, most monitors were checked every minute, some every 10 to 30 seconds, and some every 5 to 15 minutes.
+With this mix, 1,000 monitors needed about <strong>236 MB a day</strong> (about 1.9 GB for 7 days), or about 270 MB a day if most of
+them were HTTP monitors. The calculation above gives almost the same: in a day, the 1,000 monitors of the first mix
+stored about 1,090,000 checks of other monitors and about 54,000 checks of Docker monitors, and
+<span class="arithmatex">\(1{,}090{,}000 \times 200 \text{ bytes} + 54{,}000 \times 330 \text{ bytes} \approx 236 \text{ MB}\)</span>.</p>
+<h3 id="keeping-the-history-for-longer">Keeping the history for longer</h3>
+<p>With a longer history, you can also look at longer periods in the web interface and the API, for example the last 30
+days on the dashboard or on the charts of a monitor. These views read more data, and almost all of this extra work is
+done by the database.</p>
+<p>Every test above was run with <strong>30 days of history</strong>, while the virtual users looked at the last 30 days on the
+dashboard, the incidents, the status pages and in the API, so the numbers on this page already cover keeping the
+history for 30 days. A chart never has more than
+about 1,000 points, however long the period is, but the database still reads every check of the period to make them,
+so a long period of a monitor that is checked every few seconds takes longer to load. In these tests, <code>shared_buffers</code> (a
+PostgreSQL setting for the memory of its cache) was set to a quarter of the memory of the database, for example <code>256MB</code>
+for 1 GB. With the official PostgreSQL image, you can set it in the command of the container, for example
+<code>command: postgres -c shared_buffers=256MB</code>.</p>
+<p>If you keep the history for longer than 30 days, or a lot of people look at long periods at the same time, watch the
+CPU use of the database: if it's often at its limit, give it more.</p>
 <h2 id="the-memory-setting">The memory setting</h2>
 <p><em>Kuvasz</em> is a Java application. Java keeps most of its data in a part of the memory called the <strong>heap</strong>. By default,
 <em>Kuvasz</em> uses a heap of <strong>at most 192 MB</strong>, and this doesn't change when you give the machine more memory. 192 MB is
-enough for <strong>about 500 monitors</strong>.</p>
-<p>On top of the heap, <em>Kuvasz</em> needs about <strong>300 MB</strong> for other things (its code, the libraries it uses, etc.). That's
+enough for <strong>about 1,000 monitors</strong>.</p>
+<p>On top of the heap, <em>Kuvasz</em> needs about <strong>330 MB</strong> for other things (its code, the libraries it uses, etc.). That's
 why it needs 768 MB of memory even with the default heap.</p>
-<p>If you have more than 500 monitors, make the heap bigger, and give the container enough memory:</p>
+<p>If you have more than 1,000 monitors, make the heap bigger, and give the container enough memory:</p>
 <ul>
 <li><strong>The heap</strong> (the <code>-Xmx</code> value): see the <a href="#short-answer">table above</a>.</li>
 <li><strong>The memory of the container</strong>: at least the heap <strong>plus 500 MB</strong>.</li>
@@ -2492,21 +2668,19 @@ itself, and <code>-Xmx</code> is the one that sets the maximum size of the heap:
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="nt">mem_limit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1g</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
 </span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">      </span><span class="nt">JAVA_TOOL_OPTIONS</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-Xmx512M&quot;</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">      </span><span class="nt">USE_VIRTUAL_THREAD_SCHEDULING</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;true&quot;</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">      </span><span class="c1"># ... the rest of your settings</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">      </span><span class="c1"># ... the rest of your settings</span>
 </span></code></pre></div>
 </div>
 <div class="tabbed-block">
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>docker<span class="w"> </span>run<span class="w"> </span>--memory<span class="w"> </span>1g<span class="w"> </span><span class="se">\</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">JAVA_TOOL_OPTIONS</span><span class="o">=</span><span class="s2">&quot;-Xmx512M&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">USE_VIRTUAL_THREAD_SCHEDULING</span><span class="o">=</span><span class="nb">true</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span>kuvaszmonitoring/kuvasz:latest
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span>kuvaszmonitoring/kuvasz:latest
 </span></code></pre></div>
 </div>
 <div class="tabbed-block">
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">resources</span><span class="p">:</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">limits</span><span class="p">:</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">cpu</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1000m</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">cpu</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2000m</span>
 </span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="nt">memory</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1Gi</span>
 </span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">  </span><span class="nt">requests</span><span class="p">:</span>
 </span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="nt">cpu</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100m</span>
@@ -2515,8 +2689,6 @@ itself, and <code>-Xmx</code> is the one that sets the maximum size of the heap:
 </span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="nt">extraEnv</span><span class="p">:</span>
 </span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">JAVA_TOOL_OPTIONS</span>
 </span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">    </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-Xmx512M&quot;</span>
-</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">USE_VIRTUAL_THREAD_SCHEDULING</span>
-</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">    </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;true&quot;</span>
 </span></code></pre></div>
 </div>
 </div>
@@ -2528,7 +2700,7 @@ the maximum size of the heap (<code>-Xmx</code>), Java takes care of the rest.</
 </div>
 <div class="admonition tip">
 <p class="admonition-title">Checking that the setting is used</p>
-<p>When the container starts, Java writes the value it found into the log of the container, in its very first line,
+<p>When the container starts, Java writes the value it found into the log of the container, in one of its first lines,
 for example: <code>Picked up JAVA_TOOL_OPTIONS: -Xmx512M</code>. If you don't see your value there, the environment variable
 didn't reach the container.</p>
 </div>
@@ -2541,28 +2713,36 @@ didn't reach the container.</p>
 <p>If you see any of these, give <em>Kuvasz</em> more memory, and make the heap bigger, as shown above.</p>
 <h3 id="more-than-5000-monitors">More than 5,000 monitors</h3>
 <p>We tested up to 5,000 monitors. <em>Kuvasz</em> can handle more, but you need to give it more memory: the heap needs about
-<strong>60 MB more for every 1,000 monitors</strong>. Raise the heap and the memory of the container together, and watch the memory
+<strong>65 MB more for every 1,000 monitors</strong>. Raise the heap and the memory of the container together, and watch the memory
 use for a few days.</p>
 <h2 id="good-to-know">Good to know</h2>
 <ul>
-<li><strong>Ping monitors</strong>: every ping check starts a small separate program, which needs some extra memory. If you have
-  hundreds of ping (ICMP) monitors, add about 256 MB to the memory in the <a href="#short-answer">table above</a>.</li>
-<li><strong>Restarts on small machines</strong>: with 0.5 CPU, the first checks after a restart can be slow for a minute or so (we saw
-  one take 5.5 seconds). If you set a <a href="../../management/http-monitors/#response-time-threshold">response time threshold</a>
-  on your HTTP monitors, such a monitor can be reported as down right after a restart.</li>
+<li><strong>Restarts on small machines</strong>: on our test machine, <em>Kuvasz</em> needed about 50 seconds to start with 0.5 CPU and 500
+  monitors, and 20 to 35 seconds with 1 CPU and more monitors. On a slower machine, it takes longer. Its CPU is busy
+  while it starts, so if you set a
+  <a href="../../management/http-monitors/#response-time-threshold">response time threshold</a> on your HTTP monitors, such a
+  monitor might be reported as down right after a restart.</li>
 <li><strong>Very short intervals</strong>: our tests used a realistic mix of check intervals (from 10 seconds to 1 day, most of them
   1 or 5 minutes). If most of your monitors are checked every 10–30 seconds, give <em>Kuvasz</em> and the database more CPU.</li>
-<li><strong>Long monitor lists</strong>: with thousands of monitors, the monitor list pages of the web interface get big. To keep them
-  short and fast, group your monitors with <a href="../../management/http-monitors/#category">categories</a>, and filter the list
-  by category.</li>
+<li><strong>Status pages with a lot of monitors</strong>: the <a href="../../management/status-pages/#the-default-status-page">default status page</a>
+  shows every enabled monitor, so it's only available up to 100 monitors. With more, create
+  <a href="../../management/status-pages/#custom-status-pages">custom status pages</a> with selected monitors or categories. Every
+  status page lists only the latest 20 incidents of each monitor, so a monitor that goes up and down all the time
+  doesn't make the page too big.</li>
 </ul>
 <h2 id="how-we-tested">How we tested</h2>
-<p>We ran the official Docker image of <em>Kuvasz</em> 4.5.0 with test sets of 100 to 5,000 monitors. The sets mixed every
-monitor type (about half of them HTTP monitors, the rest push, ping, TCP, DNS and Docker monitors), and we repeated the
-3,000-monitor test with three other mixes. We measured the disk space separately, with the tables of <em>Kuvasz</em> filled
-with the history of 1,000 monitors. Some of the
-monitored targets were slow, some were down, and some changed between up and down, like in real life. During the
-tests, 5 virtual users used the web interface and the API at the same time.</p>
+<p>We ran <em>Kuvasz</em> 4.6.0 with test sets of 500 to 5,000 monitors. The sets mixed every monitor type (about half of them
+HTTP monitors, the rest push, ping, TCP, DNS and Docker monitors), and we repeated the 3,000-monitor test with three
+other mixes. Some of the monitored targets were slow, some were down, and some changed between up and down, like in
+real life. There was one status page with 50 monitors. During the tests, 5 virtual users used the web interface and
+the API at the same time.</p>
+<p>Before every test, we filled the database with 30 days of history of the monitors, as if they had been running for a
+month, and the virtual users looked at the last 30 days on the dashboard, the incidents, the status pages and in the
+API, and at the last 24 hours on the charts of the monitors. The history was like in real life too: most monitors were up all the
+time, with a 10-minute outage every two weeks, a few were down, and a few went up and down for 2 hours twice a week.
+With 5,000 monitors and 30 days, the database was about 23 GB.</p>
+<p>We measured the disk space separately, with the tables of <em>Kuvasz</em> filled with the same kind of history of 1,000
+monitors.</p>
 <h3 id="the-test-machine">The test machine</h3>
 <table>
 <thead>
@@ -2590,25 +2770,20 @@ tests, 5 virtual users used the web interface and the API at the same time.</p>
 </tr>
 <tr>
 <td>Docker</td>
-<td>Docker Desktop 29.8, with 8 cores and 12 GB of memory given to its Linux virtual machine</td>
+<td>Docker Desktop 29.8, with 8 CPUs and about 10 GB of memory</td>
 </tr>
 <tr>
 <td><em>Kuvasz</em></td>
-<td>the official <code>kuvaszmonitoring/kuvasz:4.5.0</code> image (<code>linux/arm64</code>), Java 25</td>
+<td>4.6.0 (<code>linux/arm64</code>), Java 25</td>
 </tr>
 <tr>
 <td>Database</td>
-<td>PostgreSQL 18 (<code>postgres:18-alpine</code>)</td>
+<td>PostgreSQL 18 (<code>postgres:18-alpine</code>), <code>shared_buffers</code> set to a quarter of its memory</td>
 </tr>
 </tbody>
 </table>
 <p><em>Kuvasz</em>, the database and the monitored test targets all ran on this computer, each in its own container, with its
 own CPU and memory limits (the numbers in the tables above). The containers couldn't use swap.</p>
-<div class="admonition note">
-<p class="admonition-title">One CPU means one core of the test machine</p>
-<p>The CPU numbers on this page are cores of the processor above, which is a fast, modern processor. On a slower one
-(for example a Raspberry Pi, or an older server), <em>Kuvasz</em> might need more CPU for the same number of monitors.</p>
-</div>
 <p>You can find the test tools and all the details in the
 <a href="https://github.com/kuvasz-uptime/kuvasz/tree/main/benchmark" target="_blank" rel="noopener"><code>benchmark</code> folder of the repository</a>.</p>
 
@@ -2782,6 +2957,12 @@ own CPU and memory limits (the numbers in the tables above). The containers coul
     
 
       <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../javascripts/katex.js"></script>
+      
+        <script src="../../vendor/katex/katex.min.js"></script>
+      
+        <script src="../../vendor/katex/contrib/auto-render.min.js"></script>
       
     
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon="{&quot;token&quot;: &quot;d7e0ee97fade40d5ab19fabc05b4502e&quot;}">

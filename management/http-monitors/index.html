@@ -55,6 +55,8 @@
     
       <link rel="stylesheet" href="../../stylesheets/custom.css">
     
+      <link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+    
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -1451,6 +1453,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Follow redirects">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cookies-along-the-redirect-chain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cookies along the redirect chain
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -2458,6 +2477,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Follow redirects">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cookies-along-the-redirect-chain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cookies along the redirect chain
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -2981,6 +3017,15 @@
 <p>The number of redirects followed in a single check is capped by the global <a href="../../setup/configuration/#http-check-max-redirects">HTTP check max redirects</a> setting (10 by default), so a chain that never repeats a URL cannot go on indefinitely.</p>
 <p>A <strong>relative</strong> <code>Location</code> header is resolved against the URL of the hop that returned it, following <a href="https://www.rfc-editor.org/rfc/rfc9110#field.location" target="_blank" rel="noopener">RFC 9110</a> — not against the monitor's own URL.</p>
 <p>Your <a href="#request-headers"><strong>custom request headers</strong></a> are only sent to a redirect target on a different origin if <a href="#cross-origin-header-propagation"><strong>cross-origin header propagation</strong></a> is enabled.</p>
+<h4 id="cookies-along-the-redirect-chain">Cookies along the redirect chain</h4>
+<p>The <strong>cookies set by the responses</strong> of a check (via <code>Set-Cookie</code> headers) are sent back on the <strong>later hops of the same redirect chain</strong>, like a browser would do it. Some sites (typically behind a CDN) redirect a client without a cookie to the <strong>very same URL</strong>, setting e.g. a session cookie on the way, and only serve the actual page to the requests that send it back.</p>
+<ul>
+<li>If a redirect points to an <strong>already visited URL</strong>, but the request would send <strong>different cookies</strong> than the previous request to the same URL did (e.g. because a hop of the chain set a cookie in the meantime), it's <strong>not treated as a redirect loop</strong>, and the URL is requested once more with the new cookies. This is tolerated <strong>only once per check</strong>, a second revisit is reported as a redirect loop.</li>
+<li>The cookies are only sent back to the <strong>origin (scheme, host and port) that set them</strong>, even if they have a <code>Domain</code> attribute, the same way as your <a href="#cross-origin-header-propagation"><strong>custom request headers</strong></a> are kept on the origin of the monitored URL. So a cookie set on <code>https://example.com</code> is never sent to <code>http://example.com</code> (in cleartext), to <code>https://example.com:8443</code>, or to <code>https://www.example.com</code>, and a cookie set over plain <code>http</code> can't override the ones of the <code>https</code> origin either.</li>
+<li>Their <code>Path</code> and <code>Secure</code> attributes, and the <code>__Secure-</code> and <code>__Host-</code> name prefixes are respected like in browsers, and the expired cookies (e.g. <code>Max-Age=0</code>) are removed.</li>
+<li>The cookies are <strong>never kept between the checks</strong>, every check starts without any.</li>
+<li>If your <a href="#request-headers"><strong>custom request headers</strong></a> contain a <code>Cookie</code> header, the cookies set by the server are merged into it, and the server's value wins if a cookie with the same name is in both. Your other cookies are sent as you configured them.</li>
+</ul>
 <h3 id="cross-origin-header-propagation">Cross-origin header propagation</h3>
 <p><span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#version" title="Minimum version"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21.41 11.58-9-9A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 .59 1.42l9 9A2 2 0 0 0 13 22a2 2 0 0 0 1.41-.59l7-7A2 2 0 0 0 22 13a2 2 0 0 0-.59-1.42M13 20l-9-9V4h7l9 9M6.5 5A1.5 1.5 0 1 1 5 6.5 1.5 1.5 0 0 1 6.5 5"/></svg></span></a></span><span class="mdx-badge__text"><a href="../../changelog/#4.4.0">4.4.0</a></span></span>
 <span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#default" title="Default value"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9H0l4 4 4-4H5a7 7 0 0 1 7-7 7 7 0 0 1 7 7 7 7 0 0 1-7 7c-1.5 0-2.91-.5-4.06-1.3L6.5 19.14A9.1 9.1 0 0 0 12 21a9 9 0 0 0 9-9 9 9 0 0 0-9-9m2 9a2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2"/></svg></span></a></span><span class="mdx-badge__text"><code>false</code></span></span>
@@ -3447,6 +3492,12 @@
     
 
       <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../javascripts/katex.js"></script>
+      
+        <script src="../../vendor/katex/katex.min.js"></script>
+      
+        <script src="../../vendor/katex/contrib/auto-render.min.js"></script>
       
     
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon="{&quot;token&quot;: &quot;d7e0ee97fade40d5ab19fabc05b4502e&quot;}">

@@ -55,6 +55,8 @@
     
       <link rel="stylesheet" href="../../stylesheets/custom.css">
     
+      <link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+    
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -2362,7 +2364,7 @@ The Helm chart also provides a basic database setup, if you don't want to bring 
 </div>
 <div class="admonition tip">
 <p class="admonition-title">How much memory and CPU does <em>Kuvasz</em> need?</p>
-<p>With the default settings, <em>Kuvasz</em> needs <strong>768 MB of memory</strong> and <strong>at least half a CPU</strong> for up to 500 monitors (less monitors would most probably fit well under 512 MB, but 768 MB is a safe limit here). If you have more monitors, see the <a href="../sizing/"><strong>hardware requirements</strong></a>.</p>
+<p>With the default settings, <em>Kuvasz</em> needs <strong>768 MB of memory</strong> and <strong>1 CPU</strong> for up to 1,000 monitors (less monitors would most probably fit well under 512 MB, but 768 MB is a safe limit here). If you have more monitors, see the <a href="../sizing/"><strong>hardware requirements</strong></a>.</p>
 </div>
 <h2 id="choose-your-deployment-method">Choose Your Deployment Method</h2>
 <p>Kuvasz can be deployed in several ways depending on your infrastructure:</p>
@@ -2752,6 +2754,12 @@ Furthermore, to make it easier to get notified about new releases, the UI will s
     
 
       <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../javascripts/katex.js"></script>
+      
+        <script src="../../vendor/katex/katex.min.js"></script>
+      
+        <script src="../../vendor/katex/contrib/auto-render.min.js"></script>
       
     
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon="{&quot;token&quot;: &quot;d7e0ee97fade40d5ab19fabc05b4502e&quot;}">

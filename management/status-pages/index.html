@@ -55,6 +55,8 @@
     
       <link rel="stylesheet" href="../../stylesheets/custom.css">
     
+      <link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+    
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -2551,6 +2553,10 @@
 </div>
 <h2 id="the-default-status-page">The default status page</h2>
 <p>The default status page is a special, built-in status page that <strong>automatically includes all enabled monitors</strong>. It cannot be deleted or created manually, but you can unpublish it (i.e. make it private) if you don't want to use it.</p>
+<div class="admonition warning">
+<p class="admonition-title">Up to 100 monitors</p>
+<p>The default status page is only available as long as you have <strong>100 enabled monitors or fewer</strong>. A page with more monitors than that would be too slow to load and too long to read. Above 100, the default status page can't be opened at all, not even if it's public or you're logged in: <code>/status</code> and <code>/api/v2/status-pages/0/details</code> answer with <em>404 Not Found</em>, and the list of the status pages on the Web UI shows it as unavailable. Create <a href="#custom-status-pages">custom status pages</a> with the monitors or the categories that you want to show instead. The limit can't be changed.</p>
+</div>
 <h3 id="title">Title</h3>
 <p><span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#version" title="Minimum version"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21.41 11.58-9-9A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 .59 1.42l9 9A2 2 0 0 0 13 22a2 2 0 0 0 1.41-.59l7-7A2 2 0 0 0 22 13a2 2 0 0 0-.59-1.42M13 20l-9-9V4h7l9 9M6.5 5A1.5 1.5 0 1 1 5 6.5 1.5 1.5 0 0 1 6.5 5"/></svg></span></a></span><span class="mdx-badge__text"><a href="../../changelog/#3.1.0">3.1.0</a></span></span>
 <span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#default" title="Default value"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9H0l4 4 4-4H5a7 7 0 0 1 7-7 7 7 0 0 1 7 7 7 7 0 0 1-7 7c-1.5 0-2.91-.5-4.06-1.3L6.5 19.14A9.1 9.1 0 0 0 12 21a9 9 0 0 0 9-9 9 9 0 0 0-9-9m2 9a2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2"/></svg></span></a></span><span class="mdx-badge__text">System status</span></span>
@@ -2592,7 +2598,7 @@
 </div>
 </div>
 </div>
-<p>Determines whether the default status page is <strong>publicly accessible</strong> or not. If set to <code>false</code>, only authenticated users will be able to access it.</p>
+<p>Determines whether the default status page is <strong>publicly accessible</strong> or not. If set to <code>false</code>, only authenticated users will be able to access it. With more than 100 enabled monitors, the default status page is <a href="#the-default-status-page">not available</a> at all, whatever this setting is.</p>
 <h3 id="custom-logo-url">Custom logo URL</h3>
 <p><span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#version" title="Minimum version"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21.41 11.58-9-9A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 .59 1.42l9 9A2 2 0 0 0 13 22a2 2 0 0 0 1.41-.59l7-7A2 2 0 0 0 22 13a2 2 0 0 0-.59-1.42M13 20l-9-9V4h7l9 9M6.5 5A1.5 1.5 0 1 1 5 6.5 1.5 1.5 0 0 1 6.5 5"/></svg></span></a></span><span class="mdx-badge__text"><a href="../../changelog/#3.1.0">3.1.0</a></span></span>
 <span class="mdx-badge"><span class="mdx-badge__icon"><a href="../../conventions/#type" title="Type"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.6 5.29c-1.1-.1-2.07.71-2.17 1.82L13.18 10H16v2h-3l-.44 5.07a3.986 3.986 0 0 1-4.33 3.63 4 4 0 0 1-3.06-1.87l1.5-1.5c.24.74.9 1.31 1.73 1.38 1.1.1 2.07-.71 2.17-1.82L11 12H8v-2h3.17l.27-3.07c.19-2.2 2.13-3.83 4.33-3.63 1.31.11 2.41.84 3.06 1.87l-1.5 1.5c-.24-.74-.9-1.31-1.73-1.38"/></svg></span></a></span><span class="mdx-badge__text">string</span></span>
@@ -2964,6 +2970,12 @@
     
 
       <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../javascripts/katex.js"></script>
+      
+        <script src="../../vendor/katex/katex.min.js"></script>
+      
+        <script src="../../vendor/katex/contrib/auto-render.min.js"></script>
       
     
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon="{&quot;token&quot;: &quot;d7e0ee97fade40d5ab19fabc05b4502e&quot;}">

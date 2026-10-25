@@ -55,6 +55,8 @@
     
       <link rel="stylesheet" href="../stylesheets/custom.css">
     
+      <link rel="stylesheet" href="../vendor/katex/katex.min.css">
+    
     <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -93,7 +95,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#upgrade-from-v3xx-to-v4xx" class="md-skip">
+        <a href="#upgrade-to-v460" class="md-skip">
           Skip to content
         </a>
       
@@ -1676,6 +1678,56 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#upgrade-to-v460" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Upgrade to v4.6.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Upgrade to v4.6.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-first-start-takes-longer-if-you-have-a-lot-of-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The first start takes longer if you have a lot of data
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#status-pages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Status pages
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#upgrade-from-v3xx-to-v4xx" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1727,7 +1779,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#api" class="md-nav__link">
+  <a href="#api_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         API
@@ -2042,6 +2094,56 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#upgrade-to-v460" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Upgrade to v4.6.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Upgrade to v4.6.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-first-start-takes-longer-if-you-have-a-lot-of-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The first start takes longer if you have a lot of data
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#status-pages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Status pages
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#upgrade-from-v3xx-to-v4xx" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2093,7 +2195,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#api" class="md-nav__link">
+  <a href="#api_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         API
@@ -2216,6 +2318,20 @@
 
   <h1>Upgrade notes</h1>
 
+<h2 id="upgrade-to-v460">Upgrade to v4.6.0</h2>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>You don't need to change your configuration to upgrade to version 4.6.0. The notes below describe what behaves differently, and what to keep an eye on during the upgrade. See the <a href="../changelog/#4.6.0"><strong>changelog</strong></a> for every change.</p>
+</div>
+<h3 id="the-first-start-takes-longer-if-you-have-a-lot-of-data">The first start takes longer if you have a lot of data</h3>
+<p>The tables that keep the response times and the other metrics of the checks get new indexes, which are built when <em>Kuvasz</em> starts for the first time after the upgrade. With a lot of history and monitors (roughly above a 1,000), this can take a while: about <strong>30 seconds for 28 million rows</strong> on a single CPU in our tests. <em>Kuvasz</em> doesn't run any checks until it's done, so don't stop it in the meantime. If you use the <a href="../setup/helm-deployment/">Helm chart</a> and keep a very long history, raise <code>livenessProbe.initialDelaySeconds</code> for the upgrade, as the liveness probe waits only about 3 minutes before it restarts <em>Kuvasz</em>.</p>
+<h3 id="status-pages">Status pages <span class="mdx-badge"><span class="mdx-badge__icon"><a href="../management/status-pages/" title="Configuration"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 0 1 8.5 12 3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5 3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97s-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.506.506 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1s.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.06.74 1.69.99l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.26 1.17-.59 1.69-.99l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64z"/></svg></span></a></span></span></h3>
+<ul>
+<li><strong>The default status page is limited to 100 monitors</strong>: above 100 enabled monitors, the <a href="../management/status-pages/#the-default-status-page">default status page</a> can't be opened anymore, whether it's public or not, and <code>GET /api/v2/status-pages/0/details</code> returns <code>404</code>. Use <a href="../management/status-pages/#custom-status-pages">custom status pages</a> with selected monitors or categories instead.</li>
+<li><strong>Only the latest 20 incidents of each monitor are listed</strong>: on the status pages, in the status page details of the REST API, and in the <code>get-status-page-details</code> tool of the <a href="../features/mcp-server/">MCP server</a>. The number of incidents and the downtime of each day still count every incident. No property was removed from the responses, there is a new one instead: <code>incidentCount</code>, the number of every incident of each monitor.</li>
+</ul>
+<h3 id="api">API</h3>
+<p>The full lists of <code>/api/v2</code> (e.g. <code>GET /api/v2/http-monitors</code> or <code>GET /api/v2/incidents</code>) keep working as before, but they are <strong>deprecated</strong>. Please switch to the new <code>/api/v3</code> lists, which return the items page by page (the <code>size</code> parameter doesn't have an upper limit, so you can achieve v2's unbounded returns by providing a huge number there). The list tools of the MCP server return one page at a time already (25 items by default).</p>
 <h2 id="upgrade-from-v3xx-to-v4xx">Upgrade from v3.x.x to v4.x.x</h2>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
@@ -2248,7 +2364,7 @@
 </span></span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;My</span><span class="nv"> </span><span class="s">Monitor&quot;</span>
 </span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="c1"># ...</span>
 </span></code></pre></div>
-<h3 id="api">API</h3>
+<h3 id="api_1">API</h3>
 <p><code>/api/v1</code> endpoints will be supported for a limited time only, because <strong>a new version of the API</strong> has been introduced under <code>/api/v2</code>. Endpoints not explicitly listed below are expected to remain the same besides the path change, which means, that you can just replace <code>/api/v1</code> with <code>/api/v2</code> in your requests.</p>
 <div class="admonition warning">
 <p class="admonition-title">End of life of v1 endpoints</p>
@@ -2572,6 +2688,12 @@ Even if it's not a complete rewrite, a lot of things have changed under the hood
     
 
       <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../javascripts/katex.js"></script>
+      
+        <script src="../vendor/katex/katex.min.js"></script>
+      
+        <script src="../vendor/katex/contrib/auto-render.min.js"></script>
       
     
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon="{&quot;token&quot;: &quot;d7e0ee97fade40d5ab19fabc05b4502e&quot;}">
