@@ -61,10 +61,6 @@ div.ts-wrapper.form-select.plugin-clear_button > div.ts-control > div.clear-butt
     border-left: none !important;
 }
 
-.ts-wrapper .ts-control > div.item {
-    border-radius: 6px !important; /* Match the border-radius of the parent input */
-}
-
 /* TomSelect active option background - dark */
 [data-bs-theme=dark] .ts-wrapper .ts-dropdown .option.active {
     background-color: var(--tblr-bg-forms) !important;
