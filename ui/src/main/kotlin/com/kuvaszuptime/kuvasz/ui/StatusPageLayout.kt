@@ -74,7 +74,7 @@ internal fun withStatusPageLayout(
                     // Outside the refreshed part of the page, so an open modal is never swapped out
                     statusPageIncidentsModal()
                     commonScripts(globals.appVersion)
-                    script(src = "/public/ext/js/htmx.2.0.10.min.js") {}
+                    script(src = "/public/ext/js/htmx.2.0.11.min.js") {}
                 }
             }
 }

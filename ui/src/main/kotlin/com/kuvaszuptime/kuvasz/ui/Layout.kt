@@ -90,7 +90,7 @@ internal fun withLayout(
                     // Tabler's datepicker is a wrapper around Vanilla Calendar Pro, which has to be loaded before it
                     script(src = "/public/ext/js/vanilla-calendar-pro.3.4.0.min.js") {}
                     commonScripts(globals.appVersion)
-                    script(src = "/public/ext/js/htmx.2.0.10.min.js") {}
+                    script(src = "/public/ext/js/htmx.2.0.11.min.js") {}
                     script(src = "/public/ext/js/alpine.3.17.5.min.js") {}
                     script(src = "/public/ext/js/masonry.4.2.2.min.js") {}
                 }
