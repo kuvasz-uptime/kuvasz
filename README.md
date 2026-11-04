@@ -31,6 +31,10 @@ Use the following credentials to log in:
 
 If you want to get started quickly, please refer to the [**Deployment guide**](https://kuvasz-uptime.dev/setup/installation/) in the documentation.
 
+## ☁️ One-Click Deploy
+
+[![Deploy on RepoCloud](https://d16t0pc4846x52.cloudfront.net/deploylobe.svg)](https://repocloud.io/details/Kuvasz/)
+
 ## ✨ Features
 
 - **HTTP(S) monitoring**: Monitor the availability and performance of your websites and services by sending HTTP(S) requests.
