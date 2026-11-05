@@ -1,0 +1,11 @@
+smtp-config:
+  host: ${smtp-plain-test-host}
+  port: ${smtp-plain-test-port}
+  transport-strategy: SMTP_PLAIN
+  username:
+  password:
+integrations:
+  email:
+    - name: plain
+      from-address: 'kuvasz@smtp-plain.test'
+      to-address: 'ops@smtp-plain.test'

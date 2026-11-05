@@ -17,7 +17,8 @@ class SMTPMailer(smtpMailerConfig: SMTPMailerConfig) : AutoCloseable {
 
     private val mailerClient = run {
         MailerBuilder
-            .withTransportStrategy(smtpMailerConfig.transportStrategy.toJavaMailerTransportStrategy())
+            .withTransportStrategy(smtpMailerConfig.transportStrategy.javaMailerTransportStrategy)
+            .withProperties(smtpMailerConfig.transportStrategy.javaMailProperties)
             .withSMTPServerHost(smtpMailerConfig.host)
             .withSMTPServerPort(smtpMailerConfig.port)
             .async()
