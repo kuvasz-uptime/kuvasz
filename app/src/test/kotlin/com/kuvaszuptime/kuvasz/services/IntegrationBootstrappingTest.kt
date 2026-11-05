@@ -16,6 +16,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookHttpMethod
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.recipientAddresses
 import com.kuvaszuptime.kuvasz.models.handlers.type
 import com.kuvaszuptime.kuvasz.services.integrations.AppriseService
 import com.kuvaszuptime.kuvasz.services.integrations.GenericWebhookService
@@ -206,7 +207,9 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.name shouldBe "test_implicitly_enabled"
                     config.type shouldBe IntegrationType.EMAIL
                     config.fromAddress shouldBe "noreply@other.dev"
-                    config.toAddress shouldBe "foo@bar.com"
+                    config.toAddress shouldContainExactly listOf("foo@bar.com", " baz@bar.com")
+                    config.recipientAddresses() shouldContainExactly listOf("foo@bar.com", "baz@bar.com")
+                    config.separateEmails shouldBe false
                     config.enabled shouldBe true
                     config.global shouldBe false
                 }
@@ -216,7 +219,8 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.name shouldBe "Global-343"
                     config.type shouldBe IntegrationType.EMAIL
                     config.fromAddress shouldBe "foo@bar.com"
-                    config.toAddress shouldBe "blabla@example.com"
+                    config.toAddress shouldContainExactly listOf("blabla@example.com", "other@example.com")
+                    config.separateEmails shouldBe true
                     config.enabled shouldBe true
                     config.global shouldBe true
                 }
@@ -226,7 +230,8 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.name shouldBe "disabled"
                     config.type shouldBe IntegrationType.EMAIL
                     config.fromAddress shouldBe "jkfds@jklfds.com"
-                    config.toAddress shouldBe "irrelevant@jfdalk.com"
+                    config.toAddress shouldContainExactly listOf("irrelevant@jfdalk.com")
+                    config.separateEmails shouldBe true
                     config.enabled shouldBe false
                     config.global shouldBe false
                 }
@@ -531,7 +536,9 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.name shouldBe "test_implicitly_enabled"
                     config.type shouldBe IntegrationType.EMAIL
                     config.fromAddress shouldBe "noreply@other.dev"
-                    config.toAddress shouldBe "foo@bar.com"
+                    config.toAddress shouldContainExactly listOf("foo@bar.com", " baz@bar.com")
+                    config.recipientAddresses() shouldContainExactly listOf("foo@bar.com", "baz@bar.com")
+                    config.separateEmails shouldBe false
                     config.enabled shouldBe true
                     config.global shouldBe false
                 }
@@ -541,7 +548,8 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.name shouldBe "Global-343"
                     config.type shouldBe IntegrationType.EMAIL
                     config.fromAddress shouldBe "foo@bar.com"
-                    config.toAddress shouldBe "blabla@example.com"
+                    config.toAddress shouldContainExactly listOf("blabla@example.com", "other@example.com")
+                    config.separateEmails shouldBe true
                     config.enabled shouldBe true
                     config.global shouldBe true
                 }
@@ -714,7 +722,8 @@ class IntegrationBootstrappingTest : StringSpec({
                 name shouldBe "Global-343"
                 enabled shouldBe true
                 fromAddress shouldBe "foo@bar.com"
-                toAddress shouldBe "blabla@example.com"
+                toAddress shouldContainExactly listOf("blabla@example.com", "other@example.com")
+                separateEmails shouldBe true
             }
 
             with(globallyEnabledIntegrationsByType[IntegrationType.TELEGRAM]?.single() as TelegramNotificationConfig) {
@@ -873,6 +882,15 @@ class IntegrationBootstrappingTest : StringSpec({
 
         ex.message shouldContain "WebhookNotificationConfig.getRequestHeaders - " +
             ValidationMessages.VALID_HEADER_NAMES
+    }
+
+    "app should not start if an email config has a blank recipient" {
+        val ex = shouldThrow<BeanInstantiationException> {
+            testAppContext("invalid-email-recipients")
+        }
+
+        ex.message shouldContain "EmailNotificationConfig.getToAddress - " +
+            IntegrationValidationMessages.EMAIL_INTEGRATION_TO_NOT_BLANK
     }
 
     "app should not start if a webhook config contains an invalid payload template" {

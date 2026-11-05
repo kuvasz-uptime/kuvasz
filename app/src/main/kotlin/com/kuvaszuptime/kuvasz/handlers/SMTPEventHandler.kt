@@ -35,35 +35,35 @@ class SMTPEventHandler(
     override fun handleMaintenanceEvent(event: MaintenanceWindowEvent) {
         filterMaintenanceTargets(event).forEach { target ->
             val emailFactory = EmailFactory(target as EmailNotificationConfig)
-            smtpMailer.sendAsync(emailFactory.fromMaintenanceEvent(event))
+            emailFactory.fromMaintenanceEvent(event).forEach(smtpMailer::sendAsync)
         }
     }
 
     override fun handleUptimeEvent(event: UptimeMonitorEvent) {
         filterTargetConfigs(event).forEach { target ->
             val emailFactory = EmailFactory(target as EmailNotificationConfig)
-            smtpMailer.sendAsync(emailFactory.fromUptimeEvent(event))
+            emailFactory.fromUptimeEvent(event).forEach(smtpMailer::sendAsync)
         }
     }
 
     override fun handleSSLEvent(event: SSLMonitorEvent) {
         filterTargetConfigs(event).forEach { target ->
             val emailFactory = EmailFactory(target as EmailNotificationConfig)
-            smtpMailer.sendAsync(emailFactory.fromSSLEvent(event))
+            emailFactory.fromSSLEvent(event).forEach(smtpMailer::sendAsync)
         }
     }
 
     override fun handleDnsRecordsChangedEvent(event: DnsRecordsChangedEvent) {
         filterTargetConfigs(event).forEach { target ->
             val emailFactory = EmailFactory(target as EmailNotificationConfig)
-            smtpMailer.sendAsync(emailFactory.fromDnsRecordsChangedEvent(event))
+            emailFactory.fromDnsRecordsChangedEvent(event).forEach(smtpMailer::sendAsync)
         }
     }
 
     override fun handleDockerContainerRestartedEvent(event: DockerContainerRestartedEvent) {
         filterTargetConfigs(event).forEach { target ->
             val emailFactory = EmailFactory(target as EmailNotificationConfig)
-            smtpMailer.sendAsync(emailFactory.fromDockerContainerRestartedEvent(event))
+            emailFactory.fromDockerContainerRestartedEvent(event).forEach(smtpMailer::sendAsync)
         }
     }
 }

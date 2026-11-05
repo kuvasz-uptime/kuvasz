@@ -40,6 +40,7 @@ import com.kuvaszuptime.kuvasz.testutils.SMTPTest
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldBeSortedBy
+import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.maps.shouldContainAll
@@ -236,7 +237,9 @@ class IntegrationControllerTest(
                 implicitlyEnabledEmail.enabled shouldBe true
                 implicitlyEnabledEmail.global shouldBe false
                 implicitlyEnabledEmail.fromAddress shouldBe "noreply@other.dev"
-                implicitlyEnabledEmail.toAddress shouldBe "foo@bar.com"
+                implicitlyEnabledEmail.toAddress shouldBe "foo@bar.com, baz@bar.com"
+                implicitlyEnabledEmail.toAddresses shouldContainExactly listOf("foo@bar.com", "baz@bar.com")
+                implicitlyEnabledEmail.separateEmails shouldBe false
             }
             response.forOne { globalEmail ->
                 globalEmail.shouldBeInstanceOf<EmailNotificationConfigDto>()
@@ -245,7 +248,9 @@ class IntegrationControllerTest(
                 globalEmail.enabled shouldBe true
                 globalEmail.global shouldBe true
                 globalEmail.fromAddress shouldBe "foo@bar.com"
-                globalEmail.toAddress shouldBe "blabla@example.com"
+                globalEmail.toAddress shouldBe "blabla@example.com, other@example.com"
+                globalEmail.toAddresses shouldContainExactly listOf("blabla@example.com", "other@example.com")
+                globalEmail.separateEmails shouldBe true
             }
             response.forOne { disabledEmail ->
                 disabledEmail.shouldBeInstanceOf<EmailNotificationConfigDto>()
@@ -255,6 +260,8 @@ class IntegrationControllerTest(
                 disabledEmail.global shouldBe false
                 disabledEmail.fromAddress shouldBe "jkfds@jklfds.com"
                 disabledEmail.toAddress shouldBe "irrelevant@jfdalk.com"
+                disabledEmail.toAddresses shouldContainExactly listOf("irrelevant@jfdalk.com")
+                disabledEmail.separateEmails shouldBe true
             }
 
             response.forOne { implicitlyEnabledPd ->

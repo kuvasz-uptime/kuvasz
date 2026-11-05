@@ -27,25 +27,46 @@ private fun slackBot(
     incidentNotes = incidentNotes,
 )
 
+private fun email(
+    toAddresses: List<String>,
+    separateEmails: Boolean = false,
+) = EmailNotificationConfigDto(
+    id = IntegrationID(IntegrationType.EMAIL, "mail"),
+    type = IntegrationType.EMAIL,
+    name = "mail",
+    enabled = true,
+    global = false,
+    excludedEvents = emptyList(),
+    fromAddress = "noreply@kuvasz.dev",
+    toAddress = toAddresses.joinToString(", "),
+    toAddresses = toAddresses,
+    separateEmails = separateEmails,
+)
+
 class IntegrationsTest : BehaviorSpec({
 
     given("the details tooltip of an integration") {
 
-        `when`("it's an email integration") {
-            val integration = EmailNotificationConfigDto(
-                id = IntegrationID(IntegrationType.EMAIL, "mail"),
-                type = IntegrationType.EMAIL,
-                name = "mail",
-                enabled = true,
-                global = false,
-                excludedEvents = emptyList(),
-                fromAddress = "noreply@kuvasz.dev",
-                toAddress = "ops@kuvasz.dev",
-            )
-
+        `when`("it's an email integration with a single recipient") {
             then("it should contain the sender and the recipient") {
-                integration.detailsTooltip() shouldBe
+                email(toAddresses = listOf("ops@kuvasz.dev")).detailsTooltip() shouldBe
                     "<b>From</b>: \"noreply@kuvasz.dev\"<br> <b>To</b>: \"ops@kuvasz.dev\""
+            }
+        }
+
+        `when`("it's an email integration with multiple recipients") {
+            then("it should contain every recipient") {
+                email(toAddresses = listOf("ops@kuvasz.dev", "dev@kuvasz.dev")).detailsTooltip() shouldBe
+                    "<b>From</b>: \"noreply@kuvasz.dev\"<br> <b>To</b>: \"ops@kuvasz.dev, dev@kuvasz.dev\""
+            }
+        }
+
+        `when`("it's an email integration that sends a separate email to every recipient") {
+            then("it should mention it too") {
+                email(toAddresses = listOf("ops@kuvasz.dev", "dev@kuvasz.dev"), separateEmails = true)
+                    .detailsTooltip() shouldBe
+                    "<b>From</b>: \"noreply@kuvasz.dev\"<br> <b>To</b>: \"ops@kuvasz.dev, dev@kuvasz.dev\"<br>" +
+                    "Every recipient gets a separate email"
             }
         }
 

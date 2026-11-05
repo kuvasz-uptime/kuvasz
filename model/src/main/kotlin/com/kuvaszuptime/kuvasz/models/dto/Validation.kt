@@ -52,7 +52,8 @@ object IntegrationValidationMessages {
     const val SMTP_HOST_NOT_BLANK = "SMTP host must not be blank"
     const val SMTP_PORT_NOT_NULL = "SMTP port must not be null"
     const val PAGERDUTY_KEY_NOT_BLANK = "PagerDuty integration key must not be blank"
-    const val EMAIL_INTEGRATION_TO_NOT_BLANK = "Email integration 'to' address must not be blank"
+    const val EMAIL_INTEGRATION_TO_NOT_BLANK = "Email integration 'to' address must contain at least one " +
+        "recipient, and none of them can be blank"
     const val EMAIL_INTEGRATION_FROM_NOT_BLANK = "Email integration 'from' address must not be blank"
     const val SLACK_WEBHOOK_URL_NOT_BLANK = "Slack integration webhook URL must not be blank"
     const val SLACK_BOT_TOKEN_NOT_BLANK = "Slack Bot integration bot token must not be blank"
