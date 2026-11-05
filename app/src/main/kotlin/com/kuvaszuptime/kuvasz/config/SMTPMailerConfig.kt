@@ -32,16 +32,14 @@ class SMTPMailerConfig {
     }
 }
 
-enum class TransportStrategy {
-    SMTP_TLS {
-        override fun toJavaMailerTransportStrategy() = JavaMailerTransportStrategy.SMTP_TLS
-    },
-    SMTP {
-        override fun toJavaMailerTransportStrategy() = JavaMailerTransportStrategy.SMTP
-    },
-    SMTPS {
-        override fun toJavaMailerTransportStrategy() = JavaMailerTransportStrategy.SMTPS
-    };
+enum class TransportStrategy(
+    val javaMailerTransportStrategy: JavaMailerTransportStrategy,
+    val javaMailProperties: Map<String, String> = emptyMap(),
+) {
+    SMTP_TLS(JavaMailerTransportStrategy.SMTP_TLS),
+    SMTP(JavaMailerTransportStrategy.SMTP),
 
-    abstract fun toJavaMailerTransportStrategy(): JavaMailerTransportStrategy
+    // simple-java-mail's SMTP strategy upgrades the connection with STARTTLS whenever the server offers it
+    SMTP_PLAIN(JavaMailerTransportStrategy.SMTP, mapOf("mail.smtp.starttls.enable" to "false")),
+    SMTPS(JavaMailerTransportStrategy.SMTPS),
 }

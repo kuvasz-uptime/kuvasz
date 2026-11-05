@@ -1,10 +1,16 @@
-## 4.6.0 <small>2026-10-25</small> { id="4.6.0" data-toc-label="4.6.0" }
+## 4.6.1 <small>2026-11-xx</small> { id="4.6.1" data-toc-label="4.6.1" }
 
 !!! question "Make your voice heard!"
 
     There is a **short questionnaire about Kuvasz** in general, which you can fill out anonymously. It takes only a few minutes, and your feedback is highly appreciated as it helps me to focus on the most important features and improvements in the future. You can find it [**here**](https://forms.gle/Lb1q6CmW8eUgVbNr9).
 
     _Thanks, Adam_
+
+### Fixes
+
+- **Sending emails without encryption was not possible**: the documentation said that the `SMTP` [**transport strategy**](setup/configuration.md#transport-strategy) sends emails without encryption, but it actually switches to an encrypted connection (STARTTLS) whenever the mail server offers it. So, if your mail server offered encryption with a self-signed certificate, or with one from your own certificate authority, _Kuvasz_ did not trust it, and failed to start. If you want to send emails **without encryption**, even if the server offers it (e.g. on a local network), use the new `SMTP_PLAIN` transport strategy. The `SMTP` one works as before, and its documentation is fixed too ([#577](https://github.com/kuvasz-uptime/kuvasz/issues/577)).
+
+## 4.6.0 <small>2026-10-25</small> { id="4.6.0" data-toc-label="4.6.0" }
 
 ### 🚀 To Infinity and Beyond!
 

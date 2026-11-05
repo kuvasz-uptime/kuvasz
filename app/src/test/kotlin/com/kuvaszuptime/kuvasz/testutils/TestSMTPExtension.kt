@@ -12,21 +12,22 @@ class KGenericContainer(imageName: String) : GenericContainer<KGenericContainer>
 
 object TestSMTPExtension : TestListener, ConstructorExtension {
 
+    const val MAILPIT_IMAGE = "axllent/mailpit:v1.27.11"
+    const val MAILPIT_SMTP_PORT = 1025
+    const val MAILPIT_HTTP_PORT = 8025
+
     private lateinit var testContainer: GenericContainer<*>
-    private const val IMAGE_NAME = "mailhog/mailhog"
-    private const val SMTP_PORT = 1025
-    private const val HTTP_PORT = 8025
     private const val SMTP_CONFIG_HOST = "smtp-config.host"
     private const val SMTP_CONFIG_PORT = "smtp-config.port"
     private const val SMTP_CONFIG_TRANSPORT_STRATEGY = "smtp-config.transport-strategy"
 
     override fun <T : Spec> instantiate(clazz: KClass<T>): Spec? {
         clazz.findAnnotation<SMTPTest>()?.let { _ ->
-            testContainer = KGenericContainer(IMAGE_NAME).withExposedPorts(SMTP_PORT, HTTP_PORT)
+            testContainer = KGenericContainer(MAILPIT_IMAGE).withExposedPorts(MAILPIT_SMTP_PORT, MAILPIT_HTTP_PORT)
             testContainer.start()
 
             System.setProperty(SMTP_CONFIG_HOST, testContainer.host)
-            System.setProperty(SMTP_CONFIG_PORT, testContainer.getMappedPort(SMTP_PORT).toString())
+            System.setProperty(SMTP_CONFIG_PORT, testContainer.getMappedPort(MAILPIT_SMTP_PORT).toString())
             System.setProperty(SMTP_CONFIG_TRANSPORT_STRATEGY, TransportStrategy.SMTP.name)
         }
         return null
