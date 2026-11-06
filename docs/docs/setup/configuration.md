@@ -606,7 +606,7 @@ The **transport strategy** to use for sending emails:
 - `SMTP_TLS` (default): starts without encryption, then always switches to an encrypted connection (STARTTLS). If the server does not support this, sending fails.
 - `SMTPS`: the connection is encrypted from the start (implicit SSL/TLS).
 - `SMTP`: starts without encryption, and switches to an encrypted connection (STARTTLS) only if the server offers it. If the server does not offer it, emails are sent without encryption.
-- `SMTP_PLAIN` (since 4.6.1): never uses encryption, even if the server offers it.
+- `SMTP_PLAIN` (since 4.7.0): never uses encryption, even if the server offers it.
 
 In all modes except `SMTP_PLAIN`, the server's certificate has to be trusted by Kuvasz. If your mail server uses a self-signed certificate or one from your own certificate authority, and it offers STARTTLS, `SMTP` fails to connect. In that case, use `SMTP_PLAIN` if sending emails without encryption is fine for you (e.g. on a local network).
 

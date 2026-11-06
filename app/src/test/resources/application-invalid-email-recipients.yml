@@ -1,0 +1,7 @@
+integrations:
+  email:
+    - name: blank_recipient
+      from-address: noreply@kuvasz.dev
+      to-address:
+        - ops@kuvasz.dev
+        - " "

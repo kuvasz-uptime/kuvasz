@@ -12,6 +12,7 @@ import com.kuvaszuptime.kuvasz.models.events.UptimeMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.formatters.PlainTextMessageFormatter
 import com.kuvaszuptime.kuvasz.models.events.formatters.getEmoji
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.recipientAddresses
 import jakarta.mail.Message
 import org.simplejavamail.api.email.Email
 import org.simplejavamail.email.EmailBuilder
@@ -21,35 +22,23 @@ class EmailFactory(private val config: EmailNotificationConfig) {
 
     private val formatter = PlainTextMessageFormatter
 
-    fun fromUptimeEvent(event: UptimeMonitorEvent): Email =
-        createEmailBase()
-            .withSubject(event.getSubject())
-            .withPlainText(formatter.toFormattedMessage(event))
-            .buildEmail()
+    fun fromUptimeEvent(event: UptimeMonitorEvent): List<Email> =
+        buildEmails(event.getSubject(), formatter.toFormattedMessage(event))
 
-    fun fromSSLEvent(event: SSLMonitorEvent): Email =
-        createEmailBase()
-            .withSubject(event.getSubject())
-            .withPlainText(formatter.toFormattedMessage(event))
-            .buildEmail()
+    fun fromSSLEvent(event: SSLMonitorEvent): List<Email> =
+        buildEmails(event.getSubject(), formatter.toFormattedMessage(event))
 
-    fun fromMaintenanceEvent(event: MaintenanceWindowEvent): Email =
-        createEmailBase()
-            .withSubject(event.getSubject())
-            .withPlainText(formatter.toFormattedMessage(event))
-            .buildEmail()
+    fun fromMaintenanceEvent(event: MaintenanceWindowEvent): List<Email> =
+        buildEmails(event.getSubject(), formatter.toFormattedMessage(event))
 
-    fun fromDnsRecordsChangedEvent(event: DnsRecordsChangedEvent): Email =
-        createEmailBase()
-            .withSubject(event.getSubject())
-            .withPlainText(formatter.toFormattedMessage(event))
-            .buildEmail()
+    fun fromDnsRecordsChangedEvent(event: DnsRecordsChangedEvent): List<Email> =
+        buildEmails(event.getSubject(), formatter.toFormattedMessage(event))
 
-    fun fromDockerContainerRestartedEvent(event: DockerContainerRestartedEvent): Email =
-        createEmailBase()
-            .withSubject(event.getSubject())
-            .withPlainText(formatter.toFormattedMessage(event))
-            .buildEmail()
+    fun fromDockerContainerRestartedEvent(event: DockerContainerRestartedEvent): List<Email> =
+        buildEmails(event.getSubject(), formatter.toFormattedMessage(event))
+
+    fun testEmails(): List<Email> =
+        buildEmails(Messages.integrationTestMessage(), Messages.integrationTestMessage())
 
     private fun UptimeMonitorEvent.getSubject(): String =
         "[kuvasz-uptime] - ${getEmoji()} [${monitor.name}] is $uptimeStatus"
@@ -79,14 +68,27 @@ class EmailFactory(private val config: EmailNotificationConfig) {
         return "[kuvasz-uptime] - ${getEmoji()} $statusString"
     }
 
-    private fun createEmailBase() =
-        EmailBuilder
-            .startingBlank()
-            .withRecipients(config.recipient())
-            .from(config.fromAddress, config.fromAddress)
-}
+    /**
+     * Builds one email with every recipient in To, or one email per recipient if
+     * [EmailNotificationConfig.separateEmails] is enabled.
+     */
+    private fun buildEmails(subject: String, plainText: String): List<Email> {
+        val recipientGroups = config.recipientAddresses().let { addresses ->
+            if (config.separateEmails) addresses.map(::listOf) else listOf(addresses)
+        }
+        return recipientGroups.map { addresses ->
+            EmailBuilder
+                .startingBlank()
+                .withRecipients(addresses.map { address -> address.toRecipient() })
+                .from(config.fromAddress, config.fromAddress)
+                .withSubject(subject)
+                .withPlainText(plainText)
+                .buildEmail()
+        }
+    }
 
-fun EmailNotificationConfig.recipient() = RecipientBuilder()
-    .withAddress(toAddress)
-    .withType(Message.RecipientType.TO)
-    .build()
+    private fun String.toRecipient() = RecipientBuilder()
+        .withAddress(this)
+        .withType(Message.RecipientType.TO)
+        .build()
+}

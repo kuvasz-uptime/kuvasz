@@ -28,6 +28,7 @@ import com.kuvaszuptime.kuvasz.models.events.TcpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.TcpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.id
+import com.kuvaszuptime.kuvasz.models.handlers.recipientAddresses
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
 import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
@@ -51,6 +52,8 @@ import io.kotest.engine.test.TestResult
 import io.kotest.inspectors.forAll
 import io.kotest.inspectors.forNone
 import io.kotest.inspectors.forOne
+import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -85,7 +88,9 @@ class SMTPEventHandlerTest(
     init {
         val eventDispatcher = EventDispatcher()
         val mailerSpy = spyk(smtpMailer, recordPrivateCalls = true)
+        // It has multiple recipients and relies on the default separate emails, so it sends one email per recipient
         val globalEmailConfig = emailNotificationConfigs.first { it.global }
+        // It has multiple recipients with separate emails disabled, so it sends one email with all of them in To
         val otherEmailConfig = emailNotificationConfigs.first { !it.global && it.enabled }
         val disabledEmailConfig = emailNotificationConfigs.first { !it.enabled }
 
@@ -124,32 +129,32 @@ class SMTPEventHandlerTest(
                     previousEvent = null
                 )
                 // Email text and subject are not config specific
-                val expectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(event)
+                val expectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(event).first()
 
                 eventDispatcher.testDispatch(event)
 
                 then("it should send an email about the event to every enabled integration") {
                     val sentEmails = mutableListOf<Email>()
 
-                    verify(exactly = 2) { mailerSpy.sendAsync(capture(sentEmails)) }
+                    verify(exactly = 3) { mailerSpy.sendAsync(capture(sentEmails)) }
                     sentEmails.forAll { email ->
                         // Email text and subject are not config specific
                         email.plainText shouldBe expectedEmail.plainText
                         email.subject shouldBe expectedEmail.subject
                         email.subject shouldContain "is DOWN"
                     }
-                    sentEmails.forOne { fromGlobalConfig ->
-                        fromGlobalConfig.fromRecipient.shouldNotBeNull().address shouldBe globalEmailConfig.fromAddress
-                        fromGlobalConfig.toRecipients.single().address shouldBe globalEmailConfig.toAddress
-                    }
+                    sentEmails.filter { email -> email.fromRecipient?.address == globalEmailConfig.fromAddress }
+                        .shouldBeSentSeparatelyTo(globalEmailConfig)
                     sentEmails.forOne { fromOtherConfig ->
                         fromOtherConfig.fromRecipient.shouldNotBeNull().address shouldBe otherEmailConfig.fromAddress
-                        fromOtherConfig.toRecipients.single().address shouldBe otherEmailConfig.toAddress
+                        fromOtherConfig.toRecipients.map { it.address } shouldContainExactly
+                            otherEmailConfig.recipientAddresses()
                     }
                     sentEmails.forNone { fromDisabledConfig ->
                         fromDisabledConfig.fromRecipient.shouldNotBeNull().address shouldBe
                             disabledEmailConfig.fromAddress
-                        fromDisabledConfig.toRecipients.single().address shouldBe disabledEmailConfig.toAddress
+                        fromDisabledConfig.toRecipients.map { it.address } shouldContainExactly
+                            disabledEmailConfig.recipientAddresses()
                     }
                 }
             }
@@ -188,7 +193,7 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.testDispatch(firstEvent)
                 val firstUptimeRecord = httpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
-                val expectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(firstEvent)
+                val expectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(firstEvent).first()
 
                 val secondEvent = HttpMonitorDownEvent(
                     monitor = monitor,
@@ -198,14 +203,17 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.testDispatch(secondEvent)
 
-                then("it should send only one email about them") {
-                    val slot = slot<Email>()
+                then("it should send only one email about them to each recipient") {
+                    val sentEmails = mutableListOf<Email>()
 
-                    verify(exactly = 1) { mailerSpy.sendAsync(capture(slot)) }
-                    slot.captured.plainText shouldContain "500 Internal Server Error"
-                    slot.captured.plainText shouldBe expectedEmail.plainText
-                    slot.captured.subject shouldContain "is DOWN"
-                    slot.captured.subject shouldBe expectedEmail.subject
+                    verify(exactly = 2) { mailerSpy.sendAsync(capture(sentEmails)) }
+                    sentEmails.shouldBeSentSeparatelyTo(globalEmailConfig)
+                    sentEmails.forAll { email ->
+                        email.plainText shouldContain "500 Internal Server Error"
+                        email.plainText shouldBe expectedEmail.plainText
+                        email.subject shouldContain "is DOWN"
+                        email.subject shouldBe expectedEmail.subject
+                    }
                 }
             }
 
@@ -228,20 +236,24 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.testDispatch(secondEvent)
 
-                val firstExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(firstEvent)
-                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(secondEvent)
+                val firstExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(firstEvent).first()
+                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(secondEvent).first()
 
-                then("it should send two different emails about them") {
+                then("it should send two different emails about them to each recipient") {
                     val emailsSent = mutableListOf<Email>()
 
-                    verify(exactly = 2) { mailerSpy.sendAsync(capture(emailsSent)) }
-                    emailsSent[0].plainText shouldBe firstExpectedEmail.plainText
-                    emailsSent[0].subject shouldContain "is DOWN"
-                    emailsSent[0].subject shouldBe firstExpectedEmail.subject
-                    emailsSent[1].plainText shouldContain "Latency: 1000ms"
-                    emailsSent[1].plainText shouldBe secondExpectedEmail.plainText
-                    emailsSent[1].subject shouldContain "is UP"
-                    emailsSent[1].subject shouldBe secondExpectedEmail.subject
+                    verify(exactly = 4) { mailerSpy.sendAsync(capture(emailsSent)) }
+                    emailsSent.take(2).forAll { email ->
+                        email.plainText shouldBe firstExpectedEmail.plainText
+                        email.subject shouldContain "is DOWN"
+                        email.subject shouldBe firstExpectedEmail.subject
+                    }
+                    emailsSent.drop(2).forAll { email ->
+                        email.plainText shouldContain "Latency: 1000ms"
+                        email.plainText shouldBe secondExpectedEmail.plainText
+                        email.subject shouldContain "is UP"
+                        email.subject shouldBe secondExpectedEmail.subject
+                    }
                 }
             }
 
@@ -264,15 +276,18 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.testDispatch(secondEvent)
 
-                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(secondEvent)
+                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(secondEvent).first()
 
                 then("it should send an email only about the down event") {
-                    val emailSent = slot<Email>()
+                    val sentEmails = mutableListOf<Email>()
 
-                    verify(exactly = 1) { mailerSpy.sendAsync(capture(emailSent)) }
-                    emailSent.captured.plainText shouldBe secondExpectedEmail.plainText
-                    emailSent.captured.subject shouldContain "is DOWN"
-                    emailSent.captured.subject shouldBe secondExpectedEmail.subject
+                    verify(exactly = 2) { mailerSpy.sendAsync(capture(sentEmails)) }
+                    sentEmails.shouldBeSentSeparatelyTo(globalEmailConfig)
+                    sentEmails.forAll { email ->
+                        email.plainText shouldBe secondExpectedEmail.plainText
+                        email.subject shouldContain "is DOWN"
+                        email.subject shouldBe secondExpectedEmail.subject
+                    }
                 }
             }
         }
@@ -307,32 +322,32 @@ class SMTPEventHandlerTest(
                     previousEvent = null
                 )
                 // Email text and subject are not config specific
-                val expectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(event)
+                val expectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(event).first()
 
                 eventDispatcher.testDispatch(event)
 
                 then("it should send an email about the event to every enabled integration") {
                     val sentEmails = mutableListOf<Email>()
 
-                    verify(exactly = 2) { mailerSpy.sendAsync(capture(sentEmails)) }
+                    verify(exactly = 3) { mailerSpy.sendAsync(capture(sentEmails)) }
                     sentEmails.forAll { email ->
                         // Email text and subject are not config specific
                         email.plainText shouldBe expectedEmail.plainText
                         email.subject shouldBe expectedEmail.subject
                         email.subject shouldContain "is DOWN"
                     }
-                    sentEmails.forOne { fromGlobalConfig ->
-                        fromGlobalConfig.fromRecipient.shouldNotBeNull().address shouldBe globalEmailConfig.fromAddress
-                        fromGlobalConfig.toRecipients.single().address shouldBe globalEmailConfig.toAddress
-                    }
+                    sentEmails.filter { email -> email.fromRecipient?.address == globalEmailConfig.fromAddress }
+                        .shouldBeSentSeparatelyTo(globalEmailConfig)
                     sentEmails.forOne { fromOtherConfig ->
                         fromOtherConfig.fromRecipient.shouldNotBeNull().address shouldBe otherEmailConfig.fromAddress
-                        fromOtherConfig.toRecipients.single().address shouldBe otherEmailConfig.toAddress
+                        fromOtherConfig.toRecipients.map { it.address } shouldContainExactly
+                            otherEmailConfig.recipientAddresses()
                     }
                     sentEmails.forNone { fromDisabledConfig ->
                         fromDisabledConfig.fromRecipient.shouldNotBeNull().address shouldBe
                             disabledEmailConfig.fromAddress
-                        fromDisabledConfig.toRecipients.single().address shouldBe disabledEmailConfig.toAddress
+                        fromDisabledConfig.toRecipients.map { it.address } shouldContainExactly
+                            disabledEmailConfig.recipientAddresses()
                     }
                 }
             }
@@ -366,7 +381,7 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.testDispatch(firstEvent)
                 val firstUptimeRecord = pushUptimeEventRepository.fetchByMonitorId(monitor.id).single()
-                val expectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(firstEvent)
+                val expectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(firstEvent).first()
 
                 val secondEvent = PushMonitorDownEvent(
                     monitor = monitor,
@@ -375,14 +390,17 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.testDispatch(secondEvent)
 
-                then("it should send only one email about them") {
-                    val slot = slot<Email>()
+                then("it should send only one email about them to each recipient") {
+                    val sentEmails = mutableListOf<Email>()
 
-                    verify(exactly = 1) { mailerSpy.sendAsync(capture(slot)) }
-                    slot.captured.plainText shouldContain "First error"
-                    slot.captured.plainText shouldBe expectedEmail.plainText
-                    slot.captured.subject shouldContain "is DOWN"
-                    slot.captured.subject shouldBe expectedEmail.subject
+                    verify(exactly = 2) { mailerSpy.sendAsync(capture(sentEmails)) }
+                    sentEmails.shouldBeSentSeparatelyTo(globalEmailConfig)
+                    sentEmails.forAll { email ->
+                        email.plainText shouldContain "First error"
+                        email.plainText shouldBe expectedEmail.plainText
+                        email.subject shouldContain "is DOWN"
+                        email.subject shouldBe expectedEmail.subject
+                    }
                 }
             }
 
@@ -402,19 +420,23 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.testDispatch(secondEvent)
 
-                val firstExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(firstEvent)
-                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(secondEvent)
+                val firstExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(firstEvent).first()
+                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(secondEvent).first()
 
-                then("it should send two different emails about them") {
+                then("it should send two different emails about them to each recipient") {
                     val emailsSent = mutableListOf<Email>()
 
-                    verify(exactly = 2) { mailerSpy.sendAsync(capture(emailsSent)) }
-                    emailsSent[0].plainText shouldBe firstExpectedEmail.plainText
-                    emailsSent[0].subject shouldContain "is DOWN"
-                    emailsSent[0].subject shouldBe firstExpectedEmail.subject
-                    emailsSent[1].plainText shouldBe secondExpectedEmail.plainText
-                    emailsSent[1].subject shouldContain "is UP"
-                    emailsSent[1].subject shouldBe secondExpectedEmail.subject
+                    verify(exactly = 4) { mailerSpy.sendAsync(capture(emailsSent)) }
+                    emailsSent.take(2).forAll { email ->
+                        email.plainText shouldBe firstExpectedEmail.plainText
+                        email.subject shouldContain "is DOWN"
+                        email.subject shouldBe firstExpectedEmail.subject
+                    }
+                    emailsSent.drop(2).forAll { email ->
+                        email.plainText shouldBe secondExpectedEmail.plainText
+                        email.subject shouldContain "is UP"
+                        email.subject shouldBe secondExpectedEmail.subject
+                    }
                 }
             }
 
@@ -434,15 +456,18 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.testDispatch(secondEvent)
 
-                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(secondEvent)
+                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(secondEvent).first()
 
                 then("it should send an email only about the down event") {
-                    val emailSent = slot<Email>()
+                    val sentEmails = mutableListOf<Email>()
 
-                    verify(exactly = 1) { mailerSpy.sendAsync(capture(emailSent)) }
-                    emailSent.captured.plainText shouldBe secondExpectedEmail.plainText
-                    emailSent.captured.subject shouldContain "is DOWN"
-                    emailSent.captured.subject shouldBe secondExpectedEmail.subject
+                    verify(exactly = 2) { mailerSpy.sendAsync(capture(sentEmails)) }
+                    sentEmails.shouldBeSentSeparatelyTo(globalEmailConfig)
+                    sentEmails.forAll { email ->
+                        email.plainText shouldBe secondExpectedEmail.plainText
+                        email.subject shouldContain "is DOWN"
+                        email.subject shouldBe secondExpectedEmail.subject
+                    }
                 }
             }
         }
@@ -479,31 +504,31 @@ class SMTPEventHandlerTest(
                     previousEvent = null,
                     packetLossPercentage = 100
                 )
-                val expectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(event)
+                val expectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(event).first()
 
                 eventDispatcher.testDispatch(event)
 
                 then("it should send an email about the event to every enabled integration") {
                     val sentEmails = mutableListOf<Email>()
 
-                    verify(exactly = 2) { mailerSpy.sendAsync(capture(sentEmails)) }
+                    verify(exactly = 3) { mailerSpy.sendAsync(capture(sentEmails)) }
                     sentEmails.forAll { email ->
                         email.plainText shouldBe expectedEmail.plainText
                         email.subject shouldBe expectedEmail.subject
                         email.subject shouldContain "is DOWN"
                     }
-                    sentEmails.forOne { fromGlobalConfig ->
-                        fromGlobalConfig.fromRecipient.shouldNotBeNull().address shouldBe globalEmailConfig.fromAddress
-                        fromGlobalConfig.toRecipients.single().address shouldBe globalEmailConfig.toAddress
-                    }
+                    sentEmails.filter { email -> email.fromRecipient?.address == globalEmailConfig.fromAddress }
+                        .shouldBeSentSeparatelyTo(globalEmailConfig)
                     sentEmails.forOne { fromOtherConfig ->
                         fromOtherConfig.fromRecipient.shouldNotBeNull().address shouldBe otherEmailConfig.fromAddress
-                        fromOtherConfig.toRecipients.single().address shouldBe otherEmailConfig.toAddress
+                        fromOtherConfig.toRecipients.map { it.address } shouldContainExactly
+                            otherEmailConfig.recipientAddresses()
                     }
                     sentEmails.forNone { fromDisabledConfig ->
                         fromDisabledConfig.fromRecipient.shouldNotBeNull().address shouldBe
                             disabledEmailConfig.fromAddress
-                        fromDisabledConfig.toRecipients.single().address shouldBe disabledEmailConfig.toAddress
+                        fromDisabledConfig.toRecipients.map { it.address } shouldContainExactly
+                            disabledEmailConfig.recipientAddresses()
                     }
                 }
             }
@@ -542,7 +567,7 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.testDispatch(firstEvent)
                 val firstUptimeRecord = icmpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
-                val expectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(firstEvent)
+                val expectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(firstEvent).first()
 
                 val secondEvent = IcmpMonitorDownEvent(
                     monitor = monitor,
@@ -552,13 +577,16 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.testDispatch(secondEvent)
 
-                then("it should send only one email about them") {
-                    val slot = slot<Email>()
+                then("it should send only one email about them to each recipient") {
+                    val sentEmails = mutableListOf<Email>()
 
-                    verify(exactly = 1) { mailerSpy.sendAsync(capture(slot)) }
-                    slot.captured.plainText shouldBe expectedEmail.plainText
-                    slot.captured.subject shouldContain "is DOWN"
-                    slot.captured.subject shouldBe expectedEmail.subject
+                    verify(exactly = 2) { mailerSpy.sendAsync(capture(sentEmails)) }
+                    sentEmails.shouldBeSentSeparatelyTo(globalEmailConfig)
+                    sentEmails.forAll { email ->
+                        email.plainText shouldBe expectedEmail.plainText
+                        email.subject shouldContain "is DOWN"
+                        email.subject shouldBe expectedEmail.subject
+                    }
                 }
             }
 
@@ -581,19 +609,23 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.testDispatch(secondEvent)
 
-                val firstExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(firstEvent)
-                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(secondEvent)
+                val firstExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(firstEvent).first()
+                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(secondEvent).first()
 
-                then("it should send two different emails about them") {
+                then("it should send two different emails about them to each recipient") {
                     val emailsSent = mutableListOf<Email>()
 
-                    verify(exactly = 2) { mailerSpy.sendAsync(capture(emailsSent)) }
-                    emailsSent[0].plainText shouldBe firstExpectedEmail.plainText
-                    emailsSent[0].subject shouldContain "is DOWN"
-                    emailsSent[0].subject shouldBe firstExpectedEmail.subject
-                    emailsSent[1].plainText shouldBe secondExpectedEmail.plainText
-                    emailsSent[1].subject shouldContain "is UP"
-                    emailsSent[1].subject shouldBe secondExpectedEmail.subject
+                    verify(exactly = 4) { mailerSpy.sendAsync(capture(emailsSent)) }
+                    emailsSent.take(2).forAll { email ->
+                        email.plainText shouldBe firstExpectedEmail.plainText
+                        email.subject shouldContain "is DOWN"
+                        email.subject shouldBe firstExpectedEmail.subject
+                    }
+                    emailsSent.drop(2).forAll { email ->
+                        email.plainText shouldBe secondExpectedEmail.plainText
+                        email.subject shouldContain "is UP"
+                        email.subject shouldBe secondExpectedEmail.subject
+                    }
                 }
             }
 
@@ -616,15 +648,18 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.testDispatch(secondEvent)
 
-                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(secondEvent)
+                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(secondEvent).first()
 
                 then("it should send an email only about the down event") {
-                    val emailSent = slot<Email>()
+                    val sentEmails = mutableListOf<Email>()
 
-                    verify(exactly = 1) { mailerSpy.sendAsync(capture(emailSent)) }
-                    emailSent.captured.plainText shouldBe secondExpectedEmail.plainText
-                    emailSent.captured.subject shouldContain "is DOWN"
-                    emailSent.captured.subject shouldBe secondExpectedEmail.subject
+                    verify(exactly = 2) { mailerSpy.sendAsync(capture(sentEmails)) }
+                    sentEmails.shouldBeSentSeparatelyTo(globalEmailConfig)
+                    sentEmails.forAll { email ->
+                        email.plainText shouldBe secondExpectedEmail.plainText
+                        email.subject shouldContain "is DOWN"
+                        email.subject shouldBe secondExpectedEmail.subject
+                    }
                 }
             }
         }
@@ -659,31 +694,31 @@ class SMTPEventHandlerTest(
                     error = "Connection refused",
                     previousEvent = null,
                 )
-                val expectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(event)
+                val expectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(event).first()
 
                 eventDispatcher.testDispatch(event)
 
                 then("it should send an email about the event to every enabled integration") {
                     val sentEmails = mutableListOf<Email>()
 
-                    verify(exactly = 2) { mailerSpy.sendAsync(capture(sentEmails)) }
+                    verify(exactly = 3) { mailerSpy.sendAsync(capture(sentEmails)) }
                     sentEmails.forAll { email ->
                         email.plainText shouldBe expectedEmail.plainText
                         email.subject shouldBe expectedEmail.subject
                         email.subject shouldContain "is DOWN"
                     }
-                    sentEmails.forOne { fromGlobalConfig ->
-                        fromGlobalConfig.fromRecipient.shouldNotBeNull().address shouldBe globalEmailConfig.fromAddress
-                        fromGlobalConfig.toRecipients.single().address shouldBe globalEmailConfig.toAddress
-                    }
+                    sentEmails.filter { email -> email.fromRecipient?.address == globalEmailConfig.fromAddress }
+                        .shouldBeSentSeparatelyTo(globalEmailConfig)
                     sentEmails.forOne { fromOtherConfig ->
                         fromOtherConfig.fromRecipient.shouldNotBeNull().address shouldBe otherEmailConfig.fromAddress
-                        fromOtherConfig.toRecipients.single().address shouldBe otherEmailConfig.toAddress
+                        fromOtherConfig.toRecipients.map { it.address } shouldContainExactly
+                            otherEmailConfig.recipientAddresses()
                     }
                     sentEmails.forNone { fromDisabledConfig ->
                         fromDisabledConfig.fromRecipient.shouldNotBeNull().address shouldBe
                             disabledEmailConfig.fromAddress
-                        fromDisabledConfig.toRecipients.single().address shouldBe disabledEmailConfig.toAddress
+                        fromDisabledConfig.toRecipients.map { it.address } shouldContainExactly
+                            disabledEmailConfig.recipientAddresses()
                     }
                 }
             }
@@ -719,7 +754,7 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.testDispatch(firstEvent)
                 val firstUptimeRecord = tcpUptimeEventRepository.fetchByMonitorId(monitor.id).single()
-                val expectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(firstEvent)
+                val expectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(firstEvent).first()
 
                 val secondEvent = TcpMonitorDownEvent(
                     monitor = monitor,
@@ -728,13 +763,16 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.testDispatch(secondEvent)
 
-                then("it should send only one email about them") {
-                    val slot = slot<Email>()
+                then("it should send only one email about them to each recipient") {
+                    val sentEmails = mutableListOf<Email>()
 
-                    verify(exactly = 1) { mailerSpy.sendAsync(capture(slot)) }
-                    slot.captured.plainText shouldBe expectedEmail.plainText
-                    slot.captured.subject shouldContain "is DOWN"
-                    slot.captured.subject shouldBe expectedEmail.subject
+                    verify(exactly = 2) { mailerSpy.sendAsync(capture(sentEmails)) }
+                    sentEmails.shouldBeSentSeparatelyTo(globalEmailConfig)
+                    sentEmails.forAll { email ->
+                        email.plainText shouldBe expectedEmail.plainText
+                        email.subject shouldContain "is DOWN"
+                        email.subject shouldBe expectedEmail.subject
+                    }
                 }
             }
 
@@ -755,19 +793,23 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.testDispatch(secondEvent)
 
-                val firstExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(firstEvent)
-                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(secondEvent)
+                val firstExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(firstEvent).first()
+                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(secondEvent).first()
 
-                then("it should send two different emails about them") {
+                then("it should send two different emails about them to each recipient") {
                     val emailsSent = mutableListOf<Email>()
 
-                    verify(exactly = 2) { mailerSpy.sendAsync(capture(emailsSent)) }
-                    emailsSent[0].plainText shouldBe firstExpectedEmail.plainText
-                    emailsSent[0].subject shouldContain "is DOWN"
-                    emailsSent[0].subject shouldBe firstExpectedEmail.subject
-                    emailsSent[1].plainText shouldBe secondExpectedEmail.plainText
-                    emailsSent[1].subject shouldContain "is UP"
-                    emailsSent[1].subject shouldBe secondExpectedEmail.subject
+                    verify(exactly = 4) { mailerSpy.sendAsync(capture(emailsSent)) }
+                    emailsSent.take(2).forAll { email ->
+                        email.plainText shouldBe firstExpectedEmail.plainText
+                        email.subject shouldContain "is DOWN"
+                        email.subject shouldBe firstExpectedEmail.subject
+                    }
+                    emailsSent.drop(2).forAll { email ->
+                        email.plainText shouldBe secondExpectedEmail.plainText
+                        email.subject shouldContain "is UP"
+                        email.subject shouldBe secondExpectedEmail.subject
+                    }
                 }
             }
 
@@ -788,15 +830,18 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.testDispatch(secondEvent)
 
-                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(secondEvent)
+                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(secondEvent).first()
 
                 then("it should send an email only about the down event") {
-                    val emailSent = slot<Email>()
+                    val sentEmails = mutableListOf<Email>()
 
-                    verify(exactly = 1) { mailerSpy.sendAsync(capture(emailSent)) }
-                    emailSent.captured.plainText shouldBe secondExpectedEmail.plainText
-                    emailSent.captured.subject shouldContain "is DOWN"
-                    emailSent.captured.subject shouldBe secondExpectedEmail.subject
+                    verify(exactly = 2) { mailerSpy.sendAsync(capture(sentEmails)) }
+                    sentEmails.shouldBeSentSeparatelyTo(globalEmailConfig)
+                    sentEmails.forAll { email ->
+                        email.plainText shouldBe secondExpectedEmail.plainText
+                        email.subject shouldContain "is DOWN"
+                        email.subject shouldBe secondExpectedEmail.subject
+                    }
                 }
             }
         }
@@ -831,31 +876,31 @@ class SMTPEventHandlerTest(
                     error = "Connection refused",
                     previousEvent = null,
                 )
-                val expectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(event)
+                val expectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(event).first()
 
                 eventDispatcher.testDispatch(event)
 
                 then("it should send an email about the event to every enabled integration") {
                     val sentEmails = mutableListOf<Email>()
 
-                    verify(exactly = 2) { mailerSpy.sendAsync(capture(sentEmails)) }
+                    verify(exactly = 3) { mailerSpy.sendAsync(capture(sentEmails)) }
                     sentEmails.forAll { email ->
                         email.plainText shouldBe expectedEmail.plainText
                         email.subject shouldBe expectedEmail.subject
                         email.subject shouldContain "is DOWN"
                     }
-                    sentEmails.forOne { fromGlobalConfig ->
-                        fromGlobalConfig.fromRecipient.shouldNotBeNull().address shouldBe globalEmailConfig.fromAddress
-                        fromGlobalConfig.toRecipients.single().address shouldBe globalEmailConfig.toAddress
-                    }
+                    sentEmails.filter { email -> email.fromRecipient?.address == globalEmailConfig.fromAddress }
+                        .shouldBeSentSeparatelyTo(globalEmailConfig)
                     sentEmails.forOne { fromOtherConfig ->
                         fromOtherConfig.fromRecipient.shouldNotBeNull().address shouldBe otherEmailConfig.fromAddress
-                        fromOtherConfig.toRecipients.single().address shouldBe otherEmailConfig.toAddress
+                        fromOtherConfig.toRecipients.map { it.address } shouldContainExactly
+                            otherEmailConfig.recipientAddresses()
                     }
                     sentEmails.forNone { fromDisabledConfig ->
                         fromDisabledConfig.fromRecipient.shouldNotBeNull().address shouldBe
                             disabledEmailConfig.fromAddress
-                        fromDisabledConfig.toRecipients.single().address shouldBe disabledEmailConfig.toAddress
+                        fromDisabledConfig.toRecipients.map { it.address } shouldContainExactly
+                            disabledEmailConfig.recipientAddresses()
                     }
                 }
             }
@@ -891,7 +936,7 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.testDispatch(firstEvent)
                 val firstUptimeRecord = dnsUptimeEventRepository.fetchByMonitorId(monitor.id).single()
-                val expectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(firstEvent)
+                val expectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(firstEvent).first()
 
                 val secondEvent = DnsMonitorDownEvent(
                     monitor = monitor,
@@ -900,13 +945,16 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.testDispatch(secondEvent)
 
-                then("it should send only one email about them") {
-                    val slot = slot<Email>()
+                then("it should send only one email about them to each recipient") {
+                    val sentEmails = mutableListOf<Email>()
 
-                    verify(exactly = 1) { mailerSpy.sendAsync(capture(slot)) }
-                    slot.captured.plainText shouldBe expectedEmail.plainText
-                    slot.captured.subject shouldContain "is DOWN"
-                    slot.captured.subject shouldBe expectedEmail.subject
+                    verify(exactly = 2) { mailerSpy.sendAsync(capture(sentEmails)) }
+                    sentEmails.shouldBeSentSeparatelyTo(globalEmailConfig)
+                    sentEmails.forAll { email ->
+                        email.plainText shouldBe expectedEmail.plainText
+                        email.subject shouldContain "is DOWN"
+                        email.subject shouldBe expectedEmail.subject
+                    }
                 }
             }
 
@@ -927,19 +975,23 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.testDispatch(secondEvent)
 
-                val firstExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(firstEvent)
-                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(secondEvent)
+                val firstExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(firstEvent).first()
+                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(secondEvent).first()
 
-                then("it should send two different emails about them") {
+                then("it should send two different emails about them to each recipient") {
                     val emailsSent = mutableListOf<Email>()
 
-                    verify(exactly = 2) { mailerSpy.sendAsync(capture(emailsSent)) }
-                    emailsSent[0].plainText shouldBe firstExpectedEmail.plainText
-                    emailsSent[0].subject shouldContain "is DOWN"
-                    emailsSent[0].subject shouldBe firstExpectedEmail.subject
-                    emailsSent[1].plainText shouldBe secondExpectedEmail.plainText
-                    emailsSent[1].subject shouldContain "is UP"
-                    emailsSent[1].subject shouldBe secondExpectedEmail.subject
+                    verify(exactly = 4) { mailerSpy.sendAsync(capture(emailsSent)) }
+                    emailsSent.take(2).forAll { email ->
+                        email.plainText shouldBe firstExpectedEmail.plainText
+                        email.subject shouldContain "is DOWN"
+                        email.subject shouldBe firstExpectedEmail.subject
+                    }
+                    emailsSent.drop(2).forAll { email ->
+                        email.plainText shouldBe secondExpectedEmail.plainText
+                        email.subject shouldContain "is UP"
+                        email.subject shouldBe secondExpectedEmail.subject
+                    }
                 }
             }
 
@@ -960,15 +1012,18 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.testDispatch(secondEvent)
 
-                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(secondEvent)
+                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromUptimeEvent(secondEvent).first()
 
                 then("it should send an email only about the down event") {
-                    val emailSent = slot<Email>()
+                    val sentEmails = mutableListOf<Email>()
 
-                    verify(exactly = 1) { mailerSpy.sendAsync(capture(emailSent)) }
-                    emailSent.captured.plainText shouldBe secondExpectedEmail.plainText
-                    emailSent.captured.subject shouldContain "is DOWN"
-                    emailSent.captured.subject shouldBe secondExpectedEmail.subject
+                    verify(exactly = 2) { mailerSpy.sendAsync(capture(sentEmails)) }
+                    sentEmails.shouldBeSentSeparatelyTo(globalEmailConfig)
+                    sentEmails.forAll { email ->
+                        email.plainText shouldBe secondExpectedEmail.plainText
+                        email.subject shouldContain "is DOWN"
+                        email.subject shouldBe secondExpectedEmail.subject
+                    }
                 }
             }
         }
@@ -988,14 +1043,14 @@ class SMTPEventHandlerTest(
                     previousRecords = mapOf(DnsRecordType.A to listOf("1.1.1.1")),
                     currentRecords = mapOf(DnsRecordType.A to listOf("2.2.2.2")),
                 )
-                val expectedEmail = EmailFactory(globalEmailConfig).fromDnsRecordsChangedEvent(event)
+                val expectedEmail = EmailFactory(globalEmailConfig).fromDnsRecordsChangedEvent(event).first()
 
                 eventDispatcher.testDispatch(event)
 
                 then("it should send a drift email to every enabled integration") {
                     val sentEmails = mutableListOf<Email>()
 
-                    verify(exactly = 2) { mailerSpy.sendAsync(capture(sentEmails)) }
+                    verify(exactly = 3) { mailerSpy.sendAsync(capture(sentEmails)) }
                     sentEmails.forAll { email ->
                         email.plainText shouldBe expectedEmail.plainText
                         email.subject shouldBe expectedEmail.subject
@@ -1004,7 +1059,8 @@ class SMTPEventHandlerTest(
                     sentEmails.forNone { fromDisabledConfig ->
                         fromDisabledConfig.fromRecipient.shouldNotBeNull().address shouldBe
                             disabledEmailConfig.fromAddress
-                        fromDisabledConfig.toRecipients.single().address shouldBe disabledEmailConfig.toAddress
+                        fromDisabledConfig.toRecipients.map { it.address } shouldContainExactly
+                            disabledEmailConfig.recipientAddresses()
                     }
                 }
             }
@@ -1025,14 +1081,14 @@ class SMTPEventHandlerTest(
                     previousRestartCount = 2,
                     currentRestartCount = 3,
                 )
-                val expectedEmail = EmailFactory(globalEmailConfig).fromDockerContainerRestartedEvent(event)
+                val expectedEmail = EmailFactory(globalEmailConfig).fromDockerContainerRestartedEvent(event).first()
 
                 eventDispatcher.testDispatch(event)
 
                 then("it should send a restart email to every enabled integration") {
                     val sentEmails = mutableListOf<Email>()
 
-                    verify(exactly = 2) { mailerSpy.sendAsync(capture(sentEmails)) }
+                    verify(exactly = 3) { mailerSpy.sendAsync(capture(sentEmails)) }
                     sentEmails.forAll { email ->
                         email.plainText shouldBe expectedEmail.plainText
                         email.subject shouldBe expectedEmail.subject
@@ -1041,7 +1097,8 @@ class SMTPEventHandlerTest(
                     sentEmails.forNone { fromDisabledConfig ->
                         fromDisabledConfig.fromRecipient.shouldNotBeNull().address shouldBe
                             disabledEmailConfig.fromAddress
-                        fromDisabledConfig.toRecipients.single().address shouldBe disabledEmailConfig.toAddress
+                        fromDisabledConfig.toRecipients.map { it.address } shouldContainExactly
+                            disabledEmailConfig.recipientAddresses()
                     }
                 }
             }
@@ -1078,32 +1135,32 @@ class SMTPEventHandlerTest(
                     error = SSLValidationError("ssl error")
                 )
                 // Email text and subject are not config specific
-                val expectedEmail = EmailFactory(globalEmailConfig).fromSSLEvent(event)
+                val expectedEmail = EmailFactory(globalEmailConfig).fromSSLEvent(event).first()
 
                 eventDispatcher.testDispatch(event)
 
                 then("it should send an email about the event to every enabled integrations") {
                     val slot = mutableListOf<Email>()
 
-                    verify(exactly = 2) { mailerSpy.sendAsync(capture(slot)) }
+                    verify(exactly = 3) { mailerSpy.sendAsync(capture(slot)) }
                     slot.forAll { email ->
                         // Email text and subject are not config specific
                         email.plainText shouldBe expectedEmail.plainText
                         email.subject shouldBe expectedEmail.subject
                         email.subject shouldContain "has an INVALID"
                     }
-                    slot.forOne { fromGlobalConfig ->
-                        fromGlobalConfig.fromRecipient.shouldNotBeNull().address shouldBe globalEmailConfig.fromAddress
-                        fromGlobalConfig.toRecipients.single().address shouldBe globalEmailConfig.toAddress
-                    }
+                    slot.filter { email -> email.fromRecipient?.address == globalEmailConfig.fromAddress }
+                        .shouldBeSentSeparatelyTo(globalEmailConfig)
                     slot.forOne { fromOtherConfig ->
                         fromOtherConfig.fromRecipient.shouldNotBeNull().address shouldBe otherEmailConfig.fromAddress
-                        fromOtherConfig.toRecipients.single().address shouldBe otherEmailConfig.toAddress
+                        fromOtherConfig.toRecipients.map { it.address } shouldContainExactly
+                            otherEmailConfig.recipientAddresses()
                     }
                     slot.forNone { fromDisabledConfig ->
                         fromDisabledConfig.fromRecipient.shouldNotBeNull().address shouldBe
                             disabledEmailConfig.fromAddress
-                        fromDisabledConfig.toRecipients.single().address shouldBe disabledEmailConfig.toAddress
+                        fromDisabledConfig.toRecipients.map { it.address } shouldContainExactly
+                            disabledEmailConfig.recipientAddresses()
                     }
                 }
             }
@@ -1139,7 +1196,7 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.testDispatch(firstEvent)
 
-                val expectedEmail = EmailFactory(globalEmailConfig).fromSSLEvent(firstEvent)
+                val expectedEmail = EmailFactory(globalEmailConfig).fromSSLEvent(firstEvent).first()
                 val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = SSLInvalidEvent(
@@ -1149,14 +1206,17 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.testDispatch(secondEvent)
 
-                then("it should send only one email about them") {
-                    val slot = slot<Email>()
+                then("it should send only one email about them to each recipient") {
+                    val sentEmails = mutableListOf<Email>()
 
-                    verify(exactly = 1) { mailerSpy.sendAsync(capture(slot)) }
-                    slot.captured.plainText shouldContain "ssl error1"
-                    slot.captured.plainText shouldBe expectedEmail.plainText
-                    slot.captured.subject shouldContain "has an INVALID"
-                    slot.captured.subject shouldBe expectedEmail.subject
+                    verify(exactly = 2) { mailerSpy.sendAsync(capture(sentEmails)) }
+                    sentEmails.shouldBeSentSeparatelyTo(globalEmailConfig)
+                    sentEmails.forAll { email ->
+                        email.plainText shouldContain "ssl error1"
+                        email.plainText shouldBe expectedEmail.plainText
+                        email.subject shouldContain "has an INVALID"
+                        email.subject shouldBe expectedEmail.subject
+                    }
                 }
             }
 
@@ -1177,19 +1237,23 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.testDispatch(secondEvent)
 
-                val firstExpectedEmail = EmailFactory(globalEmailConfig).fromSSLEvent(firstEvent)
-                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromSSLEvent(secondEvent)
+                val firstExpectedEmail = EmailFactory(globalEmailConfig).fromSSLEvent(firstEvent).first()
+                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromSSLEvent(secondEvent).first()
 
-                then("it should send two different emails about them") {
+                then("it should send two different emails about them to each recipient") {
                     val emailsSent = mutableListOf<Email>()
 
-                    verify(exactly = 2) { mailerSpy.sendAsync(capture(emailsSent)) }
-                    emailsSent[0].plainText shouldBe firstExpectedEmail.plainText
-                    emailsSent[0].subject shouldContain "has an INVALID"
-                    emailsSent[0].subject shouldBe firstExpectedEmail.subject
-                    emailsSent[1].plainText shouldBe secondExpectedEmail.plainText
-                    emailsSent[1].subject shouldContain "has a VALID"
-                    emailsSent[1].subject shouldBe secondExpectedEmail.subject
+                    verify(exactly = 4) { mailerSpy.sendAsync(capture(emailsSent)) }
+                    emailsSent.take(2).forAll { email ->
+                        email.plainText shouldBe firstExpectedEmail.plainText
+                        email.subject shouldContain "has an INVALID"
+                        email.subject shouldBe firstExpectedEmail.subject
+                    }
+                    emailsSent.drop(2).forAll { email ->
+                        email.plainText shouldBe secondExpectedEmail.plainText
+                        email.subject shouldContain "has a VALID"
+                        email.subject shouldBe secondExpectedEmail.subject
+                    }
                 }
             }
 
@@ -1210,15 +1274,18 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.testDispatch(secondEvent)
 
-                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromSSLEvent(secondEvent)
+                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromSSLEvent(secondEvent).first()
 
                 then("it should send an email, only about the invalidity") {
-                    val emailSent = slot<Email>()
+                    val sentEmails = mutableListOf<Email>()
 
-                    verify(exactly = 1) { mailerSpy.sendAsync(capture(emailSent)) }
-                    emailSent.captured.plainText shouldBe secondExpectedEmail.plainText
-                    emailSent.captured.subject shouldContain "has an INVALID"
-                    emailSent.captured.subject shouldBe secondExpectedEmail.subject
+                    verify(exactly = 2) { mailerSpy.sendAsync(capture(sentEmails)) }
+                    sentEmails.shouldBeSentSeparatelyTo(globalEmailConfig)
+                    sentEmails.forAll { email ->
+                        email.plainText shouldBe secondExpectedEmail.plainText
+                        email.subject shouldContain "has an INVALID"
+                        email.subject shouldBe secondExpectedEmail.subject
+                    }
                 }
             }
 
@@ -1229,17 +1296,20 @@ class SMTPEventHandlerTest(
                     certInfo = generateCertificateInfo(),
                     previousEvent = null
                 )
-                val expectedEmail = EmailFactory(globalEmailConfig).fromSSLEvent(event)
+                val expectedEmail = EmailFactory(globalEmailConfig).fromSSLEvent(event).first()
 
                 eventDispatcher.testDispatch(event)
 
                 then("it should send an email about the event") {
-                    val slot = slot<Email>()
+                    val sentEmails = mutableListOf<Email>()
 
-                    verify(exactly = 1) { mailerSpy.sendAsync(capture(slot)) }
-                    slot.captured.plainText shouldBe expectedEmail.plainText
-                    slot.captured.subject shouldContain "will expire soon"
-                    slot.captured.subject shouldBe expectedEmail.subject
+                    verify(exactly = 2) { mailerSpy.sendAsync(capture(sentEmails)) }
+                    sentEmails.shouldBeSentSeparatelyTo(globalEmailConfig)
+                    sentEmails.forAll { email ->
+                        email.plainText shouldBe expectedEmail.plainText
+                        email.subject shouldContain "will expire soon"
+                        email.subject shouldBe expectedEmail.subject
+                    }
                 }
             }
 
@@ -1252,7 +1322,7 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.testDispatch(firstEvent)
 
-                val expectedEmail = EmailFactory(globalEmailConfig).fromSSLEvent(firstEvent)
+                val expectedEmail = EmailFactory(globalEmailConfig).fromSSLEvent(firstEvent).first()
                 val firstSSLRecord = sslEventRepository.fetchByMonitorId(monitor.id).single()
 
                 val secondEvent = SSLWillExpireEvent(
@@ -1262,13 +1332,16 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.testDispatch(secondEvent)
 
-                then("it should send only one email about them") {
-                    val slot = slot<Email>()
+                then("it should send only one email about them to each recipient") {
+                    val sentEmails = mutableListOf<Email>()
 
-                    verify(exactly = 1) { mailerSpy.sendAsync(capture(slot)) }
-                    slot.captured.plainText shouldBe expectedEmail.plainText
-                    slot.captured.subject shouldContain "will expire soon"
-                    slot.captured.subject shouldBe expectedEmail.subject
+                    verify(exactly = 2) { mailerSpy.sendAsync(capture(sentEmails)) }
+                    sentEmails.shouldBeSentSeparatelyTo(globalEmailConfig)
+                    sentEmails.forAll { email ->
+                        email.plainText shouldBe expectedEmail.plainText
+                        email.subject shouldContain "will expire soon"
+                        email.subject shouldBe expectedEmail.subject
+                    }
                 }
             }
 
@@ -1289,15 +1362,18 @@ class SMTPEventHandlerTest(
                 )
                 eventDispatcher.testDispatch(secondEvent)
 
-                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromSSLEvent(secondEvent)
+                val secondExpectedEmail = EmailFactory(globalEmailConfig).fromSSLEvent(secondEvent).first()
 
                 then("it should send an email, only about the expiration") {
-                    val emailSent = slot<Email>()
+                    val sentEmails = mutableListOf<Email>()
 
-                    verify(exactly = 1) { mailerSpy.sendAsync(capture(emailSent)) }
-                    emailSent.captured.plainText shouldBe secondExpectedEmail.plainText
-                    emailSent.captured.subject shouldContain "will expire soon"
-                    emailSent.captured.subject shouldBe secondExpectedEmail.subject
+                    verify(exactly = 2) { mailerSpy.sendAsync(capture(sentEmails)) }
+                    sentEmails.shouldBeSentSeparatelyTo(globalEmailConfig)
+                    sentEmails.forAll { email ->
+                        email.plainText shouldBe secondExpectedEmail.plainText
+                        email.subject shouldContain "will expire soon"
+                        email.subject shouldBe secondExpectedEmail.subject
+                    }
                 }
             }
         }
@@ -1310,7 +1386,7 @@ class SMTPEventHandlerTest(
                     integrations = listOf(otherEmailConfig.id, disabledEmailConfig.id),
                 )
                 val startEvent = MaintenanceWindowStartEvent(window)
-                val expectedEmail = EmailFactory(otherEmailConfig).fromMaintenanceEvent(startEvent)
+                val expectedEmail = EmailFactory(otherEmailConfig).fromMaintenanceEvent(startEvent).single()
 
                 eventDispatcher.dispatch(startEvent)
 
@@ -1324,6 +1400,7 @@ class SMTPEventHandlerTest(
                     }
                     sentEmails.forOne { email ->
                         email.fromRecipient.shouldNotBeNull().address shouldBe otherEmailConfig.fromAddress
+                        email.toRecipients.map { it.address } shouldContainExactly otherEmailConfig.recipientAddresses()
                     }
                     sentEmails.forNone { email ->
                         email.fromRecipient.shouldNotBeNull().address shouldBe globalEmailConfig.fromAddress
@@ -1357,4 +1434,8 @@ class SMTPEventHandlerTest(
         clearAllMocks()
         super.afterTest(testCase, result)
     }
+}
+
+private fun List<Email>.shouldBeSentSeparatelyTo(config: EmailNotificationConfig) {
+    map { email -> email.toRecipients.single().address } shouldContainExactlyInAnyOrder config.recipientAddresses()
 }

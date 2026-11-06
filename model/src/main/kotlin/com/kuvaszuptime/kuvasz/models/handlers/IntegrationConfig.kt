@@ -2,6 +2,7 @@ package com.kuvaszuptime.kuvasz.models.handlers
 
 import com.kuvaszuptime.kuvasz.models.dto.IntegrationValidationMessages
 import com.kuvaszuptime.kuvasz.models.dto.Validation
+import com.kuvaszuptime.kuvasz.validation.NotBlankEntries
 import com.kuvaszuptime.kuvasz.validation.ValidHeaderNames
 import io.micronaut.context.annotation.EachProperty
 import io.micronaut.core.annotation.Introspected
@@ -43,11 +44,14 @@ interface PagerdutyConfig : IntegrationConfig {
 @Introspected
 interface EmailNotificationConfig : IntegrationConfig {
 
-    @get:NotBlank(message = IntegrationValidationMessages.EMAIL_INTEGRATION_TO_NOT_BLANK)
-    val toAddress: String
+    @get:NotBlankEntries(message = IntegrationValidationMessages.EMAIL_INTEGRATION_TO_NOT_BLANK)
+    val toAddress: List<String>
 
     @get:NotBlank(message = IntegrationValidationMessages.EMAIL_INTEGRATION_FROM_NOT_BLANK)
     val fromAddress: String
+
+    @get:Bindable(defaultValue = "true")
+    val separateEmails: Boolean
 
     companion object {
         const val IDENTIFIER = "email"
@@ -240,5 +244,11 @@ val IntegrationConfig.type: IntegrationType
 
 val IntegrationConfig.id: IntegrationID
     get() = IntegrationID(type = type, name = name)
+
+/**
+ * The configured recipients without the surrounding whitespace and the duplicates. Trimming is needed because a
+ * comma-separated value (e.g. `a@x.com, b@x.com` from an env variable) is bound into the list as-is.
+ */
+fun EmailNotificationConfig.recipientAddresses(): List<String> = toAddress.map { it.trim() }.distinct()
 
 typealias IntegrationMap = Map<IntegrationID, IntegrationConfig>

@@ -1,10 +1,14 @@
-## 4.6.1 <small>2026-11-xx</small> { id="4.6.1" data-toc-label="4.6.1" }
+## 4.7.0 <small>2026-11-xx</small> { id="4.7.0" data-toc-label="4.7.0" }
 
 !!! question "Make your voice heard!"
 
     There is a **short questionnaire about Kuvasz** in general, which you can fill out anonymously. It takes only a few minutes, and your feedback is highly appreciated as it helps me to focus on the most important features and improvements in the future. You can find it [**here**](https://forms.gle/Lb1q6CmW8eUgVbNr9).
 
     _Thanks, Adam_
+
+### Features
+
+- **More than one recipient for an email integration**: the [`to-address`](management/integrations.md#to-address) of an email integration can have **several addresses** now, either as a list in your _YAML_ file, or as one value with the addresses separated by commas (handy for environment variables). By default, every recipient gets an email of their own, so they don't see each other's addresses, and one wrong address doesn't stop the others from getting the email. If you'd rather like to send one email with every recipient in its "To" field, disable the new [`separate-emails`](management/integrations.md#separate-emails) option. Your existing email integrations keep working without any change. In the API response of the integrations, the new `toAddresses` field lists the recipients, and `separateEmails` shows how they get the emails. The `toAddress` field is deprecated: it still works, and it contains every recipient, separated by commas.
 
 ### Fixes
 

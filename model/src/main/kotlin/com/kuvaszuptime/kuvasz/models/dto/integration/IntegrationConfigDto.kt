@@ -17,6 +17,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.SlackNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookHttpMethod
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
+import com.kuvaszuptime.kuvasz.models.handlers.recipientAddresses
 import io.micronaut.core.annotation.Introspected
 import io.swagger.v3.oas.annotations.media.Schema
 
@@ -284,8 +285,19 @@ data class EmailNotificationConfigDto(
     override val excludedEvents: List<IntegrationEventType>,
     @param:Schema(description = "The email address from which notifications are sent", required = true)
     val fromAddress: String,
-    @param:Schema(description = "The email address to which notifications are sent", required = true)
+    @param:Schema(
+        description = "The recipients, comma-separated. Deprecated: use toAddresses",
+        required = true,
+        deprecated = true,
+    )
     val toAddress: String,
+    @param:Schema(description = "The email addresses to which notifications are sent", required = true)
+    val toAddresses: List<String>,
+    @param:Schema(
+        description = "Whether every recipient gets a separate email, instead of one email with every recipient in To",
+        required = true,
+    )
+    val separateEmails: Boolean,
 ) : IntegrationConfigDto {
     constructor(integrationID: IntegrationID, config: EmailNotificationConfig) : this(
         id = integrationID,
@@ -295,7 +307,9 @@ data class EmailNotificationConfigDto(
         global = config.global,
         excludedEvents = config.excludedEvents.orEmpty(),
         fromAddress = config.fromAddress,
-        toAddress = config.toAddress,
+        toAddress = config.recipientAddresses().joinToString(", "),
+        toAddresses = config.recipientAddresses(),
+        separateEmails = config.separateEmails,
     )
 }
 

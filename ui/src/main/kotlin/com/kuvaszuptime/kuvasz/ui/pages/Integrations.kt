@@ -217,7 +217,11 @@ private fun HtmlBlockTag.integrationsPageHeader() {
 }
 
 internal fun IntegrationConfigDto.detailsTooltip(): String? = when (this) {
-    is EmailNotificationConfigDto -> Messages.emailFromToDescription(fromAddress, toAddress)
+    is EmailNotificationConfigDto -> listOfNotNull(
+        Messages.emailFromToDescription(fromAddress, toAddresses.joinToString(", ")),
+        Messages.emailSeparateEmailsDescription().takeIf { separateEmails },
+    ).joinToString("<br>")
+
     is SlackBotNotificationConfigDto -> listOfNotNull(
         Messages.slackBotChannelIdDescription(channelId),
         reactionsDescription(),

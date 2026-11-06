@@ -5718,7 +5718,9 @@ components:
       - global
       - id
       - name
+      - separateEmails
       - toAddress
+      - toAddresses
       - type
       type: object
       properties:
@@ -5751,7 +5753,17 @@ components:
           description: The email address from which notifications are sent
         toAddress:
           type: string
-          description: The email address to which notifications are sent
+          description: "The recipients, comma-separated. Deprecated: use toAddresses"
+          deprecated: true
+        toAddresses:
+          type: array
+          description: The email addresses to which notifications are sent
+          items:
+            type: string
+        separateEmails:
+          type: boolean
+          description: "Whether every recipient gets a separate email, instead of\
+            \ one email with every recipient in To"
     EventSortField:
       type: string
       enum:

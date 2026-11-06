@@ -85,10 +85,13 @@ integrations:
   email:
     - name: test_implicitly_enabled
       from-address: noreply@other.dev
-      to-address: foo@bar.com
+      to-address: "foo@bar.com, baz@bar.com"
+      separate-emails: false
     - name: Global-343
       from-address: foo@bar.com
-      to-address: blabla@example.com
+      to-address:
+        - blabla@example.com
+        - other@example.com
       global: true
     - name: disabled
       from-address: jkfds@jklfds.com

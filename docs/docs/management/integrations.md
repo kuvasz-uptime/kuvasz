@@ -684,10 +684,24 @@ The email address from which the notifications will be sent. This is the address
 
 <!-- md:version 2.0.0 -->
 <!-- md:flag required -->
-<!-- md:type `string` -->
+<!-- md:type `string` or list -->
 <!-- md:yaml_prop `to-address` -->
 
-The email address **to which the notifications will be sent**.
+The email address, or addresses, **to which the notifications will be sent**. You need at least one address, and none of them can be empty.
+
+Since 4.7.0, you can give **more than one address**: as a list in your _YAML_ file, or as one value with the addresses separated by commas (e.g. `ops@example.com, dev@example.com`). If an address is listed more than once, it gets the email only once.
+
+### Separate emails
+
+<!-- md:version 4.7.0 -->
+<!-- md:default `true` -->
+<!-- md:type `boolean` -->
+<!-- md:yaml_prop `separate-emails` -->
+
+Decides how the notifications reach the recipients, if there is more than one of them:
+
+- `true`: **every recipient gets an email of their own**, with only their address in the "To" field. The recipients don't see each other's addresses, and if the mail server rejects one of the addresses, the others still get their emails.
+- `false`: **one email** is sent, with every recipient in its "To" field. Everyone can see who else got the email. Keep in mind that if the mail server rejects any of the addresses, **nobody gets the email**.
 
 ---
 
@@ -697,6 +711,12 @@ integrations:
     - name: email_implicitly_enabled
       from-address: noreply@kuvasz-uptime.dev
       to-address: your@email.address
+    - name: email_team
+      from-address: noreply@kuvasz-uptime.dev
+      to-address:
+        - ops@example.com
+        - dev@example.com
+      separate-emails: false
     - name: email_disabled
       from-address: noreply@other-sender.com
       to-address: other-recipient@blabla.com
