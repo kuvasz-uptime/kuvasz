@@ -680,6 +680,14 @@ The email integration allows you to send notifications via email. You can have m
 
 The email address from which the notifications will be sent. This is the address that will **appear in the "From" field** of the email.
 
+### From name
+
+<!-- md:version 4.8.0 -->
+<!-- md:type `string` -->
+<!-- md:yaml_prop `from-name` -->
+
+The display name of the sender, which will **appear next to the address in the "From" field** of the email (e.g. `Kuvasz Uptime <noreply@kuvasz-uptime.dev>`). If it's missing or blank, the [**`from-address`**](#from-address) is used as the name too. The name has to be a **single line**: _Kuvasz_ **refuses to start** if it contains a line break.
+
 ### To address
 
 <!-- md:version 2.0.0 -->
@@ -713,6 +721,7 @@ integrations:
       to-address: your@email.address
     - name: email_team
       from-address: noreply@kuvasz-uptime.dev
+      from-name: Kuvasz Uptime
       to-address:
         - ops@example.com
         - dev@example.com

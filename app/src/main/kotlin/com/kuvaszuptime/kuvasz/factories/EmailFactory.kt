@@ -13,6 +13,7 @@ import com.kuvaszuptime.kuvasz.models.events.formatters.PlainTextMessageFormatte
 import com.kuvaszuptime.kuvasz.models.events.formatters.getEmoji
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.recipientAddresses
+import com.kuvaszuptime.kuvasz.models.handlers.senderName
 import jakarta.mail.Message
 import org.simplejavamail.api.email.Email
 import org.simplejavamail.email.EmailBuilder
@@ -76,11 +77,13 @@ class EmailFactory(private val config: EmailNotificationConfig) {
         val recipientGroups = config.recipientAddresses().let { addresses ->
             if (config.separateEmails) addresses.map(::listOf) else listOf(addresses)
         }
+        val senderName = config.senderName() ?: config.fromAddress
+
         return recipientGroups.map { addresses ->
             EmailBuilder
                 .startingBlank()
                 .withRecipients(addresses.map { address -> address.toRecipient() })
-                .from(config.fromAddress, config.fromAddress)
+                .from(senderName, config.fromAddress)
                 .withSubject(subject)
                 .withPlainText(plainText)
                 .buildEmail()

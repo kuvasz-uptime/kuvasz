@@ -17,6 +17,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookHttpMethod
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.recipientAddresses
+import com.kuvaszuptime.kuvasz.models.handlers.senderName
 import com.kuvaszuptime.kuvasz.models.handlers.type
 import com.kuvaszuptime.kuvasz.services.integrations.AppriseService
 import com.kuvaszuptime.kuvasz.services.integrations.GenericWebhookService
@@ -207,6 +208,8 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.name shouldBe "test_implicitly_enabled"
                     config.type shouldBe IntegrationType.EMAIL
                     config.fromAddress shouldBe "noreply@other.dev"
+                    config.fromName.shouldBeNull()
+                    config.senderName().shouldBeNull()
                     config.toAddress shouldContainExactly listOf("foo@bar.com", " baz@bar.com")
                     config.recipientAddresses() shouldContainExactly listOf("foo@bar.com", "baz@bar.com")
                     config.separateEmails shouldBe false
@@ -219,6 +222,8 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.name shouldBe "Global-343"
                     config.type shouldBe IntegrationType.EMAIL
                     config.fromAddress shouldBe "foo@bar.com"
+                    config.fromName shouldBe " Kuvasz Alerts "
+                    config.senderName() shouldBe "Kuvasz Alerts"
                     config.toAddress shouldContainExactly listOf("blabla@example.com", "other@example.com")
                     config.separateEmails shouldBe true
                     config.enabled shouldBe true
@@ -230,6 +235,7 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.name shouldBe "disabled"
                     config.type shouldBe IntegrationType.EMAIL
                     config.fromAddress shouldBe "jkfds@jklfds.com"
+                    config.senderName().shouldBeNull()
                     config.toAddress shouldContainExactly listOf("irrelevant@jfdalk.com")
                     config.separateEmails shouldBe true
                     config.enabled shouldBe false
@@ -536,6 +542,8 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.name shouldBe "test_implicitly_enabled"
                     config.type shouldBe IntegrationType.EMAIL
                     config.fromAddress shouldBe "noreply@other.dev"
+                    config.fromName.shouldBeNull()
+                    config.senderName().shouldBeNull()
                     config.toAddress shouldContainExactly listOf("foo@bar.com", " baz@bar.com")
                     config.recipientAddresses() shouldContainExactly listOf("foo@bar.com", "baz@bar.com")
                     config.separateEmails shouldBe false
@@ -548,6 +556,8 @@ class IntegrationBootstrappingTest : StringSpec({
                     config.name shouldBe "Global-343"
                     config.type shouldBe IntegrationType.EMAIL
                     config.fromAddress shouldBe "foo@bar.com"
+                    config.fromName shouldBe " Kuvasz Alerts "
+                    config.senderName() shouldBe "Kuvasz Alerts"
                     config.toAddress shouldContainExactly listOf("blabla@example.com", "other@example.com")
                     config.separateEmails shouldBe true
                     config.enabled shouldBe true
@@ -722,6 +732,7 @@ class IntegrationBootstrappingTest : StringSpec({
                 name shouldBe "Global-343"
                 enabled shouldBe true
                 fromAddress shouldBe "foo@bar.com"
+                senderName() shouldBe "Kuvasz Alerts"
                 toAddress shouldContainExactly listOf("blabla@example.com", "other@example.com")
                 separateEmails shouldBe true
             }
@@ -891,6 +902,15 @@ class IntegrationBootstrappingTest : StringSpec({
 
         ex.message shouldContain "EmailNotificationConfig.getToAddress - " +
             IntegrationValidationMessages.EMAIL_INTEGRATION_TO_NOT_BLANK
+    }
+
+    "app should not start if an email config has a from name with a line break" {
+        val ex = shouldThrow<BeanInstantiationException> {
+            testAppContext("invalid-email-from-name")
+        }
+
+        ex.message shouldContain "EmailNotificationConfig.getFromName - " +
+            IntegrationValidationMessages.EMAIL_INTEGRATION_FROM_NAME_PATTERN
     }
 
     "app should not start if a webhook config contains an invalid payload template" {

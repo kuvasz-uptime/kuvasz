@@ -25,6 +25,10 @@ object Validation {
     // Matches only strings carrying at least one non-whitespace character. Null values are skipped by @Pattern, so
     // it enforces "not blank when it is set" on optional fields.
     const val NOT_BLANK_REGEX = ".*\\S.*"
+
+    // The mailer refuses to send an email if the name of its sender contains a line break or "%0A" (it suspects a
+    // header injection), so they are rejected at startup. Surrounding whitespace is fine, because it gets trimmed.
+    const val EMAIL_FROM_NAME_REGEX = "^\\s*(?!.*%0A)[^\\r\\n]*\\s*$"
 }
 
 object ValidationMessages {
@@ -55,6 +59,8 @@ object IntegrationValidationMessages {
     const val EMAIL_INTEGRATION_TO_NOT_BLANK = "Email integration 'to' address must contain at least one " +
         "recipient, and none of them can be blank"
     const val EMAIL_INTEGRATION_FROM_NOT_BLANK = "Email integration 'from' address must not be blank"
+    const val EMAIL_INTEGRATION_FROM_NAME_PATTERN = "Email integration 'from' name must not contain line breaks " +
+        "or '%0A'"
     const val SLACK_WEBHOOK_URL_NOT_BLANK = "Slack integration webhook URL must not be blank"
     const val SLACK_BOT_TOKEN_NOT_BLANK = "Slack Bot integration bot token must not be blank"
     const val SLACK_BOT_CHANNEL_ID_NOT_BLANK = "Slack Bot integration channel ID must not be blank"

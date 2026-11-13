@@ -4,12 +4,14 @@ import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
 import com.kuvaszuptime.kuvasz.testutils.SMTPTest
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.micronaut.test.annotation.MockBean
 import io.micronaut.test.extensions.kotest5.MicronautKotest5Extension.getMock
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
 import jakarta.mail.Message
 import org.simplejavamail.api.email.Email
@@ -43,6 +45,46 @@ class EmailTestServiceTest(
             result.success shouldBe true
             result.message shouldBe Messages.successfulTestResultMessage()
             verify(exactly = 1) { mockMailer.sendAsync(expectedMessage) }
+        }
+
+        should("use the from name as the display name of the sender if it's set") {
+            val testToAddress = "fdaf@fjdsfkd.com"
+            val expectedMessage = expectedTestEmail(testToAddress, fromName = "Kuvasz Alerts")
+            val config = mockk<EmailNotificationConfig>(relaxed = true) {
+                every { toAddress } returns listOf(testToAddress)
+                every { fromAddress } returns TEST_FROM_ADDRESS
+                every { fromName } returns " Kuvasz Alerts "
+            }
+            val sentEmail = slot<Email>()
+            val mockMailer = getMock(mailer)
+            every { mockMailer.sendAsync(capture(sentEmail)) } returns CompletableFuture.completedFuture(null)
+
+            val result = emailTestService.sendTestMessage(config).blockingGet()
+
+            result.success shouldBe true
+            sentEmail.captured.fromRecipient.shouldNotBeNull().name shouldBe "Kuvasz Alerts"
+            verify(exactly = 1) { mockMailer.sendAsync(expectedMessage) }
+        }
+
+        listOf(null, "", " ").forEach { missingName ->
+            should("use the from address as the display name of the sender if the from name is '$missingName'") {
+                val testToAddress = "fdaf@fjdsfkd.com"
+                val expectedMessage = expectedTestEmail(testToAddress)
+                val config = mockk<EmailNotificationConfig>(relaxed = true) {
+                    every { toAddress } returns listOf(testToAddress)
+                    every { fromAddress } returns TEST_FROM_ADDRESS
+                    every { fromName } returns missingName
+                }
+                val sentEmail = slot<Email>()
+                val mockMailer = getMock(mailer)
+                every { mockMailer.sendAsync(capture(sentEmail)) } returns CompletableFuture.completedFuture(null)
+
+                val result = emailTestService.sendTestMessage(config).blockingGet()
+
+                result.success shouldBe true
+                sentEmail.captured.fromRecipient.shouldNotBeNull().name shouldBe TEST_FROM_ADDRESS
+                verify(exactly = 1) { mockMailer.sendAsync(expectedMessage) }
+            }
         }
 
         should("send one message with every recipient in To if there are multiple recipients") {
@@ -130,7 +172,7 @@ class EmailTestServiceTest(
     fun smtpMailer(): SMTPMailer = mockk()
 }
 
-private fun expectedTestEmail(vararg toAddresses: String): Email =
+private fun expectedTestEmail(vararg toAddresses: String, fromName: String = TEST_FROM_ADDRESS): Email =
     EmailBuilder
         .startingBlank()
         .withRecipients(
@@ -141,7 +183,7 @@ private fun expectedTestEmail(vararg toAddresses: String): Email =
                     .build()
             }
         )
-        .from(TEST_FROM_ADDRESS, TEST_FROM_ADDRESS)
+        .from(fromName, TEST_FROM_ADDRESS)
         .withSubject(Messages.integrationTestMessage())
         .withPlainText(Messages.integrationTestMessage())
         .buildEmail()

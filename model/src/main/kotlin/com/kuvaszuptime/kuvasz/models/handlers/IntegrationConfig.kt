@@ -10,6 +10,7 @@ import io.micronaut.core.bind.annotation.Bindable
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.Pattern
 
 sealed interface IntegrationConfig {
     val name: String
@@ -49,6 +50,12 @@ interface EmailNotificationConfig : IntegrationConfig {
 
     @get:NotBlank(message = IntegrationValidationMessages.EMAIL_INTEGRATION_FROM_NOT_BLANK)
     val fromAddress: String
+
+    @get:Pattern(
+        regexp = Validation.EMAIL_FROM_NAME_REGEX,
+        message = IntegrationValidationMessages.EMAIL_INTEGRATION_FROM_NAME_PATTERN,
+    )
+    val fromName: String?
 
     @get:Bindable(defaultValue = "true")
     val separateEmails: Boolean
@@ -250,5 +257,10 @@ val IntegrationConfig.id: IntegrationID
  * comma-separated value (e.g. `a@x.com, b@x.com` from an env variable) is bound into the list as-is.
  */
 fun EmailNotificationConfig.recipientAddresses(): List<String> = toAddress.map { it.trim() }.distinct()
+
+/**
+ * The configured display name of the sender without the surrounding whitespace, or null if it's missing or blank.
+ */
+fun EmailNotificationConfig.senderName(): String? = fromName?.let { it.trim().ifEmpty { null } }
 
 typealias IntegrationMap = Map<IntegrationID, IntegrationConfig>

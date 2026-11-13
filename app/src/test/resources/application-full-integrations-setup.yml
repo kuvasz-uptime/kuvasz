@@ -89,12 +89,14 @@ integrations:
       separate-emails: false
     - name: Global-343
       from-address: foo@bar.com
+      from-name: ' Kuvasz Alerts '
       to-address:
         - blabla@example.com
         - other@example.com
       global: true
     - name: disabled
       from-address: jkfds@jklfds.com
+      from-name: ' '
       to-address: irrelevant@jfdalk.com
       enabled: false
   pagerduty:

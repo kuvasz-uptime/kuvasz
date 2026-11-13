@@ -143,10 +143,17 @@ class SMTPEventHandlerTest(
                         email.subject shouldBe expectedEmail.subject
                         email.subject shouldContain "is DOWN"
                     }
-                    sentEmails.filter { email -> email.fromRecipient?.address == globalEmailConfig.fromAddress }
-                        .shouldBeSentSeparatelyTo(globalEmailConfig)
+                    val fromGlobalConfig =
+                        sentEmails.filter { email -> email.fromRecipient?.address == globalEmailConfig.fromAddress }
+                    fromGlobalConfig.shouldBeSentSeparatelyTo(globalEmailConfig)
+                    fromGlobalConfig.forAll { email ->
+                        // It has a from name, so that is the display name of the sender
+                        email.fromRecipient.shouldNotBeNull().name shouldBe "Kuvasz Alerts"
+                    }
                     sentEmails.forOne { fromOtherConfig ->
                         fromOtherConfig.fromRecipient.shouldNotBeNull().address shouldBe otherEmailConfig.fromAddress
+                        // It has no from name, so the address is used as the display name too
+                        fromOtherConfig.fromRecipient.shouldNotBeNull().name shouldBe otherEmailConfig.fromAddress
                         fromOtherConfig.toRecipients.map { it.address } shouldContainExactly
                             otherEmailConfig.recipientAddresses()
                     }

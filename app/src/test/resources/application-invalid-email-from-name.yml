@@ -1,0 +1,6 @@
+integrations:
+  email:
+    - name: multiline_from_name
+      from-address: noreply@kuvasz.dev
+      from-name: "Kuvasz\nAlerts"
+      to-address: ops@kuvasz.dev

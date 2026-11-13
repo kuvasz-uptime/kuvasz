@@ -30,6 +30,7 @@ private fun slackBot(
 private fun email(
     toAddresses: List<String>,
     separateEmails: Boolean = false,
+    fromName: String? = null,
 ) = EmailNotificationConfigDto(
     id = IntegrationID(IntegrationType.EMAIL, "mail"),
     type = IntegrationType.EMAIL,
@@ -38,6 +39,7 @@ private fun email(
     global = false,
     excludedEvents = emptyList(),
     fromAddress = "noreply@kuvasz.dev",
+    fromName = fromName,
     toAddress = toAddresses.joinToString(", "),
     toAddresses = toAddresses,
     separateEmails = separateEmails,
@@ -51,6 +53,22 @@ class IntegrationsTest : BehaviorSpec({
             then("it should contain the sender and the recipient") {
                 email(toAddresses = listOf("ops@kuvasz.dev")).detailsTooltip() shouldBe
                     "<b>From</b>: \"noreply@kuvasz.dev\"<br> <b>To</b>: \"ops@kuvasz.dev\""
+            }
+        }
+
+        `when`("it's an email integration with a sender name") {
+            then("it should contain the name next to the sender's address") {
+                email(toAddresses = listOf("ops@kuvasz.dev"), fromName = "Kuvasz Alerts").detailsTooltip() shouldBe
+                    "<b>From</b>: \"Kuvasz Alerts &lt;noreply@kuvasz.dev&gt;\"<br> <b>To</b>: \"ops@kuvasz.dev\""
+            }
+        }
+
+        `when`("it's an email integration with a sender name that contains HTML") {
+            then("the name should be escaped") {
+                email(toAddresses = listOf("ops@kuvasz.dev"), fromName = "<b>Ops</b> & <Prod>")
+                    .detailsTooltip() shouldBe
+                    "<b>From</b>: \"&lt;b&gt;Ops&lt;/b&gt; &amp; &lt;Prod&gt; &lt;noreply@kuvasz.dev&gt;\"<br> " +
+                    "<b>To</b>: \"ops@kuvasz.dev\""
             }
         }
 

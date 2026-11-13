@@ -1,3 +1,9 @@
+## 4.8.0 <small>2026-11-xx</small> { id="4.8.0" data-toc-label="4.8.0" }
+
+### Features
+
+- **Sender name for the email integration**: an email integration can have a [`from-name`](management/integrations.md#from-name) now, which is shown as the **display name of the sender** in the "From" field of the notifications. If you don't set it, nothing changes: the address is used as the name, as before. The name is also returned by the API (`fromName`) and shown on the Integrations page.
+
 ## 4.7.0 <small>2026-11-06</small> { id="4.7.0" data-toc-label="4.7.0" }
 
 !!! question "Make your voice heard!"

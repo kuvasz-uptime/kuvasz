@@ -18,6 +18,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.TelegramNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookHttpMethod
 import com.kuvaszuptime.kuvasz.models.handlers.WebhookNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.recipientAddresses
+import com.kuvaszuptime.kuvasz.models.handlers.senderName
 import io.micronaut.core.annotation.Introspected
 import io.swagger.v3.oas.annotations.media.Schema
 
@@ -286,6 +287,10 @@ data class EmailNotificationConfigDto(
     @param:Schema(description = "The email address from which notifications are sent", required = true)
     val fromAddress: String,
     @param:Schema(
+        description = "The display name of the sender. If it's null, the from address is used as the name too"
+    )
+    val fromName: String?,
+    @param:Schema(
         description = "The recipients, comma-separated. Deprecated: use toAddresses",
         required = true,
         deprecated = true,
@@ -307,6 +312,7 @@ data class EmailNotificationConfigDto(
         global = config.global,
         excludedEvents = config.excludedEvents.orEmpty(),
         fromAddress = config.fromAddress,
+        fromName = config.senderName(),
         toAddress = config.recipientAddresses().joinToString(", "),
         toAddresses = config.recipientAddresses(),
         separateEmails = config.separateEmails,
