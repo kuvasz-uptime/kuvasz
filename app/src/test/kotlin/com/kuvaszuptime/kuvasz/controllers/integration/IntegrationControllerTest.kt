@@ -237,6 +237,7 @@ class IntegrationControllerTest(
                 implicitlyEnabledEmail.enabled shouldBe true
                 implicitlyEnabledEmail.global shouldBe false
                 implicitlyEnabledEmail.fromAddress shouldBe "noreply@other.dev"
+                implicitlyEnabledEmail.fromName.shouldBeNull()
                 implicitlyEnabledEmail.toAddress shouldBe "foo@bar.com, baz@bar.com"
                 implicitlyEnabledEmail.toAddresses shouldContainExactly listOf("foo@bar.com", "baz@bar.com")
                 implicitlyEnabledEmail.separateEmails shouldBe false
@@ -248,6 +249,7 @@ class IntegrationControllerTest(
                 globalEmail.enabled shouldBe true
                 globalEmail.global shouldBe true
                 globalEmail.fromAddress shouldBe "foo@bar.com"
+                globalEmail.fromName shouldBe "Kuvasz Alerts"
                 globalEmail.toAddress shouldBe "blabla@example.com, other@example.com"
                 globalEmail.toAddresses shouldContainExactly listOf("blabla@example.com", "other@example.com")
                 globalEmail.separateEmails shouldBe true
@@ -259,6 +261,7 @@ class IntegrationControllerTest(
                 disabledEmail.enabled shouldBe false
                 disabledEmail.global shouldBe false
                 disabledEmail.fromAddress shouldBe "jkfds@jklfds.com"
+                disabledEmail.fromName.shouldBeNull()
                 disabledEmail.toAddress shouldBe "irrelevant@jfdalk.com"
                 disabledEmail.toAddresses shouldContainExactly listOf("irrelevant@jfdalk.com")
                 disabledEmail.separateEmails shouldBe true

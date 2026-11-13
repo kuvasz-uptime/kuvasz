@@ -5751,6 +5751,11 @@ components:
         fromAddress:
           type: string
           description: The email address from which notifications are sent
+        fromName:
+          type: string
+          description: "The display name of the sender. If it's null, the from address\
+            \ is used as the name too"
+          nullable: true
         toAddress:
           type: string
           description: "The recipients, comma-separated. Deprecated: use toAddresses"

@@ -218,7 +218,7 @@ private fun HtmlBlockTag.integrationsPageHeader() {
 
 internal fun IntegrationConfigDto.detailsTooltip(): String? = when (this) {
     is EmailNotificationConfigDto -> listOfNotNull(
-        Messages.emailFromToDescription(fromAddress, toAddresses.joinToString(", ")),
+        Messages.emailFromToDescription(senderDescription(), toAddresses.joinToString(", ")),
         Messages.emailSeparateEmailsDescription().takeIf { separateEmails },
     ).joinToString("<br>")
 
@@ -230,6 +230,12 @@ internal fun IntegrationConfigDto.detailsTooltip(): String? = when (this) {
 
     else -> null
 }
+
+// The name is free text and the tooltip is rendered as HTML, so it has to be escaped
+private fun EmailNotificationConfigDto.senderDescription(): String =
+    fromName?.let { name -> "${name.escapeHtml()} &lt;$fromAddress&gt;" } ?: fromAddress
+
+private fun String.escapeHtml(): String = replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 private fun SlackBotNotificationConfigDto.reactionsDescription(): String? {
     val trigger = triggerReaction?.takeIf { emoji -> emoji.isNotBlank() }
