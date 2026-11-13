@@ -3115,6 +3115,13 @@ const dateTimePickerField = () => ({
             if (isPopupShown) anchorPopup();
         }));
         element.addEventListener('change.bs.datepicker', (event) => {
+            // Tabler reports a typed YYYY-MM-DD (or a cleared input) too, with the input's native change event, after
+            // writing the input with the time of the model. What was typed is restored instead, and it's applied by
+            // the input's own change handler, like any other typed value (e.g. a day without a time stays invalid)
+            if (event.event?.type === 'change') {
+                element.value = event.dates[0] ?? '';
+                return;
+            }
             isDayJustPicked = event.dates.length > 0;
             this.pickedDate = event.dates[0] || '';
             // The time picker always shows a time, which is taken over unless one was set already

@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.security.oidc.OidcAuthenticationMapper
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
+import io.micronaut.security.oauth2.endpoint.token.response.OauthAuthenticationMapper
 import io.micronaut.security.oauth2.endpoint.token.response.OpenIdClaims
 import io.micronaut.security.oauth2.endpoint.token.response.OpenIdTokenResponse
 import io.mockk.every
@@ -46,6 +47,14 @@ class OidcAuthenticationMapperTest : BehaviorSpec({
                     Role.WEB.alias,
                     Role.API.alias,
                 )
+            }
+
+            then("it records the provider of the user, which the OIDC logout looks up the end-session endpoint by") {
+                val response =
+                    mapper.createAuthenticationResponse(OIDC_PROVIDER_NAME, tokenResponse, claims, null).awaitFirst()
+
+                response.authentication.get().attributes shouldBe
+                    mapOf(OauthAuthenticationMapper.PROVIDER_KEY to OIDC_PROVIDER_NAME)
             }
         }
 
