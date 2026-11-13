@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.uitest.pages.docker.DockerMonitorDetailsPage
 import com.kuvaszuptime.kuvasz.uitest.pages.docker.DockerMonitorListPage
 import com.kuvaszuptime.kuvasz.uitest.shouldAcceptAfterFixing
 import com.kuvaszuptime.kuvasz.uitest.shouldRejectWith
+import com.microsoft.playwright.Page
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
 import com.microsoft.playwright.options.LoadState
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -101,12 +102,8 @@ class DockerMonitorCrudUiTest(private val dockerMonitorRepository: DockerMonitor
 
             // Editing through the list's shared modal, which is the path that re-populates the selects
             list.navigate()
-            // The save reloads the list in place, so navigating before that reload has started would get aborted by it
-            page.waitForRequest({ it.isNavigationRequest }) {
-                list.configureMonitor(name).setUptimeCheckInterval("120").save()
-            }
+            page.waitForReload { list.configureMonitor(name).setUptimeCheckInterval("120").save() }
 
-            list.navigate()
             val reopened = list.configureMonitor(name)
             assertThat(reopened.selectedDockerHost).hasText("vps-1")
             assertThat(reopened.selectedContainer).hasText("worker")
@@ -227,4 +224,16 @@ class DockerMonitorCrudUiTest(private val dockerMonitorRepository: DockerMonitor
     companion object {
         private const val UPDATED_UPTIME_CHECK_INTERVAL = 120
     }
+}
+
+/**
+ * Runs [action] and waits until the page it reloaded in place has loaded. `waitForURL` can't tell a reload of the same
+ * URL apart, and its request goes out before the page actually navigates, so a navigation started in between would be
+ * interrupted by it. A marker left on the old document tells the two pages apart instead.
+ */
+private fun Page.waitForReload(action: () -> Unit) {
+    evaluate("document.documentElement.dataset.beforeReload = ''")
+    action()
+    assertThat(locator("html[data-before-reload]")).hasCount(0)
+    waitForLoadState()
 }

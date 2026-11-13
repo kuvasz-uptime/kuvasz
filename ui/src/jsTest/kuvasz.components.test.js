@@ -400,6 +400,22 @@ test('initDateTimePicker keeps the Tabler datepicker and the start in sync', asy
     listeners['hide.bs.datepicker'](laterHide);
     assert.equal(laterHide.defaultPrevented, false);
 
+    // A day typed into the input is reported with its native change event, after Tabler wrote the time of the model
+    // next to it. The model is left to the input's own change handler, the typed value is restored for it, and the
+    // popup can be closed right after
+    element.value = '2030-01-07 08:15';
+    listeners['change.bs.datepicker']({dates: ['2030-01-07'], event: {type: 'change'}});
+    assert.equal(element.value, '2030-01-07');
+    assert.equal(form.pickedDate, '2030-01-05');
+    assert.equal(form.pickedTime, '08:15');
+    const hideAfterTyped = {defaultPrevented: false, preventDefault() { this.defaultPrevented = true; }};
+    listeners['hide.bs.datepicker'](hideAfterTyped);
+    assert.equal(hideAfterTyped.defaultPrevented, false);
+    // ...just like a cleared input
+    listeners['change.bs.datepicker']({dates: [], event: {type: 'change'}});
+    assert.equal(element.value, '');
+    assert.equal(form.pickedDate, '2030-01-05');
+
     // An already set time is kept when another day is picked
     form.pickedTime = '10:30';
     listeners['change.bs.datepicker']({dates: ['2030-01-06']});
