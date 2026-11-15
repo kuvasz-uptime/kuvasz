@@ -1,0 +1,56 @@
+suite: notes
+templates:
+  - NOTES.txt
+release:
+  name: t
+  namespace: kuvasz
+chart:
+  version: 1.0.0
+  appVersion: 1.0.0
+tests:
+  - it: should not mention any HTTPRoute by default
+    asserts:
+      - notMatchRegexRaw:
+          pattern: HTTPRoute
+
+  - it: should list the hostnames of the main route
+    set:
+      httpRoute.enabled: true
+      httpRoute.hostnames:
+        - kuvasz.example.com
+    asserts:
+      - matchRegexRaw:
+          pattern: "HTTPRoute is enabled. Use the listener address of the configured Gateway with these hostnames:\n  - kuvasz.example.com\n  kubectl get httproute --namespace kuvasz t-kuvasz-uptime\n"
+
+  - it: should not promise hostnames for a main route without any
+    set:
+      httpRoute.enabled: true
+      httpRoute.hostnames: []
+    asserts:
+      - matchRegexRaw:
+          pattern: "HTTPRoute is enabled. Use the listener address of the configured Gateway.\n  kubectl get httproute --namespace kuvasz t-kuvasz-uptime\n"
+
+  - it: should list every extra route with its hostnames, even if the main route is disabled
+    set:
+      extraHttpRoutes:
+        - name: status
+          hostnames:
+            - status.example.com
+            - status2.example.com
+        - name: internal
+    asserts:
+      - notMatchRegexRaw:
+          pattern: "HTTPRoute is enabled. Use the listener address of the configured Gateway"
+      - matchRegexRaw:
+          pattern: "Additional HTTPRoute t-kuvasz-uptime-status is enabled. Use the listener address of its Gateway with these hostnames:\n  - status.example.com\n  - status2.example.com\n  kubectl get httproute --namespace kuvasz t-kuvasz-uptime-status\n"
+      - matchRegexRaw:
+          pattern: "Additional HTTPRoute t-kuvasz-uptime-internal is enabled. Use the listener address of its Gateway.\n  kubectl get httproute --namespace kuvasz t-kuvasz-uptime-internal\n"
+
+  - it: should list the extra routes after the main route
+    set:
+      httpRoute.enabled: true
+      extraHttpRoutes:
+        - name: public
+    asserts:
+      - matchRegexRaw:
+          pattern: "(?s)kubectl get httproute --namespace kuvasz t-kuvasz-uptime\n\n  Additional HTTPRoute t-kuvasz-uptime-public is enabled"

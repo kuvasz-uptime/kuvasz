@@ -187,3 +187,83 @@ Validate OIDC configuration
 {{- end -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Determine the name of an extra HTTPRoute. Expects a dict with "root" (the chart context) and "route" (the route values).
+*/}}
+{{- define "kuvasz.extraHttpRouteName" -}}
+{{- printf "%s-%s" (include "kuvasz.fullname" .root) (toString (required "extraHttpRoutes[].name is required" .route.name)) -}}
+{{- end -}}
+
+{{/*
+Validate the extra HTTPRoutes
+*/}}
+{{- define "kuvasz.validateExtraHttpRoutes" -}}
+{{- $names := list -}}
+{{- range .Values.extraHttpRoutes -}}
+{{- $name := include "kuvasz.extraHttpRouteName" (dict "root" $ "route" .) -}}
+{{- if hasKey . "enabled" -}}
+{{- fail (printf "extraHttpRoutes: %s has an enabled key, which is not supported; remove the item to disable the route" $name) -}}
+{{- end -}}
+{{- if has $name $names -}}
+{{- fail (printf "extraHttpRoutes: %s is defined more than once; the names have to be unique" $name) -}}
+{{- end -}}
+{{- $names = append $names $name -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Render an HTTPRoute, with a default rule backed by the chart's Service.
+Expects a dict with "root" (the chart context), "name" (the route name) and "route" (the route values).
+*/}}
+{{- define "kuvasz.httpRoute" -}}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ .name }}
+  labels:
+    {{- include "kuvasz.labels" .root | nindent 4 }}
+    {{- with .route.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .route.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  parentRefs:
+    {{- if .route.parentRefs }}
+    {{- toYaml .route.parentRefs | nindent 4 }}
+    {{- else }}
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway
+      namespace: {{ .root.Release.Namespace | quote }}
+    {{- end }}
+  {{- with .route.hostnames }}
+  hostnames:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  rules:
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: {{ include "kuvasz.fullname" .root }}
+          port: {{ .root.Values.service.port }}
+          weight: 1
+      {{- with .route.matches }}
+      matches:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .route.filters }}
+      filters:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .route.timeouts }}
+      timeouts:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .route.extraRules }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+{{- end -}}

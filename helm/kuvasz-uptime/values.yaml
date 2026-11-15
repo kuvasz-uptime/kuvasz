@@ -91,6 +91,25 @@ httpRoute:
   timeouts: {}
   extraRules: []
 
+# Additional Gateway API HTTPRoutes, e.g. a public route that serves only a status page.
+# Each entry takes the same keys as httpRoute (except enabled, remove the entry instead), and is named <fullname>-<name>.
+# Entries don't inherit anything from httpRoute, and they are rendered even if httpRoute is disabled.
+# Always set matches: without it, the default rule of the route matches every path.
+extraHttpRoutes: []
+#  - name: public
+#    parentRefs:
+#      - group: gateway.networking.k8s.io
+#        kind: Gateway
+#        name: external
+#        namespace: gateway
+#    hostnames:
+#      - status.example.com
+#    matches:
+#      - path:
+#          type: PathPrefix
+#          value: /public
+#    extraRules: []
+
 # Resource limits and requests
 resources:
   limits:

@@ -1,0 +1,95 @@
+# Test values file for Kuvasz Helm chart with additional Gateway API HTTPRoutes:
+# an internal route serving everything, and two public routes serving only a status page each
+
+fullnameOverride: kuvasz
+
+postgresql:
+  enabled: false
+
+externalDatabase:
+  host: "postgres.example.com"
+  port: 5432
+  database: "kuvasz"
+  user: "kuvasz"
+  password: "external-db-password"
+
+auth:
+  enabled: true
+  adminUser: "admin"
+  adminPassword: "admin-password-12345"
+
+httpRoute:
+  enabled: true
+  parentRefs:
+    - group: "gateway.networking.k8s.io"
+      kind: "Gateway"
+      name: "internal"
+      namespace: "gateway-system"
+  hostnames:
+    - "kuvasz.internal.example.com"
+
+extraHttpRoutes:
+  - name: status
+    parentRefs:
+      - group: "gateway.networking.k8s.io"
+        kind: "Gateway"
+        name: "external"
+        namespace: "gateway-system"
+    hostnames:
+      - "status.example.com"
+    matches:
+      - path:
+          type: PathPrefix
+          value: /public
+    extraRules:
+      - matches:
+          - path:
+              type: Exact
+              value: /
+        filters:
+          - type: URLRewrite
+            urlRewrite:
+              path:
+                type: ReplaceFullPath
+                replaceFullPath: /status/customers
+        backendRefs:
+          - group: ""
+            kind: Service
+            name: kuvasz
+            port: 8080
+            weight: 1
+  - name: uptime
+    labels:
+      exposure: public
+    annotations:
+      example.com/owner: "community-team"
+    parentRefs:
+      - group: "gateway.networking.k8s.io"
+        kind: "Gateway"
+        name: "external"
+        namespace: "gateway-system"
+    hostnames:
+      - "uptime.example.com"
+    matches:
+      - path:
+          type: PathPrefix
+          value: /public
+    timeouts:
+      request: 10s
+    extraRules:
+      - matches:
+          - path:
+              type: Exact
+              value: /
+        filters:
+          - type: URLRewrite
+            urlRewrite:
+              path:
+                type: ReplaceFullPath
+                replaceFullPath: /status/community
+        backendRefs:
+          - group: ""
+            kind: Service
+            name: kuvasz
+            port: 8080
+            weight: 1

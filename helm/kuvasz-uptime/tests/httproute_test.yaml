@@ -1,0 +1,290 @@
+suite: httproute
+templates:
+  - httproute.yaml
+release:
+  name: t
+  namespace: kuvasz
+chart:
+  version: 1.0.0
+  appVersion: 1.0.0
+tests:
+  - it: should not render any route by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render the main route with the default rule and the default Gateway
+    set:
+      httpRoute.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: HTTPRoute
+      - equal:
+          path: metadata.name
+          value: t-kuvasz-uptime
+      - equal:
+          path: spec.parentRefs
+          value:
+            - group: gateway.networking.k8s.io
+              kind: Gateway
+              name: gateway
+              namespace: kuvasz
+      - equal:
+          path: spec.hostnames
+          value:
+            - kuvasz.local
+      - equal:
+          path: spec.rules
+          value:
+            - backendRefs:
+                - group: ""
+                  kind: Service
+                  name: t-kuvasz-uptime
+                  port: 8080
+                  weight: 1
+              matches:
+                - path:
+                    type: PathPrefix
+                    value: /
+
+  - it: should render an extra route even if the main route is disabled
+    set:
+      extraHttpRoutes:
+        - name: public
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: t-kuvasz-uptime-public
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: t
+
+  - it: should render the main route and every extra route
+    set:
+      httpRoute.enabled: true
+      extraHttpRoutes:
+        - name: status
+        - name: uptime
+    asserts:
+      - hasDocuments:
+          count: 3
+      - equal:
+          path: metadata.name
+          value: t-kuvasz-uptime
+        documentIndex: 0
+      - equal:
+          path: metadata.name
+          value: t-kuvasz-uptime-status
+        documentIndex: 1
+      - equal:
+          path: metadata.name
+          value: t-kuvasz-uptime-uptime
+        documentIndex: 2
+
+  - it: should not inherit anything from the main route
+    set:
+      httpRoute:
+        enabled: true
+        labels:
+          exposure: internal
+        annotations:
+          example.com/owner: platform
+        parentRefs:
+          - name: internal
+            namespace: gateway-system
+        hostnames:
+          - kuvasz.internal.example.com
+        filters:
+          - type: RequestHeaderModifier
+            requestHeaderModifier:
+              add:
+                - name: X-Internal
+                  value: "true"
+        timeouts:
+          request: 30s
+        extraRules:
+          - backendRefs:
+              - name: other
+                port: 80
+      extraHttpRoutes:
+        - name: public
+    documentIndex: 1
+    asserts:
+      - notExists:
+          path: metadata.labels.exposure
+      - notExists:
+          path: metadata.annotations
+      - notExists:
+          path: spec.hostnames
+      - equal:
+          path: spec.parentRefs
+          value:
+            - group: gateway.networking.k8s.io
+              kind: Gateway
+              name: gateway
+              namespace: kuvasz
+      - equal:
+          path: spec.rules
+          value:
+            - backendRefs:
+                - group: ""
+                  kind: Service
+                  name: t-kuvasz-uptime
+                  port: 8080
+                  weight: 1
+
+  - it: should render every key of an extra route
+    set:
+      service.port: 9090
+      extraHttpRoutes:
+        - name: public
+          labels:
+            exposure: public
+          annotations:
+            example.com/owner: community
+          parentRefs:
+            - group: gateway.networking.k8s.io
+              kind: Gateway
+              name: external
+              namespace: gateway
+          hostnames:
+            - status.example.com
+          matches:
+            - path:
+                type: PathPrefix
+                value: /public
+          filters:
+            - type: ResponseHeaderModifier
+              responseHeaderModifier:
+                add:
+                  - name: X-Public
+                    value: "true"
+          timeouts:
+            request: 10s
+          extraRules:
+            - matches:
+                - path:
+                    type: Exact
+                    value: /
+              filters:
+                - type: URLRewrite
+                  urlRewrite:
+                    path:
+                      type: ReplaceFullPath
+                      replaceFullPath: /status/customers
+              backendRefs:
+                - group: ""
+                  kind: Service
+                  name: kuvasz
+                  port: 9090
+                  weight: 1
+    asserts:
+      - equal:
+          path: metadata.labels.exposure
+          value: public
+      - equal:
+          path: metadata.annotations
+          value:
+            example.com/owner: community
+      - equal:
+          path: spec.parentRefs
+          value:
+            - group: gateway.networking.k8s.io
+              kind: Gateway
+              name: external
+              namespace: gateway
+      - equal:
+          path: spec.hostnames
+          value:
+            - status.example.com
+      - equal:
+          path: spec.rules
+          value:
+            - backendRefs:
+                - group: ""
+                  kind: Service
+                  name: t-kuvasz-uptime
+                  port: 9090
+                  weight: 1
+              matches:
+                - path:
+                    type: PathPrefix
+                    value: /public
+              filters:
+                - type: ResponseHeaderModifier
+                  responseHeaderModifier:
+                    add:
+                      - name: X-Public
+                        value: "true"
+              timeouts:
+                request: 10s
+            - matches:
+                - path:
+                    type: Exact
+                    value: /
+              filters:
+                - type: URLRewrite
+                  urlRewrite:
+                    path:
+                      type: ReplaceFullPath
+                      replaceFullPath: /status/customers
+              backendRefs:
+                - group: ""
+                  kind: Service
+                  name: kuvasz
+                  port: 9090
+                  weight: 1
+
+  - it: should use fullnameOverride in the names of the extra routes and in their default backend
+    set:
+      fullnameOverride: kuvasz
+      extraHttpRoutes:
+        - name: public
+    asserts:
+      - equal:
+          path: metadata.name
+          value: kuvasz-public
+      - equal:
+          path: spec.rules[0].backendRefs[0].name
+          value: kuvasz
+
+  - it: should accept a number as the name of an extra route
+    set:
+      extraHttpRoutes:
+        - name: 2024
+    asserts:
+      - equal:
+          path: metadata.name
+          value: t-kuvasz-uptime-2024
+
+  - it: should fail if an extra route has an enabled key
+    set:
+      extraHttpRoutes:
+        - name: public
+          enabled: false
+    asserts:
+      - failedTemplate:
+          errorMessage: "extraHttpRoutes: t-kuvasz-uptime-public has an enabled key, which is not supported; remove the item to disable the route"
+
+  - it: should fail if two extra routes have the same name
+    set:
+      extraHttpRoutes:
+        - name: public
+        - name: status
+        - name: public
+    asserts:
+      - failedTemplate:
+          errorMessage: "extraHttpRoutes: t-kuvasz-uptime-public is defined more than once; the names have to be unique"
+
+  - it: should fail if an extra route has no name
+    set:
+      extraHttpRoutes:
+        - hostnames:
+            - status.example.com
+    asserts:
+      - failedTemplate:
+          errorMessage: extraHttpRoutes[].name is required
