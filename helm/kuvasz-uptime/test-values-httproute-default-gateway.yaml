@@ -1,0 +1,21 @@
+# Test values file for Kuvasz Helm chart with Gateway API HTTPRoute attached to the default Gateway
+
+postgresql:
+  enabled: false
+
+externalDatabase:
+  host: "postgres.example.com"
+  port: 5432
+  database: "kuvasz"
+  user: "kuvasz"
+  password: "external-db-password"
+
+auth:
+  enabled: true
+  adminUser: "admin"
+  adminPassword: "admin-password-12345"
+
+httpRoute:
+  enabled: true
+  hostnames:
+    - "kuvasz.example.com"

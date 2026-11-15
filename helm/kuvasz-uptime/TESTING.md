@@ -67,6 +67,17 @@ This uses the `test-values-httproute.yaml` file which configures:
 - Gateway API HTTPRoute
 - Existing Gateway parent reference
 
+### 6. Render with Gateway API HTTPRoute and the default Gateway
+
+```bash
+helm template test-release . -f test-values-httproute-default-gateway.yaml > rendered-httproute-default-gateway.yaml
+```
+
+This uses the `test-values-httproute-default-gateway.yaml` file which configures:
+
+- External PostgreSQL database
+- Gateway API HTTPRoute without `parentRefs`, so it attaches to the Gateway named `gateway` in the release namespace
+
 ## Continuous Integration
 
 These checks run automatically on every push and pull request that touches

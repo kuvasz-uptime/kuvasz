@@ -17,7 +17,9 @@ spec:
     {{- if .Values.httpRoute.parentRefs }}
     {{- toYaml .Values.httpRoute.parentRefs | nindent 4 }}
     {{- else }}
-    - name: gateway
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway
       namespace: {{ .Release.Namespace | quote }}
     {{- end }}
   {{- with .Values.httpRoute.hostnames }}
@@ -26,7 +28,9 @@ spec:
   {{- end }}
   rules:
     - backendRefs:
-        - name: {{ include "kuvasz.fullname" . }}
+        - group: ""
+          kind: Service
+          name: {{ include "kuvasz.fullname" . }}
           port: {{ .Values.service.port }}
           weight: 1
       {{- with .Values.httpRoute.matches }}
