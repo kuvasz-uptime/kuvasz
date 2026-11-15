@@ -138,7 +138,7 @@ externalAdminSecret: false
 auth:
   enabled: true
   # Admin user credentials.
-  # If not provided, will be auto-generated and stored in secret.
+  # If not provided, will be auto-generated on install, stored in secret, and kept on upgrades.
   adminUser: ""
   adminPassword: ""
   # API keys are optional. Leave empty to disable API key access.

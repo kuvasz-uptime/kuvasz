@@ -5,7 +5,7 @@ Kuvasz provides an official Helm chart for deploying to Kubernetes clusters. Thi
 ## Prerequisites
 
 - A running Kubernetes cluster
-- [Helm 4.x](https://helm.sh/docs/intro/install/) installed
+- [Helm](https://helm.sh/docs/intro/install/) 3.8.0 or newer (Helm 4.x works too) installed. The chart is published to an OCI registry, and older Helm versions can't install charts from there
 - `kubectl` configured to access your cluster
 
 ## Quick start
@@ -286,6 +286,24 @@ kubectl create configmap kuvasz-custom-config -n kuvasz-uptime --from-file kuvas
   --dry-run=client -o yaml | kubectl apply -f -
 kubectl rollout restart deployment -n kuvasz-uptime kuvasz-uptime
 ```
+
+### Admin credentials
+
+The chart stores the admin username and password in a Secret, named `<release-name>-kuvasz-uptime-admin` by default. The name is different if the release name already contains `kuvasz-uptime` (then it's `<release-name>-admin`), or if you set `nameOverride` or `fullnameOverride`. `helm status <release-name>` prints the commands to read the credentials with the exact name of your Secret. With the default name, you can read the values with:
+
+```bash
+kubectl get secret -n <namespace> <release-name>-kuvasz-uptime-admin -o jsonpath='{.data.admin-user}' | base64 -d
+kubectl get secret -n <namespace> <release-name>-kuvasz-uptime-admin -o jsonpath='{.data.admin-password}' | base64 -d
+```
+
+If you leave `auth.adminUser` or `auth.adminPassword` empty, the chart creates a random value for it, but only if the Secret doesn't have one yet. When you upgrade, the chart reads the Secret from the cluster and keeps these values. So they don't change, and the pod doesn't restart because of them (except once, on the first upgrade after a fresh install). This also means that:
+
+- if you remove a value that you set before (e.g. `auth.adminPassword`), the chart keeps the old value, and doesn't create a random one,
+- `helm uninstall` doesn't delete the Secret, so if you install the chart again with the same release name, it uses the old values.
+
+If you want new random values, delete the Secret (`kubectl delete secret -n <namespace> <release-name>-kuvasz-uptime-admin`), then run `helm upgrade` (or `helm install`) again.
+
+Tools that create the manifests with `helm template` (like _Argo CD_) can't read the Secret from the cluster, so they create new random values every time. If you use such a tool, set `auth.adminUser` and `auth.adminPassword` yourself, or create the Secret yourself and set `externalAdminSecret: true`.
 
 ### OIDC authentication
 

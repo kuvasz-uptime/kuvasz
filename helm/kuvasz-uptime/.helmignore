@@ -24,4 +24,4 @@
 # Test files
 test-values*.yaml
 README.md
-
+tests/
