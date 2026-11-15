@@ -18,7 +18,9 @@ auth:
 httpRoute:
   enabled: true
   parentRefs:
-    - name: "gateway"
+    - group: "gateway.networking.k8s.io"
+      kind: "Gateway"
+      name: "gateway"
       namespace: "gateway-system"
       sectionName: "https"
   hostnames:

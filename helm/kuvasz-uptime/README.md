@@ -161,7 +161,9 @@ The chart can expose Kuvasz through a Gateway API `HTTPRoute` instead of, or alo
 httpRoute:
   enabled: true
   parentRefs:
-    - name: gateway
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway
       namespace: gateway-system
       sectionName: https
   hostnames:
@@ -173,6 +175,8 @@ httpRoute:
 ```
 
 If `httpRoute.parentRefs` is empty, the route attaches to a Gateway named `gateway` in the release namespace. `httpRoute.filters`, `httpRoute.timeouts`, and `httpRoute.extraRules` are rendered directly into the `HTTPRoute` spec for advanced Gateway API use cases.
+
+_Kubernetes_ fills in some fields of the `HTTPRoute` if they are not set. For example, it adds `group` and `kind` to every Gateway in `parentRefs` and to every backend in `backendRefs`, `weight` to every backend, `type` to every path and header match, and `statusCode` to every redirect. The chart sets these fields for the default Gateway and for the backend it creates, but it uses your own `httpRoute.parentRefs`, `httpRoute.matches`, `httpRoute.filters` and `httpRoute.extraRules` as they are. If you use a tool that compares the chart with what is running in the cluster (like _Argo CD_), set these fields in your own values too, as in the example above. Otherwise, the tool keeps reporting the route as out of sync. For the same reason, don't leave `httpRoute.matches` empty: _Kubernetes_ adds a match for every path (`/`) in that case.
 
 ## Authentication
 

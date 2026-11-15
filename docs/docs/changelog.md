@@ -4,6 +4,10 @@
 
 - **Sender name for the email integration**: an email integration can have a [`from-name`](management/integrations.md#from-name) now, which is shown as the **display name of the sender** in the "From" field of the notifications. If you don't set it, nothing changes: the address is used as the name, as before. The name is also returned by the API (`fromName`) and shown on the Integrations page.
 
+### Fixes
+
+- **The HTTPRoute of the Helm chart was always out of sync in Argo CD**: _Kubernetes_ fills in the `group` and `kind` fields of the route's backend and Gateway, even if they are not set. The chart didn't set them, so tools that compare the chart with what is actually running in the cluster (like _Argo CD_) always saw a difference. The chart sets these fields now for the backend, and for the default Gateway (used when `httpRoute.parentRefs` is empty). Nothing changes in your cluster. If you set your own values for the route, like `httpRoute.parentRefs` or `httpRoute.extraRules`, check the [**Helm deployment guide**](setup/helm-deployment.md#gateway-api-httproute) for the fields to add to them ([#587](https://github.com/kuvasz-uptime/kuvasz/issues/587)).
+
 ## 4.7.0 <small>2026-11-06</small> { id="4.7.0" data-toc-label="4.7.0" }
 
 !!! question "Make your voice heard!"

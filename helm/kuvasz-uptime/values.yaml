@@ -76,7 +76,9 @@ httpRoute:
   # Gateways the HTTPRoute is attached to. If empty, it attaches to a Gateway
   # named "gateway" in the release namespace.
   parentRefs: []
-  #  - name: gateway
+  #  - group: gateway.networking.k8s.io
+  #    kind: Gateway
+  #    name: gateway
   #    namespace: default
   #    sectionName: http
   hostnames:
