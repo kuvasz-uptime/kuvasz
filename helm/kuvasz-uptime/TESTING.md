@@ -4,7 +4,7 @@ This document provides commands to test the Helm chart rendering with custom val
 
 ## Prerequisites
 
-- Helm 3.2.0+ installed
+- Helm 3.8.0+ or Helm 4.x installed
 - Access to a Kubernetes cluster (optional, for full deployment testing)
 
 ## Basic Template Rendering
@@ -78,14 +78,32 @@ This uses the `test-values-httproute-default-gateway.yaml` file which configures
 - External PostgreSQL database
 - Gateway API HTTPRoute without `parentRefs`, so it attaches to the Gateway named `gateway` in the release namespace
 
+## Unit tests
+
+The `tests/` folder has unit tests for the templates, written for the
+[`helm-unittest`](https://github.com/helm-unittest/helm-unittest) plugin. They can
+fake the resources that are already in the cluster, so they also cover templates
+that use `lookup` (e.g. the admin Secret keeps its generated credentials on upgrades).
+
+```bash
+helm plugin install https://github.com/helm-unittest/helm-unittest --version v1.2.1 --verify=false
+helm unittest .
+```
+
+Leave out `--verify=false` with Helm 3, which doesn't have this flag.
+
 ## Continuous Integration
 
 These checks run automatically on every push and pull request that touches
-`helm/**`, via the `.github/workflows/helm-ci.yml` workflow. It lints the chart
-and renders it with the default values plus every `test-values*.yaml` fixture,
+`helm/**`, via the `.github/workflows/helm-ci.yml` workflow. With the latest Helm
+version, it lints the chart, runs the unit tests, and renders it with the default values plus every `test-values*.yaml` fixture,
 validating each rendered manifest against the Kubernetes (and Gateway API CRD)
 schemas with [`kubeconform`](https://github.com/yannh/kubeconform). Run the
 commands below locally before pushing to reproduce the same validation.
+
+A second job lints and renders the chart with the oldest supported Helm version
+(3.8.0, set in `MIN_HELM_VERSION`), so a template change that needs a newer Helm
+version fails the build.
 
 ## Validate Chart
 
@@ -231,8 +249,8 @@ helm install test-release . -f test-values.yaml
 helm status test-release
 
 # Get admin credentials
-kubectl get secret test-release-kuvasz-admin -o jsonpath='{.data.admin-user}' | base64 -d
-kubectl get secret test-release-kuvasz-admin -o jsonpath='{.data.admin-password}' | base64 -d
+kubectl get secret test-release-kuvasz-uptime-admin -o jsonpath='{.data.admin-user}' | base64 -d
+kubectl get secret test-release-kuvasz-uptime-admin -o jsonpath='{.data.admin-password}' | base64 -d
 
 # Uninstall
 helm uninstall test-release

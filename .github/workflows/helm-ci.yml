@@ -10,6 +10,8 @@ on:
 
 env:
   CHART_DIR: helm/kuvasz-uptime
+  # The oldest Helm version the docs promise to support (the first one that can install from OCI registries)
+  MIN_HELM_VERSION: v3.8.0
 
 jobs:
   lint-and-test:
@@ -20,6 +22,10 @@ jobs:
 
       - name: Lint chart
         run: helm lint $CHART_DIR
+      - name: Run unit tests
+        run: |
+          helm plugin install https://github.com/helm-unittest/helm-unittest --version v1.2.1 --verify=false
+          helm unittest $CHART_DIR
       - name: Install kubeconform
         run: |
           curl -sSLo kubeconform.tar.gz \
@@ -40,4 +46,23 @@ jobs:
                   -schema-location default \
                   -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
             echo "::endgroup::"
+          done
+
+  minimum-helm-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: azure/setup-helm@v5
+        with:
+          version: ${{ env.MIN_HELM_VERSION }}
+
+      - name: Lint chart
+        run: helm lint $CHART_DIR
+      - name: Render all scenarios
+        run: |
+          set -euo pipefail
+          for values in "" $(ls $CHART_DIR/test-values*.yaml); do
+            args=""
+            if [ -n "$values" ]; then args="-f $values"; fi
+            helm template test-release $CHART_DIR $args > /dev/null
           done
