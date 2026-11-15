@@ -32,8 +32,13 @@ private fun incident(
 private fun note(content: String, status: InvestigationStatus, timestamp: OffsetDateTime) =
     StatusPageIncidentNoteDto(status = status, content = content, timestamp = timestamp)
 
-private fun monitor(name: String, vararg days: List<StatusPageIncidentDto>) = StatusPageHttpMonitorDetailsDto(
+private fun monitor(
+    name: String,
+    vararg days: List<StatusPageIncidentDto>,
+    displayName: String? = null,
+) = StatusPageHttpMonitorDetailsDto(
     name = name,
+    displayName = displayName,
     lastCheck = null,
     uptimeRatio = null,
     uptimeStatus = null,
@@ -194,7 +199,8 @@ class StatusPageIncidentsTest : BehaviorSpec({
         val recentlyResolved = incident(2, generatedAt.minusHours(3), generatedAt.minusHours(2))
         val resolvedADayAgo = incident(3, generatedAt.minusHours(25), generatedAt.minusHours(24))
         val longResolved = incident(4, generatedAt.minusDays(2), generatedAt.minusDays(2).plusHours(1))
-        val zulu = monitor("zulu", listOf(ongoing, recentlyResolved))
+        // Its name would put it first, but it's shown, so it's ordered by its display name
+        val zulu = monitor("a-zulu", listOf(ongoing, recentlyResolved), displayName = "zulu")
         val alpha = monitor("Alpha", listOf(recentlyResolved.copy(id = 5)))
         val calm = monitor("calm", listOf(resolvedADayAgo, longResolved))
         val data = pageData(generatedAt, zulu, calm, alpha)
@@ -202,7 +208,7 @@ class StatusPageIncidentsTest : BehaviorSpec({
         `when`("the incidents of every monitor are collected") {
             val all = data.incidentsByMonitor()
 
-            then("every monitor is there with the incidents of its history, ordered by their names") {
+            then("every monitor is there with the incidents of its history, ordered by their shown names") {
                 all shouldBe listOf(
                     alpha to listOf(recentlyResolved.copy(id = 5)),
                     calm to listOf(resolvedADayAgo, longResolved),

@@ -121,6 +121,7 @@ class PagerdutyEventHandlerTest(
             `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
                 val monitor = createHttpMonitor(
                     httpMonitorRepository,
+                    displayName = "Payments API",
                     integrations = listOf(
                         globalPagerdutyConfig.id,
                         otherPagerdutyConfig.id,
@@ -145,7 +146,8 @@ class PagerdutyEventHandlerTest(
                         request.eventAction shouldBe PagerdutyEventAction.TRIGGER
                         request.dedupKey shouldBe "kuvasz_uptime_${monitor.id}"
                         request.payload.severity shouldBe PagerdutySeverity.CRITICAL
-                        request.payload.source shouldBe monitor.name
+                        // The alert is about the monitor shown by its display name
+                        request.payload.source shouldBe "Payments API"
                         request.payload.summary shouldBe event.toStructuredMessage().summary
                     }
                     slot.forOne { fromGlobalConfig ->

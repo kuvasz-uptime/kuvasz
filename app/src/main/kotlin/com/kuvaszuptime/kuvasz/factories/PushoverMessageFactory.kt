@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEvent
+import com.kuvaszuptime.kuvasz.models.events.MonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.SSLMonitorEvent
 import com.kuvaszuptime.kuvasz.models.events.StructuredDnsMonitorDownMessage
 import com.kuvaszuptime.kuvasz.models.events.StructuredDnsMonitorUpMessage
@@ -34,6 +35,7 @@ import com.kuvaszuptime.kuvasz.models.events.formatters.toSeverity
 import com.kuvaszuptime.kuvasz.models.handlers.PushoverNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.pushover.PushoverMessage
 import com.kuvaszuptime.kuvasz.models.handlers.pushover.PushoverPriority
+import com.kuvaszuptime.kuvasz.models.monitor.effectiveName
 import com.kuvaszuptime.kuvasz.util.AppInfo
 import io.micronaut.context.annotation.Requires
 import jakarta.inject.Singleton
@@ -50,23 +52,22 @@ class PushoverMessageFactory {
 
     fun fromUptimeEvent(event: UptimeMonitorEvent): PushoverMessage =
         event.toStructuredMessage().let {
-            buildMessage("${event.getEmoji()} ${event.monitor.name}", it.summary, it.toDetails(), event.toSeverity())
+            buildMessage(event.title(), it.summary, it.toDetails(), event.toSeverity())
         }
 
     fun fromSSLEvent(event: SSLMonitorEvent): PushoverMessage =
         event.toStructuredMessage().let {
-            buildMessage("${event.getEmoji()} ${event.monitor.name}", it.summary, it.toDetails(), event.toSeverity())
+            buildMessage(event.title(), it.summary, it.toDetails(), event.toSeverity())
         }
 
     fun fromDnsRecordsChangedEvent(event: DnsRecordsChangedEvent): PushoverMessage =
         event.toStructuredMessage().let {
-            buildMessage("${event.getEmoji()} ${event.monitor.name}", it.summary, it.toDetails(), MessageSeverity.INFO)
+            buildMessage(event.title(), it.summary, it.toDetails(), MessageSeverity.INFO)
         }
 
     fun fromDockerContainerRestartedEvent(event: DockerContainerRestartedEvent): PushoverMessage =
         event.toStructuredMessage().let { message ->
-            val title = "${event.getEmoji()} ${event.monitor.name}"
-            buildMessage(title, message.summary, message.toDetails(), MessageSeverity.WARNING)
+            buildMessage(event.title(), message.summary, message.toDetails(), MessageSeverity.WARNING)
         }
 
     fun fromMaintenanceEvent(event: MaintenanceWindowEvent): PushoverMessage =
@@ -81,6 +82,8 @@ class PushoverMessageFactory {
             details = emptyList(),
             severity = MessageSeverity.INFO,
         )
+
+    private fun MonitorEvent<*>.title() = "${getEmoji()} ${monitor.effectiveName}"
 
     private fun buildMessage(
         title: String,

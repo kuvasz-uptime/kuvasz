@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DockerMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DockerUptimeEventRecord
+import com.kuvaszuptime.kuvasz.models.monitor.effectiveName
 import com.kuvaszuptime.kuvasz.util.toDurationString
 import java.math.BigDecimal
 import java.time.OffsetDateTime
@@ -42,7 +43,7 @@ data class DockerMonitorUpEvent(
     override val uptimeStatus = UptimeStatus.UP
 
     override fun toStructuredMessage() = StructuredDockerMonitorUpMessage(
-        summary = Messages.yourDockerMonitorIsUp(monitor.name),
+        summary = Messages.yourDockerMonitorIsUp(monitor.effectiveName),
         previousDownTime = getEndedEventDuration().toDurationString()?.let { Messages.wasDownFor(it) },
     )
 }
@@ -60,7 +61,7 @@ data class DockerMonitorDownEvent(
     override val uptimeStatus = UptimeStatus.DOWN
 
     override fun toStructuredMessage() = StructuredDockerMonitorDownMessage(
-        summary = Messages.yourDockerMonitorIsDown(monitor.name),
+        summary = Messages.yourDockerMonitorIsDown(monitor.effectiveName),
         error = Messages.reasonExplanation(error),
         previousUpTime = getEndedEventDuration().toDurationString()?.let { Messages.wasUpFor(it) },
     )

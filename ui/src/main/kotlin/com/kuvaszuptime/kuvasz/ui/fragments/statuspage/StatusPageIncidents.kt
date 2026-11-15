@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDataDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIncidentDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIncidentNoteDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageMonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.effectiveName
 import com.kuvaszuptime.kuvasz.models.label
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
@@ -45,7 +46,7 @@ internal fun StatusPageMonitorDetailsDto.incidentStatusColor(isOngoing: Boolean)
 // Every monitor with the incidents of its history, ordered by the names of the monitors
 internal fun StatusPageDataDto.incidentsByMonitor(): IncidentsByMonitor =
     monitors
-        .sortedBy { it.name.lowercase() }
+        .sortedBy { it.effectiveName.lowercase() }
         .map { monitor -> monitor to monitor.incidentsOfHistory }
 
 internal fun IncidentsByMonitor.ongoing(): IncidentsByMonitor = filterIncidents { incident -> incident.isOngoing }
@@ -67,7 +68,7 @@ internal fun FlowContent.monitorIncidentsCard(
     statusCard(monitor.incidentStatusColor(isOngoing), cardTestId = "status-page-monitor-incidents") {
         h4 {
             classes(CARD_TITLE, MB_0)
-            +monitor.name
+            +monitor.effectiveName
         }
         incidents.forEach { incident ->
             div {
@@ -223,7 +224,7 @@ internal fun FlowContent.monitorIncidentsTemplate(
             classes(MODAL_HEADER)
             h5 {
                 classes(MODAL_TITLE, PY_3)
-                +Messages.statusPageIncidentsOfMonitor(monitor.name, historyDays.toString())
+                +Messages.statusPageIncidentsOfMonitor(monitor.effectiveName, historyDays.toString())
             }
             button(type = ButtonType.button) {
                 classes(BTN_CLOSE)

@@ -83,6 +83,7 @@ private fun incident(status: IncidentStatus, startedAt: OffsetDateTime, endedAt:
 private fun unreliableMonitor(uptimeStatus: UptimeStatus?, inMaintenance: Boolean) = UnreliableMonitor(
     id = NumericMonitorID(MonitorType.PUSH, 1),
     name = "Monitor",
+    displayName = null,
     uptimeStatus = uptimeStatus,
     inMaintenance = inMaintenance,
     history = HistoricalUptimeStatsDto("PT168H", 2, 1, 0.5, 3600),

@@ -40,7 +40,8 @@ class StatusPageIncidentsUiTest(
 ) : UiTestSpec() {
     init {
         "an ongoing incident opens the active incidents, which show only its public notes" {
-            val monitor = createHttpMonitor(httpMonitorRepository, monitorName = "Burning API")
+            val monitor =
+                createHttpMonitor(httpMonitorRepository, monitorName = "burning-api", displayName = "Burning API")
             val incident = createHttpUptimeEventRecord(
                 dslContext,
                 monitorId = monitor.id,
@@ -80,7 +81,9 @@ class StatusPageIncidentsUiTest(
             assertThat(statusPage.activeIncidents.toggle).hasAttribute("aria-expanded", "true")
             // Without any recently resolved incident, there is no accordion for them at all
             assertThat(statusPage.resolvedIncidents.root).hasCount(0)
-            val card = statusPage.activeIncidents.monitorCard(monitor.name)
+            // The incidents are shown with the display name of their monitor
+            val card = statusPage.activeIncidents.monitorCard("Burning API")
+            assertThat(card).not().containsText("burning-api")
             assertThat(card.locator(".card-status-start")).hasClass(Pattern.compile(".*bg-danger.*"))
             assertThat(card.getByTestId("public-incident-started")).hasCount(1)
             assertThat(card.getByTestId("public-incident-resolved")).hasCount(0)

@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.PushUptimeEventRecord
+import com.kuvaszuptime.kuvasz.models.monitor.effectiveName
 import com.kuvaszuptime.kuvasz.util.toDurationString
 
 sealed class PushUptimeMonitorEvent : UptimeMonitorEvent() {
@@ -19,7 +20,7 @@ data class PushMonitorUpEvent(
 
     override fun toStructuredMessage() =
         StructuredPushMonitorUpMessage(
-            summary = Messages.yourPushMonitorIsUp(monitor.name),
+            summary = Messages.yourPushMonitorIsUp(monitor.effectiveName),
             previousDownTime = getEndedEventDuration().toDurationString()?.let { Messages.wasDownFor(it) }
         )
 }
@@ -35,7 +36,7 @@ data class PushMonitorDownEvent(
 
     override fun toStructuredMessage(): StructuredMonitorDownMessage =
         StructuredMonitorDownMessage(
-            summary = Messages.yourPushMonitorIsDown(monitor.name),
+            summary = Messages.yourPushMonitorIsDown(monitor.effectiveName),
             error = Messages.reasonExplanation(error),
             previousUpTime = getEndedEventDuration().toDurationString()?.let { Messages.wasUpFor(it) }
         )

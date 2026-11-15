@@ -393,6 +393,26 @@ class MonitorImporterTest(
                 }
             }
 
+            `when`("the display name of an existing monitor is removed from the config") {
+                val existing = createDockerMonitor(
+                    dockerMonitorRepository,
+                    monitorName = "unlabeled-docker",
+                    displayName = "Old label",
+                )
+
+                monitorImporter.importDockerMonitorConfigs(
+                    listOf(dockerAdapter("unlabeled-docker", displayName = null)),
+                    dryRun = false,
+                )
+
+                then("it should clear the display name, so the monitor is shown by its name again") {
+                    with(dockerMonitorRepository.findByName("unlabeled-docker").shouldNotBeNull()) {
+                        id shouldBe existing.id
+                        displayName.shouldBeNull()
+                    }
+                }
+            }
+
             `when`("dryRun is true") {
                 val existingMonitor = createDockerMonitor(dockerMonitorRepository, monitorName = "existing-docker")
 

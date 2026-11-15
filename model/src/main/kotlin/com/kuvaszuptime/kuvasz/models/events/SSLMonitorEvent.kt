@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.SslEventRecord
+import com.kuvaszuptime.kuvasz.models.monitor.effectiveName
 import com.kuvaszuptime.kuvasz.models.monitor.http.safeDisplayUrl
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.CertificateInfo
 import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
@@ -56,7 +57,7 @@ data class SSLValidEvent(
 
     override fun toStructuredMessage() =
         StructuredSSLValidMessage(
-            summary = Messages.yourSiteHasAValidCert(monitor.name, monitor.safeDisplayUrl),
+            summary = Messages.yourSiteHasAValidCert(monitor.effectiveName, monitor.safeDisplayUrl),
             previousInvalidEvent = getEndedEventDuration().toDurationString()
                 ?.let { Messages.wasXForY(getPreviousStatusString(), it) }
         )
@@ -72,7 +73,7 @@ data class SSLInvalidEvent(
 
     override fun toStructuredMessage() =
         StructuredSSLInvalidMessage(
-            summary = Messages.yourSiteHasAnInvalidCert(monitor.name, monitor.safeDisplayUrl),
+            summary = Messages.yourSiteHasAnInvalidCert(monitor.effectiveName, monitor.safeDisplayUrl),
             error = Messages.reasonExplanation(error.message?.sanitizeAsError().orEmpty()),
             previousValidEvent = getEndedEventDuration().toDurationString()
                 ?.let { Messages.wasXForY(getPreviousStatusString(), it) }
@@ -89,7 +90,7 @@ data class SSLWillExpireEvent(
 
     override fun toStructuredMessage() =
         StructuredSSLWillExpireMessage(
-            summary = Messages.yourCertWillExpireSoon(monitor.name),
+            summary = Messages.yourCertWillExpireSoon(monitor.effectiveName),
             validUntil = Messages.expiryDate(certInfo.validTo)
         )
 }

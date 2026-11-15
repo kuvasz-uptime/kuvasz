@@ -14,6 +14,7 @@ import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPagePushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageTcpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.WithLatency
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.effectiveName
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
@@ -157,7 +158,7 @@ private fun FlowContent.monitorCardGrid(monitors: List<StatusPageMonitorDetailsD
         classes(CSSClass.ROW)
         // DOWN monitors are more important, sort by status (D < U), then by name, ignoring its casing
         monitors
-            .sortedWith(compareBy({ it.uptimeStatus?.name.toString() }, { it.name.lowercase() }))
+            .sortedWith(compareBy({ it.uptimeStatus?.name.toString() }, { it.effectiveName.lowercase() }))
             .forEach { monitor ->
                 div {
                     classes(COL_12, MB_3)
@@ -183,7 +184,7 @@ private fun FlowContent.monitorCard(monitor: StatusPageMonitorDetailsDto, histor
                 classes(D_FLEX, ALIGN_ITEMS_CENTER, GAP_2, MB_2)
                 h3 {
                     classes(MB_0)
-                    +monitor.name
+                    +monitor.effectiveName
                 }
                 div {
                     classes(MS_AUTO, D_FLEX, ALIGN_ITEMS_CENTER, GAP_2)

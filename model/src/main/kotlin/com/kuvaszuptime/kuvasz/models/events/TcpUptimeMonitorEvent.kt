@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpUptimeEventRecord
+import com.kuvaszuptime.kuvasz.models.monitor.effectiveName
 import com.kuvaszuptime.kuvasz.util.toDurationString
 
 sealed class TcpUptimeMonitorEvent : UptimeMonitorEvent() {
@@ -19,7 +20,7 @@ data class TcpMonitorUpEvent(
     override val uptimeStatus = UptimeStatus.UP
 
     override fun toStructuredMessage() = StructuredTcpMonitorUpMessage(
-        summary = Messages.yourTcpMonitorIsUp(monitor.name),
+        summary = Messages.yourTcpMonitorIsUp(monitor.effectiveName),
         latency = latencyInMs?.let { Messages.tcpLatency(it.toString()) },
         previousDownTime = getEndedEventDuration().toDurationString()?.let { Messages.wasDownFor(it) },
     )
@@ -35,7 +36,7 @@ data class TcpMonitorDownEvent(
     override val uptimeStatus = UptimeStatus.DOWN
 
     override fun toStructuredMessage() = StructuredTcpMonitorDownMessage(
-        summary = Messages.yourTcpMonitorIsDown(monitor.name),
+        summary = Messages.yourTcpMonitorIsDown(monitor.effectiveName),
         error = Messages.reasonExplanation(error),
         previousUpTime = getEndedEventDuration().toDurationString()?.let { Messages.wasUpFor(it) },
     )

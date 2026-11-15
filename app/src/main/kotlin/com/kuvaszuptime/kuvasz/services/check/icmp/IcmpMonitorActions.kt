@@ -206,6 +206,7 @@ class IcmpMonitorActions(
         ) { monitor, uptime, averages ->
             StatusPageIcmpMonitorDetailsDto(
                 name = monitor.name,
+                displayName = monitor.displayName,
                 lastCheck = monitor.lastUptimeCheck,
                 averageLatencyInMs = averages.latencies[monitor.id],
                 lastPacketLossPercentage = averages.packetLosses[monitor.id],

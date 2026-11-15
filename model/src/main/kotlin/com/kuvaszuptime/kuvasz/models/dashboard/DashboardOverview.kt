@@ -51,10 +51,17 @@ data class DashboardUptimeStats(
 data class UnreliableMonitor(
     val id: NumericMonitorID,
     val name: String,
+    val displayName: String?,
     val uptimeStatus: UptimeStatus?,
     val inMaintenance: Boolean,
     val history: HistoricalUptimeStatsDto,
 )
+
+/**
+ * The label of the monitor that is shown to people: its display name if it has one, its unique name otherwise.
+ */
+val UnreliableMonitor.effectiveName: String
+    get() = displayName ?: name
 
 /**
  * The incidents (DOWN events) that were open at any point during the period, the same ones as the history counts.

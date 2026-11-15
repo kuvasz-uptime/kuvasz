@@ -205,6 +205,7 @@ class TcpMonitorActions(
         ) { monitor, uptime, averageLatencies ->
             StatusPageTcpMonitorDetailsDto(
                 name = monitor.name,
+                displayName = monitor.displayName,
                 lastCheck = monitor.lastUptimeCheck,
                 averageLatencyInMs = averageLatencies[monitor.id],
                 uptimeRatio = uptime.uptimeRatio,

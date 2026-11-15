@@ -14,6 +14,7 @@ import com.kuvaszuptime.kuvasz.models.events.formatters.getEmoji
 import com.kuvaszuptime.kuvasz.models.handlers.EmailNotificationConfig
 import com.kuvaszuptime.kuvasz.models.handlers.recipientAddresses
 import com.kuvaszuptime.kuvasz.models.handlers.senderName
+import com.kuvaszuptime.kuvasz.models.monitor.effectiveName
 import jakarta.mail.Message
 import org.simplejavamail.api.email.Email
 import org.simplejavamail.email.EmailBuilder
@@ -42,7 +43,7 @@ class EmailFactory(private val config: EmailNotificationConfig) {
         buildEmails(Messages.integrationTestMessage(), Messages.integrationTestMessage())
 
     private fun UptimeMonitorEvent.getSubject(): String =
-        "[kuvasz-uptime] - ${getEmoji()} [${monitor.name}] is $uptimeStatus"
+        "[kuvasz-uptime] - ${getEmoji()} [${monitor.effectiveName}] is $uptimeStatus"
 
     private fun SSLMonitorEvent.getSubject(): String {
         val statusString = when (sslStatus) {
@@ -51,14 +52,14 @@ class EmailFactory(private val config: EmailNotificationConfig) {
             SslStatus.WILL_EXPIRE -> Messages.hasAnExpiringCertificate()
         }
 
-        return "[kuvasz-uptime] - ${getEmoji()} [${monitor.name}] $statusString"
+        return "[kuvasz-uptime] - ${getEmoji()} [${monitor.effectiveName}] $statusString"
     }
 
     private fun DnsRecordsChangedEvent.getSubject(): String =
-        "[kuvasz-uptime] - ${getEmoji()} [${monitor.name}] ${Messages.dnsRecordsHaveChanged()}"
+        "[kuvasz-uptime] - ${getEmoji()} [${monitor.effectiveName}] ${Messages.dnsRecordsHaveChanged()}"
 
     private fun DockerContainerRestartedEvent.getSubject(): String =
-        "[kuvasz-uptime] - ${getEmoji()} [${monitor.name}] ${Messages.dockerContainerHasRestarted()}"
+        "[kuvasz-uptime] - ${getEmoji()} [${monitor.effectiveName}] ${Messages.dockerContainerHasRestarted()}"
 
     private fun MaintenanceWindowEvent.getSubject(): String {
         val statusString = when (this) {

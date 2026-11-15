@@ -24,7 +24,9 @@ import java.util.regex.Pattern
 class PublicStatusPageUiTest(private val httpMonitorRepository: HttpMonitorRepository) : UiTestSpec() {
     init {
         "a public status page is reachable without authentication and shows its monitor" {
-            val monitor = createHttpMonitor(httpMonitorRepository, monitorName = "Public API")
+            // The page references the monitor by its name, but shows its display name
+            val monitor =
+                createHttpMonitor(httpMonitorRepository, monitorName = "public-api", displayName = "Public API")
             val pageTitle = "Public Systems Status"
             val slug = "public-systems"
             createStatusPage(
@@ -40,7 +42,8 @@ class PublicStatusPageUiTest(private val httpMonitorRepository: HttpMonitorRepos
             statusPage.navigate(slug)
 
             assertThat(statusPage.title(pageTitle).first()).isVisible()
-            assertThat(statusPage.monitorCard(monitor.name)).isVisible()
+            assertThat(statusPage.monitorCard("Public API")).isVisible()
+            statusPage.monitorNames shouldBe listOf("Public API")
             // Without any categorized monitor the page keeps its plain list, with no cards or sections
             assertThat(statusPage.categoryCards).hasCount(0)
             assertThat(statusPage.categorySections).hasCount(0)
@@ -312,10 +315,13 @@ class PublicStatusPageUiTest(private val httpMonitorRepository: HttpMonitorRepos
             assertThat(statusPage.maintenanceTimeframe()).containsText(windowStart.year.toString())
         }
 
-        "monitor cards with the same status are sorted by name, regardless of its casing" {
-            val monitors = listOf("Charlie", "bravo", "Delta", "alpha").map { name ->
+        "monitor cards with the same status are sorted by their shown name, regardless of its casing" {
+            val monitors = listOf("bravo", "Delta", "alpha").map { name ->
                 createHttpMonitor(httpMonitorRepository, monitorName = name)
-            }
+            }.plus(
+                // Its name would put it last, but it's shown and sorted by its display name
+                createHttpMonitor(httpMonitorRepository, monitorName = "zz-charlie", displayName = "Charlie"),
+            )
             val slug = "sorted-status"
             createStatusPage(
                 dslContext,

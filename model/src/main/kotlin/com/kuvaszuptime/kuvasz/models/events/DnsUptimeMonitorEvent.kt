@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsUptimeEventRecord
+import com.kuvaszuptime.kuvasz.models.monitor.effectiveName
 import com.kuvaszuptime.kuvasz.util.toDurationString
 
 sealed class DnsUptimeMonitorEvent : UptimeMonitorEvent() {
@@ -19,7 +20,7 @@ data class DnsMonitorUpEvent(
     override val uptimeStatus = UptimeStatus.UP
 
     override fun toStructuredMessage() = StructuredDnsMonitorUpMessage(
-        summary = Messages.yourDnsMonitorIsUp(monitor.name),
+        summary = Messages.yourDnsMonitorIsUp(monitor.effectiveName),
         latency = latencyInMs?.let { Messages.dnsLatency(it.toString()) },
         previousDownTime = getEndedEventDuration().toDurationString()?.let { Messages.wasDownFor(it) },
     )
@@ -35,7 +36,7 @@ data class DnsMonitorDownEvent(
     override val uptimeStatus = UptimeStatus.DOWN
 
     override fun toStructuredMessage() = StructuredDnsMonitorDownMessage(
-        summary = Messages.yourDnsMonitorIsDown(monitor.name),
+        summary = Messages.yourDnsMonitorIsDown(monitor.effectiveName),
         error = Messages.reasonExplanation(error),
         previousUpTime = getEndedEventDuration().toDurationString()?.let { Messages.wasUpFor(it) },
     )

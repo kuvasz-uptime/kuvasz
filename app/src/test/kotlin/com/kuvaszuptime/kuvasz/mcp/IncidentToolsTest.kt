@@ -110,7 +110,7 @@ class IncidentToolsTest(
             }
 
             `when`("list-incidents is called with an ongoing incident in the DB") {
-                val monitor = createHttpMonitor(monitorRepository)
+                val monitor = createHttpMonitor(monitorRepository, displayName = "Shop front")
                 val event = createHttpUptimeEventRecord(
                     dslContext,
                     monitorId = monitor.id,
@@ -127,6 +127,7 @@ class IncidentToolsTest(
                     val incidentList = response.structuredContentAs<IncidentListSchema>().shouldNotBeNull()
                     incidentList.incidents.forOne { incident ->
                         incident.monitorName shouldBe monitor.name
+                        incident.monitorDisplayName shouldBe "Shop front"
                         incident.eventId shouldBe event.id
                     }
 

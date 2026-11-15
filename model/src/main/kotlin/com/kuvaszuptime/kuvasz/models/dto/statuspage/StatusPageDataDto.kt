@@ -72,6 +72,7 @@ data class StatusPageMaintenanceWindowDto(
 )
 sealed interface StatusPageMonitorDetailsDto {
     val name: String
+    val displayName: String?
     val type: String
     val lastCheck: OffsetDateTime?
     val uptimeRatio: Double?
@@ -82,12 +83,19 @@ sealed interface StatusPageMonitorDetailsDto {
     val category: String?
 }
 
+/**
+ * The label of the monitor that is shown to people: its display name if it has one, its unique name otherwise.
+ */
+val StatusPageMonitorDetailsDto.effectiveName: String
+    get() = displayName ?: name
+
 sealed interface WithLatency {
     val averageLatencyInMs: Int?
 }
 
 data class StatusPagePushMonitorDetailsDto(
     override val name: String,
+    override val displayName: String?,
     override val type: String = "push",
     override val lastCheck: OffsetDateTime?,
     override val uptimeRatio: Double?,
@@ -102,6 +110,7 @@ data class StatusPagePushMonitorDetailsDto(
 
 data class StatusPageHttpMonitorDetailsDto(
     override val name: String,
+    override val displayName: String?,
     override val type: String = "http",
     override val lastCheck: OffsetDateTime?,
     override val uptimeRatio: Double?,
@@ -116,6 +125,7 @@ data class StatusPageHttpMonitorDetailsDto(
 
 data class StatusPageIcmpMonitorDetailsDto(
     override val name: String,
+    override val displayName: String?,
     override val type: String = "icmp",
     override val lastCheck: OffsetDateTime?,
     override val uptimeRatio: Double?,
@@ -131,6 +141,7 @@ data class StatusPageIcmpMonitorDetailsDto(
 
 data class StatusPageTcpMonitorDetailsDto(
     override val name: String,
+    override val displayName: String?,
     override val type: String = "tcp",
     override val lastCheck: OffsetDateTime?,
     override val uptimeRatio: Double?,
@@ -145,6 +156,7 @@ data class StatusPageTcpMonitorDetailsDto(
 
 data class StatusPageDnsMonitorDetailsDto(
     override val name: String,
+    override val displayName: String?,
     override val type: String = "dns",
     override val lastCheck: OffsetDateTime?,
     override val uptimeRatio: Double?,
@@ -207,6 +219,7 @@ data class StatusPageIncidentNoteDto(
  */
 data class StatusPageDockerMonitorDetailsDto(
     override val name: String,
+    override val displayName: String?,
     override val type: String = "docker",
     override val lastCheck: OffsetDateTime?,
     override val uptimeRatio: Double?,

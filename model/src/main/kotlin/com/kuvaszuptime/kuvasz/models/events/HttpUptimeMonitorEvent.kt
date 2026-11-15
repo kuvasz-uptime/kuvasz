@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpUptimeEventRecord
+import com.kuvaszuptime.kuvasz.models.monitor.effectiveName
 import com.kuvaszuptime.kuvasz.models.monitor.http.safeDisplayUrl
 import com.kuvaszuptime.kuvasz.util.toDurationString
 import io.micronaut.http.HttpStatus
@@ -23,7 +24,7 @@ data class HttpMonitorUpEvent(
 
     override fun toStructuredMessage() =
         StructuredHttpMonitorUpMessage(
-            summary = Messages.yourMonitorIsUp(monitor.name, monitor.safeDisplayUrl, status.code),
+            summary = Messages.yourMonitorIsUp(monitor.effectiveName, monitor.safeDisplayUrl, status.code),
             latency = Messages.latencyIs(latency),
             previousDownTime = getEndedEventDuration().toDurationString()?.let { Messages.wasDownFor(it) }
         )
@@ -54,7 +55,7 @@ data class HttpMonitorDownEvent(
 
         return StructuredMonitorDownMessage(
             summary = Messages.yourMonitorIsDown(
-                monitor.name,
+                monitor.effectiveName,
                 monitor.safeDisplayUrl,
                 status?.let { " (" + it.code + ")" }.orEmpty(),
             ),

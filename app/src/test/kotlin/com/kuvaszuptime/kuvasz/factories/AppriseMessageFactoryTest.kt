@@ -43,6 +43,7 @@ import com.kuvaszuptime.kuvasz.util.toDurationString
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldEndWith
 import io.kotest.matchers.string.shouldNotContain
 import io.micronaut.http.HttpStatus
 import io.micronaut.json.JsonMapper
@@ -102,6 +103,27 @@ class AppriseMessageFactoryTest(
     }
 
     context("the title and the body") {
+
+        should("name the monitor by its display name, if it has one") {
+            val label = "Payments API"
+            val httpMonitor = HttpMonitorRecord().setId(1).setName("payments-http").setDisplayName(label)
+                .setUrl("https://test.url").setSensitiveUrl(false)
+            val dnsMonitor = DnsMonitorRecord().setId(2).setName("payments-dns").setDisplayName(label)
+            val dockerMonitor = DockerMonitorRecord().setId(3).setName("payments-docker").setDisplayName(label)
+            val records = mapOf(DnsRecordType.A to listOf("1.1.1.1"))
+
+            val messages = listOf(
+                factory.fromUptimeEvent(HttpMonitorUpEvent(httpMonitor, HttpStatus.OK, 100, null)),
+                factory.fromSSLEvent(SSLInvalidEvent(httpMonitor, SSLValidationError("Chain error"), null)),
+                factory.fromDnsRecordsChangedEvent(DnsRecordsChangedEvent(dnsMonitor, records, emptyMap())),
+                factory.fromDockerContainerRestartedEvent(DockerContainerRestartedEvent(dockerMonitor, 1, 2)),
+            )
+
+            messages.forEach { message ->
+                message.title shouldEndWith " $label"
+                message.body shouldContain "\"$label\""
+            }
+        }
 
         should("name the subject of the event in the title, and lead the body with its summary") {
             val previousEvent = SslEventRecord().setStartedAt(getCurrentTimestamp().minusMinutes(30))

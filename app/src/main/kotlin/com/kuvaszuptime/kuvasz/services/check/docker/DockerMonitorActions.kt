@@ -210,6 +210,7 @@ class DockerMonitorActions(
         ) { monitor, uptime, _ ->
             StatusPageDockerMonitorDetailsDto(
                 name = monitor.name,
+                displayName = monitor.displayName,
                 lastCheck = monitor.lastUptimeCheck,
                 uptimeRatio = uptime.uptimeRatio,
                 uptimeStatus = monitor.uptimeStatus,

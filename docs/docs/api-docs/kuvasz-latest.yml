@@ -5849,6 +5849,7 @@ components:
       required:
       - eventDetails
       - monitorDetailsUrl
+      - monitorDisplayName
       - monitorId
       - monitorName
       - monitorUrn
@@ -5862,6 +5863,8 @@ components:
         monitorUrn:
           type: string
         monitorName:
+          type: string
+        monitorDisplayName:
           type: string
         monitorDetailsUrl:
           type: string
@@ -10126,6 +10129,9 @@ components:
       properties:
         name:
           type: string
+        displayName:
+          type: string
+          nullable: true
         type:
           type: string
         lastCheck:
@@ -10238,6 +10244,9 @@ components:
       properties:
         name:
           type: string
+        displayName:
+          type: string
+          nullable: true
         type:
           type: string
         lastCheck:
@@ -10282,6 +10291,9 @@ components:
       properties:
         name:
           type: string
+        displayName:
+          type: string
+          nullable: true
         type:
           type: string
         lastCheck:
@@ -10432,6 +10444,9 @@ components:
       properties:
         name:
           type: string
+        displayName:
+          type: string
+          nullable: true
         type:
           type: string
         lastCheck:
@@ -10475,6 +10490,9 @@ components:
       properties:
         name:
           type: string
+        displayName:
+          type: string
+          nullable: true
         type:
           type: string
         lastCheck:
@@ -10528,6 +10546,9 @@ components:
       properties:
         name:
           type: string
+        displayName:
+          type: string
+          nullable: true
         type:
           type: string
         lastCheck:
