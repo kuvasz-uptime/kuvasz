@@ -189,6 +189,65 @@ If `httpRoute.parentRefs` is empty, the route attaches to a Gateway named `gatew
 
 _Kubernetes_ fills in some fields of the `HTTPRoute` if they are not set. For example, it adds `group` and `kind` to every Gateway in `parentRefs` and to every backend in `backendRefs`, `weight` to every backend, `type` to every path and header match, and `statusCode` to every redirect. The chart sets these fields for the default Gateway and for the backend it creates, but it uses your own `httpRoute.parentRefs`, `httpRoute.matches`, `httpRoute.filters` and `httpRoute.extraRules` as they are. If you use a tool that compares the chart with what is running in the cluster (like _Argo CD_), set these fields in your own values too, as in the example above. Otherwise, the tool keeps reporting the route as out of sync. For the same reason, don't leave `httpRoute.matches` empty: _Kubernetes_ adds a match for every path (`/`) in that case.
 
+#### Additional HTTPRoutes
+
+Sometimes one route is not enough. For example, you may want to expose _Kuvasz_ on two Gateways: an internal one that serves everything, and a public one that serves **only a status page**. The Gateways and the hostnames are set for the whole route, so every rule of a route works on every Gateway it is attached to. That's why the chart can create more routes with `extraHttpRoutes`.
+
+Each item of `extraHttpRoutes` takes the same keys as `httpRoute` (except `enabled`), and gets its own default rule that sends the requests to the Service of the chart. The route is named `<fullname>-<name>`, so the names have to be unique. The items don't inherit anything from `httpRoute`, and the chart creates them even if `httpRoute.enabled` is `false`. To turn off a route, remove its item: the chart stops with an error if an item has an `enabled` key, so a route you wanted to turn off is never created by mistake.
+
+!!! warning "Always set `matches`"
+
+    The items don't inherit the default `matches` of `httpRoute` either. If an item has no `matches`, its default rule matches **every path**, so the whole app (the dashboard, the API and `/mcp` too) is reachable through that route.
+
+The example below serves a public status page at the root of `status.example.com`, and nothing else:
+
+```yaml
+fullnameOverride: kuvasz
+extraHttpRoutes:
+  - name: public
+    parentRefs:
+      - group: gateway.networking.k8s.io
+        kind: Gateway
+        name: external
+        namespace: gateway
+    hostnames:
+      - status.example.com
+    matches:
+      - path:
+          type: PathPrefix
+          value: /public
+    extraRules:
+      - matches:
+          - path:
+              type: Exact
+              value: /
+        filters:
+          - type: URLRewrite
+            urlRewrite:
+              path:
+                type: ReplaceFullPath
+                replaceFullPath: /status/my-status
+        backendRefs:
+          - group: ""
+            kind: Service
+            name: kuvasz
+            port: 8080
+            weight: 1
+```
+
+- The default rule serves the stylesheets, scripts and icons of the page under `/public`.
+- The extra rule sends `/` to the status page with the `my-status` slug. The address bar still shows `/`, and the page refreshes itself through this address too.
+- Every other path (the dashboard, the API, `/mcp`, etc.) matches no rule, so the Gateway answers with `404`, and the request never reaches _Kuvasz_.
+- Only the default rule sends the requests to the Service of the chart automatically, so the extra rule has to name the Service and its port itself. `fullnameOverride` keeps this name stable (`kuvasz` in the example), and the port has to be the same as `service.port` (`8080` by default). If you change `service.port`, change the port in the extra rule too, otherwise only the assets of the page keep working.
+
+If you want to serve status pages on more hostnames, create one route for each of them, because each hostname has to send `/` to a different page.
+
+!!! warning "List the paths you want to expose"
+
+    Don't try to hide some paths (for example `/mcp`) with a rule that redirects or blocks them, and let everything else through. Some Gateways pass on paths like `//mcp` or `/mcp%2F` as they are, so these skip your rule, but _Kuvasz_ still treats them as `/mcp`. A list of the allowed paths, like in the example above, is much safer: a path that is not on the list doesn't reach _Kuvasz_ at all.
+
+The note above about the fields that _Kubernetes_ fills in is true for these routes too.
+
 ### Security context
 
 The chart runs _Kuvasz_ as a **non-root user and group** (`1000:1000`), **without any capabilities**, and with a **read-only root filesystem** by default. The only place _Kuvasz_ writes to is `/tmp` (the temporary files of the [YAML exports](../management/examples.md#backup-restore-with-yaml)), which the chart always mounts as an `emptyDir` volume, so you don't need to add one yourself.

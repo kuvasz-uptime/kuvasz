@@ -78,6 +78,18 @@ This uses the `test-values-httproute-default-gateway.yaml` file which configures
 - External PostgreSQL database
 - Gateway API HTTPRoute without `parentRefs`, so it attaches to the Gateway named `gateway` in the release namespace
 
+### 7. Render with additional Gateway API HTTPRoutes
+
+```bash
+helm template test-release . -f test-values-httproute-extra.yaml > rendered-httproute-extra.yaml
+```
+
+This uses the `test-values-httproute-extra.yaml` file which configures:
+
+- External PostgreSQL database
+- The main HTTPRoute on an internal Gateway
+- Two `extraHttpRoutes` on a public Gateway, each serving only a status page (at `/`) and its assets (under `/public`)
+
 ## Unit tests
 
 The `tests/` folder has unit tests for the templates, written for the

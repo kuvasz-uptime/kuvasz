@@ -3,6 +3,7 @@
 ### Features
 
 - **Sender name for the email integration**: an email integration can have a [`from-name`](management/integrations.md#from-name) now, which is shown as the **display name of the sender** in the "From" field of the notifications. If you don't set it, nothing changes: the address is used as the name, as before. The name is also returned by the API (`fromName`) and shown on the Integrations page.
+- **More HTTPRoutes in the Helm chart**: the chart can create more Gateway API routes with `extraHttpRoutes`, besides the one in `httpRoute`. This way, you can expose _Kuvasz_ on more Gateways with different rules. For example, it can serve everything on an internal Gateway, and **only a status page** on a public one. Check the [**Helm deployment guide**](setup/helm-deployment.md#additional-httproutes) for an example ([#589](https://github.com/kuvasz-uptime/kuvasz/issues/589)).
 
 ### Fixes
 

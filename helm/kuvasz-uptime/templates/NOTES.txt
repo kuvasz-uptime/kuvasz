@@ -7,7 +7,7 @@
 {{- end }}
 
 {{- else if .Values.httpRoute.enabled }}
-  HTTPRoute is enabled. Use the listener address of the configured Gateway with these hostnames:
+  HTTPRoute is enabled. Use the listener address of the configured Gateway{{ if .Values.httpRoute.hostnames }} with these hostnames:{{ else }}.{{ end }}
   {{- range .Values.httpRoute.hostnames }}
   - {{ . }}
   {{- end }}
@@ -27,6 +27,15 @@
 {{- else if contains "ClusterIP" .Values.service.type }}
   kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "kuvasz.fullname" . }} {{ .Values.service.port }}:{{ .Values.service.port }}
   echo "Visit http://127.0.0.1:{{ .Values.service.port }} to use your application"
+{{- end }}
+{{- range .Values.extraHttpRoutes }}
+{{- $routeName := include "kuvasz.extraHttpRouteName" (dict "root" $ "route" .) }}
+
+  Additional HTTPRoute {{ $routeName }} is enabled. Use the listener address of its Gateway{{ if .hostnames }} with these hostnames:{{ else }}.{{ end }}
+  {{- range .hostnames }}
+  - {{ . }}
+  {{- end }}
+  kubectl get httproute --namespace {{ $.Release.Namespace }} {{ $routeName }}
 {{- end }}
 
 2. Get admin credentials:

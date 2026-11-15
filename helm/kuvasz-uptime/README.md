@@ -78,6 +78,7 @@ The following table lists the most important parameters and their default values
 | `httpRoute.filters`                            | HTTPRoute filters for request/response manipulation                                                                      | `[]`                      |
 | `httpRoute.timeouts`                           | HTTPRoute timeout configuration                                                                                          | `{}`                      |
 | `httpRoute.extraRules`                         | Additional HTTPRoute rules to append                                                                                     | `[]`                      |
+| `extraHttpRoutes`                              | Additional HTTPRoutes, named `<fullname>-<name>`. Same keys as `httpRoute` (except `enabled`), nothing is inherited      | `[]`                      |
 | `auth.enabled`                                 | Enable authentication                                                                                                    | `true`                    |
 | `auth.adminUser`                               | Admin username (auto-generated if empty, ignored when OIDC is enabled)                                                   | `""`                      |
 | `auth.adminPassword`                           | Admin password (auto-generated if empty, ignored when OIDC is enabled)                                                   | `""`                      |
@@ -177,6 +178,48 @@ httpRoute:
 If `httpRoute.parentRefs` is empty, the route attaches to a Gateway named `gateway` in the release namespace. `httpRoute.filters`, `httpRoute.timeouts`, and `httpRoute.extraRules` are rendered directly into the `HTTPRoute` spec for advanced Gateway API use cases.
 
 _Kubernetes_ fills in some fields of the `HTTPRoute` if they are not set. For example, it adds `group` and `kind` to every Gateway in `parentRefs` and to every backend in `backendRefs`, `weight` to every backend, `type` to every path and header match, and `statusCode` to every redirect. The chart sets these fields for the default Gateway and for the backend it creates, but it uses your own `httpRoute.parentRefs`, `httpRoute.matches`, `httpRoute.filters` and `httpRoute.extraRules` as they are. If you use a tool that compares the chart with what is running in the cluster (like _Argo CD_), set these fields in your own values too, as in the example above. Otherwise, the tool keeps reporting the route as out of sync. For the same reason, don't leave `httpRoute.matches` empty: _Kubernetes_ adds a match for every path (`/`) in that case.
+
+### Additional HTTPRoutes
+
+The Gateways and the hostnames are set for the whole route, so one route can't serve everything on an internal Gateway and only a status page on a public one. `extraHttpRoutes` creates more routes for cases like this. Each item takes the same keys as `httpRoute` (except `enabled`), gets its own default rule that sends the requests to the Service of the chart, and is named `<fullname>-<name>` (so the names have to be unique). The items don't inherit anything from `httpRoute`, and the chart creates them even if `httpRoute.enabled` is `false`. To turn off a route, remove its item: the chart stops with an error if an item has an `enabled` key. Always set `matches`: without it, the default rule matches every path, so the whole app is reachable through the route.
+
+A public status page at the root of `status.example.com`, with nothing else exposed:
+
+```yaml
+fullnameOverride: kuvasz
+extraHttpRoutes:
+  - name: public
+    parentRefs:
+      - group: gateway.networking.k8s.io
+        kind: Gateway
+        name: external
+        namespace: gateway
+    hostnames:
+      - status.example.com
+    matches:
+      - path:
+          type: PathPrefix
+          value: /public
+    extraRules:
+      - matches:
+          - path:
+              type: Exact
+              value: /
+        filters:
+          - type: URLRewrite
+            urlRewrite:
+              path:
+                type: ReplaceFullPath
+                replaceFullPath: /status/my-status
+        backendRefs:
+          - group: ""
+            kind: Service
+            name: kuvasz
+            port: 8080
+            weight: 1
+```
+
+The default rule serves the assets of the page under `/public`, `/` shows the status page, and the Gateway answers every other path with `404`. The extra rule has to name the Service and its port itself, so `fullnameOverride` keeps that name stable, and the port has to be the same as `service.port`. List the paths you want to expose, instead of blocking some of them (like `/mcp`): some Gateways pass on paths like `//mcp` as they are, so they would skip a blocking rule, while a path that is not on the list doesn't reach Kuvasz at all. See the [documentation](https://kuvasz-uptime.dev/setup/helm-deployment/#additional-httproutes) for more details.
 
 ## Authentication
 
