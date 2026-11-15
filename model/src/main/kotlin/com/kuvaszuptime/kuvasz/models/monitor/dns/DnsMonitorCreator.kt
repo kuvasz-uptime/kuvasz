@@ -8,6 +8,7 @@ import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorCreator
 import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
+import com.kuvaszuptime.kuvasz.models.monitor.normalizeDisplayName
 import com.kuvaszuptime.kuvasz.validation.ValidDnsRecordMatchers
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
@@ -64,6 +65,7 @@ interface DnsMonitorCreator : DnsResponseCodeMatchers, MonitorCreator<DnsMonitor
     override fun toMonitorRecord(validatedIntegrations: Set<IntegrationID>): DnsMonitorRecord =
         DnsMonitorRecord()
             .setName(name)
+            .setDisplayName(normalizeDisplayName(displayName))
             .setHost(host)
             .setResolverHost(resolverHost)
             .setResolverPort(resolverPort)

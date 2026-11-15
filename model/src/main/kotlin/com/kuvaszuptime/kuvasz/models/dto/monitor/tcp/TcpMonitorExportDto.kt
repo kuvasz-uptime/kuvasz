@@ -8,6 +8,7 @@ import io.micronaut.core.annotation.Introspected
 @Introspected
 data class TcpMonitorExportDto(
     val name: String,
+    val displayName: String? = null,
     val host: String,
     val port: Int,
     val uptimeCheckInterval: Int,
@@ -25,6 +26,7 @@ data class TcpMonitorExportDto(
         fun fromMonitorRecord(record: TcpMonitorRecord): TcpMonitorExportDto {
             return TcpMonitorExportDto(
                 name = record.name,
+                displayName = record.displayName,
                 host = record.host,
                 port = record.port,
                 uptimeCheckInterval = record.uptimeCheckInterval,

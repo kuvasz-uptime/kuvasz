@@ -89,6 +89,7 @@ class AppBootstrappingDockerMonitorYamlConfigTest : StringSpec({
 
         monitorsInDb.forOne { firstMonitor ->
             firstMonitor.name shouldBe "test1"
+            firstMonitor.displayName shouldBe "First label"
             firstMonitor.dockerHost shouldBe "local"
             firstMonitor.container shouldBe "my-app"
             firstMonitor.uptimeCheckInterval shouldBe 120
@@ -167,6 +168,8 @@ class AppBootstrappingDockerMonitorYamlConfigTest : StringSpec({
 
         monitorsInDb.forOne { firstMonitor ->
             firstMonitor.name shouldBe "test1"
+            // Only the display name changed, not the name, so it is still the same monitor
+            firstMonitor.displayName shouldBe "Renamed label"
             firstMonitor.dockerHost shouldBe "local"
             firstMonitor.container shouldBe "renamed-app"
             firstMonitor.uptimeCheckInterval shouldBe 180

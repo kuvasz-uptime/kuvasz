@@ -16,6 +16,7 @@ interface DockerMonitorConfig : DockerMonitorCreator, MonitorConfig {
     }
 
     override val name: String
+    override val displayName: String?
     override val dockerHost: String
     override val container: String
     override val uptimeCheckInterval: Int

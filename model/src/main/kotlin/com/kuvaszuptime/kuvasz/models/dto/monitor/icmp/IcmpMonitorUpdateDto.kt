@@ -20,6 +20,9 @@ data class IcmpMonitorUpdateDto(
     @get:NotBlank(message = MonitorValidationMessages.NAME_NOT_BLANK)
     val name: String?,
 
+    @param:Schema(description = MonitorDocs.DISPLAY_NAME, required = false, nullable = true)
+    val displayName: String?,
+
     @param:Schema(description = IcmpMonitorDocs.HOST, required = false, nullable = false)
     @get:NotBlank(message = MonitorValidationMessages.HOST_NOT_BLANK)
     val host: String?,

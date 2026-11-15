@@ -28,6 +28,7 @@ import java.time.OffsetDateTime
 data class HttpMonitorSchema(
     val id: Long,
     val name: String,
+    val displayName: String?,
     val url: String,
     val sensitiveUrl: Boolean,
     val uptimeCheckInterval: Int,
@@ -59,6 +60,7 @@ data class HttpMonitorSchema(
         fun fromDto(dto: HttpMonitorDto) = HttpMonitorSchema(
             id = dto.id,
             name = dto.name,
+            displayName = dto.displayName,
             url = dto.url,
             sensitiveUrl = dto.sensitiveUrl,
             uptimeCheckInterval = dto.uptimeCheckInterval,
@@ -95,6 +97,7 @@ data class HttpMonitorSchema(
 data class HttpMonitorDetailsSchema(
     val id: Long,
     val name: String,
+    val displayName: String?,
     val url: String,
     val sensitiveUrl: Boolean,
     val uptimeCheckInterval: Int,
@@ -141,6 +144,7 @@ data class HttpMonitorDetailsSchema(
             HttpMonitorDetailsSchema(
                 id = dto.id,
                 name = dto.name,
+                displayName = dto.displayName,
                 url = dto.url.toString(),
                 sensitiveUrl = dto.sensitiveUrl,
                 uptimeCheckInterval = dto.uptimeCheckInterval,
@@ -213,6 +217,7 @@ data class HttpMonitorStatsSchema(
 data class HttpMonitorSummarySchema(
     val id: Long,
     val name: String,
+    val displayName: String?,
     val url: String,
     val enabled: Boolean,
     val sslCheckEnabled: Boolean,
@@ -233,6 +238,7 @@ data class HttpMonitorSummarySchema(
             HttpMonitorSummarySchema(
                 id = dto.id,
                 name = dto.name,
+                displayName = dto.displayName,
                 url = dto.url.toString(),
                 enabled = dto.enabled,
                 sslCheckEnabled = dto.sslCheckEnabled,
@@ -266,6 +272,7 @@ data class HttpMonitorListSchema(
 data class HttpMonitorCreatorSchema(
     @get:NotBlank
     val name: String,
+    val displayName: String? = null,
     @get:Pattern(regexp = Validation.URI_REGEX)
     val url: String,
     val sensitiveUrl: Boolean?,
@@ -300,6 +307,7 @@ data class HttpMonitorCreatorSchema(
 
     fun toDto() = HttpMonitorCreateDto(
         name = name,
+        displayName = displayName,
         url = url,
         sensitiveUrl = sensitiveUrl ?: HttpMonitorDefaults.SENSITIVE_URL,
         uptimeCheckInterval = uptimeCheckInterval,

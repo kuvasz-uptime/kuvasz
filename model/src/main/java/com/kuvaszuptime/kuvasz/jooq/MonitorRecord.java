@@ -10,6 +10,8 @@ public interface MonitorRecord extends WithCategory {
 
     String getName();
 
+    String getDisplayName();
+
     Boolean getEnabled();
 
     IntegrationID[] getIntegrations();

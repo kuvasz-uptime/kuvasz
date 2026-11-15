@@ -13,6 +13,8 @@ data class PushMonitorDto(
     val id: Long,
     @param:Schema(description = MonitorDocs.NAME, required = true)
     val name: String,
+    @param:Schema(description = MonitorDocs.DISPLAY_NAME, required = true, nullable = true)
+    val displayName: String?,
     @param:Schema(description = PushMonitorDocs.HEARTBEAT_INTERVAL, required = true)
     val heartbeatInterval: Long,
     @param:Schema(description = PushMonitorDocs.GRACE_PERIOD, required = true)
@@ -41,6 +43,7 @@ data class PushMonitorDto(
             PushMonitorDto(
                 id = record.id,
                 name = record.name,
+                displayName = record.displayName,
                 heartbeatInterval = record.heartbeatInterval,
                 gracePeriod = record.gracePeriod,
                 lastHeartbeat = record.lastHeartbeat,

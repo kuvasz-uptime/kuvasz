@@ -76,6 +76,7 @@ class AppBootstrappingPushMonitorYamlConfigTest : StringSpec({
 
         monitorsInDb.forOne { firstMonitor ->
             firstMonitor.name shouldBe "test1"
+            firstMonitor.displayName shouldBe "First label"
             firstMonitor.heartbeatInterval shouldBe 120
             firstMonitor.gracePeriod shouldBe 10
             firstMonitor.enabled shouldBe false
@@ -140,6 +141,8 @@ class AppBootstrappingPushMonitorYamlConfigTest : StringSpec({
 
         monitorsInDb.forOne { firstMonitor ->
             firstMonitor.name shouldBe "test1"
+            // Only the display name changed, not the name, so it is still the same monitor
+            firstMonitor.displayName shouldBe "Renamed label"
             firstMonitor.heartbeatInterval shouldBe 125
             firstMonitor.gracePeriod shouldBe 0
             firstMonitor.enabled shouldBe true

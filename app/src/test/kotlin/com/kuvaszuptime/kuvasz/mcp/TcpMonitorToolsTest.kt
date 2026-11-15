@@ -64,14 +64,17 @@ class TcpMonitorToolsTest(
             }
 
             `when`("list-tcp-monitors is called with monitors in the DB") {
-                val monitor = createTcpMonitor(tcpMonitorRepository)
+                val monitor = createTcpMonitor(tcpMonitorRepository, displayName = "Listed label")
                 val response = callToolWithMcpClient(LIST_TCP_MONITORS)
 
                 then("it should return the list in both structured and text content") {
                     response.isError shouldBe false
 
                     val monitorList = response.structuredContentAs<TcpMonitorListSchema>().shouldNotBeNull()
-                    monitorList.monitors.forOne { it.name shouldBe monitor.name }
+                    monitorList.monitors.forOne { listed ->
+                        listed.name shouldBe monitor.name
+                        listed.displayName shouldBe "Listed label"
+                    }
 
                     response.contentAs<TcpMonitorListSchema>() shouldBe monitorList
                 }
@@ -81,7 +84,8 @@ class TcpMonitorToolsTest(
         given("the get-tcp-monitor-details tool") {
 
             `when`("get-tcp-monitor-details is called with a valid ID") {
-                val monitor = createTcpMonitor(tcpMonitorRepository, proxy = "corporate-egress")
+                val monitor =
+                    createTcpMonitor(tcpMonitorRepository, displayName = "Details label", proxy = "corporate-egress")
                 val response = callToolWithMcpClient(GET_TCP_MONITOR_DETAILS, mapOf("monitorId" to monitor.id))
 
                 then("it should return the details in both structured and text content") {
@@ -90,6 +94,7 @@ class TcpMonitorToolsTest(
                     val details = response.structuredContentAs<TcpMonitorDetailsSchema>().shouldNotBeNull()
                     details.id shouldBe monitor.id
                     details.name shouldBe monitor.name
+                    details.displayName shouldBe "Details label"
                     details.ignoreConnectivityCheck shouldBe monitor.ignoreConnectivityCheck
                     details.port shouldBe monitor.port
                     details.proxy shouldBe "corporate-egress"
@@ -131,6 +136,25 @@ class TcpMonitorToolsTest(
         }
 
         given("the create-tcp-monitor tool") {
+
+            `when`("create-tcp-monitor is called with a display name") {
+                val response = callToolWithMcpClient(
+                    CREATE_TCP_MONITOR,
+                    mapOf(
+                        "name" to "mcp-created-tcp-monitor-with-display-name",
+                        "host" to "10.0.0.1",
+                        "port" to 5432,
+                        "uptimeCheckInterval" to 60,
+                        "displayName" to "  MCP label  ",
+                    )
+                )
+
+                then("the created monitor should have the trimmed display name") {
+                    response.isError shouldBe false
+
+                    response.structuredContentAs<TcpMonitorSchema>().shouldNotBeNull().displayName shouldBe "MCP label"
+                }
+            }
 
             `when`("create-tcp-monitor is called with a minimal, valid input") {
                 val response = callToolWithMcpClient(

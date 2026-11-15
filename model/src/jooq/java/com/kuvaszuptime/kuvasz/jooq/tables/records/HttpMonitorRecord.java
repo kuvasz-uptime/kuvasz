@@ -456,6 +456,21 @@ public class HttpMonitorRecord extends UpdatableRecordImpl<HttpMonitorRecord> im
         return (String) get(27);
     }
 
+    /**
+     * Setter for <code>kuvasz.http_monitor.display_name</code>.
+     */
+    public HttpMonitorRecord setDisplayName(String value) {
+        set(28, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.http_monitor.display_name</code>.
+     */
+    public String getDisplayName() {
+        return (String) get(28);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -479,7 +494,7 @@ public class HttpMonitorRecord extends UpdatableRecordImpl<HttpMonitorRecord> im
     /**
      * Create a detached, initialised HttpMonitorRecord
      */
-    public HttpMonitorRecord(Long id, String name, String url, Integer uptimeCheckInterval, Boolean enabled, OffsetDateTime createdAt, OffsetDateTime updatedAt, Boolean sslCheckEnabled, Boolean metricsHistoryEnabled, Boolean followRedirects, Boolean forceNoCache, HttpMethod requestMethod, Integer sslExpiryThreshold, IntegrationID[] integrations, Integer[] expectedStatusCodes, Integer responseTimeThresholdMillis, String expectedKeyword, Boolean expectedKeywordCaseSensitive, Boolean expectedKeywordNegated, JsonNode requestHeaders, JsonNode expectedHeaders, String requestBody, Long failureCountThreshold, Boolean sensitiveUrl, String category, Boolean crossOriginHeaderPropagation, Boolean ignoreConnectivityCheck, String proxy) {
+    public HttpMonitorRecord(Long id, String name, String url, Integer uptimeCheckInterval, Boolean enabled, OffsetDateTime createdAt, OffsetDateTime updatedAt, Boolean sslCheckEnabled, Boolean metricsHistoryEnabled, Boolean followRedirects, Boolean forceNoCache, HttpMethod requestMethod, Integer sslExpiryThreshold, IntegrationID[] integrations, Integer[] expectedStatusCodes, Integer responseTimeThresholdMillis, String expectedKeyword, Boolean expectedKeywordCaseSensitive, Boolean expectedKeywordNegated, JsonNode requestHeaders, JsonNode expectedHeaders, String requestBody, Long failureCountThreshold, Boolean sensitiveUrl, String category, Boolean crossOriginHeaderPropagation, Boolean ignoreConnectivityCheck, String proxy, String displayName) {
         super(HttpMonitor.HTTP_MONITOR);
 
         setId(id);
@@ -510,6 +525,7 @@ public class HttpMonitorRecord extends UpdatableRecordImpl<HttpMonitorRecord> im
         setCrossOriginHeaderPropagation(crossOriginHeaderPropagation);
         setIgnoreConnectivityCheck(ignoreConnectivityCheck);
         setProxy(proxy);
+        setDisplayName(displayName);
         resetTouchedOnNotNull();
     }
 
@@ -548,6 +564,7 @@ public class HttpMonitorRecord extends UpdatableRecordImpl<HttpMonitorRecord> im
             setCrossOriginHeaderPropagation(value.getCrossOriginHeaderPropagation());
             setIgnoreConnectivityCheck(value.getIgnoreConnectivityCheck());
             setProxy(value.getProxy());
+            setDisplayName(value.getDisplayName());
             resetTouchedOnNotNull();
         }
     }

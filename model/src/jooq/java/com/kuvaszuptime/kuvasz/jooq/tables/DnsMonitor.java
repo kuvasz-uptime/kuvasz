@@ -177,6 +177,11 @@ public class DnsMonitor extends TableImpl<DnsMonitorRecord> {
      */
     public final TableField<DnsMonitorRecord, Boolean> IGNORE_CONNECTIVITY_CHECK = createField(DSL.name("ignore_connectivity_check"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("false"), SQLDataType.BOOLEAN)), this, "");
 
+    /**
+     * The column <code>kuvasz.dns_monitor.display_name</code>.
+     */
+    public final TableField<DnsMonitorRecord, String> DISPLAY_NAME = createField(DSL.name("display_name"), SQLDataType.CLOB, this, "");
+
     private DnsMonitor(Name alias, Table<DnsMonitorRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }

@@ -71,6 +71,7 @@ fun createHttpMonitor(
     sslCheckEnabled: Boolean = true,
     uptimeCheckInterval: Int = 30000,
     monitorName: String = randomClientSecret(),
+    displayName: String? = null,
     url: String = "http://irrelevant.com",
     requestMethod: HttpMethod = HttpMethod.GET,
     latencyHistoryEnabled: Boolean = true,
@@ -94,6 +95,7 @@ fun createHttpMonitor(
 ): HttpMonitorRecord {
     val monitor = HttpMonitorRecord()
         .setName(monitorName)
+        .setDisplayName(displayName)
         .setUptimeCheckInterval(uptimeCheckInterval)
         .setUrl(url)
         .setEnabled(enabled)
@@ -129,6 +131,7 @@ fun createPushMonitor(
     gracePeriod: Long = 0,
     clientSecret: String = randomClientSecret(),
     monitorName: String = randomClientSecret(),
+    displayName: String? = null,
     integrations: List<IntegrationID> = emptyList(),
     lastHeartbeat: OffsetDateTime? = null,
     failureCountThreshold: Long = 1L,
@@ -136,6 +139,7 @@ fun createPushMonitor(
 ): PushMonitorRecord {
     val monitor = PushMonitorRecord()
         .setName(monitorName)
+        .setDisplayName(displayName)
         .setHeartbeatInterval(heartbeatInterval)
         .setGracePeriod(gracePeriod)
         .setClientSecret(clientSecret)
@@ -330,6 +334,7 @@ fun createIcmpMonitor(
     enabled: Boolean = true,
     host: String = "127.0.0.1",
     monitorName: String = randomClientSecret(),
+    displayName: String? = null,
     uptimeCheckInterval: Int = 60,
     packetCount: Int = 3,
     timeoutSeconds: Int = 5,
@@ -341,6 +346,7 @@ fun createIcmpMonitor(
 ): IcmpMonitorRecord {
     val monitor = IcmpMonitorRecord()
         .setName(monitorName)
+        .setDisplayName(displayName)
         .setHost(host)
         .setUptimeCheckInterval(uptimeCheckInterval)
         .setPacketCount(packetCount)
@@ -361,6 +367,7 @@ fun createTcpMonitor(
     host: String = "127.0.0.1",
     port: Int = 8080,
     monitorName: String = randomClientSecret(),
+    displayName: String? = null,
     uptimeCheckInterval: Int = 60,
     timeoutMs: Int = 5000,
     latencyThresholdMs: Int? = null,
@@ -372,6 +379,7 @@ fun createTcpMonitor(
 ): TcpMonitorRecord {
     val monitor = TcpMonitorRecord()
         .setName(monitorName)
+        .setDisplayName(displayName)
         .setHost(host)
         .setPort(port)
         .setUptimeCheckInterval(uptimeCheckInterval)
@@ -393,6 +401,7 @@ fun createDockerMonitor(
     dockerHost: String = "local",
     container: String = "my-app",
     monitorName: String = randomClientSecret(),
+    displayName: String? = null,
     uptimeCheckInterval: Int = 60,
     timeoutMs: Int = 5000,
     failureCountThreshold: Long = 1L,
@@ -403,6 +412,7 @@ fun createDockerMonitor(
 ): DockerMonitorRecord {
     val monitor = DockerMonitorRecord()
         .setName(monitorName)
+        .setDisplayName(displayName)
         .setDockerHost(dockerHost)
         .setContainer(container)
         .setUptimeCheckInterval(uptimeCheckInterval)
@@ -430,6 +440,7 @@ fun createDnsMonitor(
     driftDetectionEnabled: Boolean = false,
     driftRecordTypes: List<DnsRecordType> = emptyList(),
     monitorName: String = randomClientSecret(),
+    displayName: String? = null,
     uptimeCheckInterval: Int = 60,
     timeoutMs: Int = 5000,
     latencyThresholdMs: Int? = null,
@@ -440,6 +451,7 @@ fun createDnsMonitor(
 ): DnsMonitorRecord {
     val monitor = DnsMonitorRecord()
         .setName(monitorName)
+        .setDisplayName(displayName)
         .setHost(host)
         .setResolverHost(resolverHost)
         .setResolverPort(resolverPort)

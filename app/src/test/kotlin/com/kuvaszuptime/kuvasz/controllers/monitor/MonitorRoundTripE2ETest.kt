@@ -55,6 +55,7 @@ class MonitorRoundTripE2ETest(
                     sensitiveUrl = true,
                     uptimeCheckInterval = 23234,
                     monitorName = "roundtrip-http",
+                    displayName = "Round trip HTTP",
                     crossOriginHeaderPropagation = true,
                     sslExpiryThreshold = 15,
                     failureCountThreshold = 5,
@@ -74,6 +75,7 @@ class MonitorRoundTripE2ETest(
                     enabled = false,
                     heartbeatInterval = 12345,
                     monitorName = "roundtrip-push",
+                    displayName = "Round trip PUSH",
                     gracePeriod = 54321,
                     clientSecret = "ab".repeat(18),
                     failureCountThreshold = 3,
@@ -84,6 +86,7 @@ class MonitorRoundTripE2ETest(
                     enabled = false,
                     host = "example.com",
                     monitorName = "roundtrip-icmp",
+                    displayName = "Round trip ICMP",
                     uptimeCheckInterval = 120,
                     packetCount = 5,
                     timeoutSeconds = 10,
@@ -98,6 +101,7 @@ class MonitorRoundTripE2ETest(
                     host = "example.com",
                     port = 5432,
                     monitorName = "roundtrip-tcp",
+                    displayName = "Round trip TCP",
                     category = "roundtrip-category",
                     uptimeCheckInterval = 120,
                     timeoutMs = 10000,
@@ -110,6 +114,7 @@ class MonitorRoundTripE2ETest(
                     enabled = false,
                     host = "example.com",
                     monitorName = "roundtrip-dns",
+                    displayName = "Round trip DNS",
                     uptimeCheckInterval = 120,
                     resolverHost = "1.1.1.1",
                     resolverPort = 5353,
@@ -195,6 +200,7 @@ class MonitorRoundTripE2ETest(
                     restoredHttp.expectedHeadersAsMap() shouldBe httpMonitor.expectedHeadersAsMap()
                     restoredHttp.requestBody shouldBe httpMonitor.requestBody
                     restoredHttp.category shouldBe "roundtrip-category"
+                    restoredHttp.displayName shouldBe "Round trip HTTP"
 
                     val restoredPush = pushMonitorRepository.findByName("roundtrip-push").shouldNotBeNull()
                     restoredPush.heartbeatInterval shouldBe pushMonitor.heartbeatInterval
@@ -203,6 +209,7 @@ class MonitorRoundTripE2ETest(
                     restoredPush.enabled shouldBe pushMonitor.enabled
                     restoredPush.failureCountThreshold shouldBe pushMonitor.failureCountThreshold
                     restoredPush.category shouldBe "roundtrip-category"
+                    restoredPush.displayName shouldBe "Round trip PUSH"
 
                     val restoredIcmp = icmpMonitorRepository.findByName("roundtrip-icmp").shouldNotBeNull()
                     restoredIcmp.host shouldBe icmpMonitor.host
@@ -214,6 +221,7 @@ class MonitorRoundTripE2ETest(
                     restoredIcmp.enabled shouldBe icmpMonitor.enabled
                     restoredIcmp.metricsHistoryEnabled shouldBe icmpMonitor.metricsHistoryEnabled
                     restoredIcmp.category shouldBe "roundtrip-category"
+                    restoredIcmp.displayName shouldBe "Round trip ICMP"
 
                     val restoredTcp = tcpMonitorRepository.findByName("roundtrip-tcp").shouldNotBeNull()
                     restoredTcp.host shouldBe tcpMonitor.host
@@ -225,6 +233,7 @@ class MonitorRoundTripE2ETest(
                     restoredTcp.enabled shouldBe tcpMonitor.enabled
                     restoredTcp.metricsHistoryEnabled shouldBe tcpMonitor.metricsHistoryEnabled
                     restoredTcp.category shouldBe "roundtrip-category"
+                    restoredTcp.displayName shouldBe "Round trip TCP"
 
                     val restoredDns = dnsMonitorRepository.findByName("roundtrip-dns").shouldNotBeNull()
                     restoredDns.host shouldBe dnsMonitor.host
@@ -240,6 +249,7 @@ class MonitorRoundTripE2ETest(
                     restoredDns.latencyThresholdMs shouldBe dnsMonitor.latencyThresholdMs
                     restoredDns.failureCountThreshold shouldBe dnsMonitor.failureCountThreshold
                     restoredDns.category shouldBe "roundtrip-category"
+                    restoredDns.displayName shouldBe "Round trip DNS"
                     restoredDns.enabled shouldBe dnsMonitor.enabled
                     restoredDns.metricsHistoryEnabled shouldBe dnsMonitor.metricsHistoryEnabled
 

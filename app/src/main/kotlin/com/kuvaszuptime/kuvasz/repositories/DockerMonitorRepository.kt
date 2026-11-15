@@ -15,6 +15,7 @@ import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.docker.idWithName
 import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
+import com.kuvaszuptime.kuvasz.models.monitor.normalizeDisplayName
 import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
 import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
@@ -51,6 +52,7 @@ class DockerMonitorRepository(
         .select(
             DOCKER_MONITOR.ID.`as`(DockerMonitorSummary::id.name),
             DOCKER_MONITOR.NAME.`as`(DockerMonitorSummary::name.name),
+            DOCKER_MONITOR.DISPLAY_NAME.`as`(DockerMonitorSummary::displayName.name),
             DOCKER_MONITOR.ENABLED.`as`(DockerMonitorSummary::enabled.name),
             DOCKER_MONITOR.CATEGORY.`as`(DockerMonitorSummary::category.name),
             checkNotNull(latestUptimeEventSelect.field(DOCKER_UPTIME_EVENT.STATUS))
@@ -118,7 +120,7 @@ class DockerMonitorRepository(
     ): PagedResult<DockerMonitorDetailsDto> {
         val condition = DSL.and(
             filterCondition(enabled, uptimeStatus, categoryFilter),
-            containsIgnoreCaseCondition(DOCKER_MONITOR.NAME, name),
+            containsIgnoreCaseCondition(listOf(DOCKER_MONITOR.NAME, DOCKER_MONITOR.DISPLAY_NAME), name),
         )
         return monitorDetailsSelect()
             .and(condition)
@@ -161,7 +163,7 @@ class DockerMonitorRepository(
 
     private fun DockerMonitorSortField.toField(): Field<*> = when (this) {
         DockerMonitorSortField.ID -> DOCKER_MONITOR.ID
-        DockerMonitorSortField.NAME -> DOCKER_MONITOR.NAME
+        DockerMonitorSortField.NAME -> effectiveNameField(DOCKER_MONITOR.NAME, DOCKER_MONITOR.DISPLAY_NAME)
         DockerMonitorSortField.ENABLED -> DOCKER_MONITOR.ENABLED
         DockerMonitorSortField.UPTIME_STATUS -> checkNotNull(latestUptimeEventSelect.field(DOCKER_UPTIME_EVENT.STATUS))
         DockerMonitorSortField.UPTIME_STATUS_STARTED_AT ->
@@ -199,6 +201,7 @@ class DockerMonitorRepository(
             (txCtx ?: dslContext)
                 .update(DOCKER_MONITOR)
                 .set(DOCKER_MONITOR.NAME, updatedMonitor.name)
+                .set(DOCKER_MONITOR.DISPLAY_NAME, normalizeDisplayName(updatedMonitor.displayName))
                 .set(DOCKER_MONITOR.DOCKER_HOST, updatedMonitor.dockerHost)
                 .set(DOCKER_MONITOR.CONTAINER, updatedMonitor.container)
                 .set(DOCKER_MONITOR.UPTIME_CHECK_INTERVAL, updatedMonitor.uptimeCheckInterval)
@@ -257,6 +260,7 @@ class DockerMonitorRepository(
         .select(
             DOCKER_MONITOR.ID.`as`(DockerMonitorDetailsDto::id.name),
             DOCKER_MONITOR.NAME.`as`(DockerMonitorDetailsDto::name.name),
+            DOCKER_MONITOR.DISPLAY_NAME.`as`(DockerMonitorDetailsDto::displayName.name),
             DOCKER_MONITOR.CATEGORY.`as`(DockerMonitorDetailsDto::category.name),
             DOCKER_MONITOR.IGNORE_CONNECTIVITY_CHECK
                 .`as`(DockerMonitorDetailsDto::ignoreConnectivityCheck.name),

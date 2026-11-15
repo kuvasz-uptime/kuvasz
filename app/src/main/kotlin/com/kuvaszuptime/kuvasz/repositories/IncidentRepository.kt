@@ -100,7 +100,13 @@ class IncidentRepository(private val dslContext: DSLContext) {
             includeSslIncidents = true,
             types = type?.let { setOf(it) },
         ).unionAll().asTable("incident")
-        val condition = containsIgnoreCaseCondition(incidents.incidentField(IncidentDto::monitorName.name), name)
+        val condition = containsIgnoreCaseCondition(
+            listOf(
+                incidents.incidentField(IncidentDto::monitorName.name),
+                incidents.incidentField(IncidentDto::monitorDisplayName.name),
+            ),
+            name,
+        )
 
         return dslContext
             .selectFrom(incidents)
@@ -122,7 +128,10 @@ class IncidentRepository(private val dslContext: DSLContext) {
     private fun IncidentSortField.toField(incidents: Table<*>): Field<*> = checkNotNull(
         when (this) {
             IncidentSortField.ID -> incidents.field(IncidentDto::eventId.name)
-            IncidentSortField.MONITOR_NAME -> incidents.field(IncidentDto::monitorName.name)
+            IncidentSortField.MONITOR_NAME -> effectiveNameField(
+                incidents.incidentField(IncidentDto::monitorName.name),
+                incidents.incidentField(IncidentDto::monitorDisplayName.name),
+            )
             IncidentSortField.INCIDENT_TYPE -> incidents.field(IncidentDto::incidentType.name)
             IncidentSortField.STATUS -> incidents.field(IncidentDto::status.name)
             IncidentSortField.STARTED_AT -> incidents.field(IncidentDto::startedAt.name)
@@ -271,6 +280,7 @@ class IncidentRepository(private val dslContext: DSLContext) {
         .select(
             HTTP_MONITOR.ID.`as`(IncidentDto::monitorId.name),
             HTTP_MONITOR.NAME.`as`(IncidentDto::monitorName.name),
+            HTTP_MONITOR.DISPLAY_NAME.`as`(IncidentDto::monitorDisplayName.name),
             HTTP_MONITOR.ENABLED.`as`(IncidentDto::isMonitorEnabled.name),
             DSL.inline(IncidentType.HTTP.name).`as`(IncidentDto::incidentType.name),
             HTTP_UPTIME_EVENT.ID.`as`(IncidentDto::eventId.name),
@@ -303,6 +313,7 @@ class IncidentRepository(private val dslContext: DSLContext) {
         .select(
             PUSH_MONITOR.ID.`as`(IncidentDto::monitorId.name),
             PUSH_MONITOR.NAME.`as`(IncidentDto::monitorName.name),
+            PUSH_MONITOR.DISPLAY_NAME.`as`(IncidentDto::monitorDisplayName.name),
             PUSH_MONITOR.ENABLED.`as`(IncidentDto::isMonitorEnabled.name),
             DSL.inline(IncidentType.PUSH.name).`as`(IncidentDto::incidentType.name),
             PUSH_UPTIME_EVENT.ID.`as`(IncidentDto::eventId.name),
@@ -335,6 +346,7 @@ class IncidentRepository(private val dslContext: DSLContext) {
         .select(
             ICMP_MONITOR.ID.`as`(IncidentDto::monitorId.name),
             ICMP_MONITOR.NAME.`as`(IncidentDto::monitorName.name),
+            ICMP_MONITOR.DISPLAY_NAME.`as`(IncidentDto::monitorDisplayName.name),
             ICMP_MONITOR.ENABLED.`as`(IncidentDto::isMonitorEnabled.name),
             DSL.inline(IncidentType.ICMP.name).`as`(IncidentDto::incidentType.name),
             ICMP_UPTIME_EVENT.ID.`as`(IncidentDto::eventId.name),
@@ -367,6 +379,7 @@ class IncidentRepository(private val dslContext: DSLContext) {
         .select(
             TCP_MONITOR.ID.`as`(IncidentDto::monitorId.name),
             TCP_MONITOR.NAME.`as`(IncidentDto::monitorName.name),
+            TCP_MONITOR.DISPLAY_NAME.`as`(IncidentDto::monitorDisplayName.name),
             TCP_MONITOR.ENABLED.`as`(IncidentDto::isMonitorEnabled.name),
             DSL.inline(IncidentType.TCP.name).`as`(IncidentDto::incidentType.name),
             TCP_UPTIME_EVENT.ID.`as`(IncidentDto::eventId.name),
@@ -399,6 +412,7 @@ class IncidentRepository(private val dslContext: DSLContext) {
         .select(
             DOCKER_MONITOR.ID.`as`(IncidentDto::monitorId.name),
             DOCKER_MONITOR.NAME.`as`(IncidentDto::monitorName.name),
+            DOCKER_MONITOR.DISPLAY_NAME.`as`(IncidentDto::monitorDisplayName.name),
             DOCKER_MONITOR.ENABLED.`as`(IncidentDto::isMonitorEnabled.name),
             DSL.inline(IncidentType.DOCKER.name).`as`(IncidentDto::incidentType.name),
             DOCKER_UPTIME_EVENT.ID.`as`(IncidentDto::eventId.name),
@@ -439,6 +453,7 @@ class IncidentRepository(private val dslContext: DSLContext) {
         .select(
             DNS_MONITOR.ID.`as`(IncidentDto::monitorId.name),
             DNS_MONITOR.NAME.`as`(IncidentDto::monitorName.name),
+            DNS_MONITOR.DISPLAY_NAME.`as`(IncidentDto::monitorDisplayName.name),
             DNS_MONITOR.ENABLED.`as`(IncidentDto::isMonitorEnabled.name),
             DSL.inline(IncidentType.DNS.name).`as`(IncidentDto::incidentType.name),
             DNS_UPTIME_EVENT.ID.`as`(IncidentDto::eventId.name),
@@ -471,6 +486,7 @@ class IncidentRepository(private val dslContext: DSLContext) {
         .select(
             HTTP_MONITOR.ID.`as`(IncidentDto::monitorId.name),
             HTTP_MONITOR.NAME.`as`(IncidentDto::monitorName.name),
+            HTTP_MONITOR.DISPLAY_NAME.`as`(IncidentDto::monitorDisplayName.name),
             DSL.field(HTTP_MONITOR.ENABLED.and(HTTP_MONITOR.SSL_CHECK_ENABLED))
                 .`as`(IncidentDto::isMonitorEnabled.name),
             DSL.inline(IncidentType.SSL.name).`as`(IncidentDto::incidentType.name),

@@ -26,6 +26,7 @@ import java.time.OffsetDateTime
 data class DnsMonitorSchema(
     val id: Long,
     val name: String,
+    val displayName: String?,
     val host: String,
     val resolverHost: String?,
     val resolverPort: Int,
@@ -50,6 +51,7 @@ data class DnsMonitorSchema(
         fun fromDto(dto: DnsMonitorDto) = DnsMonitorSchema(
             id = dto.id,
             name = dto.name,
+            displayName = dto.displayName,
             host = dto.host,
             resolverHost = dto.resolverHost,
             resolverPort = dto.resolverPort,
@@ -79,6 +81,7 @@ data class DnsMonitorSchema(
 data class DnsMonitorDetailsSchema(
     val id: Long,
     val name: String,
+    val displayName: String?,
     val host: String,
     val resolverHost: String?,
     val resolverPort: Int,
@@ -111,6 +114,7 @@ data class DnsMonitorDetailsSchema(
         fun fromDto(dto: DnsMonitorDetailsDto) = DnsMonitorDetailsSchema(
             id = dto.id,
             name = dto.name,
+            displayName = dto.displayName,
             host = dto.host,
             resolverHost = dto.resolverHost,
             resolverPort = dto.resolverPort,
@@ -147,6 +151,7 @@ data class DnsMonitorDetailsSchema(
 data class DnsMonitorSummarySchema(
     val id: Long,
     val name: String,
+    val displayName: String?,
     val host: String,
     val transport: DnsTransport,
     val uptimeCheckInterval: Int,
@@ -163,6 +168,7 @@ data class DnsMonitorSummarySchema(
         fun fromDto(dto: DnsMonitorDetailsDto) = DnsMonitorSummarySchema(
             id = dto.id,
             name = dto.name,
+            displayName = dto.displayName,
             host = dto.host,
             transport = dto.transport,
             uptimeCheckInterval = dto.uptimeCheckInterval,
@@ -214,6 +220,7 @@ data class DnsMonitorStatsSchema(
 data class DnsMonitorCreatorSchema(
     @get:NotBlank
     val name: String,
+    val displayName: String? = null,
     @get:NotBlank
     val host: String,
     @get:Min(Validation.MIN_UPTIME_CHECK_INTERVAL)
@@ -238,6 +245,7 @@ data class DnsMonitorCreatorSchema(
 ) {
     fun toDto() = DnsMonitorCreateDto(
         name = name,
+        displayName = displayName,
         host = host,
         uptimeCheckInterval = uptimeCheckInterval,
         resolverHost = resolverHost,

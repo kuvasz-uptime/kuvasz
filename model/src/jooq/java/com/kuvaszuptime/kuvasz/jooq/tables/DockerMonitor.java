@@ -139,6 +139,11 @@ public class DockerMonitor extends TableImpl<DockerMonitorRecord> {
      */
     public final TableField<DockerMonitorRecord, Boolean> RESTART_ALERT_ENABLED = createField(DSL.name("restart_alert_enabled"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("false"), SQLDataType.BOOLEAN)), this, "");
 
+    /**
+     * The column <code>kuvasz.docker_monitor.display_name</code>.
+     */
+    public final TableField<DockerMonitorRecord, String> DISPLAY_NAME = createField(DSL.name("display_name"), SQLDataType.CLOB, this, "");
+
     private DockerMonitor(Name alias, Table<DockerMonitorRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }

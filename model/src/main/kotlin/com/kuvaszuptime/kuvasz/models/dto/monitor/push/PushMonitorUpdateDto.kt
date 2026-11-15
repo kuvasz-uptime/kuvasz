@@ -21,6 +21,9 @@ data class PushMonitorUpdateDto(
     @get:NotBlank(message = MonitorValidationMessages.NAME_NOT_BLANK)
     val name: String?,
 
+    @param:Schema(description = MonitorDocs.DISPLAY_NAME, required = false, nullable = true)
+    val displayName: String?,
+
     @get:Min(MIN_HEARTBEAT_INTERVAL, message = MonitorValidationMessages.HEARTBEAT_INTERVAL_MIN)
     @get:NotNull(message = MonitorValidationMessages.HEARTBEAT_INTERVAL_NOT_NULL)
     @param:Schema(description = PushMonitorDocs.HEARTBEAT_INTERVAL, required = false, nullable = false)

@@ -69,6 +69,7 @@ private fun uptimeStats(
 private fun incident(status: IncidentStatus, startedAt: OffsetDateTime, endedAt: OffsetDateTime?) = IncidentDto(
     monitorId = 1,
     monitorName = "Monitor",
+    monitorDisplayName = null,
     isMonitorEnabled = true,
     incidentType = IncidentType.HTTP,
     eventId = 1,

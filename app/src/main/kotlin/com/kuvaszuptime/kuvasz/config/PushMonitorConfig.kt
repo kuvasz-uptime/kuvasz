@@ -16,6 +16,7 @@ interface PushMonitorConfig : PushMonitorCreator, MonitorConfig {
     }
 
     override val name: String
+    override val displayName: String?
     override val clientSecret: String
     override val heartbeatInterval: Long
 

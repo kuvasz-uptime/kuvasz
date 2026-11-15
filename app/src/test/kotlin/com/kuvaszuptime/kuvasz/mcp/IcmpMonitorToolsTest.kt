@@ -62,14 +62,17 @@ class IcmpMonitorToolsTest(
             }
 
             `when`("list-icmp-monitors is called with monitors in the DB") {
-                val monitor = createIcmpMonitor(icmpMonitorRepository)
+                val monitor = createIcmpMonitor(icmpMonitorRepository, displayName = "Listed label")
                 val response = callToolWithMcpClient(LIST_ICMP_MONITORS)
 
                 then("it should return the list in both structured and text content") {
                     response.isError shouldBe false
 
                     val monitorList = response.structuredContentAs<IcmpMonitorListSchema>().shouldNotBeNull()
-                    monitorList.monitors.forOne { it.name shouldBe monitor.name }
+                    monitorList.monitors.forOne { listed ->
+                        listed.name shouldBe monitor.name
+                        listed.displayName shouldBe "Listed label"
+                    }
 
                     response.contentAs<IcmpMonitorListSchema>() shouldBe monitorList
                 }
@@ -79,7 +82,7 @@ class IcmpMonitorToolsTest(
         given("the get-icmp-monitor-details tool") {
 
             `when`("get-icmp-monitor-details is called with a valid ID") {
-                val monitor = createIcmpMonitor(icmpMonitorRepository)
+                val monitor = createIcmpMonitor(icmpMonitorRepository, displayName = "Details label")
                 val response = callToolWithMcpClient(GET_ICMP_MONITOR_DETAILS, mapOf("monitorId" to monitor.id))
 
                 then("it should return the details in both structured and text content") {
@@ -88,6 +91,7 @@ class IcmpMonitorToolsTest(
                     val details = response.structuredContentAs<IcmpMonitorDetailsSchema>().shouldNotBeNull()
                     details.id shouldBe monitor.id
                     details.name shouldBe monitor.name
+                    details.displayName shouldBe "Details label"
                     details.ignoreConnectivityCheck shouldBe monitor.ignoreConnectivityCheck
 
                     response.contentAs<IcmpMonitorDetailsSchema>() shouldBe details
@@ -127,6 +131,24 @@ class IcmpMonitorToolsTest(
         }
 
         given("the create-icmp-monitor tool") {
+
+            `when`("create-icmp-monitor is called with a display name") {
+                val response = callToolWithMcpClient(
+                    CREATE_ICMP_MONITOR,
+                    mapOf(
+                        "name" to "mcp-created-icmp-monitor-with-display-name",
+                        "host" to "10.0.0.1",
+                        "uptimeCheckInterval" to 60,
+                        "displayName" to "  MCP label  ",
+                    )
+                )
+
+                then("the created monitor should have the trimmed display name") {
+                    response.isError shouldBe false
+
+                    response.structuredContentAs<IcmpMonitorSchema>().shouldNotBeNull().displayName shouldBe "MCP label"
+                }
+            }
 
             `when`("create-icmp-monitor is called with a minimal, valid input") {
                 val response = callToolWithMcpClient(

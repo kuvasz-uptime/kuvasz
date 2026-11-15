@@ -14,6 +14,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
+import com.kuvaszuptime.kuvasz.models.monitor.normalizeDisplayName
 import com.kuvaszuptime.kuvasz.models.monitor.tcp.idWithName
 import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
 import com.kuvaszuptime.kuvasz.models.pagination.Sorting
@@ -52,6 +53,7 @@ class TcpMonitorRepository(
         .select(
             TCP_MONITOR.ID.`as`(TcpMonitorSummary::id.name),
             TCP_MONITOR.NAME.`as`(TcpMonitorSummary::name.name),
+            TCP_MONITOR.DISPLAY_NAME.`as`(TcpMonitorSummary::displayName.name),
             TCP_MONITOR.ENABLED.`as`(TcpMonitorSummary::enabled.name),
             TCP_MONITOR.CATEGORY.`as`(TcpMonitorSummary::category.name),
             checkNotNull(latestUptimeEventSelect.field(TCP_UPTIME_EVENT.STATUS))
@@ -124,7 +126,7 @@ class TcpMonitorRepository(
     ): PagedResult<TcpMonitorDetailsDto> {
         val condition = DSL.and(
             filterCondition(enabled, uptimeStatus, categoryFilter),
-            containsIgnoreCaseCondition(TCP_MONITOR.NAME, name),
+            containsIgnoreCaseCondition(listOf(TCP_MONITOR.NAME, TCP_MONITOR.DISPLAY_NAME), name),
         )
         return monitorDetailsSelect()
             .and(condition)
@@ -167,7 +169,7 @@ class TcpMonitorRepository(
 
     private fun TcpMonitorSortField.toField(): Field<*> = when (this) {
         TcpMonitorSortField.ID -> TCP_MONITOR.ID
-        TcpMonitorSortField.NAME -> TCP_MONITOR.NAME
+        TcpMonitorSortField.NAME -> effectiveNameField(TCP_MONITOR.NAME, TCP_MONITOR.DISPLAY_NAME)
         TcpMonitorSortField.ENABLED -> TCP_MONITOR.ENABLED
         TcpMonitorSortField.UPTIME_STATUS -> checkNotNull(latestUptimeEventSelect.field(TCP_UPTIME_EVENT.STATUS))
         TcpMonitorSortField.UPTIME_STATUS_STARTED_AT ->
@@ -205,6 +207,7 @@ class TcpMonitorRepository(
             (txCtx ?: dslContext)
                 .update(TCP_MONITOR)
                 .set(TCP_MONITOR.NAME, updatedMonitor.name)
+                .set(TCP_MONITOR.DISPLAY_NAME, normalizeDisplayName(updatedMonitor.displayName))
                 .set(TCP_MONITOR.HOST, updatedMonitor.host)
                 .set(TCP_MONITOR.PORT, updatedMonitor.port)
                 .set(TCP_MONITOR.UPTIME_CHECK_INTERVAL, updatedMonitor.uptimeCheckInterval)
@@ -264,6 +267,7 @@ class TcpMonitorRepository(
         .select(
             TCP_MONITOR.ID.`as`(TcpMonitorDetailsDto::id.name),
             TCP_MONITOR.NAME.`as`(TcpMonitorDetailsDto::name.name),
+            TCP_MONITOR.DISPLAY_NAME.`as`(TcpMonitorDetailsDto::displayName.name),
             TCP_MONITOR.CATEGORY.`as`(TcpMonitorDetailsDto::category.name),
             TCP_MONITOR.IGNORE_CONNECTIVITY_CHECK
                 .`as`(TcpMonitorDetailsDto::ignoreConnectivityCheck.name),

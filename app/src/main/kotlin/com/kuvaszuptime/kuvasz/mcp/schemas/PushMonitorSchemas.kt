@@ -24,6 +24,7 @@ import java.time.OffsetDateTime
 data class PushMonitorSchema(
     val id: Long,
     val name: String,
+    val displayName: String?,
     val heartbeatInterval: Long,
     val gracePeriod: Long,
     val lastHeartbeat: OffsetDateTime?,
@@ -40,6 +41,7 @@ data class PushMonitorSchema(
         fun fromDto(dto: PushMonitorDto) = PushMonitorSchema(
             id = dto.id,
             name = dto.name,
+            displayName = dto.displayName,
             heartbeatInterval = dto.heartbeatInterval,
             gracePeriod = dto.gracePeriod,
             lastHeartbeat = dto.lastHeartbeat,
@@ -61,6 +63,7 @@ data class PushMonitorSchema(
 data class PushMonitorDetailsSchema(
     val id: Long,
     val name: String,
+    val displayName: String?,
     val heartbeatInterval: Long,
     val gracePeriod: Long,
     val clientSecret: String,
@@ -85,6 +88,7 @@ data class PushMonitorDetailsSchema(
         fun fromDto(dto: PushMonitorDetailsDto) = PushMonitorDetailsSchema(
             id = dto.id,
             name = dto.name,
+            displayName = dto.displayName,
             heartbeatInterval = dto.heartbeatInterval,
             gracePeriod = dto.gracePeriod,
             clientSecret = dto.clientSecret,
@@ -113,6 +117,7 @@ data class PushMonitorDetailsSchema(
 data class PushMonitorSummarySchema(
     val id: Long,
     val name: String,
+    val displayName: String?,
     val heartbeatInterval: Long,
     val gracePeriod: Long,
     val enabled: Boolean,
@@ -128,6 +133,7 @@ data class PushMonitorSummarySchema(
         fun fromDto(dto: PushMonitorDetailsDto) = PushMonitorSummarySchema(
             id = dto.id,
             name = dto.name,
+            displayName = dto.displayName,
             heartbeatInterval = dto.heartbeatInterval,
             gracePeriod = dto.gracePeriod,
             enabled = dto.enabled,
@@ -157,6 +163,7 @@ data class PushMonitorListSchema(
 data class PushMonitorCreatorSchema(
     @get:NotBlank
     val name: String,
+    val displayName: String? = null,
     @get:Min(Validation.MIN_HEARTBEAT_INTERVAL)
     val heartbeatInterval: Long,
     @get:PositiveOrZero
@@ -173,6 +180,7 @@ data class PushMonitorCreatorSchema(
 ) {
     fun toDto() = PushMonitorCreateDto(
         name = name,
+        displayName = displayName,
         heartbeatInterval = heartbeatInterval,
         gracePeriod = gracePeriod ?: PushMonitorDefaults.GRACE_PERIOD_SECONDS,
         enabled = enabled ?: PushMonitorDefaults.MONITOR_ENABLED,

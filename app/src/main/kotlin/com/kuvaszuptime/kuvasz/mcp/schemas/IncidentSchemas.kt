@@ -28,6 +28,7 @@ data class IncidentListSchema(
 data class IncidentSchema(
     val monitorId: Long,
     val monitorName: String,
+    val monitorDisplayName: String?,
     val isMonitorEnabled: Boolean,
     val incidentType: IncidentType,
     val eventId: Long,
@@ -41,6 +42,7 @@ data class IncidentSchema(
         fun fromDto(dto: IncidentDto) = IncidentSchema(
             monitorId = dto.monitorId,
             monitorName = dto.monitorName,
+            monitorDisplayName = dto.monitorDisplayName,
             isMonitorEnabled = dto.isMonitorEnabled,
             incidentType = dto.incidentType,
             eventId = dto.eventId,

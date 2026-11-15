@@ -16,6 +16,7 @@ import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.dns.idWithName
 import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
+import com.kuvaszuptime.kuvasz.models.monitor.normalizeDisplayName
 import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
 import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
@@ -54,6 +55,7 @@ class DnsMonitorRepository(
         .select(
             DNS_MONITOR.ID.`as`(DnsMonitorSummary::id.name),
             DNS_MONITOR.NAME.`as`(DnsMonitorSummary::name.name),
+            DNS_MONITOR.DISPLAY_NAME.`as`(DnsMonitorSummary::displayName.name),
             DNS_MONITOR.ENABLED.`as`(DnsMonitorSummary::enabled.name),
             DNS_MONITOR.CATEGORY.`as`(DnsMonitorSummary::category.name),
             checkNotNull(latestUptimeEventSelect.field(DNS_UPTIME_EVENT.STATUS))
@@ -139,7 +141,7 @@ class DnsMonitorRepository(
     ): PagedResult<DnsMonitorDetailsDto> {
         val condition = DSL.and(
             filterCondition(enabled, uptimeStatus, categoryFilter),
-            containsIgnoreCaseCondition(DNS_MONITOR.NAME, name),
+            containsIgnoreCaseCondition(listOf(DNS_MONITOR.NAME, DNS_MONITOR.DISPLAY_NAME), name),
         )
         return monitorDetailsSelect()
             .and(condition)
@@ -182,7 +184,7 @@ class DnsMonitorRepository(
 
     private fun DnsMonitorSortField.toField(): Field<*> = when (this) {
         DnsMonitorSortField.ID -> DNS_MONITOR.ID
-        DnsMonitorSortField.NAME -> DNS_MONITOR.NAME
+        DnsMonitorSortField.NAME -> effectiveNameField(DNS_MONITOR.NAME, DNS_MONITOR.DISPLAY_NAME)
         DnsMonitorSortField.ENABLED -> DNS_MONITOR.ENABLED
         DnsMonitorSortField.UPTIME_STATUS -> checkNotNull(latestUptimeEventSelect.field(DNS_UPTIME_EVENT.STATUS))
         DnsMonitorSortField.UPTIME_STATUS_STARTED_AT ->
@@ -208,6 +210,7 @@ class DnsMonitorRepository(
             (txCtx ?: dslContext)
                 .update(DNS_MONITOR)
                 .set(DNS_MONITOR.NAME, updatedMonitor.name)
+                .set(DNS_MONITOR.DISPLAY_NAME, normalizeDisplayName(updatedMonitor.displayName))
                 .set(DNS_MONITOR.HOST, updatedMonitor.host)
                 .set(DNS_MONITOR.RESOLVER_HOST, updatedMonitor.resolverHost)
                 .set(DNS_MONITOR.RESOLVER_PORT, updatedMonitor.resolverPort)
@@ -264,6 +267,7 @@ class DnsMonitorRepository(
         .select(
             DNS_MONITOR.ID.`as`(DnsMonitorDetailsDto::id.name),
             DNS_MONITOR.NAME.`as`(DnsMonitorDetailsDto::name.name),
+            DNS_MONITOR.DISPLAY_NAME.`as`(DnsMonitorDetailsDto::displayName.name),
             DNS_MONITOR.CATEGORY.`as`(DnsMonitorDetailsDto::category.name),
             DNS_MONITOR.IGNORE_CONNECTIVITY_CHECK
                 .`as`(DnsMonitorDetailsDto::ignoreConnectivityCheck.name),

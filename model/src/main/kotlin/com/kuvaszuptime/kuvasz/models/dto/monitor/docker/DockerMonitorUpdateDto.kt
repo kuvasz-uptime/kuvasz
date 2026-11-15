@@ -20,6 +20,9 @@ data class DockerMonitorUpdateDto(
     @get:NotBlank(message = MonitorValidationMessages.NAME_NOT_BLANK)
     val name: String?,
 
+    @param:Schema(description = MonitorDocs.DISPLAY_NAME, required = false, nullable = true)
+    val displayName: String?,
+
     @param:Schema(description = DockerMonitorDocs.DOCKER_HOST, required = false, nullable = false)
     @get:NotBlank(message = MonitorValidationMessages.DOCKER_HOST_NOT_BLANK)
     val dockerHost: String?,

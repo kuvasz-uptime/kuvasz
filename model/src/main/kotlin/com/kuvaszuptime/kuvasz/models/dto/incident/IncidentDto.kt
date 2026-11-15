@@ -1,6 +1,7 @@
 package com.kuvaszuptime.kuvasz.models.dto.incident
 
 import com.kuvaszuptime.kuvasz.models.IncidentType
+import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDocs
 import com.kuvaszuptime.kuvasz.models.monitor.NumericMonitorID
 import com.kuvaszuptime.kuvasz.models.monitorType
 import io.micronaut.core.annotation.Introspected
@@ -13,6 +14,8 @@ data class IncidentDto(
     val monitorId: Long,
     @param:Schema(description = "Name of the monitor this incident belongs to", required = true)
     val monitorName: String,
+    @param:Schema(description = MonitorDocs.DISPLAY_NAME, required = true, nullable = true)
+    val monitorDisplayName: String?,
     @param:Schema(description = "Whether the monitor related to the incident is enabled", required = true)
     val isMonitorEnabled: Boolean,
     @param:Schema(description = "Type of the incident", required = true)
@@ -30,6 +33,13 @@ data class IncidentDto(
     @param:Schema(description = "When the incident was last updated", required = true)
     val updatedAt: OffsetDateTime,
 )
+
+/**
+ * The label of the incident's monitor that is shown to people: its display name if it has one, its unique name
+ * otherwise.
+ */
+val IncidentDto.effectiveMonitorName: String
+    get() = monitorDisplayName ?: monitorName
 
 // Unique across the types, unlike the monitorId itself
 val IncidentDto.numericMonitorId: NumericMonitorID

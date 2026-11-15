@@ -132,6 +132,7 @@ class DashboardOverviewUiTest(
                         IncidentDto(
                             monitorId = index.toLong(),
                             monitorName = "${type.name} Monitor",
+                            monitorDisplayName = null,
                             isMonitorEnabled = true,
                             incidentType = type,
                             eventId = index * EVENT_ID_STEP,
@@ -171,6 +172,7 @@ class DashboardOverviewUiTest(
                         HttpMonitorSummary(
                             id = CERTIFICATE_MONITOR_ID,
                             name = "Expired Monitor",
+                            displayName = null,
                             enabled = true,
                             category = null,
                             uptimeStatus = UptimeStatus.UP,

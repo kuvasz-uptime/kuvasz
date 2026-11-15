@@ -34,6 +34,7 @@ public class IcmpMonitor implements Serializable {
     private OffsetDateTime updatedAt;
     private String category;
     private Boolean ignoreConnectivityCheck;
+    private String displayName;
 
     public IcmpMonitor() {}
 
@@ -53,6 +54,7 @@ public class IcmpMonitor implements Serializable {
         this.updatedAt = value.updatedAt;
         this.category = value.category;
         this.ignoreConnectivityCheck = value.ignoreConnectivityCheck;
+        this.displayName = value.displayName;
     }
 
     public IcmpMonitor(
@@ -70,7 +72,8 @@ public class IcmpMonitor implements Serializable {
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt,
         String category,
-        Boolean ignoreConnectivityCheck
+        Boolean ignoreConnectivityCheck,
+        String displayName
     ) {
         this.id = id;
         this.name = name;
@@ -87,6 +90,7 @@ public class IcmpMonitor implements Serializable {
         this.updatedAt = updatedAt;
         this.category = category;
         this.ignoreConnectivityCheck = ignoreConnectivityCheck;
+        this.displayName = displayName;
     }
 
     /**
@@ -314,6 +318,21 @@ public class IcmpMonitor implements Serializable {
         return this;
     }
 
+    /**
+     * Getter for <code>kuvasz.icmp_monitor.display_name</code>.
+     */
+    public String getDisplayName() {
+        return this.displayName;
+    }
+
+    /**
+     * Setter for <code>kuvasz.icmp_monitor.display_name</code>.
+     */
+    public IcmpMonitor setDisplayName(String displayName) {
+        this.displayName = displayName;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -413,6 +432,12 @@ public class IcmpMonitor implements Serializable {
         }
         else if (!this.ignoreConnectivityCheck.equals(other.ignoreConnectivityCheck))
             return false;
+        if (this.displayName == null) {
+            if (other.displayName != null)
+                return false;
+        }
+        else if (!this.displayName.equals(other.displayName))
+            return false;
         return true;
     }
 
@@ -435,6 +460,7 @@ public class IcmpMonitor implements Serializable {
         result = prime * result + ((this.updatedAt == null) ? 0 : this.updatedAt.hashCode());
         result = prime * result + ((this.category == null) ? 0 : this.category.hashCode());
         result = prime * result + ((this.ignoreConnectivityCheck == null) ? 0 : this.ignoreConnectivityCheck.hashCode());
+        result = prime * result + ((this.displayName == null) ? 0 : this.displayName.hashCode());
         return result;
     }
 
@@ -457,6 +483,7 @@ public class IcmpMonitor implements Serializable {
         sb.append(", ").append(updatedAt);
         sb.append(", ").append(category);
         sb.append(", ").append(ignoreConnectivityCheck);
+        sb.append(", ").append(displayName);
 
         sb.append(")");
         return sb.toString();

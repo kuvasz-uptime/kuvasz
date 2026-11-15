@@ -14,6 +14,7 @@ sealed class MonitorSummary {
     abstract val type: MonitorType
     abstract val id: Long
     abstract val name: String
+    abstract val displayName: String?
     abstract val enabled: Boolean
     abstract val category: String?
     abstract val uptimeStatus: UptimeStatus?
@@ -23,9 +24,16 @@ sealed class MonitorSummary {
         get() = MonitorID(type, name)
 }
 
+/**
+ * The label of the monitor that is shown to people: its display name if it has one, its unique name otherwise.
+ */
+val MonitorSummary.effectiveName: String
+    get() = displayName ?: name
+
 data class HttpMonitorSummary(
     override val id: Long,
     override val name: String,
+    override val displayName: String?,
     override val enabled: Boolean,
     override val category: String?,
     override val uptimeStatus: UptimeStatus?,
@@ -40,6 +48,7 @@ data class HttpMonitorSummary(
 data class PushMonitorSummary(
     override val id: Long,
     override val name: String,
+    override val displayName: String?,
     override val enabled: Boolean,
     override val category: String?,
     override val uptimeStatus: UptimeStatus?,
@@ -50,6 +59,7 @@ data class PushMonitorSummary(
 data class IcmpMonitorSummary(
     override val id: Long,
     override val name: String,
+    override val displayName: String?,
     override val enabled: Boolean,
     override val category: String?,
     override val uptimeStatus: UptimeStatus?,
@@ -60,6 +70,7 @@ data class IcmpMonitorSummary(
 data class TcpMonitorSummary(
     override val id: Long,
     override val name: String,
+    override val displayName: String?,
     override val enabled: Boolean,
     override val category: String?,
     override val uptimeStatus: UptimeStatus?,
@@ -70,6 +81,7 @@ data class TcpMonitorSummary(
 data class DnsMonitorSummary(
     override val id: Long,
     override val name: String,
+    override val displayName: String?,
     override val enabled: Boolean,
     override val category: String?,
     override val uptimeStatus: UptimeStatus?,
@@ -80,6 +92,7 @@ data class DnsMonitorSummary(
 data class DockerMonitorSummary(
     override val id: Long,
     override val name: String,
+    override val displayName: String?,
     override val enabled: Boolean,
     override val category: String?,
     override val uptimeStatus: UptimeStatus?,

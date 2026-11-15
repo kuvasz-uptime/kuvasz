@@ -7,6 +7,7 @@ import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorCreator
 import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
+import com.kuvaszuptime.kuvasz.models.monitor.normalizeDisplayName
 import com.kuvaszuptime.kuvasz.util.nullIfBlank
 import com.kuvaszuptime.kuvasz.validation.SupportedStatusCodes
 import com.kuvaszuptime.kuvasz.validation.ValidHeaderNames
@@ -76,6 +77,7 @@ interface HttpMonitorCreator : MonitorCreator<HttpMonitorRecord> {
     override fun toMonitorRecord(validatedIntegrations: Set<IntegrationID>): HttpMonitorRecord =
         HttpMonitorRecord()
             .setName(name)
+            .setDisplayName(normalizeDisplayName(displayName))
             .setUrl(url)
             .setSensitiveUrl(sensitiveUrl)
             .setEnabled(enabled)

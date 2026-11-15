@@ -1,5 +1,6 @@
 dns-monitors:
   - name: test1
+    display-name: "  First label  "
     host: example.com
     uptime-check-interval: 120
     enabled: false

@@ -22,6 +22,7 @@ interface DnsMonitorConfig : DnsMonitorCreator, MonitorConfig {
     }
 
     override val name: String
+    override val displayName: String?
     override val host: String
     override val uptimeCheckInterval: Int
 

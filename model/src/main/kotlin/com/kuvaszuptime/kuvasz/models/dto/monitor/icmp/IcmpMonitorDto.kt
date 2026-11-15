@@ -13,6 +13,8 @@ data class IcmpMonitorDto(
     val id: Long,
     @param:Schema(description = MonitorDocs.NAME, required = true)
     val name: String,
+    @param:Schema(description = MonitorDocs.DISPLAY_NAME, required = true, nullable = true)
+    val displayName: String?,
     @param:Schema(description = IcmpMonitorDocs.HOST, required = true)
     val host: String,
     @param:Schema(description = MonitorDocs.UPTIME_CHECK_INTERVAL, required = true)
@@ -44,6 +46,7 @@ data class IcmpMonitorDto(
         fun fromMonitorRecord(record: IcmpMonitorRecord) = IcmpMonitorDto(
             id = record.id,
             name = record.name,
+            displayName = record.displayName,
             host = record.host,
             uptimeCheckInterval = record.uptimeCheckInterval,
             packetCount = record.packetCount,

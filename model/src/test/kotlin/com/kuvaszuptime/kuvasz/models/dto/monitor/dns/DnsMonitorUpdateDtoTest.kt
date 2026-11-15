@@ -21,6 +21,7 @@ class DnsMonitorUpdateDtoTest(validator: DefaultValidator) : BehaviorSpec({
         recordMatchers: List<DnsRecordMatcher> = emptyList(),
     ) = DnsMonitorUpdateDto(
         name = "Test Monitor",
+        displayName = null,
         host = "example.com",
         resolverHost = null,
         resolverPort = 53,

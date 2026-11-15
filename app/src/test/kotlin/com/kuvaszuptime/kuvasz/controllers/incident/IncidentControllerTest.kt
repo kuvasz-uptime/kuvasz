@@ -47,6 +47,7 @@ class IncidentControllerTest(
     val incident = IncidentDto(
         monitorId = 1L,
         monitorName = "Monitor",
+        monitorDisplayName = null,
         isMonitorEnabled = true,
         incidentType = IncidentType.HTTP,
         eventId = 42L,

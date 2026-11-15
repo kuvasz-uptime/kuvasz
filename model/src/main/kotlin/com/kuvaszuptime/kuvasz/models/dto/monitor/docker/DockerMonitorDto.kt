@@ -13,6 +13,8 @@ data class DockerMonitorDto(
     val id: Long,
     @param:Schema(description = MonitorDocs.NAME, required = true)
     val name: String,
+    @param:Schema(description = MonitorDocs.DISPLAY_NAME, required = true, nullable = true)
+    val displayName: String?,
     @param:Schema(description = DockerMonitorDocs.DOCKER_HOST, required = true)
     val dockerHost: String,
     @param:Schema(description = DockerMonitorDocs.CONTAINER, required = true)
@@ -44,6 +46,7 @@ data class DockerMonitorDto(
         fun fromMonitorRecord(record: DockerMonitorRecord) = DockerMonitorDto(
             id = record.id,
             name = record.name,
+            displayName = record.displayName,
             dockerHost = record.dockerHost,
             container = record.container,
             uptimeCheckInterval = record.uptimeCheckInterval,

@@ -128,6 +128,11 @@ public class PushMonitor extends TableImpl<PushMonitorRecord> {
      */
     public final TableField<PushMonitorRecord, Boolean> IGNORE_CONNECTIVITY_CHECK = createField(DSL.name("ignore_connectivity_check"), SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field(DSL.raw("false"), SQLDataType.BOOLEAN)), this, "");
 
+    /**
+     * The column <code>kuvasz.push_monitor.display_name</code>.
+     */
+    public final TableField<PushMonitorRecord, String> DISPLAY_NAME = createField(DSL.name("display_name"), SQLDataType.CLOB, this, "");
+
     private PushMonitor(Name alias, Table<PushMonitorRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }

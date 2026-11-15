@@ -4293,6 +4293,7 @@ class StatCalculatorTest(
                             HttpMonitorSummary(
                                 id = http.id,
                                 name = "HTTP",
+                                displayName = null,
                                 enabled = true,
                                 category = "Web",
                                 uptimeStatus = UptimeStatus.DOWN,
@@ -4301,11 +4302,11 @@ class StatCalculatorTest(
                                 sslValidUntil = null,
                                 sslError = "Expired",
                             ),
-                            PushMonitorSummary(push.id, "Push", enabled = false, null, null),
-                            IcmpMonitorSummary(icmp.id, "ICMP", enabled = true, null, UptimeStatus.UP),
-                            TcpMonitorSummary(tcp.id, "TCP", enabled = true, null, UptimeStatus.DOWN),
-                            DnsMonitorSummary(dns.id, "DNS", enabled = true, "Resolvers", UptimeStatus.UP),
-                            DockerMonitorSummary(docker.id, "Docker", enabled = true, null, null),
+                            PushMonitorSummary(push.id, "Push", null, enabled = false, null, null),
+                            IcmpMonitorSummary(icmp.id, "ICMP", null, enabled = true, null, UptimeStatus.UP),
+                            TcpMonitorSummary(tcp.id, "TCP", null, enabled = true, null, UptimeStatus.DOWN),
+                            DnsMonitorSummary(dns.id, "DNS", null, enabled = true, "Resolvers", UptimeStatus.UP),
+                            DockerMonitorSummary(docker.id, "Docker", null, enabled = true, null, null),
                         )
                     // Every summary tells its own type
                     summaries.map { it.type } shouldContainExactlyInAnyOrder MonitorType.entries

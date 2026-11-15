@@ -32,6 +32,7 @@ public class PushMonitor implements Serializable {
     private Long failureCountThreshold;
     private String category;
     private Boolean ignoreConnectivityCheck;
+    private String displayName;
 
     public PushMonitor() {}
 
@@ -49,6 +50,7 @@ public class PushMonitor implements Serializable {
         this.failureCountThreshold = value.failureCountThreshold;
         this.category = value.category;
         this.ignoreConnectivityCheck = value.ignoreConnectivityCheck;
+        this.displayName = value.displayName;
     }
 
     public PushMonitor(
@@ -64,7 +66,8 @@ public class PushMonitor implements Serializable {
         OffsetDateTime updatedAt,
         Long failureCountThreshold,
         String category,
-        Boolean ignoreConnectivityCheck
+        Boolean ignoreConnectivityCheck,
+        String displayName
     ) {
         this.id = id;
         this.name = name;
@@ -79,6 +82,7 @@ public class PushMonitor implements Serializable {
         this.failureCountThreshold = failureCountThreshold;
         this.category = category;
         this.ignoreConnectivityCheck = ignoreConnectivityCheck;
+        this.displayName = displayName;
     }
 
     /**
@@ -276,6 +280,21 @@ public class PushMonitor implements Serializable {
         return this;
     }
 
+    /**
+     * Getter for <code>kuvasz.push_monitor.display_name</code>.
+     */
+    public String getDisplayName() {
+        return this.displayName;
+    }
+
+    /**
+     * Setter for <code>kuvasz.push_monitor.display_name</code>.
+     */
+    public PushMonitor setDisplayName(String displayName) {
+        this.displayName = displayName;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -363,6 +382,12 @@ public class PushMonitor implements Serializable {
         }
         else if (!this.ignoreConnectivityCheck.equals(other.ignoreConnectivityCheck))
             return false;
+        if (this.displayName == null) {
+            if (other.displayName != null)
+                return false;
+        }
+        else if (!this.displayName.equals(other.displayName))
+            return false;
         return true;
     }
 
@@ -383,6 +408,7 @@ public class PushMonitor implements Serializable {
         result = prime * result + ((this.failureCountThreshold == null) ? 0 : this.failureCountThreshold.hashCode());
         result = prime * result + ((this.category == null) ? 0 : this.category.hashCode());
         result = prime * result + ((this.ignoreConnectivityCheck == null) ? 0 : this.ignoreConnectivityCheck.hashCode());
+        result = prime * result + ((this.displayName == null) ? 0 : this.displayName.hashCode());
         return result;
     }
 
@@ -403,6 +429,7 @@ public class PushMonitor implements Serializable {
         sb.append(", ").append(failureCountThreshold);
         sb.append(", ").append(category);
         sb.append(", ").append(ignoreConnectivityCheck);
+        sb.append(", ").append(displayName);
 
         sb.append(")");
         return sb.toString();

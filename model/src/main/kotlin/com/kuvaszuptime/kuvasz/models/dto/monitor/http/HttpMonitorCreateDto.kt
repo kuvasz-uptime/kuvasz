@@ -11,6 +11,8 @@ import io.swagger.v3.oas.annotations.media.Schema
 data class HttpMonitorCreateDto(
     @param:Schema(description = MonitorDocs.NAME, required = true)
     override val name: String,
+    @param:Schema(description = MonitorDocs.DISPLAY_NAME, required = false, nullable = true)
+    override val displayName: String? = null,
     @param:Schema(description = HttpMonitorDocs.URL, required = true)
     override val url: String,
     @param:Schema(

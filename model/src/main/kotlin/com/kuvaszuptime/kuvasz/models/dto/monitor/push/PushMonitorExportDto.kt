@@ -8,6 +8,7 @@ import io.micronaut.core.annotation.Introspected
 @Introspected
 data class PushMonitorExportDto(
     val name: String,
+    val displayName: String? = null,
     val heartbeatInterval: Long,
     val gracePeriod: Long,
     val clientSecret: String,
@@ -21,6 +22,7 @@ data class PushMonitorExportDto(
         fun fromMonitorRecord(record: PushMonitorRecord): PushMonitorExportDto {
             return PushMonitorExportDto(
                 name = record.name,
+                displayName = record.displayName,
                 heartbeatInterval = record.heartbeatInterval,
                 gracePeriod = record.gracePeriod,
                 clientSecret = record.clientSecret,

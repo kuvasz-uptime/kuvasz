@@ -18,6 +18,7 @@ interface TcpMonitorConfig : TcpMonitorCreator, MonitorConfig {
     }
 
     override val name: String
+    override val displayName: String?
     override val host: String
     override val port: Int
     override val uptimeCheckInterval: Int

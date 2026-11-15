@@ -8,6 +8,7 @@ import io.micronaut.core.annotation.Introspected
 @Introspected
 class HttpMonitorImportAdapter(dto: HttpMonitorExportDto) : HttpMonitorCreator {
     override val name: String = dto.name
+    override val displayName: String? = dto.displayName
     override val url: String = dto.url
     override val sensitiveUrl: Boolean = dto.sensitiveUrl
     override val uptimeCheckInterval: Int = dto.uptimeCheckInterval

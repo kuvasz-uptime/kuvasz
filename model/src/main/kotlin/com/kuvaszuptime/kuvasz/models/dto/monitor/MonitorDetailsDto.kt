@@ -9,6 +9,7 @@ import java.time.OffsetDateTime
 sealed interface MonitorDetailsDto {
     val id: Long
     val name: String
+    val displayName: String?
     val enabled: Boolean
     val uptimeStatus: UptimeStatus?
     val uptimeStatusStartedAt: OffsetDateTime?
@@ -28,6 +29,12 @@ fun MonitorDetailsDto.monitorType(): MonitorType = when (this) {
     is DnsMonitorDetailsDto -> MonitorType.DNS
     is DockerMonitorDetailsDto -> MonitorType.DOCKER
 }
+
+/**
+ * The label of the monitor that is shown to people: its display name if it has one, its unique name otherwise.
+ */
+val MonitorDetailsDto.effectiveName: String
+    get() = displayName ?: name
 
 fun MonitorDetailsDto.monitorId(): MonitorID = MonitorID(monitorType(), name)
 

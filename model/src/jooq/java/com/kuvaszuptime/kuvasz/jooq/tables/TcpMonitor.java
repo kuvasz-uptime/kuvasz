@@ -144,6 +144,11 @@ public class TcpMonitor extends TableImpl<TcpMonitorRecord> {
      */
     public final TableField<TcpMonitorRecord, String> PROXY = createField(DSL.name("proxy"), SQLDataType.CLOB, this, "");
 
+    /**
+     * The column <code>kuvasz.tcp_monitor.display_name</code>.
+     */
+    public final TableField<TcpMonitorRecord, String> DISPLAY_NAME = createField(DSL.name("display_name"), SQLDataType.CLOB, this, "");
+
     private TcpMonitor(Name alias, Table<TcpMonitorRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }

@@ -817,6 +817,7 @@ class MonitorControllerTest(
                     httpMonitors = listOf(
                         HttpMonitorExportDto(
                             name = "multi-http",
+                            displayName = "Multi HTTP",
                             url = "https://example.com",
                             sensitiveUrl = false,
                             uptimeCheckInterval = 60,
@@ -844,6 +845,7 @@ class MonitorControllerTest(
                     pushMonitors = listOf(
                         PushMonitorExportDto(
                             name = "multi-push",
+                            displayName = "Multi PUSH",
                             heartbeatInterval = 60,
                             gracePeriod = 30,
                             clientSecret = "ab".repeat(18),
@@ -857,6 +859,7 @@ class MonitorControllerTest(
                     icmpMonitors = listOf(
                         IcmpMonitorExportDto(
                             name = "multi-icmp",
+                            displayName = "Multi ICMP",
                             host = "1.2.3.4",
                             uptimeCheckInterval = 60,
                             packetCount = 4,
@@ -873,6 +876,7 @@ class MonitorControllerTest(
                     tcpMonitors = listOf(
                         TcpMonitorExportDto(
                             name = "multi-tcp",
+                            displayName = "Multi TCP",
                             host = "1.2.3.4",
                             port = 5432,
                             uptimeCheckInterval = 60,
@@ -889,6 +893,7 @@ class MonitorControllerTest(
                     dnsMonitors = listOf(
                         DnsMonitorExportDto(
                             name = "multi-dns",
+                            displayName = "Multi DNS",
                             host = "example.com",
                             resolverHost = "1.1.1.1",
                             resolverPort = 5353,
@@ -933,6 +938,11 @@ class MonitorControllerTest(
                         MonitorType.DNS,
                     )
 
+                    httpMonitorRepository.findByName("multi-http").shouldNotBeNull().displayName shouldBe "Multi HTTP"
+                    pushMonitorRepository.findByName("multi-push").shouldNotBeNull().displayName shouldBe "Multi PUSH"
+                    icmpMonitorRepository.findByName("multi-icmp").shouldNotBeNull().displayName shouldBe "Multi ICMP"
+                    tcpMonitorRepository.findByName("multi-tcp").shouldNotBeNull().displayName shouldBe "Multi TCP"
+                    dnsMonitorRepository.findByName("multi-dns").shouldNotBeNull().displayName shouldBe "Multi DNS"
                     // The DNS-specific fields, incl. the JSONB matchers, must survive the import
                     val importedDns = dnsMonitorRepository.findByName("multi-dns").shouldNotBeNull()
                     importedDns.transport shouldBe DnsTransport.TCP

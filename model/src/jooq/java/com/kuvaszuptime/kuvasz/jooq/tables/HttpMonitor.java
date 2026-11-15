@@ -214,6 +214,11 @@ public class HttpMonitor extends TableImpl<HttpMonitorRecord> {
      */
     public final TableField<HttpMonitorRecord, String> PROXY = createField(DSL.name("proxy"), SQLDataType.CLOB, this, "");
 
+    /**
+     * The column <code>kuvasz.http_monitor.display_name</code>.
+     */
+    public final TableField<HttpMonitorRecord, String> DISPLAY_NAME = createField(DSL.name("display_name"), SQLDataType.CLOB, this, "");
+
     private HttpMonitor(Name alias, Table<HttpMonitorRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }
