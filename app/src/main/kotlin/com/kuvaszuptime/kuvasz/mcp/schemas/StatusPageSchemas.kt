@@ -102,6 +102,7 @@ data class CategoryStatusSchema(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class StatusPageMonitorSchema(
     val name: String,
+    val displayName: String?,
     val type: String,
     val uptimeStatus: UptimeStatus?,
     val uptimeRatio: Double?,
@@ -115,6 +116,7 @@ data class StatusPageMonitorSchema(
     companion object {
         fun fromDto(dto: StatusPageMonitorDetailsDto) = StatusPageMonitorSchema(
             name = dto.name,
+            displayName = dto.displayName,
             type = dto.type,
             uptimeStatus = dto.uptimeStatus,
             uptimeRatio = dto.uptimeRatio,

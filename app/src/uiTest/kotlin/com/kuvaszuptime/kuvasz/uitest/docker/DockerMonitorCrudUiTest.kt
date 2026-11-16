@@ -79,8 +79,16 @@ class DockerMonitorCrudUiTest(private val dockerMonitorRepository: DockerMonitor
             configureModal.setName(updatedName).setCategory("").save()
             assertThat(details.heading(updatedName)).isVisible()
 
+            // The display name is shown instead of the name, which stays in sight, as it identifies the monitor
+            val displayName = "E2E Shown Label"
+            details.openConfigureModal().setDisplayName(displayName).save()
+            assertThat(details.heading(displayName)).isVisible()
+            assertThat(details.uniqueNameBadge).containsText(updatedName)
+
             list.navigate()
             assertThat(list.rowByName(updatedName)).isVisible()
+            assertThat(list.rowByName(updatedName).locator("td").first()).containsText(displayName)
+            assertThat(list.rowByName(updatedName).getByTestId("monitor-unique-name")).hasText(updatedName)
 
             list.deleteMonitor(updatedName)
             assertThat(list.rowByName(updatedName)).hasCount(0)

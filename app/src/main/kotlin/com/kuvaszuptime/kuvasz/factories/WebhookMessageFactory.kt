@@ -21,6 +21,7 @@ import com.kuvaszuptime.kuvasz.models.handlers.webhook.GenericWebhookMessage
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.dns.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.docker.monitorId
+import com.kuvaszuptime.kuvasz.models.monitor.effectiveName
 import com.kuvaszuptime.kuvasz.models.monitor.http.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.icmp.monitorId
 import com.kuvaszuptime.kuvasz.models.monitor.push.monitorId
@@ -57,6 +58,7 @@ class WebhookMessageFactory(private val templateEngine: PebbleEngine) {
             monitorId = event.monitor.id,
             monitorUrn = event.monitor.urn().toString(),
             monitorName = event.monitor.name,
+            monitorLabel = event.monitor.effectiveName,
             monitorDetailsUrl = event.monitor.relativeDetailsUrl,
             timestamp = event.dispatchedAt.toInstant().toEpochMilli(),
             type = event.toIntegrationEventType(),
@@ -76,6 +78,7 @@ class WebhookMessageFactory(private val templateEngine: PebbleEngine) {
             monitorId = 0,
             monitorUrn = "",
             monitorName = "",
+            monitorLabel = "",
             monitorDetailsUrl = "",
             timestamp = event.dispatchedAt.toInstant().toEpochMilli(),
             type = event.toIntegrationEventType(),

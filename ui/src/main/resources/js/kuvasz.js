@@ -1543,6 +1543,7 @@ const monitorForm = ({
 
     populateFrom(source) {
         this.name = source?.name || '';
+        this.displayName = source?.displayName || '';
         this.failureCountThreshold = source?.failureCountThreshold || 1;
         this.integrations = source?.integrations || [];
         this.category = source?.category || null;
@@ -1556,6 +1557,8 @@ const monitorForm = ({
     cloneFrom(monitorId, clonedName) {
         return this.loadEntity(monitorId, () => {
             this.name = clonedName;
+            // Otherwise the clone would look exactly like the original wherever the monitors are shown
+            this.displayName = '';
             this.regenerateUniqueFields();
         });
     },
@@ -1601,6 +1604,7 @@ const monitorForm = ({
     buildRequestBody() {
         return {
             name: this.name,
+            displayName: sanitizeTextInput(this.displayName),
             failureCountThreshold: this.failureCountThreshold,
             integrations: this.integrations,
             category: sanitizeTextInput(this.category),

@@ -66,14 +66,17 @@ class DnsMonitorToolsTest(
             }
 
             `when`("list-dns-monitors is called with monitors in the DB") {
-                val monitor = createDnsMonitor(dnsMonitorRepository)
+                val monitor = createDnsMonitor(dnsMonitorRepository, displayName = "Listed label")
                 val response = callToolWithMcpClient(LIST_DNS_MONITORS)
 
                 then("it should return the list in both structured and text content") {
                     response.isError shouldBe false
 
                     val monitorList = response.structuredContentAs<DnsMonitorListSchema>().shouldNotBeNull()
-                    monitorList.monitors.forOne { it.name shouldBe monitor.name }
+                    monitorList.monitors.forOne { listed ->
+                        listed.name shouldBe monitor.name
+                        listed.displayName shouldBe "Listed label"
+                    }
 
                     response.contentAs<DnsMonitorListSchema>() shouldBe monitorList
                 }
@@ -85,6 +88,7 @@ class DnsMonitorToolsTest(
             `when`("get-dns-monitor-details is called with a valid ID") {
                 val monitor = createDnsMonitor(
                     dnsMonitorRepository,
+                    displayName = "Details label",
                     host = "example.com",
                     transport = DnsTransport.TCP,
                     recordMatchers = listOf(DnsRecordMatcher(DnsRecordType.A, DnsMatchType.EXACT, "1.2.3.4")),
@@ -97,6 +101,7 @@ class DnsMonitorToolsTest(
                     val details = response.structuredContentAs<DnsMonitorDetailsSchema>().shouldNotBeNull()
                     details.id shouldBe monitor.id
                     details.name shouldBe monitor.name
+                    details.displayName shouldBe "Details label"
                     details.ignoreConnectivityCheck shouldBe monitor.ignoreConnectivityCheck
                     details.host shouldBe "example.com"
                     details.transport shouldBe DnsTransport.TCP
@@ -139,6 +144,24 @@ class DnsMonitorToolsTest(
         }
 
         given("the create-dns-monitor tool") {
+
+            `when`("create-dns-monitor is called with a display name") {
+                val response = callToolWithMcpClient(
+                    CREATE_DNS_MONITOR,
+                    mapOf(
+                        "name" to "mcp-created-dns-monitor-with-display-name",
+                        "host" to "example.com",
+                        "uptimeCheckInterval" to 60,
+                        "displayName" to "  MCP label  ",
+                    )
+                )
+
+                then("the created monitor should have the trimmed display name") {
+                    response.isError shouldBe false
+
+                    response.structuredContentAs<DnsMonitorSchema>().shouldNotBeNull().displayName shouldBe "MCP label"
+                }
+            }
 
             `when`("create-dns-monitor is called with a minimal, valid input") {
                 val response = callToolWithMcpClient(

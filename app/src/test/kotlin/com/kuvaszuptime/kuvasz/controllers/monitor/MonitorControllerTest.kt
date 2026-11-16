@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.jooq.enums.DnsResponseCode
 import com.kuvaszuptime.kuvasz.jooq.enums.DnsTransport
 import com.kuvaszuptime.kuvasz.jooq.enums.HttpMethod
 import com.kuvaszuptime.kuvasz.mocks.createDnsMonitor
+import com.kuvaszuptime.kuvasz.mocks.createDockerMonitor
 import com.kuvaszuptime.kuvasz.mocks.createHttpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createIcmpMonitor
 import com.kuvaszuptime.kuvasz.mocks.createPushMonitor
@@ -14,6 +15,7 @@ import com.kuvaszuptime.kuvasz.models.ServiceError
 import com.kuvaszuptime.kuvasz.models.dto.importing.MonitorImportResultDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDefaults
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsMonitorExportDto
+import com.kuvaszuptime.kuvasz.models.dto.monitor.docker.DockerMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorDefaults
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitorExportDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.icmp.IcmpMonitorExportDto
@@ -29,6 +31,7 @@ import com.kuvaszuptime.kuvasz.models.monitor.dns.recordMatchersAsList
 import com.kuvaszuptime.kuvasz.models.monitor.http.expectedHeadersAsMap
 import com.kuvaszuptime.kuvasz.models.monitor.http.requestHeadersAsMap
 import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
+import com.kuvaszuptime.kuvasz.repositories.DockerMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.IcmpMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.PushMonitorRepository
@@ -69,6 +72,7 @@ class MonitorControllerTest(
     private val icmpMonitorRepository: IcmpMonitorRepository,
     private val tcpMonitorRepository: TcpMonitorRepository,
     private val dnsMonitorRepository: DnsMonitorRepository,
+    private val dockerMonitorRepository: DockerMonitorRepository,
     private val yamlMapper: YAMLMapper,
     private val httpCheckScheduler: HttpCheckScheduler,
 ) : DatabaseBehaviorSpec() {
@@ -264,6 +268,14 @@ class MonitorControllerTest(
                     latencyThresholdMs = 250,
                     failureCountThreshold = 3L,
                     metricsHistoryEnabled = false,
+                )
+                val dockerMonitor = createDockerMonitor(
+                    dockerMonitorRepository,
+                    monitorName = "irrelevant11",
+                    displayName = "Exported container",
+                    container = "exported-app",
+                    restartAlertEnabled = true,
+                    category = "Containers",
                 )
 
                 val request = HttpRequest.GET<Any>("/api/v2/monitors/export/yaml").accept(MediaType.APPLICATION_YAML)
@@ -464,6 +476,26 @@ class MonitorControllerTest(
                         secondMonitor.metricsHistoryEnabled shouldBe dnsMonitor2.metricsHistoryEnabled
                         secondMonitor.integrations.shouldBeEmpty()
                     }
+
+                    val exportedDockerMonitorsRaw =
+                        yamlMapper.readTree(responseBody)["docker-monitors"].shouldNotBeNull()
+                    val parsedDockerMonitor =
+                        yamlMapper.convertValue<List<DockerMonitorExportDto>>(exportedDockerMonitorsRaw).single()
+                    parsedDockerMonitor shouldBe DockerMonitorExportDto(
+                        name = dockerMonitor.name,
+                        displayName = "Exported container",
+                        dockerHost = dockerMonitor.dockerHost,
+                        container = "exported-app",
+                        uptimeCheckInterval = dockerMonitor.uptimeCheckInterval,
+                        timeoutMs = dockerMonitor.timeoutMs,
+                        failureCountThreshold = dockerMonitor.failureCountThreshold,
+                        enabled = dockerMonitor.enabled,
+                        integrations = emptySet(),
+                        metricsHistoryEnabled = dockerMonitor.metricsHistoryEnabled,
+                        restartAlertEnabled = true,
+                        category = "Containers",
+                        ignoreConnectivityCheck = dockerMonitor.ignoreConnectivityCheck,
+                    )
                 }
             }
 
@@ -492,8 +524,8 @@ class MonitorControllerTest(
 
         given("MonitorController's importYamlMonitors() endpoint") {
 
-            `when`("a YAML file taken before ignoreConnectivityCheck existed is uploaded") {
-                // A backup from an older version simply doesn't carry the field at all, so it's stripped from an
+            `when`("a YAML file taken before ignoreConnectivityCheck and displayName existed is uploaded") {
+                // A backup from an older version simply doesn't carry the fields at all, so they're stripped from an
                 // otherwise valid export here, instead of hand-writing the whole payload
                 val currentYaml = buildYamlImportContent(
                     httpMonitors = listOf(
@@ -527,7 +559,7 @@ class MonitorControllerTest(
                 )
                 val legacyYaml = currentYaml.decodeToString()
                     .lineSequence()
-                    .filterNot { it.contains("ignore-connectivity-check") }
+                    .filterNot { it.contains("ignore-connectivity-check") || it.contains("display-name") }
                     .joinToString("\n")
                     .toByteArray()
 
@@ -539,12 +571,14 @@ class MonitorControllerTest(
                     .contentType(MediaType.MULTIPART_FORM_DATA_TYPE)
                     .accept(MediaType.APPLICATION_JSON_TYPE)
 
-                then("it should import it, falling back to the default of the missing field") {
+                then("it should import it, falling back to the defaults of the missing fields") {
                     val response = client.exchange(request, MonitorImportResultDto::class.java).awaitFirst()
 
                     response.status shouldBe HttpStatus.OK
-                    httpMonitorRepository.findByName("legacy-http").shouldNotBeNull()
-                        .ignoreConnectivityCheck shouldBe MonitorDefaults.IGNORE_CONNECTIVITY_CHECK
+                    with(httpMonitorRepository.findByName("legacy-http").shouldNotBeNull()) {
+                        ignoreConnectivityCheck shouldBe MonitorDefaults.IGNORE_CONNECTIVITY_CHECK
+                        displayName.shouldBeNull()
+                    }
                 }
             }
 
@@ -817,6 +851,7 @@ class MonitorControllerTest(
                     httpMonitors = listOf(
                         HttpMonitorExportDto(
                             name = "multi-http",
+                            displayName = "Multi HTTP",
                             url = "https://example.com",
                             sensitiveUrl = false,
                             uptimeCheckInterval = 60,
@@ -844,6 +879,7 @@ class MonitorControllerTest(
                     pushMonitors = listOf(
                         PushMonitorExportDto(
                             name = "multi-push",
+                            displayName = "Multi PUSH",
                             heartbeatInterval = 60,
                             gracePeriod = 30,
                             clientSecret = "ab".repeat(18),
@@ -857,6 +893,7 @@ class MonitorControllerTest(
                     icmpMonitors = listOf(
                         IcmpMonitorExportDto(
                             name = "multi-icmp",
+                            displayName = "Multi ICMP",
                             host = "1.2.3.4",
                             uptimeCheckInterval = 60,
                             packetCount = 4,
@@ -873,6 +910,7 @@ class MonitorControllerTest(
                     tcpMonitors = listOf(
                         TcpMonitorExportDto(
                             name = "multi-tcp",
+                            displayName = "Multi TCP",
                             host = "1.2.3.4",
                             port = 5432,
                             uptimeCheckInterval = 60,
@@ -889,6 +927,7 @@ class MonitorControllerTest(
                     dnsMonitors = listOf(
                         DnsMonitorExportDto(
                             name = "multi-dns",
+                            displayName = "Multi DNS",
                             host = "example.com",
                             resolverHost = "1.1.1.1",
                             resolverPort = 5353,
@@ -933,6 +972,11 @@ class MonitorControllerTest(
                         MonitorType.DNS,
                     )
 
+                    httpMonitorRepository.findByName("multi-http").shouldNotBeNull().displayName shouldBe "Multi HTTP"
+                    pushMonitorRepository.findByName("multi-push").shouldNotBeNull().displayName shouldBe "Multi PUSH"
+                    icmpMonitorRepository.findByName("multi-icmp").shouldNotBeNull().displayName shouldBe "Multi ICMP"
+                    tcpMonitorRepository.findByName("multi-tcp").shouldNotBeNull().displayName shouldBe "Multi TCP"
+                    dnsMonitorRepository.findByName("multi-dns").shouldNotBeNull().displayName shouldBe "Multi DNS"
                     // The DNS-specific fields, incl. the JSONB matchers, must survive the import
                     val importedDns = dnsMonitorRepository.findByName("multi-dns").shouldNotBeNull()
                     importedDns.transport shouldBe DnsTransport.TCP

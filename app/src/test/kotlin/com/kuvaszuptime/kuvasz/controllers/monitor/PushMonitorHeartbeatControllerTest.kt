@@ -20,7 +20,7 @@ class PushMonitorHeartbeatControllerTest(
 ) : BehaviorSpec({
 
     val monitor = PushMonitorRecord().apply {
-        name = "irrelevant"
+        setName("irrelevant")
     }
 
     given("the sendHeartbeatViaPost() endpoint") {

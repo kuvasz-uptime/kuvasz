@@ -12,6 +12,7 @@ class SystemStatusTest : BehaviorSpec({
         inMaintenance: Boolean = false,
     ) = StatusPageHttpMonitorDetailsDto(
         name = "monitor",
+        displayName = null,
         lastCheck = null,
         uptimeRatio = null,
         uptimeStatus = uptimeStatus,

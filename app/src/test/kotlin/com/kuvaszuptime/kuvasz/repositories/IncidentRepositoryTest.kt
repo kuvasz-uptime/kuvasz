@@ -1743,9 +1743,9 @@ class IncidentRepositoryTest(
 
             `when`("there is an incident of every type") {
 
-                then("each of them should be found by its own type and event ID") {
+                then("each of them should be found by its own type and event ID, with its monitor's display name") {
                     val now = getCurrentTimestamp()
-                    val httpMonitorId = createHttpMonitor(httpMonitorRepository).id
+                    val httpMonitorId = createHttpMonitor(httpMonitorRepository, displayName = "HTTP monitor").id
                     val eventIds = mapOf(
                         IncidentType.HTTP to createHttpUptimeEventRecord(
                             dslContext,
@@ -1763,39 +1763,50 @@ class IncidentRepositoryTest(
                         ).id,
                         IncidentType.PUSH to createPushUptimeEventRecord(
                             dslContext,
-                            monitorId = createPushMonitor(pushMonitorRepository).id,
+                            monitorId = createPushMonitor(pushMonitorRepository, displayName = "Push monitor").id,
                             status = UptimeStatus.DOWN,
                             startedAt = now,
                             endedAt = null,
                         ).id,
                         IncidentType.ICMP to createIcmpUptimeEventRecord(
                             dslContext,
-                            monitorId = createIcmpMonitor(icmpMonitorRepository).id,
+                            monitorId = createIcmpMonitor(icmpMonitorRepository, displayName = "ICMP monitor").id,
                             status = UptimeStatus.DOWN,
                             startedAt = now,
                             endedAt = null,
                         ).id,
                         IncidentType.TCP to createTcpUptimeEventRecord(
                             dslContext,
-                            monitorId = createTcpMonitor(tcpMonitorRepository).id,
+                            monitorId = createTcpMonitor(tcpMonitorRepository, displayName = "TCP monitor").id,
                             status = UptimeStatus.DOWN,
                             startedAt = now,
                             endedAt = null,
                         ).id,
                         IncidentType.DNS to createDnsUptimeEventRecord(
                             dslContext,
-                            monitorId = createDnsMonitor(dnsMonitorRepository).id,
+                            monitorId = createDnsMonitor(dnsMonitorRepository, displayName = "DNS monitor").id,
                             status = UptimeStatus.DOWN,
                             startedAt = now,
                             endedAt = null,
                         ).id,
                         IncidentType.DOCKER to createDockerUptimeEventRecord(
                             dslContext,
-                            monitorId = createDockerMonitor(dockerMonitorRepository).id,
+                            monitorId = createDockerMonitor(dockerMonitorRepository, displayName = "Docker monitor").id,
                             status = UptimeStatus.DOWN,
                             startedAt = now,
                             endedAt = null,
                         ).id,
+                    )
+
+                    // Every type is selected separately, so each of them must pick its own monitor's display name
+                    val expectedDisplayNames = mapOf(
+                        IncidentType.HTTP to "HTTP monitor",
+                        IncidentType.SSL to "HTTP monitor",
+                        IncidentType.PUSH to "Push monitor",
+                        IncidentType.ICMP to "ICMP monitor",
+                        IncidentType.TCP to "TCP monitor",
+                        IncidentType.DNS to "DNS monitor",
+                        IncidentType.DOCKER to "Docker monitor",
                     )
 
                     eventIds.keys shouldBe IncidentType.entries.toSet()
@@ -1803,6 +1814,7 @@ class IncidentRepositoryTest(
                         incidentRepository.getIncident(type, eventId).shouldNotBeNull().let { incident ->
                             incident.incidentType shouldBe type
                             incident.eventId shouldBe eventId
+                            incident.monitorDisplayName shouldBe expectedDisplayNames.getValue(type)
                         }
                     }
                 }

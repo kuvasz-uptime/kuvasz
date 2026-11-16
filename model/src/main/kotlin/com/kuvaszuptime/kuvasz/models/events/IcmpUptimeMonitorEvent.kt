@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.IcmpUptimeEventRecord
+import com.kuvaszuptime.kuvasz.models.monitor.effectiveName
 import com.kuvaszuptime.kuvasz.util.toDurationString
 
 sealed class IcmpUptimeMonitorEvent : UptimeMonitorEvent() {
@@ -20,7 +21,7 @@ data class IcmpMonitorUpEvent(
     override val uptimeStatus = UptimeStatus.UP
 
     override fun toStructuredMessage() = StructuredIcmpMonitorUpMessage(
-        summary = Messages.yourIcmpMonitorIsUp(monitor.name),
+        summary = Messages.yourIcmpMonitorIsUp(monitor.effectiveName),
         latency = latencyInMs?.let { Messages.icmpLatency(it.toString()) },
         packetLoss = Messages.icmpPacketLoss(packetLossPercentage.toString()),
         previousDownTime = getEndedEventDuration().toDurationString()?.let { Messages.wasDownFor(it) },
@@ -38,7 +39,7 @@ data class IcmpMonitorDownEvent(
     override val uptimeStatus = UptimeStatus.DOWN
 
     override fun toStructuredMessage() = StructuredIcmpMonitorDownMessage(
-        summary = Messages.yourIcmpMonitorIsDown(monitor.name),
+        summary = Messages.yourIcmpMonitorIsDown(monitor.effectiveName),
         error = Messages.reasonExplanation(error),
         packetLoss = Messages.icmpPacketLoss(packetLossPercentage.toString()),
         previousUpTime = getEndedEventDuration().toDurationString()?.let { Messages.wasUpFor(it) },

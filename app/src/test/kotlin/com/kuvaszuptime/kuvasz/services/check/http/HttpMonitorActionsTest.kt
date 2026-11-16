@@ -43,6 +43,7 @@ class HttpMonitorActionsTest(
                     httpMonitorRepository,
                     enabled = true,
                     monitorName = "enabled-monitor",
+                    displayName = "Enabled label",
                     latencyHistoryEnabled = true,
                 )
                 val enabledMonitor2 = createHttpMonitor(
@@ -108,6 +109,7 @@ class HttpMonitorActionsTest(
                     result shouldHaveSize 2
                     result.forOne { upMonitor ->
                         upMonitor.name shouldBe enabledMonitor.name
+                        upMonitor.displayName shouldBe "Enabled label"
                         upMonitor.lastCheck shouldBe enabledMonitorsUptimeEvent.updatedAt
                         upMonitor.averageLatencyInMs shouldBe 123
                         upMonitor.uptimeRatio shouldBe 0.2312

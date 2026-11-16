@@ -8,11 +8,17 @@ import com.microsoft.playwright.Page
 class IcmpMonitorFormModal(page: Page) : ModalView(page) {
 
     val nameInput: Locator get() = modal.locator("#icmp-name-input")
+    val displayNameInput: Locator get() = modal.locator("#icmp-displayName-input")
     val hostInput: Locator get() = modal.locator("#icmp-host-input")
     val uptimeCheckIntervalInput: Locator get() = modal.locator("#icmp-uptimeCheckInterval-input")
 
     fun setName(value: String): IcmpMonitorFormModal {
         nameInput.fill(value)
+        return this
+    }
+
+    fun setDisplayName(value: String): IcmpMonitorFormModal {
+        displayNameInput.fill(value)
         return this
     }
 

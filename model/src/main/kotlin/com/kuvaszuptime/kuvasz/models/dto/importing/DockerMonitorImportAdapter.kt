@@ -7,6 +7,7 @@ import io.micronaut.core.annotation.Introspected
 @Introspected
 class DockerMonitorImportAdapter(dto: DockerMonitorExportDto) : DockerMonitorCreator {
     override val name: String = dto.name
+    override val displayName: String? = dto.displayName
     override val dockerHost: String = dto.dockerHost
     override val container: String = dto.container
     override val uptimeCheckInterval: Int = dto.uptimeCheckInterval

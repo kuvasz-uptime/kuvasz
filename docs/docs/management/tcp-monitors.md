@@ -13,6 +13,7 @@
     ```yaml title="YAML monitor reference"
     tcp-monitors:
     - name: "My TCP Monitor" # (1)!
+      display-name: "Shown name" # (14)!
       category: "Core services" # (11)!
       host: "example.com" # (2)!
       port: 5432 # (3)!
@@ -42,6 +43,7 @@
       11. **Category**: An optional, free-form category to group the monitor on the status pages (e.g. a product or service name).
       12. **Ignore connectivity check**: Whether the monitor should keep being checked even while _Kuvasz_ considers its own outbound connectivity lost. Defaults to false.
       13. **Proxy**: The name of a [proxy](proxies.md) defined in the `proxies` section of your YAML file, that the checks of the monitor are routed through. Defaults to `null`, which means a direct connection.
+      14. **Display name**: An optional name that is shown instead of the name, e.g. on the status pages and in the notifications. It doesn't have to be unique, and you can change it without losing the history of the monitor.
 
 === "API (expert)"
 
@@ -65,6 +67,20 @@
 <!-- md:yaml_prop `name` -->
 
 The name of the monitor, which **must be unique** across all TCP monitors.
+
+!!! warning "Renaming a monitor in the YAML file"
+
+    If you manage your monitors in the YAML file, _Kuvasz_ recognizes a monitor by its name when it starts. So a monitor with a new name is a **new monitor**: the one with the old name is deleted, together with its **whole history** (events, incidents, latency data). If you only want to change how the monitor is shown, use the [display name](#display-name) instead.
+
+### Display name
+
+<!-- md:version 4.8.0 -->
+<!-- md:type string -->
+<!-- md:yaml_prop `display-name` -->
+
+An optional name that is shown **instead of the name** wherever people see the monitor: on the _Web UI_, on the [status pages](../features/status-pages.md) and in the [notifications](../features/notifications.md). Unlike the name, it doesn't have to be unique, and you can change it at any time without losing anything. The default is `null`, which means that the name is shown.
+
+This is the way to rename a monitor that you manage in the YAML file: change its display name and keep its name, so the monitor keeps its history. The _Web UI_ still shows the name next to the display name, because the YAML file, the status pages and the maintenance windows refer to the monitor by its name.
 
 ### Category
 

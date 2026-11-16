@@ -38,6 +38,7 @@ import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDefaults
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIncidentDto
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.NumericMonitorID
+import com.kuvaszuptime.kuvasz.models.monitor.effectiveName
 import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.DockerMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
@@ -4106,7 +4107,9 @@ class StatCalculatorTest(
                 val now = getCurrentTimestamp().truncatedTo(ChronoUnit.MICROS)
                 val names = listOf("G", "C", "A", "F", "B", "E", "D")
                 names.forEach { name ->
-                    val monitor = createTcpMonitor(tcpMonitorRepository, monitorName = name)
+                    // The last one by its name, but the second one by the name that is shown
+                    val displayName = "AA".takeIf { name == "G" }
+                    val monitor = createTcpMonitor(tcpMonitorRepository, monitorName = name, displayName = displayName)
                     createTcpUptimeEventRecord(
                         dslContext = dslContext,
                         monitorId = monitor.id,
@@ -4118,8 +4121,9 @@ class StatCalculatorTest(
 
                 val leastReliableMonitors = dashboardStats(Duration.ofDays(1), now).leastReliableMonitors
 
-                then("the ties should be broken by their names") {
-                    leastReliableMonitors.map { it.name } shouldBe listOf("A", "B", "C", "D", "E")
+                then("the ties should be broken by their shown names") {
+                    leastReliableMonitors.map { it.effectiveName } shouldBe listOf("A", "AA", "B", "C", "D")
+                    leastReliableMonitors.single { it.displayName == "AA" }.name shouldBe "G"
                 }
             }
 
@@ -4227,7 +4231,12 @@ class StatCalculatorTest(
             `when`("there are monitors of every type") {
 
                 val now = getCurrentTimestamp()
-                val http = createHttpMonitor(httpMonitorRepository, monitorName = "HTTP", category = "Web")
+                val http = createHttpMonitor(
+                    httpMonitorRepository,
+                    monitorName = "HTTP",
+                    displayName = "HTTP label",
+                    category = "Web",
+                )
                 createHttpUptimeEventRecord(
                     dslContext = dslContext,
                     monitorId = http.id,
@@ -4244,8 +4253,13 @@ class StatCalculatorTest(
                     sslExpiryDate = now.plusDays(3),
                     error = "Expired",
                 )
-                val push = createPushMonitor(pushMonitorRepository, monitorName = "Push", enabled = false)
-                val icmp = createIcmpMonitor(icmpMonitorRepository, monitorName = "ICMP")
+                val push = createPushMonitor(
+                    pushMonitorRepository,
+                    monitorName = "Push",
+                    displayName = "Push label",
+                    enabled = false,
+                )
+                val icmp = createIcmpMonitor(icmpMonitorRepository, monitorName = "ICMP", displayName = "ICMP label")
                 createIcmpUptimeEventRecord(
                     dslContext = dslContext,
                     monitorId = icmp.id,
@@ -4253,7 +4267,7 @@ class StatCalculatorTest(
                     startedAt = now.minusHours(1),
                     endedAt = null,
                 )
-                val tcp = createTcpMonitor(tcpMonitorRepository, monitorName = "TCP")
+                val tcp = createTcpMonitor(tcpMonitorRepository, monitorName = "TCP", displayName = "TCP label")
                 createTcpUptimeEventRecord(
                     dslContext = dslContext,
                     monitorId = tcp.id,
@@ -4261,7 +4275,12 @@ class StatCalculatorTest(
                     startedAt = now.minusHours(1),
                     endedAt = null,
                 )
-                val dns = createDnsMonitor(dnsMonitorRepository, monitorName = "DNS", category = "Resolvers")
+                val dns = createDnsMonitor(
+                    dnsMonitorRepository,
+                    monitorName = "DNS",
+                    displayName = "DNS label",
+                    category = "Resolvers",
+                )
                 createDnsUptimeEventRecord(
                     dslContext = dslContext,
                     monitorId = dns.id,
@@ -4269,7 +4288,11 @@ class StatCalculatorTest(
                     startedAt = now.minusHours(1),
                     endedAt = null,
                 )
-                val docker = createDockerMonitor(dockerMonitorRepository, monitorName = "Docker")
+                val docker = createDockerMonitor(
+                    dockerMonitorRepository,
+                    monitorName = "Docker",
+                    displayName = "Docker label",
+                )
                 // A closed one doesn't tell the current state
                 createDockerUptimeEventRecord(
                     dslContext = dslContext,
@@ -4293,6 +4316,7 @@ class StatCalculatorTest(
                             HttpMonitorSummary(
                                 id = http.id,
                                 name = "HTTP",
+                                displayName = "HTTP label",
                                 enabled = true,
                                 category = "Web",
                                 uptimeStatus = UptimeStatus.DOWN,
@@ -4301,11 +4325,11 @@ class StatCalculatorTest(
                                 sslValidUntil = null,
                                 sslError = "Expired",
                             ),
-                            PushMonitorSummary(push.id, "Push", enabled = false, null, null),
-                            IcmpMonitorSummary(icmp.id, "ICMP", enabled = true, null, UptimeStatus.UP),
-                            TcpMonitorSummary(tcp.id, "TCP", enabled = true, null, UptimeStatus.DOWN),
-                            DnsMonitorSummary(dns.id, "DNS", enabled = true, "Resolvers", UptimeStatus.UP),
-                            DockerMonitorSummary(docker.id, "Docker", enabled = true, null, null),
+                            PushMonitorSummary(push.id, "Push", "Push label", enabled = false, null, null),
+                            IcmpMonitorSummary(icmp.id, "ICMP", "ICMP label", enabled = true, null, UptimeStatus.UP),
+                            TcpMonitorSummary(tcp.id, "TCP", "TCP label", enabled = true, null, UptimeStatus.DOWN),
+                            DnsMonitorSummary(dns.id, "DNS", "DNS label", enabled = true, "Resolvers", UptimeStatus.UP),
+                            DockerMonitorSummary(docker.id, "Docker", "Docker label", enabled = true, null, null),
                         )
                     // Every summary tells its own type
                     summaries.map { it.type } shouldContainExactlyInAnyOrder MonitorType.entries

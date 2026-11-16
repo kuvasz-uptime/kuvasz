@@ -7,6 +7,7 @@ import io.micronaut.core.annotation.Introspected
 @Introspected
 class PushMonitorImportAdapter(dto: PushMonitorExportDto) : PushMonitorCreator {
     override val name: String = dto.name
+    override val displayName: String? = dto.displayName
     override val heartbeatInterval: Long = dto.heartbeatInterval
     override val gracePeriod: Long = dto.gracePeriod
     override val clientSecret: String = dto.clientSecret

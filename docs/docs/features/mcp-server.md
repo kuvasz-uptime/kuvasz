@@ -61,7 +61,7 @@ The `/mcp` endpoint is protected by a dedicated [**MCP API key**](../setup/confi
 
 !!! info "Lists, page by page"
 
-    The tools that list monitors, status pages, maintenance windows and incidents return **one page** at a time: 25 items by default. The result tells how many items and pages there are in total, so the assistant can ask for the next page with `page`. These tools can also change the page size (`size`), search by name (`name`), and sort the items (`sortedBy`, `sortOrder`).
+    The tools that list monitors, status pages, maintenance windows and incidents return **one page** at a time: 25 items by default. The result tells how many items and pages there are in total, so the assistant can ask for the next page with `page`. These tools can also change the page size (`size`), search by name (`name`, which finds the display names of the monitors too), and sort the items (`sortedBy`, `sortOrder`).
 
 The MCP server exposes the following tools to connected clients:
 

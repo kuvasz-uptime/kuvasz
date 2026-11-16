@@ -243,6 +243,7 @@ class HttpMonitorActions(
         ) { monitor, uptime, averageLatencies ->
             StatusPageHttpMonitorDetailsDto(
                 name = monitor.name,
+                displayName = monitor.displayName,
                 lastCheck = monitor.lastUptimeCheck,
                 averageLatencyInMs = averageLatencies[monitor.id],
                 uptimeRatio = uptime.uptimeRatio,

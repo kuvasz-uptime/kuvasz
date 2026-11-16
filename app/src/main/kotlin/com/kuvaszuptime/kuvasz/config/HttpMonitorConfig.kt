@@ -18,6 +18,7 @@ interface HttpMonitorConfig : HttpMonitorCreator, MonitorConfig {
     }
 
     override val name: String
+    override val displayName: String?
     override val url: String
     override val uptimeCheckInterval: Int
 

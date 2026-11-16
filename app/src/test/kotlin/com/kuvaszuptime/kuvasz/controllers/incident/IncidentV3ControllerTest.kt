@@ -25,6 +25,7 @@ import com.kuvaszuptime.kuvasz.mocks.createTcpUptimeEventRecord
 import com.kuvaszuptime.kuvasz.models.IncidentType
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentDto
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentSortField
+import com.kuvaszuptime.kuvasz.models.dto.incident.effectiveMonitorName
 import com.kuvaszuptime.kuvasz.models.dto.pagination.SortOrder
 import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
@@ -75,7 +76,7 @@ class IncidentV3ControllerTest(
                 val incidents = fetchIncidents().result
                 val keys = mapOf<IncidentSortField, (IncidentDto) -> Comparable<*>?>(
                     IncidentSortField.ID to { it.eventId },
-                    IncidentSortField.MONITOR_NAME to { it.monitorName.lowercase() },
+                    IncidentSortField.MONITOR_NAME to { it.effectiveMonitorName.lowercase() },
                     IncidentSortField.INCIDENT_TYPE to { it.incidentType.name.lowercase() },
                     IncidentSortField.STATUS to { it.status.name.lowercase() },
                     IncidentSortField.STARTED_AT to { it.startedAt.toInstant() },
@@ -122,6 +123,8 @@ class IncidentV3ControllerTest(
 
                 then("the filters should narrow the incidents and their totals") {
                     fetchIncidents(name = "BRA").result.map { it.monitorName }.toSet() shouldBe setOf("Bravo")
+                    fetchIncidents(name = "ECH").result.map { it.monitorName to it.monitorDisplayName } shouldBe
+                        listOf("a-dns" to "echo")
                     fetchIncidents(includeResolved = false).result.map { it.incidentType } shouldContainExactly
                         listOf(IncidentType.HTTP, IncidentType.PUSH)
                     fetchIncidents(period = Duration.ofMinutes(30)).totalCount shouldBe 4
@@ -245,7 +248,8 @@ class IncidentV3ControllerTest(
         val alpha = createTcpMonitor(tcpMonitorRepository, monitorName = "alpha")
         val charlie = createIcmpMonitor(icmpMonitorRepository, monitorName = "charlie")
         val delta = createPushMonitor(pushMonitorRepository, monitorName = "Delta")
-        val echo = createDnsMonitor(dnsMonitorRepository, monitorName = "echo")
+        // Its name would put it first, but it is sorted and shown by its display name
+        val echo = createDnsMonitor(dnsMonitorRepository, monitorName = "a-dns", displayName = "echo")
         val disabled = createTcpMonitor(tcpMonitorRepository, monitorName = "disabled", enabled = false)
 
         createHttpUptimeEventRecord(

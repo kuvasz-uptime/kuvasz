@@ -4,16 +4,18 @@ import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.monitor.WithDisplayName
 import java.time.OffsetDateTime
 
 /**
  * The few properties of a monitor that its statistics rely on, which are way cheaper to fetch than the whole
  * [MonitorDetailsDto], e.g. every time the dashboard is refreshed.
  */
-sealed class MonitorSummary {
+sealed class MonitorSummary : WithDisplayName {
     abstract val type: MonitorType
     abstract val id: Long
-    abstract val name: String
+    abstract override val name: String
+    abstract override val displayName: String?
     abstract val enabled: Boolean
     abstract val category: String?
     abstract val uptimeStatus: UptimeStatus?
@@ -26,6 +28,7 @@ sealed class MonitorSummary {
 data class HttpMonitorSummary(
     override val id: Long,
     override val name: String,
+    override val displayName: String?,
     override val enabled: Boolean,
     override val category: String?,
     override val uptimeStatus: UptimeStatus?,
@@ -40,6 +43,7 @@ data class HttpMonitorSummary(
 data class PushMonitorSummary(
     override val id: Long,
     override val name: String,
+    override val displayName: String?,
     override val enabled: Boolean,
     override val category: String?,
     override val uptimeStatus: UptimeStatus?,
@@ -50,6 +54,7 @@ data class PushMonitorSummary(
 data class IcmpMonitorSummary(
     override val id: Long,
     override val name: String,
+    override val displayName: String?,
     override val enabled: Boolean,
     override val category: String?,
     override val uptimeStatus: UptimeStatus?,
@@ -60,6 +65,7 @@ data class IcmpMonitorSummary(
 data class TcpMonitorSummary(
     override val id: Long,
     override val name: String,
+    override val displayName: String?,
     override val enabled: Boolean,
     override val category: String?,
     override val uptimeStatus: UptimeStatus?,
@@ -70,6 +76,7 @@ data class TcpMonitorSummary(
 data class DnsMonitorSummary(
     override val id: Long,
     override val name: String,
+    override val displayName: String?,
     override val enabled: Boolean,
     override val category: String?,
     override val uptimeStatus: UptimeStatus?,
@@ -80,6 +87,7 @@ data class DnsMonitorSummary(
 data class DockerMonitorSummary(
     override val id: Long,
     override val name: String,
+    override val displayName: String?,
     override val enabled: Boolean,
     override val category: String?,
     override val uptimeStatus: UptimeStatus?,

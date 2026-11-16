@@ -50,6 +50,7 @@ interface TcpMonitorCreator : MonitorCreator<TcpMonitorRecord> {
     override fun toMonitorRecord(validatedIntegrations: Set<IntegrationID>): TcpMonitorRecord =
         TcpMonitorRecord()
             .setName(name)
+            .setDisplayName(displayName.nullIfBlank())
             .setHost(host)
             .setPort(port)
             .setUptimeCheckInterval(uptimeCheckInterval)

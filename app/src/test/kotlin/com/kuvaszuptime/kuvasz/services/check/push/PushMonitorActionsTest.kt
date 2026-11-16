@@ -58,6 +58,7 @@ class PushMonitorActionsTest(
                     pushMonitorRepository,
                     enabled = true,
                     monitorName = "enabled-monitor",
+                    displayName = "Enabled label",
                 )
 
                 val statCalculatorMock = getMock(statCalculator)
@@ -98,6 +99,7 @@ class PushMonitorActionsTest(
                     result shouldHaveSize 1
                     result.forOne { upMonitor ->
                         upMonitor.name shouldBe enabledMonitor.name
+                        upMonitor.displayName shouldBe "Enabled label"
                         upMonitor.lastCheck shouldBe enabledMonitorsUptimeEvent.updatedAt
                         upMonitor.lastHeartbeat.shouldBeNull()
                         upMonitor.uptimeRatio shouldBe 0.2312

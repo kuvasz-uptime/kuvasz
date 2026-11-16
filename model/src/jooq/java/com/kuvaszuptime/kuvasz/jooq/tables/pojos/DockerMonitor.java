@@ -34,6 +34,7 @@ public class DockerMonitor implements Serializable {
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
     private Boolean restartAlertEnabled;
+    private String displayName;
 
     public DockerMonitor() {}
 
@@ -53,6 +54,7 @@ public class DockerMonitor implements Serializable {
         this.createdAt = value.createdAt;
         this.updatedAt = value.updatedAt;
         this.restartAlertEnabled = value.restartAlertEnabled;
+        this.displayName = value.displayName;
     }
 
     public DockerMonitor(
@@ -70,7 +72,8 @@ public class DockerMonitor implements Serializable {
         Boolean ignoreConnectivityCheck,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt,
-        Boolean restartAlertEnabled
+        Boolean restartAlertEnabled,
+        String displayName
     ) {
         this.id = id;
         this.name = name;
@@ -87,6 +90,7 @@ public class DockerMonitor implements Serializable {
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.restartAlertEnabled = restartAlertEnabled;
+        this.displayName = displayName;
     }
 
     /**
@@ -314,6 +318,21 @@ public class DockerMonitor implements Serializable {
         return this;
     }
 
+    /**
+     * Getter for <code>kuvasz.docker_monitor.display_name</code>.
+     */
+    public String getDisplayName() {
+        return this.displayName;
+    }
+
+    /**
+     * Setter for <code>kuvasz.docker_monitor.display_name</code>.
+     */
+    public DockerMonitor setDisplayName(String displayName) {
+        this.displayName = displayName;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -413,6 +432,12 @@ public class DockerMonitor implements Serializable {
         }
         else if (!this.restartAlertEnabled.equals(other.restartAlertEnabled))
             return false;
+        if (this.displayName == null) {
+            if (other.displayName != null)
+                return false;
+        }
+        else if (!this.displayName.equals(other.displayName))
+            return false;
         return true;
     }
 
@@ -435,6 +460,7 @@ public class DockerMonitor implements Serializable {
         result = prime * result + ((this.createdAt == null) ? 0 : this.createdAt.hashCode());
         result = prime * result + ((this.updatedAt == null) ? 0 : this.updatedAt.hashCode());
         result = prime * result + ((this.restartAlertEnabled == null) ? 0 : this.restartAlertEnabled.hashCode());
+        result = prime * result + ((this.displayName == null) ? 0 : this.displayName.hashCode());
         return result;
     }
 
@@ -457,6 +483,7 @@ public class DockerMonitor implements Serializable {
         sb.append(", ").append(createdAt);
         sb.append(", ").append(updatedAt);
         sb.append(", ").append(restartAlertEnabled);
+        sb.append(", ").append(displayName);
 
         sb.append(")");
         return sb.toString();

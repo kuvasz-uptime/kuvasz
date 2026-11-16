@@ -13,6 +13,7 @@ import io.micronaut.core.annotation.Introspected
 @ValidDnsResponseCode
 class DnsMonitorImportAdapter(dto: DnsMonitorExportDto) : DnsMonitorCreator {
     override val name: String = dto.name
+    override val displayName: String? = dto.displayName
     override val host: String = dto.host
     override val resolverHost: String? = dto.resolverHost
     override val resolverPort: Int = dto.resolverPort

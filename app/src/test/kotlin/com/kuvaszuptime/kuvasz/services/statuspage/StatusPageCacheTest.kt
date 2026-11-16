@@ -40,6 +40,7 @@ class StatusPageCacheTest(
             val mockHttpMonitorList = listOf(
                 StatusPageHttpMonitorDetailsDto(
                     name = "Josh Snow",
+                    displayName = null,
                     lastCheck = null,
                     averageLatencyInMs = null,
                     uptimeRatio = null,
@@ -49,6 +50,7 @@ class StatusPageCacheTest(
                 ),
                 StatusPageHttpMonitorDetailsDto(
                     name = "Arya Stark",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(3),
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9234,
@@ -65,6 +67,7 @@ class StatusPageCacheTest(
             val mockPushMonitorList = listOf(
                 StatusPagePushMonitorDetailsDto(
                     name = "Wuf wuf",
+                    displayName = null,
                     lastCheck = null,
                     uptimeRatio = null,
                     uptimeStatus = null,
@@ -74,6 +77,7 @@ class StatusPageCacheTest(
                 ),
                 StatusPagePushMonitorDetailsDto(
                     name = "That woman from the tower who breastfeeds her 13 year old son",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(4),
                     lastHeartbeat = null,
                     uptimeRatio = 0.9123,
@@ -159,6 +163,7 @@ class StatusPageCacheTest(
             val mockMonitorList = listOf(
                 StatusPageHttpMonitorDetailsDto(
                     name = "Josh Snow",
+                    displayName = null,
                     lastCheck = null,
                     averageLatencyInMs = null,
                     uptimeRatio = null,
@@ -168,6 +173,7 @@ class StatusPageCacheTest(
                 ),
                 StatusPageHttpMonitorDetailsDto(
                     name = "Arya Stark",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(3),
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9234,
@@ -184,6 +190,7 @@ class StatusPageCacheTest(
             val mockPushMonitorList = listOf(
                 StatusPagePushMonitorDetailsDto(
                     name = "Wuf wuf",
+                    displayName = null,
                     lastCheck = null,
                     lastHeartbeat = null,
                     uptimeRatio = null,
@@ -193,6 +200,7 @@ class StatusPageCacheTest(
                 ),
                 StatusPagePushMonitorDetailsDto(
                     name = "That woman from the tower who breastfeeds her 13 year old son",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(4),
                     lastHeartbeat = null,
                     uptimeRatio = 0.9123,

@@ -41,7 +41,20 @@ internal fun categoryFilterCondition(categoryField: Field<String>, filter: Categ
  * LIKE (`%`, `_`) are matched literally. A blank text selects everything.
  */
 internal fun containsIgnoreCaseCondition(field: Field<String>, text: String?): Condition =
-    text?.trim()?.takeIf { it.isNotEmpty() }?.let { field.containsIgnoreCase(it) } ?: DSL.noCondition()
+    containsIgnoreCaseCondition(listOf(field), text)
+
+/**
+ * Selects the rows where any of the [fields] contains the [text], the same way as the single field variant.
+ */
+internal fun containsIgnoreCaseCondition(fields: List<Field<String>>, text: String?): Condition =
+    text?.trim()?.takeIf { it.isNotEmpty() }?.let { trimmed -> DSL.or(fields.map { it.containsIgnoreCase(trimmed) }) }
+        ?: DSL.noCondition()
+
+/**
+ * The label of a monitor that is shown to people in SQL: its display name if it has one, its unique name otherwise.
+ */
+internal fun effectiveNameField(nameField: Field<String>, displayNameField: Field<String>): Field<String> =
+    DSL.coalesce(displayNameField, nameField)
 
 /**
  * The WHERE condition selecting the monitors of a status page: the ones referenced explicitly by their name,

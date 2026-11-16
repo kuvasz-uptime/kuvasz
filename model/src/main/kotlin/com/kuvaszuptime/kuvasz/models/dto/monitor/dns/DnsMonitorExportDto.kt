@@ -13,6 +13,7 @@ import io.micronaut.core.annotation.Introspected
 @Introspected
 data class DnsMonitorExportDto(
     val name: String,
+    val displayName: String? = null,
     val host: String,
     val resolverHost: String?,
     val resolverPort: Int,
@@ -35,6 +36,7 @@ data class DnsMonitorExportDto(
         fun fromMonitorRecord(record: DnsMonitorRecord): DnsMonitorExportDto {
             return DnsMonitorExportDto(
                 name = record.name,
+                displayName = record.displayName,
                 host = record.host,
                 resolverHost = record.resolverHost,
                 resolverPort = record.resolverPort,

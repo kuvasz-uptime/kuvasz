@@ -66,6 +66,7 @@ public class HttpMonitor implements Serializable {
     private Boolean crossOriginHeaderPropagation;
     private Boolean ignoreConnectivityCheck;
     private String proxy;
+    private String displayName;
 
     public HttpMonitor() {}
 
@@ -98,6 +99,7 @@ public class HttpMonitor implements Serializable {
         this.crossOriginHeaderPropagation = value.crossOriginHeaderPropagation;
         this.ignoreConnectivityCheck = value.ignoreConnectivityCheck;
         this.proxy = value.proxy;
+        this.displayName = value.displayName;
     }
 
     public HttpMonitor(
@@ -128,7 +130,8 @@ public class HttpMonitor implements Serializable {
         String category,
         Boolean crossOriginHeaderPropagation,
         Boolean ignoreConnectivityCheck,
-        String proxy
+        String proxy,
+        String displayName
     ) {
         this.id = id;
         this.name = name;
@@ -158,6 +161,7 @@ public class HttpMonitor implements Serializable {
         this.crossOriginHeaderPropagation = crossOriginHeaderPropagation;
         this.ignoreConnectivityCheck = ignoreConnectivityCheck;
         this.proxy = proxy;
+        this.displayName = displayName;
     }
 
     /**
@@ -590,6 +594,21 @@ public class HttpMonitor implements Serializable {
         return this;
     }
 
+    /**
+     * Getter for <code>kuvasz.http_monitor.display_name</code>.
+     */
+    public String getDisplayName() {
+        return this.displayName;
+    }
+
+    /**
+     * Setter for <code>kuvasz.http_monitor.display_name</code>.
+     */
+    public HttpMonitor setDisplayName(String displayName) {
+        this.displayName = displayName;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -767,6 +786,12 @@ public class HttpMonitor implements Serializable {
         }
         else if (!this.proxy.equals(other.proxy))
             return false;
+        if (this.displayName == null) {
+            if (other.displayName != null)
+                return false;
+        }
+        else if (!this.displayName.equals(other.displayName))
+            return false;
         return true;
     }
 
@@ -802,6 +827,7 @@ public class HttpMonitor implements Serializable {
         result = prime * result + ((this.crossOriginHeaderPropagation == null) ? 0 : this.crossOriginHeaderPropagation.hashCode());
         result = prime * result + ((this.ignoreConnectivityCheck == null) ? 0 : this.ignoreConnectivityCheck.hashCode());
         result = prime * result + ((this.proxy == null) ? 0 : this.proxy.hashCode());
+        result = prime * result + ((this.displayName == null) ? 0 : this.displayName.hashCode());
         return result;
     }
 
@@ -837,6 +863,7 @@ public class HttpMonitor implements Serializable {
         sb.append(", ").append(crossOriginHeaderPropagation);
         sb.append(", ").append(ignoreConnectivityCheck);
         sb.append(", ").append(proxy);
+        sb.append(", ").append(displayName);
 
         sb.append(")");
         return sb.toString();

@@ -65,9 +65,10 @@ object ListToolArgs {
         "The field to sort by, e.g. 'NAME' or 'ID'. An unknown field is rejected with the list of the allowed ones."
     const val SORT_ORDER = "'ASC' or 'DESC'. Defaults to 'ASC' if 'sortedBy' is given."
     const val MONITOR_NAME =
-        "Returns only the monitors whose name contains this text, ignoring the case of the letters."
+        "Returns only the monitors whose name or display name contains this text, ignoring the case of the letters."
     const val INCIDENT_MONITOR_NAME =
-        "Returns only the incidents whose monitor's name contains this text, ignoring the case of the letters."
+        "Returns only the incidents whose monitor's name or display name contains this text, ignoring the case of " +
+            "the letters."
     const val STATUS_PAGE_TITLE =
         "Returns only the status pages whose title contains this text, ignoring the case of the letters."
     const val MAINTENANCE_WINDOW_NAME =

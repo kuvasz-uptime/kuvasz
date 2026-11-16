@@ -10,6 +10,8 @@ import io.swagger.v3.oas.annotations.media.Schema
 data class PushMonitorCreateDto(
     @param:Schema(description = MonitorDocs.NAME, required = true)
     override val name: String,
+    @param:Schema(description = MonitorDocs.DISPLAY_NAME, required = false, nullable = true)
+    override val displayName: String? = null,
     @param:Schema(description = PushMonitorDocs.HEARTBEAT_INTERVAL, required = true)
     override val heartbeatInterval: Long,
     @param:Schema(description = PushMonitorDocs.GRACE_PERIOD, required = true)

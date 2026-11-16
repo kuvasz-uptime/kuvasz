@@ -21,9 +21,9 @@ import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.fetchPage
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import com.kuvaszuptime.kuvasz.util.nullIfBlank
 import com.kuvaszuptime.kuvasz.util.sortedIn
 import jakarta.inject.Singleton
-import java.time.OffsetDateTime
 import org.jooq.Condition
 import org.jooq.DSLContext
 import org.jooq.Field
@@ -36,6 +36,7 @@ import org.jooq.Table
 import org.jooq.exception.DataAccessException
 import org.jooq.impl.DSL
 import org.jooq.impl.SQLDataType
+import java.time.OffsetDateTime
 
 @Singleton
 @Suppress("TooManyFunctions")
@@ -54,6 +55,7 @@ class PushMonitorRepository(
         .select(
             PUSH_MONITOR.ID.`as`(PushMonitorSummary::id.name),
             PUSH_MONITOR.NAME.`as`(PushMonitorSummary::name.name),
+            PUSH_MONITOR.DISPLAY_NAME.`as`(PushMonitorSummary::displayName.name),
             PUSH_MONITOR.ENABLED.`as`(PushMonitorSummary::enabled.name),
             PUSH_MONITOR.CATEGORY.`as`(PushMonitorSummary::category.name),
             checkNotNull(latestUptimeEventSelect.field(PUSH_UPTIME_EVENT.STATUS))
@@ -131,7 +133,7 @@ class PushMonitorRepository(
     ): PagedResult<PushMonitorDetailsDto> {
         val condition = DSL.and(
             filterCondition(enabled, uptimeStatus, categoryFilter),
-            containsIgnoreCaseCondition(PUSH_MONITOR.NAME, name),
+            containsIgnoreCaseCondition(listOf(PUSH_MONITOR.NAME, PUSH_MONITOR.DISPLAY_NAME), name),
         )
         return monitorDetailsSelect()
             .and(condition)
@@ -174,7 +176,7 @@ class PushMonitorRepository(
 
     private fun PushMonitorSortField.toField(): Field<*> = when (this) {
         PushMonitorSortField.ID -> PUSH_MONITOR.ID
-        PushMonitorSortField.NAME -> PUSH_MONITOR.NAME
+        PushMonitorSortField.NAME -> effectiveNameField(PUSH_MONITOR.NAME, PUSH_MONITOR.DISPLAY_NAME)
         PushMonitorSortField.ENABLED -> PUSH_MONITOR.ENABLED
         PushMonitorSortField.UPTIME_STATUS -> checkNotNull(latestUptimeEventSelect.field(PUSH_UPTIME_EVENT.STATUS))
         PushMonitorSortField.UPTIME_STATUS_STARTED_AT ->
@@ -211,6 +213,7 @@ class PushMonitorRepository(
             (txCtx ?: dslContext)
                 .update(PUSH_MONITOR)
                 .set(PUSH_MONITOR.NAME, updatedMonitor.name)
+                .set(PUSH_MONITOR.DISPLAY_NAME, updatedMonitor.displayName.nullIfBlank())
                 .set(PUSH_MONITOR.HEARTBEAT_INTERVAL, updatedMonitor.heartbeatInterval)
                 .set(PUSH_MONITOR.GRACE_PERIOD, updatedMonitor.gracePeriod)
                 .set(PUSH_MONITOR.ENABLED, updatedMonitor.enabled)
@@ -266,6 +269,7 @@ class PushMonitorRepository(
         .select(
             PUSH_MONITOR.ID.`as`(PushMonitorDetailsDto::id.name),
             PUSH_MONITOR.NAME.`as`(PushMonitorDetailsDto::name.name),
+            PUSH_MONITOR.DISPLAY_NAME.`as`(PushMonitorDetailsDto::displayName.name),
             PUSH_MONITOR.CATEGORY.`as`(PushMonitorDetailsDto::category.name),
             PUSH_MONITOR.IGNORE_CONNECTIVITY_CHECK
                 .`as`(PushMonitorDetailsDto::ignoreConnectivityCheck.name),

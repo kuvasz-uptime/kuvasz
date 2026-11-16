@@ -11,6 +11,7 @@ import io.micronaut.core.annotation.Introspected
 @Introspected
 data class HttpMonitorExportDto(
     val name: String,
+    val displayName: String? = null,
     val url: String,
     val sensitiveUrl: Boolean,
     val uptimeCheckInterval: Int,
@@ -40,6 +41,7 @@ data class HttpMonitorExportDto(
         fun fromMonitorRecord(record: HttpMonitorRecord): HttpMonitorExportDto {
             return HttpMonitorExportDto(
                 name = record.name,
+                displayName = record.displayName,
                 url = record.url,
                 sensitiveUrl = record.sensitiveUrl,
                 uptimeCheckInterval = record.uptimeCheckInterval,

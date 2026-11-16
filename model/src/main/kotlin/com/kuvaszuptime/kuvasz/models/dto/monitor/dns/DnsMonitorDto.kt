@@ -18,6 +18,8 @@ data class DnsMonitorDto(
     val id: Long,
     @param:Schema(description = MonitorDocs.NAME, required = true)
     val name: String,
+    @param:Schema(description = MonitorDocs.DISPLAY_NAME, required = true, nullable = true)
+    val displayName: String?,
     @param:Schema(description = DnsMonitorDocs.HOST, required = true)
     val host: String,
     @param:Schema(description = DnsMonitorDocs.RESOLVER_HOST, required = true, nullable = true)
@@ -61,6 +63,7 @@ data class DnsMonitorDto(
         fun fromMonitorRecord(record: DnsMonitorRecord) = DnsMonitorDto(
             id = record.id,
             name = record.name,
+            displayName = record.displayName,
             host = record.host,
             resolverHost = record.resolverHost,
             resolverPort = record.resolverPort,

@@ -14,6 +14,8 @@ data class PushMonitorDetailsDto(
     override val id: Long,
     @param:Schema(description = MonitorDocs.NAME, required = true)
     override val name: String,
+    @param:Schema(description = MonitorDocs.DISPLAY_NAME, required = true, nullable = true)
+    override val displayName: String?,
     @param:Schema(description = PushMonitorDocs.HEARTBEAT_INTERVAL, required = true)
     val heartbeatInterval: Long,
     @param:Schema(description = PushMonitorDocs.GRACE_PERIOD, required = true)

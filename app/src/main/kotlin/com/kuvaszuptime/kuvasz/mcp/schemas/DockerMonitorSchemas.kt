@@ -24,6 +24,7 @@ import java.time.OffsetDateTime
 data class DockerMonitorSchema(
     val id: Long,
     val name: String,
+    val displayName: String?,
     val dockerHost: String,
     val container: String,
     val uptimeCheckInterval: Int,
@@ -42,6 +43,7 @@ data class DockerMonitorSchema(
         fun fromDto(dto: DockerMonitorDto) = DockerMonitorSchema(
             id = dto.id,
             name = dto.name,
+            displayName = dto.displayName,
             dockerHost = dto.dockerHost,
             container = dto.container,
             uptimeCheckInterval = dto.uptimeCheckInterval,
@@ -65,6 +67,7 @@ data class DockerMonitorSchema(
 data class DockerMonitorDetailsSchema(
     val id: Long,
     val name: String,
+    val displayName: String?,
     val dockerHost: String,
     val container: String,
     val image: String?,
@@ -94,6 +97,7 @@ data class DockerMonitorDetailsSchema(
         fun fromDto(dto: DockerMonitorDetailsDto) = DockerMonitorDetailsSchema(
             id = dto.id,
             name = dto.name,
+            displayName = dto.displayName,
             dockerHost = dto.dockerHost,
             container = dto.container,
             image = dto.image,
@@ -127,6 +131,7 @@ data class DockerMonitorDetailsSchema(
 data class DockerMonitorSummarySchema(
     val id: Long,
     val name: String,
+    val displayName: String?,
     val dockerHost: String,
     val container: String,
     val image: String?,
@@ -144,6 +149,7 @@ data class DockerMonitorSummarySchema(
         fun fromDto(dto: DockerMonitorDetailsDto) = DockerMonitorSummarySchema(
             id = dto.id,
             name = dto.name,
+            displayName = dto.displayName,
             dockerHost = dto.dockerHost,
             container = dto.container,
             image = dto.image,
@@ -202,6 +208,7 @@ data class DockerMonitorStatsSchema(
 data class DockerMonitorCreatorSchema(
     @get:NotBlank
     val name: String,
+    val displayName: String? = null,
     @get:NotBlank
     val dockerHost: String,
     @get:NotBlank
@@ -221,6 +228,7 @@ data class DockerMonitorCreatorSchema(
 ) {
     fun toDto() = DockerMonitorCreateDto(
         name = name,
+        displayName = displayName,
         dockerHost = dockerHost,
         container = container,
         uptimeCheckInterval = uptimeCheckInterval,

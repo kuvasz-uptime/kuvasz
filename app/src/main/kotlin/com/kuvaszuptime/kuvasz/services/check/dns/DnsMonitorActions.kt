@@ -204,6 +204,7 @@ class DnsMonitorActions(
         ) { monitor, uptime, averageLatencies ->
             StatusPageDnsMonitorDetailsDto(
                 name = monitor.name,
+                displayName = monitor.displayName,
                 lastCheck = monitor.lastUptimeCheck,
                 averageLatencyInMs = averageLatencies[monitor.id],
                 uptimeRatio = uptime.uptimeRatio,

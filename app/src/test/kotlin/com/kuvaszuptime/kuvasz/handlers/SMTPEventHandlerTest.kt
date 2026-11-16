@@ -116,6 +116,7 @@ class SMTPEventHandlerTest(
             `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
                 val monitor = createHttpMonitor(
                     repository = httpMonitorRepository,
+                    displayName = "Payments API",
                     integrations = listOf(
                         globalEmailConfig.id,
                         otherEmailConfig.id,
@@ -142,6 +143,7 @@ class SMTPEventHandlerTest(
                         email.plainText shouldBe expectedEmail.plainText
                         email.subject shouldBe expectedEmail.subject
                         email.subject shouldContain "is DOWN"
+                        email.subject shouldContain "[Payments API]"
                     }
                     val fromGlobalConfig =
                         sentEmails.filter { email -> email.fromRecipient?.address == globalEmailConfig.fromAddress }

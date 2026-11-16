@@ -7,6 +7,7 @@ import io.micronaut.core.annotation.Introspected
 @Introspected
 data class DockerMonitorExportDto(
     val name: String,
+    val displayName: String? = null,
     val dockerHost: String,
     val container: String,
     val uptimeCheckInterval: Int,
@@ -23,6 +24,7 @@ data class DockerMonitorExportDto(
         fun fromMonitorRecord(record: DockerMonitorRecord): DockerMonitorExportDto {
             return DockerMonitorExportDto(
                 name = record.name,
+                displayName = record.displayName,
                 dockerHost = record.dockerHost,
                 container = record.container,
                 uptimeCheckInterval = record.uptimeCheckInterval,

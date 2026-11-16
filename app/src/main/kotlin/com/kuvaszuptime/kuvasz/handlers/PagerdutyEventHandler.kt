@@ -208,6 +208,7 @@ class PagerdutyEventHandler(
             dedupKey = deduplicationKey,
             payload = PagerdutyTriggerPayload(
                 summary = toStructuredMessage().summary,
+                // The unique name, which doesn't change with the display name, so the routing rules keep matching
                 source = monitor.name,
                 severity = severity
             )

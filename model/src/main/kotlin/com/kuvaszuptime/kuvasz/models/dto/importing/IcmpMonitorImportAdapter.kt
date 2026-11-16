@@ -7,6 +7,7 @@ import io.micronaut.core.annotation.Introspected
 @Introspected
 class IcmpMonitorImportAdapter(dto: IcmpMonitorExportDto) : IcmpMonitorCreator {
     override val name: String = dto.name
+    override val displayName: String? = dto.displayName
     override val host: String = dto.host
     override val uptimeCheckInterval: Int = dto.uptimeCheckInterval
     override val packetCount: Int = dto.packetCount

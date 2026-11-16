@@ -50,8 +50,12 @@ class PushMonitorListPage(private val page: Page) {
         rowByName(name).getByTestId("push-monitor-toggle-button").click()
     }
 
-    fun deleteMonitor(name: String) {
+    fun openDeleteModal(name: String): Locator {
         rowByName(name).getByTestId("push-monitor-delete-button").click()
-        page.locator(".modal.show").getByTestId("delete-confirm-button").click()
+        return page.locator(".modal.show")
+    }
+
+    fun deleteMonitor(name: String) {
+        openDeleteModal(name).getByTestId("delete-confirm-button").click()
     }
 }

@@ -22,11 +22,12 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.ActualUptimeStats
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.tcp.TcpMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusHistoryDto
-import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIncidentDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDefaults
+import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIncidentDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIncidentNoteDto
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.NumericMonitorID
+import com.kuvaszuptime.kuvasz.models.monitor.effectiveName
 import com.kuvaszuptime.kuvasz.models.uptimeIncidentType
 import com.kuvaszuptime.kuvasz.repositories.IncidentNoteRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository
@@ -274,7 +275,7 @@ class StatCalculator(
                 .sortedWith(
                     compareByDescending<UnreliableMonitor> { it.history.totalDowntimeSeconds }
                         .thenByDescending { it.history.incidents }
-                        .thenBy { it.name }
+                        .thenBy { it.effectiveName }
                 )
                 .take(LEAST_RELIABLE_MONITORS_LIMIT),
         )
@@ -357,6 +358,7 @@ class StatCalculator(
                 UnreliableMonitor(
                     id = monitorId,
                     name = monitor.name,
+                    displayName = monitor.displayName,
                     uptimeStatus = monitor.uptimeStatus,
                     inMaintenance = monitorId in monitorsInMaintenance,
                     history = uptime.toHistoricalUptimeStats(period),

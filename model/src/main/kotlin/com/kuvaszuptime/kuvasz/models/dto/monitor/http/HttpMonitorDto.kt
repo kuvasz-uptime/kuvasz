@@ -16,6 +16,8 @@ data class HttpMonitorDto(
     val id: Long,
     @param:Schema(description = MonitorDocs.NAME, required = true)
     val name: String,
+    @param:Schema(description = MonitorDocs.DISPLAY_NAME, required = true, nullable = true)
+    val displayName: String?,
     @param:Schema(description = HttpMonitorDocs.URL, required = true)
     val url: String,
     @param:Schema(description = HttpMonitorDocs.SENSITIVE_URL, required = true)
@@ -74,6 +76,7 @@ data class HttpMonitorDto(
             HttpMonitorDto(
                 id = record.id,
                 name = record.name,
+                displayName = record.displayName,
                 url = record.url,
                 sensitiveUrl = record.sensitiveUrl,
                 uptimeCheckInterval = record.uptimeCheckInterval,

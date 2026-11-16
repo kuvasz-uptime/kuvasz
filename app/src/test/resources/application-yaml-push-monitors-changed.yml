@@ -1,5 +1,6 @@
 push-monitors:
   - name: test1
+    display-name: Renamed label
     heartbeat-interval: 125
     client-secret: somesecretsomesecretsomesecretsomesecretsomesecretsomesecretsomesecretsomesecretsomesecretU
     enabled: true

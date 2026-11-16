@@ -59,7 +59,7 @@ Maintenance notifications behave differently from monitor events:
 
 - They are sent **only to the integrations explicitly assigned to the maintenance window**. Unlike monitor events, **globally-enabled integrations are intentionally ignored** here, so a global integration only receives maintenance notifications when it is explicitly assigned to the window.
 - All integration types are supported. On PagerDuty a start event triggers a `warning` alert and the end event resolves it.
-- For **custom webhooks**, maintenance events reuse the same payload contract as monitor events, but the monitor-specific fields are blank, because a maintenance window is not tied to a single monitor: `monitorId` is `0` and `monitorUrn`, `monitorName` and `monitorDetailsUrl` are empty strings. The `type`, `timestamp` and `eventDetails` fields are populated as usual, and any existing `payloadTemplate` keeps working (the blank monitor variables simply render as empty).
+- For **custom webhooks**, maintenance events reuse the same payload contract as monitor events, but the monitor-specific fields are blank, because a maintenance window is not tied to a single monitor: `monitorId` is `0` and `monitorUrn`, `monitorName`, `monitorLabel` and `monitorDetailsUrl` are empty strings. The `type`, `timestamp` and `eventDetails` fields are populated as usual, and any existing `payloadTemplate` keeps working (the blank monitor variables simply render as empty).
 
 !!! tip "Excluding certain events"
 

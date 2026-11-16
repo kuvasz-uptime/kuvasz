@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorCreator
 import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
+import com.kuvaszuptime.kuvasz.util.nullIfBlank
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
@@ -56,6 +57,7 @@ interface IcmpMonitorCreator : MonitorCreator<IcmpMonitorRecord> {
     override fun toMonitorRecord(validatedIntegrations: Set<IntegrationID>): IcmpMonitorRecord =
         IcmpMonitorRecord()
             .setName(name)
+            .setDisplayName(displayName.nullIfBlank())
             .setHost(host)
             .setUptimeCheckInterval(uptimeCheckInterval)
             .setPacketCount(packetCount)

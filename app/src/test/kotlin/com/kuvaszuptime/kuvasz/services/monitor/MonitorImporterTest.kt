@@ -357,15 +357,59 @@ class MonitorImporterTest(
 
             `when`("it receives Docker monitors and dryRun is false") {
                 val result = monitorImporter.importDockerMonitorConfigs(
-                    listOf(dockerAdapter("persisted-docker", restartAlertEnabled = true)),
+                    listOf(
+                        dockerAdapter("persisted-docker", displayName = "  Docker label  ", restartAlertEnabled = true),
+                    ),
                     dryRun = false,
                 )
 
                 then("it should persist the Docker monitor") {
                     result.monitorType shouldBe MonitorType.DOCKER
                     result.receivedCnt shouldBe 1
-                    dockerMonitorRepository.findByName("persisted-docker").shouldNotBeNull()
-                        .restartAlertEnabled shouldBe true
+                    with(dockerMonitorRepository.findByName("persisted-docker").shouldNotBeNull()) {
+                        restartAlertEnabled shouldBe true
+                        displayName shouldBe "Docker label"
+                    }
+                }
+            }
+
+            `when`("only the display name of an existing monitor changes") {
+                val existing = createDockerMonitor(
+                    dockerMonitorRepository,
+                    monitorName = "relabeled-docker",
+                    displayName = "Old label",
+                )
+
+                monitorImporter.importDockerMonitorConfigs(
+                    listOf(dockerAdapter("relabeled-docker", displayName = "New label")),
+                    dryRun = false,
+                )
+
+                then("it should update the same monitor in place, instead of replacing it") {
+                    with(dockerMonitorRepository.findByName("relabeled-docker").shouldNotBeNull()) {
+                        id shouldBe existing.id
+                        displayName shouldBe "New label"
+                    }
+                }
+            }
+
+            `when`("the display name of an existing monitor is removed from the config") {
+                val existing = createDockerMonitor(
+                    dockerMonitorRepository,
+                    monitorName = "unlabeled-docker",
+                    displayName = "Old label",
+                )
+
+                monitorImporter.importDockerMonitorConfigs(
+                    listOf(dockerAdapter("unlabeled-docker", displayName = null)),
+                    dryRun = false,
+                )
+
+                then("it should clear the display name, so the monitor is shown by its name again") {
+                    with(dockerMonitorRepository.findByName("unlabeled-docker").shouldNotBeNull()) {
+                        id shouldBe existing.id
+                        displayName.shouldBeNull()
+                    }
                 }
             }
 
@@ -950,12 +994,14 @@ class MonitorImporterTest(
 
     private fun dockerAdapter(
         name: String,
+        displayName: String? = null,
         dockerHost: String = "local",
         metricsHistoryEnabled: Boolean = true,
         restartAlertEnabled: Boolean = false,
     ) = DockerMonitorImportAdapter(
         DockerMonitorExportDto(
             name = name,
+            displayName = displayName,
             dockerHost = dockerHost,
             container = "my-app",
             uptimeCheckInterval = 60,

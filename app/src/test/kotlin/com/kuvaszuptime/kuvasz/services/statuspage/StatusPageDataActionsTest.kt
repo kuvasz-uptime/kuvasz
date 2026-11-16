@@ -111,6 +111,7 @@ class StatusPageDataActionsTest(
             val mockHttpMonitorList = listOf(
                 StatusPageHttpMonitorDetailsDto(
                     name = "Josh Snow",
+                    displayName = null,
                     lastCheck = null,
                     averageLatencyInMs = null,
                     uptimeRatio = null,
@@ -120,6 +121,7 @@ class StatusPageDataActionsTest(
                 ),
                 StatusPageHttpMonitorDetailsDto(
                     name = "Arya Stark",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(3),
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9234,
@@ -136,6 +138,7 @@ class StatusPageDataActionsTest(
             val mockPushMonitorList = listOf(
                 StatusPagePushMonitorDetailsDto(
                     name = "One of the dragon lords",
+                    displayName = null,
                     lastCheck = null,
                     lastHeartbeat = null,
                     uptimeRatio = null,
@@ -145,6 +148,7 @@ class StatusPageDataActionsTest(
                 ),
                 StatusPagePushMonitorDetailsDto(
                     name = "I can't recall more from the series",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(3),
                     lastHeartbeat = null,
                     uptimeRatio = 0.9231,
@@ -186,6 +190,7 @@ class StatusPageDataActionsTest(
             val mockHttpMonitorList = listOf(
                 StatusPageHttpMonitorDetailsDto(
                     name = "Josh Snow",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(10),
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9999,
@@ -195,6 +200,7 @@ class StatusPageDataActionsTest(
                 ),
                 StatusPageHttpMonitorDetailsDto(
                     name = "Arya Stark",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(3),
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9234,
@@ -211,6 +217,7 @@ class StatusPageDataActionsTest(
             val mockPushMonitorList = listOf(
                 StatusPagePushMonitorDetailsDto(
                     name = "One of the dragon lords",
+                    displayName = null,
                     lastCheck = null,
                     lastHeartbeat = null,
                     uptimeRatio = null,
@@ -220,6 +227,7 @@ class StatusPageDataActionsTest(
                 ),
                 StatusPagePushMonitorDetailsDto(
                     name = "I can't recall more from the series",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(3),
                     lastHeartbeat = null,
                     uptimeRatio = 0.9231,
@@ -259,6 +267,7 @@ class StatusPageDataActionsTest(
             val mockHttpMonitorList = listOf(
                 StatusPageHttpMonitorDetailsDto(
                     name = "Josh Snow",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(10),
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9999,
@@ -268,6 +277,7 @@ class StatusPageDataActionsTest(
                 ),
                 StatusPageHttpMonitorDetailsDto(
                     name = "Arya Stark",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(3),
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9234,
@@ -284,6 +294,7 @@ class StatusPageDataActionsTest(
             val mockPushMonitorList = listOf(
                 StatusPagePushMonitorDetailsDto(
                     name = "One of the dragon lords",
+                    displayName = null,
                     lastCheck = null,
                     lastHeartbeat = null,
                     uptimeRatio = null,
@@ -293,6 +304,7 @@ class StatusPageDataActionsTest(
                 ),
                 StatusPagePushMonitorDetailsDto(
                     name = "I can't recall more from the series",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(3),
                     lastHeartbeat = null,
                     uptimeRatio = 0.9231,
@@ -332,6 +344,7 @@ class StatusPageDataActionsTest(
             val mockHttpMonitorList = listOf(
                 StatusPageHttpMonitorDetailsDto(
                     name = "Josh Snow",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(10),
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9999,
@@ -341,6 +354,7 @@ class StatusPageDataActionsTest(
                 ),
                 StatusPageHttpMonitorDetailsDto(
                     name = "Arya Stark",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(3),
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9234,
@@ -357,6 +371,7 @@ class StatusPageDataActionsTest(
             val mockPushMonitorList = listOf(
                 StatusPagePushMonitorDetailsDto(
                     name = "One of the dragon lords",
+                    displayName = null,
                     lastCheck = null,
                     lastHeartbeat = null,
                     uptimeRatio = null,
@@ -366,6 +381,7 @@ class StatusPageDataActionsTest(
                 ),
                 StatusPagePushMonitorDetailsDto(
                     name = "I can't recall more from the series",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(3),
                     lastHeartbeat = null,
                     uptimeRatio = 0.9231,
@@ -425,6 +441,7 @@ class StatusPageDataActionsTest(
             val mockHttpMonitorList = listOf(
                 StatusPageHttpMonitorDetailsDto(
                     name = "HTTP monitor",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(10),
                     averageLatencyInMs = 50,
                     uptimeRatio = 1.0,
@@ -436,6 +453,7 @@ class StatusPageDataActionsTest(
             val mockIcmpMonitorList = listOf(
                 StatusPageIcmpMonitorDetailsDto(
                     name = "ICMP monitor pending",
+                    displayName = null,
                     lastCheck = null,
                     averageLatencyInMs = null,
                     lastPacketLossPercentage = null,
@@ -446,6 +464,7 @@ class StatusPageDataActionsTest(
                 ),
                 StatusPageIcmpMonitorDetailsDto(
                     name = "ICMP monitor up",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(5),
                     averageLatencyInMs = 12,
                     lastPacketLossPercentage = 0,
@@ -488,6 +507,7 @@ class StatusPageDataActionsTest(
             val mockHttpMonitorList = listOf(
                 StatusPageHttpMonitorDetailsDto(
                     name = "HTTP monitor",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(10),
                     averageLatencyInMs = 50,
                     uptimeRatio = 1.0,
@@ -499,6 +519,7 @@ class StatusPageDataActionsTest(
             val mockIcmpMonitorList = listOf(
                 StatusPageIcmpMonitorDetailsDto(
                     name = "ICMP monitor down",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(5),
                     averageLatencyInMs = null,
                     lastPacketLossPercentage = 100,
@@ -541,6 +562,7 @@ class StatusPageDataActionsTest(
             val mockHttpMonitorList = listOf(
                 StatusPageHttpMonitorDetailsDto(
                     name = "HTTP monitor",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(10),
                     averageLatencyInMs = 50,
                     uptimeRatio = 1.0,
@@ -552,6 +574,7 @@ class StatusPageDataActionsTest(
             val mockTcpMonitorList = listOf(
                 StatusPageTcpMonitorDetailsDto(
                     name = "TCP monitor pending",
+                    displayName = null,
                     lastCheck = null,
                     averageLatencyInMs = null,
                     uptimeRatio = null,
@@ -561,6 +584,7 @@ class StatusPageDataActionsTest(
                 ),
                 StatusPageTcpMonitorDetailsDto(
                     name = "TCP monitor down",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(5),
                     averageLatencyInMs = null,
                     uptimeRatio = 0.95,
@@ -602,6 +626,7 @@ class StatusPageDataActionsTest(
             val mockHttpMonitorList = listOf(
                 StatusPageHttpMonitorDetailsDto(
                     name = "Josh Snow",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(10),
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9999,
@@ -612,6 +637,7 @@ class StatusPageDataActionsTest(
                 ),
                 StatusPageHttpMonitorDetailsDto(
                     name = "Arya Stark",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(3),
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9234,
@@ -652,6 +678,7 @@ class StatusPageDataActionsTest(
             val mockHttpMonitorList = listOf(
                 StatusPageHttpMonitorDetailsDto(
                     name = "Josh Snow",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(10),
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9999,
@@ -662,6 +689,7 @@ class StatusPageDataActionsTest(
                 ),
                 StatusPageHttpMonitorDetailsDto(
                     name = "Arya Stark",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(3),
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9234,
@@ -692,6 +720,7 @@ class StatusPageDataActionsTest(
             val mockHttpMonitorList = listOf(
                 StatusPageHttpMonitorDetailsDto(
                     name = "Josh Snow",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(10),
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9999,
@@ -701,6 +730,7 @@ class StatusPageDataActionsTest(
                 ),
                 StatusPageHttpMonitorDetailsDto(
                     name = "Arya Stark",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(3),
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9234,
@@ -731,6 +761,7 @@ class StatusPageDataActionsTest(
             val mockHttpMonitorList = listOf(
                 StatusPageHttpMonitorDetailsDto(
                     name = "Josh Snow",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(10),
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9999,
@@ -776,6 +807,7 @@ class StatusPageDataActionsTest(
             val mockHttpMonitorList = listOf(
                 StatusPageHttpMonitorDetailsDto(
                     name = "Josh Snow",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(10),
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9999,
@@ -811,11 +843,56 @@ class StatusPageDataActionsTest(
             }
         }
 
+        `when`("a window is scoped to a monitor that has a display name") {
+
+            val mockHttpMonitorList = listOf(
+                StatusPageHttpMonitorDetailsDto(
+                    name = "josh-snow",
+                    displayName = "Josh Snow",
+                    lastCheck = getCurrentTimestamp().minusSeconds(10),
+                    averageLatencyInMs = 123,
+                    uptimeRatio = 0.9999,
+                    uptimeStatus = UptimeStatus.UP,
+                    incidentCount = 0,
+                    uptimeStatusHistory = emptyList(),
+                    inMaintenance = true,
+                ),
+            )
+            val mockHttpMonitorActions = getMock(httpMonitorActions)
+            every {
+                mockHttpMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
+            } returns mockHttpMonitorList
+            val mockPushMonitorActions = getMock(pushMonitorActions)
+            every {
+                mockPushMonitorActions.getStatusPageDataOfEnabledMonitors(Duration.ofDays(30), null, null)
+            } returns emptyList()
+            val mwRepoMock = getMock(maintenanceWindowRepository)
+            every { mwRepoMock.fetchEnabledOnStatusPages() } returns listOf(
+                maintenanceWindowRecord(
+                    name = "By name",
+                    global = false,
+                    monitors = arrayOf(MonitorID(MonitorType.HTTP_SSL, "josh-snow")),
+                ),
+                maintenanceWindowRecord(
+                    name = "By display name",
+                    global = false,
+                    monitors = arrayOf(MonitorID(MonitorType.HTTP_SSL, "Josh Snow")),
+                ),
+            )
+
+            val result = statusPageActions.getDefaultStatusPageData()
+
+            then("the window should be matched by the name of the monitor, which identifies it") {
+                result.activeMaintenanceWindows.map { it.name } shouldBe listOf("By name")
+            }
+        }
+
         `when`("a window is scoped to a category") {
 
             val mockHttpMonitorList = listOf(
                 StatusPageHttpMonitorDetailsDto(
                     name = "Josh Snow",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(10),
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9999,
@@ -913,6 +990,7 @@ class StatusPageDataActionsTest(
             val mockHttpMonitorList = listOf(
                 StatusPageHttpMonitorDetailsDto(
                     name = "Josh Snow",
+                    displayName = null,
                     lastCheck = null,
                     averageLatencyInMs = null,
                     uptimeRatio = null,
@@ -922,6 +1000,7 @@ class StatusPageDataActionsTest(
                 ),
                 StatusPageHttpMonitorDetailsDto(
                     name = "Arya Stark",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(3),
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9234,
@@ -938,6 +1017,7 @@ class StatusPageDataActionsTest(
             val mockPushMonitorList = listOf(
                 StatusPagePushMonitorDetailsDto(
                     name = "One of the dragon lords",
+                    displayName = null,
                     lastCheck = null,
                     lastHeartbeat = null,
                     uptimeRatio = null,
@@ -947,6 +1027,7 @@ class StatusPageDataActionsTest(
                 ),
                 StatusPagePushMonitorDetailsDto(
                     name = "I can't recall more from the series",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(3),
                     lastHeartbeat = null,
                     uptimeRatio = 0.9231,
@@ -998,6 +1079,7 @@ class StatusPageDataActionsTest(
             val mockHttpMonitorList = listOf(
                 StatusPageHttpMonitorDetailsDto(
                     name = "Josh Snow",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(10),
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9999,
@@ -1007,6 +1089,7 @@ class StatusPageDataActionsTest(
                 ),
                 StatusPageHttpMonitorDetailsDto(
                     name = "Arya Stark",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(3),
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9234,
@@ -1023,6 +1106,7 @@ class StatusPageDataActionsTest(
             val mockPushMonitorList = listOf(
                 StatusPagePushMonitorDetailsDto(
                     name = "One of the dragon lords",
+                    displayName = null,
                     lastCheck = null,
                     lastHeartbeat = null,
                     uptimeRatio = null,
@@ -1032,6 +1116,7 @@ class StatusPageDataActionsTest(
                 ),
                 StatusPagePushMonitorDetailsDto(
                     name = "I can't recall more from the series",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(3),
                     lastHeartbeat = null,
                     uptimeRatio = 0.9231,
@@ -1082,6 +1167,7 @@ class StatusPageDataActionsTest(
             val mockHttpMonitorList = listOf(
                 StatusPageHttpMonitorDetailsDto(
                     name = "Josh Snow",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(10),
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9999,
@@ -1091,6 +1177,7 @@ class StatusPageDataActionsTest(
                 ),
                 StatusPageHttpMonitorDetailsDto(
                     name = "Arya Stark",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(3),
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9234,
@@ -1107,6 +1194,7 @@ class StatusPageDataActionsTest(
             val mockPushMonitorList = listOf(
                 StatusPagePushMonitorDetailsDto(
                     name = "One of the dragon lords",
+                    displayName = null,
                     lastCheck = null,
                     lastHeartbeat = null,
                     uptimeRatio = null,
@@ -1116,6 +1204,7 @@ class StatusPageDataActionsTest(
                 ),
                 StatusPagePushMonitorDetailsDto(
                     name = "I can't recall more from the series",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(3),
                     lastHeartbeat = null,
                     uptimeRatio = 0.9231,
@@ -1166,6 +1255,7 @@ class StatusPageDataActionsTest(
             val mockHttpMonitorList = listOf(
                 StatusPageHttpMonitorDetailsDto(
                     name = "Josh Snow",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(10),
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9999,
@@ -1175,6 +1265,7 @@ class StatusPageDataActionsTest(
                 ),
                 StatusPageHttpMonitorDetailsDto(
                     name = "Arya Stark",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(3),
                     averageLatencyInMs = 123,
                     uptimeRatio = 0.9234,
@@ -1191,6 +1282,7 @@ class StatusPageDataActionsTest(
             val mockPushMonitorList = listOf(
                 StatusPagePushMonitorDetailsDto(
                     name = "One of the dragon lords",
+                    displayName = null,
                     lastCheck = null,
                     lastHeartbeat = null,
                     uptimeRatio = null,
@@ -1200,6 +1292,7 @@ class StatusPageDataActionsTest(
                 ),
                 StatusPagePushMonitorDetailsDto(
                     name = "I can't recall more from the series",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(3),
                     lastHeartbeat = null,
                     uptimeRatio = 0.9231,
@@ -1292,6 +1385,7 @@ class StatusPageDataActionsTest(
             val mockHttpMonitorList = listOf(
                 StatusPageHttpMonitorDetailsDto(
                     name = "http-monitor-1",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(10),
                     averageLatencyInMs = 80,
                     uptimeRatio = 1.0,
@@ -1303,6 +1397,7 @@ class StatusPageDataActionsTest(
             val mockIcmpMonitorList = listOf(
                 StatusPageIcmpMonitorDetailsDto(
                     name = "icmp-monitor-1",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(5),
                     averageLatencyInMs = 15,
                     lastPacketLossPercentage = 0,
@@ -1318,6 +1413,7 @@ class StatusPageDataActionsTest(
                 ),
                 StatusPageIcmpMonitorDetailsDto(
                     name = "icmp-monitor-2",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(5),
                     averageLatencyInMs = null,
                     lastPacketLossPercentage = 100,
@@ -1409,6 +1505,7 @@ class StatusPageDataActionsTest(
             val mockHttpMonitorList = listOf(
                 StatusPageHttpMonitorDetailsDto(
                     name = "http-monitor-1",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(10),
                     averageLatencyInMs = 80,
                     uptimeRatio = 1.0,
@@ -1420,6 +1517,7 @@ class StatusPageDataActionsTest(
             val mockTcpMonitorList = listOf(
                 StatusPageTcpMonitorDetailsDto(
                     name = "tcp-monitor-1",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(5),
                     averageLatencyInMs = 15,
                     uptimeRatio = 1.0,
@@ -1434,6 +1532,7 @@ class StatusPageDataActionsTest(
                 ),
                 StatusPageTcpMonitorDetailsDto(
                     name = "tcp-monitor-2",
+                    displayName = null,
                     lastCheck = getCurrentTimestamp().minusSeconds(5),
                     averageLatencyInMs = null,
                     uptimeRatio = 0.9,
@@ -1501,6 +1600,7 @@ class StatusPageDataActionsTest(
         fun httpMonitor(name: String, category: String?, status: UptimeStatus?, inMaintenance: Boolean = false) =
             StatusPageHttpMonitorDetailsDto(
                 name = name,
+                displayName = null,
                 lastCheck = getCurrentTimestamp(),
                 averageLatencyInMs = null,
                 uptimeRatio = null,
@@ -1682,6 +1782,7 @@ class StatusPageDataActionsShortRetentionTest(
 
 private fun historyMonitor() = StatusPageHttpMonitorDetailsDto(
     name = "History",
+    displayName = null,
     lastCheck = null,
     averageLatencyInMs = null,
     uptimeRatio = null,

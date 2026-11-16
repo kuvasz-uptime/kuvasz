@@ -7,6 +7,7 @@ import io.micronaut.core.annotation.Introspected
 @Introspected
 class TcpMonitorImportAdapter(dto: TcpMonitorExportDto) : TcpMonitorCreator {
     override val name: String = dto.name
+    override val displayName: String? = dto.displayName
     override val host: String = dto.host
     override val port: Int = dto.port
     override val uptimeCheckInterval: Int = dto.uptimeCheckInterval

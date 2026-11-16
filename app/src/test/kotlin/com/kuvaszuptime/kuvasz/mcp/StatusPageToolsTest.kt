@@ -287,7 +287,7 @@ class StatusPageToolsTest(
             }
 
             `when`("get-status-page-details is called for a page with a monitor that has an ongoing incident") {
-                val monitor = createHttpMonitor(httpMonitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository, displayName = "Public label")
                 val page = createStatusPage(
                     dslContext,
                     monitors = listOf(MonitorID(MonitorType.HTTP_SSL, monitor.name))
@@ -309,6 +309,7 @@ class StatusPageToolsTest(
 
                     val details = response.structuredContentAs<StatusPageDetailsSchema>().shouldNotBeNull()
                     details.historyDays shouldBe 30
+                    details.monitors.single().displayName shouldBe "Public label"
                     val today = details.monitors.single().uptimeStatusHistory.last()
                     today.incidents.single().let { listed ->
                         listed.id shouldBe incident.id

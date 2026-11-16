@@ -24,6 +24,7 @@ import com.kuvaszuptime.kuvasz.models.events.DockerMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.HttpRedirectEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.IcmpMonitorUpEvent
 import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowEndEvent
@@ -41,11 +42,15 @@ import com.kuvaszuptime.kuvasz.models.monitor.ssl.SSLValidationError
 import com.kuvaszuptime.kuvasz.util.diffToDuration
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import com.kuvaszuptime.kuvasz.util.toDurationString
+import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldEndWith
+import io.kotest.matchers.string.shouldNotContain
 import io.kotest.matchers.string.shouldStartWith
 import io.micronaut.http.HttpStatus
+import java.net.URI
 
 private const val DOCKER_ERROR = "The container exited (137)"
 
@@ -171,7 +176,7 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
 
             val pushMonitor = PushMonitorRecord().apply {
                 id = 222
-                name = "test_push_monitor"
+                setName("test_push_monitor")
             }
 
             `when`("it gets a PushMonitorUpEvent without a previousEvent") {
@@ -764,6 +769,51 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
                         "Your SSL certificate for \"test_monitor\" will expire soon\n" +
                             "Expiry date: ${event.certInfo.validTo}"
                     formatter.toFormattedMessage(event) shouldBe expectedMessage
+                }
+            }
+        }
+
+        given("a monitor that has a display name") {
+            val label = "Payments API"
+            val http = HttpMonitorRecord().setName("payments-http").setDisplayName(label).setUrl("https://test.url")
+                .setSensitiveUrl(false)
+            val push = PushMonitorRecord().setName("payments-push").setDisplayName(label)
+            val icmp = IcmpMonitorRecord().setName("payments-icmp").setDisplayName(label).setHost("test.host")
+            val tcp = TcpMonitorRecord().setName("payments-tcp").setDisplayName(label).setHost("test.host").setPort(80)
+            val dns = DnsMonitorRecord().setName("payments-dns").setDisplayName(label).setHost("test.host")
+            val docker = DockerMonitorRecord().setName("payments-docker").setDisplayName(label)
+            val records = mapOf(DnsRecordType.A to listOf("1.1.1.1"))
+
+            `when`("any kind of event is sent about it") {
+                val events = listOf(
+                    HttpMonitorUpEvent(http, HttpStatus.OK, 300, null),
+                    HttpMonitorDownEvent(http, HttpStatus.BAD_REQUEST, Exception("uptime error"), null),
+                    HttpRedirectEvent(http, URI("https://redirected.url")),
+                    SSLValidEvent(http, generateCertificateInfo(), null),
+                    SSLInvalidEvent(http, SSLValidationError("ssl error"), null),
+                    SSLWillExpireEvent(http, generateCertificateInfo(), null),
+                    PushMonitorUpEvent(push, null),
+                    PushMonitorDownEvent(push, "missed a heartbeat", null),
+                    IcmpMonitorUpEvent(icmp, null, 300, 0),
+                    IcmpMonitorDownEvent(icmp, "icmp error", null, 100),
+                    TcpMonitorUpEvent(tcp, null, 300),
+                    TcpMonitorDownEvent(tcp, "tcp error", null),
+                    DnsMonitorUpEvent(dns, null, 300),
+                    DnsMonitorDownEvent(dns, "dns error", null),
+                    DnsRecordsChangedEvent(dns, records, mapOf(DnsRecordType.A to listOf("2.2.2.2"))),
+                    DockerMonitorUpEvent(docker, null, 300),
+                    DockerMonitorDownEvent(docker, DOCKER_ERROR, null),
+                    DockerContainerRestartedEvent(docker, previousRestartCount = 1, currentRestartCount = 2),
+                )
+
+                then("the summary should show the display name instead of the unique name") {
+                    events.forEach { event ->
+                        withClue(event::class.simpleName) {
+                            val message = event.toStructuredMessage().summary
+                            message shouldContain "\"$label\""
+                            message shouldNotContain "payments-"
+                        }
+                    }
                 }
             }
         }

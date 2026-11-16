@@ -1,5 +1,6 @@
 push-monitors:
   - name: test1
+    display-name: "  First label  "
     heartbeat-interval: 120
     grace-period: 10
     client-secret: somesecretsomesecretsomesecretsomesecretsomesecretsomesecretsomesecretsomesecretsomesecret1

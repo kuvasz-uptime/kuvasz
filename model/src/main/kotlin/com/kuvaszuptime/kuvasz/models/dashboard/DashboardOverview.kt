@@ -9,6 +9,7 @@ import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitoringStatsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.ActualUptimeStats
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.HistoricalUptimeStatsDto
 import com.kuvaszuptime.kuvasz.models.monitor.NumericMonitorID
+import com.kuvaszuptime.kuvasz.models.monitor.WithDisplayName
 import java.time.Duration
 import java.time.OffsetDateTime
 
@@ -50,11 +51,12 @@ data class DashboardUptimeStats(
  */
 data class UnreliableMonitor(
     val id: NumericMonitorID,
-    val name: String,
+    override val name: String,
+    override val displayName: String?,
     val uptimeStatus: UptimeStatus?,
     val inMaintenance: Boolean,
     val history: HistoricalUptimeStatsDto,
-)
+) : WithDisplayName
 
 /**
  * The incidents (DOWN events) that were open at any point during the period, the same ones as the history counts.

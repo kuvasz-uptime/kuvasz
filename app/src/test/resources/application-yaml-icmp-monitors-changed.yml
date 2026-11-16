@@ -1,5 +1,6 @@
 icmp-monitors:
   - name: test1
+    display-name: Renamed label
     host: 127.0.0.1
     uptime-check-interval: 180
     enabled: true

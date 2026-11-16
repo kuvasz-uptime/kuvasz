@@ -13,6 +13,8 @@ data class TcpMonitorDto(
     val id: Long,
     @param:Schema(description = MonitorDocs.NAME, required = true)
     val name: String,
+    @param:Schema(description = MonitorDocs.DISPLAY_NAME, required = true, nullable = true)
+    val displayName: String?,
     @param:Schema(description = TcpMonitorDocs.HOST, required = true)
     val host: String,
     @param:Schema(description = TcpMonitorDocs.PORT, required = true)
@@ -46,6 +48,7 @@ data class TcpMonitorDto(
         fun fromMonitorRecord(record: TcpMonitorRecord) = TcpMonitorDto(
             id = record.id,
             name = record.name,
+            displayName = record.displayName,
             host = record.host,
             port = record.port,
             uptimeCheckInterval = record.uptimeCheckInterval,

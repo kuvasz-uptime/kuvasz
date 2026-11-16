@@ -12,11 +12,13 @@ import com.kuvaszuptime.kuvasz.models.dashboard.UnreliableMonitor
 import com.kuvaszuptime.kuvasz.models.dashboard.UptimeTimelineSlot
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentDto
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentStatus
+import com.kuvaszuptime.kuvasz.models.dto.incident.effectiveMonitorName
 import com.kuvaszuptime.kuvasz.models.dto.incident.numericMonitorId
 import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorSummary
 import com.kuvaszuptime.kuvasz.models.dto.monitor.http.HttpMonitoringStatsDto.ActualMonitoringStats.SslStats
 import com.kuvaszuptime.kuvasz.models.dto.monitor.stats.ActualUptimeStats
+import com.kuvaszuptime.kuvasz.models.monitor.effectiveName
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
@@ -586,7 +588,7 @@ private fun FlowContent.incidentRow(incident: IncidentDto, inMaintenance: Boolea
         testId = "dashboard-incident",
         dotClasses = dotClasses,
         dotTooltip = state,
-        title = incident.monitorName,
+        title = incident.effectiveMonitorName,
         href = incident.detailsPath,
         titleTooltip = incident.details,
     ) {
@@ -643,7 +645,7 @@ private fun FlowContent.certificateRow(monitor: HttpMonitorSummary) {
         testId = "dashboard-certificate",
         dotClasses = setOf(if (isInvalid) STATUS_RED else STATUS_YELLOW),
         dotTooltip = if (isInvalid) Messages.invalid() else Messages.expiresSoon(),
-        title = monitor.name,
+        title = monitor.effectiveName,
         href = sslEventsPath(monitor.id),
         details = if (isInvalid) {
             monitor.sslError ?: Messages.invalid()
@@ -770,7 +772,7 @@ private fun FlowContent.unreliableMonitorRow(monitor: UnreliableMonitor) {
         testId = "dashboard-least-reliable-monitor",
         dotClasses = dotClasses,
         dotTooltip = state,
-        title = monitor.name,
+        title = monitor.effectiveName,
         href = typeUiConfig.detailsPath(monitor.id.id),
     ) {
         val uptime = monitor.history.uptimeRatio?.formatAsPercentage()

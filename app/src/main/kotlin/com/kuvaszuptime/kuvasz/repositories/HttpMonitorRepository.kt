@@ -57,6 +57,7 @@ class HttpMonitorRepository(
         .select(
             HTTP_MONITOR.ID.`as`(HttpMonitorSummary::id.name),
             HTTP_MONITOR.NAME.`as`(HttpMonitorSummary::name.name),
+            HTTP_MONITOR.DISPLAY_NAME.`as`(HttpMonitorSummary::displayName.name),
             HTTP_MONITOR.ENABLED.`as`(HttpMonitorSummary::enabled.name),
             HTTP_MONITOR.CATEGORY.`as`(HttpMonitorSummary::category.name),
             checkNotNull(latestUptimeEventSelect.field(HTTP_UPTIME_EVENT.STATUS))
@@ -139,7 +140,7 @@ class HttpMonitorRepository(
     ): PagedResult<HttpMonitorDetailsDto> {
         val condition = DSL.and(
             filterCondition(enabled, uptimeStatus, sslStatus, sslCheckEnabled, categoryFilter),
-            containsIgnoreCaseCondition(HTTP_MONITOR.NAME, name),
+            containsIgnoreCaseCondition(listOf(HTTP_MONITOR.NAME, HTTP_MONITOR.DISPLAY_NAME), name),
         )
         return monitorDetailsSelect()
             .and(condition)
@@ -175,6 +176,7 @@ class HttpMonitorRepository(
             (txCtx ?: dslContext)
                 .update(HTTP_MONITOR)
                 .set(HTTP_MONITOR.NAME, updatedMonitor.name)
+                .set(HTTP_MONITOR.DISPLAY_NAME, updatedMonitor.displayName.nullIfBlank())
                 .set(HTTP_MONITOR.URL, updatedMonitor.url)
                 .set(HTTP_MONITOR.SENSITIVE_URL, updatedMonitor.sensitiveUrl)
                 .set(HTTP_MONITOR.UPTIME_CHECK_INTERVAL, updatedMonitor.uptimeCheckInterval)
@@ -274,7 +276,7 @@ class HttpMonitorRepository(
 
     private fun HttpMonitorSortField.toField(): Field<*> = when (this) {
         HttpMonitorSortField.ID -> HTTP_MONITOR.ID
-        HttpMonitorSortField.NAME -> HTTP_MONITOR.NAME
+        HttpMonitorSortField.NAME -> effectiveNameField(HTTP_MONITOR.NAME, HTTP_MONITOR.DISPLAY_NAME)
         HttpMonitorSortField.ENABLED -> HTTP_MONITOR.ENABLED
         HttpMonitorSortField.UPTIME_STATUS -> checkNotNull(latestUptimeEventSelect.field(HTTP_UPTIME_EVENT.STATUS))
         HttpMonitorSortField.UPTIME_STATUS_STARTED_AT ->
@@ -302,6 +304,7 @@ class HttpMonitorRepository(
         .select(
             HTTP_MONITOR.ID.`as`(HttpMonitorDetailsDto::id.name),
             HTTP_MONITOR.NAME.`as`(HttpMonitorDetailsDto::name.name),
+            HTTP_MONITOR.DISPLAY_NAME.`as`(HttpMonitorDetailsDto::displayName.name),
             HTTP_MONITOR.URL.`as`(HttpMonitorDetailsDto::url.name),
             HTTP_MONITOR.SENSITIVE_URL.`as`(HttpMonitorDetailsDto::sensitiveUrl.name),
             HTTP_MONITOR.UPTIME_CHECK_INTERVAL.`as`(HttpMonitorDetailsDto::uptimeCheckInterval.name),

@@ -248,6 +248,21 @@ public class DockerMonitorRecord extends UpdatableRecordImpl<DockerMonitorRecord
         return (Boolean) get(14);
     }
 
+    /**
+     * Setter for <code>kuvasz.docker_monitor.display_name</code>.
+     */
+    public DockerMonitorRecord setDisplayName(String value) {
+        set(15, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>kuvasz.docker_monitor.display_name</code>.
+     */
+    public String getDisplayName() {
+        return (String) get(15);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -271,7 +286,7 @@ public class DockerMonitorRecord extends UpdatableRecordImpl<DockerMonitorRecord
     /**
      * Create a detached, initialised DockerMonitorRecord
      */
-    public DockerMonitorRecord(Long id, String name, String dockerHost, String container, Integer uptimeCheckInterval, Integer timeoutMs, Long failureCountThreshold, Boolean enabled, Boolean metricsHistoryEnabled, IntegrationID[] integrations, String category, Boolean ignoreConnectivityCheck, OffsetDateTime createdAt, OffsetDateTime updatedAt, Boolean restartAlertEnabled) {
+    public DockerMonitorRecord(Long id, String name, String dockerHost, String container, Integer uptimeCheckInterval, Integer timeoutMs, Long failureCountThreshold, Boolean enabled, Boolean metricsHistoryEnabled, IntegrationID[] integrations, String category, Boolean ignoreConnectivityCheck, OffsetDateTime createdAt, OffsetDateTime updatedAt, Boolean restartAlertEnabled, String displayName) {
         super(DockerMonitor.DOCKER_MONITOR);
 
         setId(id);
@@ -289,6 +304,7 @@ public class DockerMonitorRecord extends UpdatableRecordImpl<DockerMonitorRecord
         setCreatedAt(createdAt);
         setUpdatedAt(updatedAt);
         setRestartAlertEnabled(restartAlertEnabled);
+        setDisplayName(displayName);
         resetTouchedOnNotNull();
     }
 
@@ -314,6 +330,7 @@ public class DockerMonitorRecord extends UpdatableRecordImpl<DockerMonitorRecord
             setCreatedAt(value.getCreatedAt());
             setUpdatedAt(value.getUpdatedAt());
             setRestartAlertEnabled(value.getRestartAlertEnabled());
+            setDisplayName(value.getDisplayName());
             resetTouchedOnNotNull();
         }
     }

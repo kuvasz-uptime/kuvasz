@@ -1,5 +1,6 @@
 http-monitors:
   - name: test1
+    display-name: "  First label  "
     url: http://example.com
     uptime-check-interval: 120
     enabled: false

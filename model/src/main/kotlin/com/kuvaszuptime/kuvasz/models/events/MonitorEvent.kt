@@ -8,6 +8,7 @@ import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.dto.monitor.dns.DnsSnapshotRecords
 import com.kuvaszuptime.kuvasz.models.events.MonitorEvent.Companion.DETAILS_MAX_LENGTH
 import com.kuvaszuptime.kuvasz.models.events.MonitorEvent.Companion.ERROR_MAX_LENGTH
+import com.kuvaszuptime.kuvasz.models.monitor.effectiveName
 import com.kuvaszuptime.kuvasz.models.monitor.http.safeDisplayUrl
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import java.net.URI
@@ -31,7 +32,7 @@ data class HttpRedirectEvent(
 ) : MonitorEvent<HttpMonitorRecord>() {
 
     override fun toStructuredMessage() = StructuredRedirectMessage(
-        summary = Messages.requestHasBeenRedirected(monitor.name, monitor.safeDisplayUrl, redirectLocation),
+        summary = Messages.requestHasBeenRedirected(monitor.effectiveName, monitor.safeDisplayUrl, redirectLocation),
     )
 }
 
@@ -42,7 +43,7 @@ data class DnsRecordsChangedEvent(
 ) : MonitorEvent<DnsMonitorRecord>() {
 
     override fun toStructuredMessage() = StructuredDnsRecordsChangedMessage(
-        summary = Messages.dnsRecordsChanged(monitor.name),
+        summary = Messages.dnsRecordsChanged(monitor.effectiveName),
         details = buildDiff(),
     )
 
@@ -69,7 +70,7 @@ data class DockerContainerRestartedEvent(
 ) : MonitorEvent<DockerMonitorRecord>() {
 
     override fun toStructuredMessage() = StructuredDockerContainerRestartedMessage(
-        summary = Messages.dockerContainerRestarted(monitor.name),
+        summary = Messages.dockerContainerRestarted(monitor.effectiveName),
         details = Messages.dockerContainerRestartedDetails(
             (currentRestartCount - previousRestartCount).toString(),
             currentRestartCount.toString(),

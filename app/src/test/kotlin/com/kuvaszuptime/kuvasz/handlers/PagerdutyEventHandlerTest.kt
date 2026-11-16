@@ -59,6 +59,7 @@ import io.kotest.inspectors.forNone
 import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldStartWith
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
@@ -121,6 +122,7 @@ class PagerdutyEventHandlerTest(
             `when`("it receives a MonitorDownEvent and there is no previous event for the monitor") {
                 val monitor = createHttpMonitor(
                     httpMonitorRepository,
+                    displayName = "Payments API",
                     integrations = listOf(
                         globalPagerdutyConfig.id,
                         otherPagerdutyConfig.id,
@@ -145,7 +147,9 @@ class PagerdutyEventHandlerTest(
                         request.eventAction shouldBe PagerdutyEventAction.TRIGGER
                         request.dedupKey shouldBe "kuvasz_uptime_${monitor.id}"
                         request.payload.severity shouldBe PagerdutySeverity.CRITICAL
+                        // The source identifies the monitor, so it stays its name, even if it has a display name
                         request.payload.source shouldBe monitor.name
+                        request.payload.summary shouldContain "Payments API"
                         request.payload.summary shouldBe event.toStructuredMessage().summary
                     }
                     slot.forOne { fromGlobalConfig ->

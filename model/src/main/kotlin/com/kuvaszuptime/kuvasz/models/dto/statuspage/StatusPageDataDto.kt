@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.kuvaszuptime.kuvasz.jooq.enums.InvestigationStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentStatus
+import com.kuvaszuptime.kuvasz.models.monitor.WithDisplayName
 import com.kuvaszuptime.kuvasz.models.statuspage.SystemStatus
 import com.kuvaszuptime.kuvasz.models.theme.ThemeBase
 import io.swagger.v3.oas.annotations.media.Schema
@@ -70,8 +71,9 @@ data class StatusPageMaintenanceWindowDto(
     JsonSubTypes.Type(value = StatusPageDnsMonitorDetailsDto::class, name = "dns"),
     JsonSubTypes.Type(value = StatusPageDockerMonitorDetailsDto::class, name = "docker"),
 )
-sealed interface StatusPageMonitorDetailsDto {
-    val name: String
+sealed interface StatusPageMonitorDetailsDto : WithDisplayName {
+    override val name: String
+    override val displayName: String?
     val type: String
     val lastCheck: OffsetDateTime?
     val uptimeRatio: Double?
@@ -88,6 +90,7 @@ sealed interface WithLatency {
 
 data class StatusPagePushMonitorDetailsDto(
     override val name: String,
+    override val displayName: String?,
     override val type: String = "push",
     override val lastCheck: OffsetDateTime?,
     override val uptimeRatio: Double?,
@@ -102,6 +105,7 @@ data class StatusPagePushMonitorDetailsDto(
 
 data class StatusPageHttpMonitorDetailsDto(
     override val name: String,
+    override val displayName: String?,
     override val type: String = "http",
     override val lastCheck: OffsetDateTime?,
     override val uptimeRatio: Double?,
@@ -116,6 +120,7 @@ data class StatusPageHttpMonitorDetailsDto(
 
 data class StatusPageIcmpMonitorDetailsDto(
     override val name: String,
+    override val displayName: String?,
     override val type: String = "icmp",
     override val lastCheck: OffsetDateTime?,
     override val uptimeRatio: Double?,
@@ -131,6 +136,7 @@ data class StatusPageIcmpMonitorDetailsDto(
 
 data class StatusPageTcpMonitorDetailsDto(
     override val name: String,
+    override val displayName: String?,
     override val type: String = "tcp",
     override val lastCheck: OffsetDateTime?,
     override val uptimeRatio: Double?,
@@ -145,6 +151,7 @@ data class StatusPageTcpMonitorDetailsDto(
 
 data class StatusPageDnsMonitorDetailsDto(
     override val name: String,
+    override val displayName: String?,
     override val type: String = "dns",
     override val lastCheck: OffsetDateTime?,
     override val uptimeRatio: Double?,
@@ -207,6 +214,7 @@ data class StatusPageIncidentNoteDto(
  */
 data class StatusPageDockerMonitorDetailsDto(
     override val name: String,
+    override val displayName: String?,
     override val type: String = "docker",
     override val lastCheck: OffsetDateTime?,
     override val uptimeRatio: Double?,

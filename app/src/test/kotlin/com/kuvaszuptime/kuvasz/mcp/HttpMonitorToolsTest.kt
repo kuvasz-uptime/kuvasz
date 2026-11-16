@@ -118,14 +118,17 @@ class HttpMonitorToolsTest(
             }
 
             `when`("list-http-monitors is called with monitors in the DB") {
-                val monitor = createHttpMonitor(httpMonitorRepository)
+                val monitor = createHttpMonitor(httpMonitorRepository, displayName = "Listed label")
                 val response = callToolWithMcpClient(LIST_HTTP_MONITORS)
 
                 then("it should return the list in both structured and text content") {
                     response.isError shouldBe false
 
                     val monitorList = response.structuredContentAs<HttpMonitorListSchema>().shouldNotBeNull()
-                    monitorList.monitors.forOne { it.name shouldBe monitor.name }
+                    monitorList.monitors.forOne { listed ->
+                        listed.name shouldBe monitor.name
+                        listed.displayName shouldBe "Listed label"
+                    }
 
                     response.contentAs<HttpMonitorListSchema>() shouldBe monitorList
                 }
@@ -137,6 +140,7 @@ class HttpMonitorToolsTest(
             `when`("get-http-monitor-details is called with a valid ID") {
                 val monitor = createHttpMonitor(
                     httpMonitorRepository,
+                    displayName = "Details label",
                     integrations = listOf(IntegrationID(IntegrationType.SLACK, "test_implicitly_enabled")),
                     crossOriginHeaderPropagation = true,
                     proxy = "corporate-egress",
@@ -149,6 +153,7 @@ class HttpMonitorToolsTest(
                     val details = response.structuredContentAs<HttpMonitorDetailsSchema>().shouldNotBeNull()
                     details.id shouldBe monitor.id
                     details.name shouldBe monitor.name
+                    details.displayName shouldBe "Details label"
                     details.ignoreConnectivityCheck shouldBe monitor.ignoreConnectivityCheck
                     details.integrations shouldHaveSingleElement "slack:test_implicitly_enabled"
                     details.crossOriginHeaderPropagation shouldBe true
@@ -191,6 +196,24 @@ class HttpMonitorToolsTest(
         }
 
         given("the create-http-monitor tool") {
+
+            `when`("create-http-monitor is called with a display name") {
+                val response = callToolWithMcpClient(
+                    CREATE_HTTP_MONITOR,
+                    mapOf(
+                        "name" to "mcp-created-monitor-with-display-name",
+                        "url" to "https://example.com",
+                        "uptimeCheckInterval" to 60,
+                        "displayName" to "  MCP label  ",
+                    )
+                )
+
+                then("the created monitor should have the trimmed display name") {
+                    response.isError shouldBe false
+
+                    response.structuredContentAs<HttpMonitorSchema>().shouldNotBeNull().displayName shouldBe "MCP label"
+                }
+            }
 
             `when`("create-http-monitor is called with a minimal, valid input") {
                 val response = callToolWithMcpClient(

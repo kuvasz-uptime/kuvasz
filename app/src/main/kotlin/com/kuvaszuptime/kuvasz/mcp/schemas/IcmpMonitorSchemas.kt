@@ -21,6 +21,7 @@ import java.time.OffsetDateTime
 data class IcmpMonitorSchema(
     val id: Long,
     val name: String,
+    val displayName: String?,
     val host: String,
     val uptimeCheckInterval: Int,
     val packetCount: Int,
@@ -39,6 +40,7 @@ data class IcmpMonitorSchema(
         fun fromDto(dto: IcmpMonitorDto) = IcmpMonitorSchema(
             id = dto.id,
             name = dto.name,
+            displayName = dto.displayName,
             host = dto.host,
             uptimeCheckInterval = dto.uptimeCheckInterval,
             packetCount = dto.packetCount,
@@ -62,6 +64,7 @@ data class IcmpMonitorSchema(
 data class IcmpMonitorDetailsSchema(
     val id: Long,
     val name: String,
+    val displayName: String?,
     val host: String,
     val uptimeCheckInterval: Int,
     val packetCount: Int,
@@ -88,6 +91,7 @@ data class IcmpMonitorDetailsSchema(
         fun fromDto(dto: IcmpMonitorDetailsDto) = IcmpMonitorDetailsSchema(
             id = dto.id,
             name = dto.name,
+            displayName = dto.displayName,
             host = dto.host,
             uptimeCheckInterval = dto.uptimeCheckInterval,
             packetCount = dto.packetCount,
@@ -118,6 +122,7 @@ data class IcmpMonitorDetailsSchema(
 data class IcmpMonitorSummarySchema(
     val id: Long,
     val name: String,
+    val displayName: String?,
     val host: String,
     val uptimeCheckInterval: Int,
     val enabled: Boolean,
@@ -133,6 +138,7 @@ data class IcmpMonitorSummarySchema(
         fun fromDto(dto: IcmpMonitorDetailsDto) = IcmpMonitorSummarySchema(
             id = dto.id,
             name = dto.name,
+            displayName = dto.displayName,
             host = dto.host,
             uptimeCheckInterval = dto.uptimeCheckInterval,
             enabled = dto.enabled,
@@ -185,6 +191,7 @@ data class IcmpMonitorStatsSchema(
 data class IcmpMonitorCreatorSchema(
     @get:NotBlank
     val name: String,
+    val displayName: String? = null,
     @get:NotBlank
     val host: String,
     @get:Min(Validation.MIN_UPTIME_CHECK_INTERVAL)
@@ -201,6 +208,7 @@ data class IcmpMonitorCreatorSchema(
 ) {
     fun toDto() = IcmpMonitorCreateDto(
         name = name,
+        displayName = displayName,
         host = host,
         uptimeCheckInterval = uptimeCheckInterval,
         packetCount = packetCount ?: IcmpMonitorDefaults.PACKET_COUNT,

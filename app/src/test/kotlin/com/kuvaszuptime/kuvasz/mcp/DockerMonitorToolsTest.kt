@@ -68,7 +68,7 @@ class DockerMonitorToolsTest(
             }
 
             `when`("list-docker-monitors is called with monitors in the DB") {
-                val monitor = createDockerMonitor(dockerMonitorRepository)
+                val monitor = createDockerMonitor(dockerMonitorRepository, displayName = "Listed label")
                 createDockerUptimeEventRecord(
                     dslContext,
                     monitorId = monitor.id,
@@ -84,6 +84,7 @@ class DockerMonitorToolsTest(
                     val monitorList = response.structuredContentAs<DockerMonitorListSchema>().shouldNotBeNull()
                     monitorList.monitors.forOne { listed ->
                         listed.name shouldBe monitor.name
+                        listed.displayName shouldBe "Listed label"
                         listed.image shouldBe "nginx:1.27"
                     }
 
@@ -95,7 +96,7 @@ class DockerMonitorToolsTest(
         given("the get-docker-monitor-details tool") {
 
             `when`("get-docker-monitor-details is called with a valid ID") {
-                val monitor = createDockerMonitor(dockerMonitorRepository)
+                val monitor = createDockerMonitor(dockerMonitorRepository, displayName = "Details label")
                 createDockerUptimeEventRecord(
                     dslContext,
                     monitorId = monitor.id,
@@ -115,6 +116,7 @@ class DockerMonitorToolsTest(
                     val details = response.structuredContentAs<DockerMonitorDetailsSchema>().shouldNotBeNull()
                     details.id shouldBe monitor.id
                     details.name shouldBe monitor.name
+                    details.displayName shouldBe "Details label"
                     details.ignoreConnectivityCheck shouldBe monitor.ignoreConnectivityCheck
                     details.dockerHost shouldBe monitor.dockerHost
                     details.container shouldBe monitor.container
@@ -159,6 +161,26 @@ class DockerMonitorToolsTest(
         }
 
         given("the create-docker-monitor tool") {
+
+            `when`("create-docker-monitor is called with a display name") {
+                val response = callToolWithMcpClient(
+                    CREATE_DOCKER_MONITOR,
+                    mapOf(
+                        "name" to "mcp-created-docker-monitor-with-display-name",
+                        "dockerHost" to "local",
+                        "container" to "my-app",
+                        "uptimeCheckInterval" to 60,
+                        "displayName" to "  MCP label  ",
+                    )
+                )
+
+                then("the created monitor should have the trimmed display name") {
+                    response.isError shouldBe false
+
+                    response.structuredContentAs<DockerMonitorSchema>().shouldNotBeNull()
+                        .displayName shouldBe "MCP label"
+                }
+            }
 
             `when`("create-docker-monitor is called with a minimal, valid input") {
                 val response = callToolWithMcpClient(

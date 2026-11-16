@@ -5,6 +5,7 @@ There are three ways to manage your monitors in _Kuvasz_: through the **Web UI**
 !!!note "Key concepts for all methods"
 
     - The **name of the monitor must be unique** per monitor type, otherwise the creation/update will fail. If you want to update an existing monitor, you can use the same name, of course.
+    - A monitor can also have an optional **display name**, which is shown instead of its name, e.g. on the status pages and in the notifications. It doesn't have to be unique, and you can change it at any time without losing anything.
     - The UI and the API will be in **read-only mode** if you have defined your monitors via _YAML_
 
 ## Management methods - good to know
@@ -88,6 +89,8 @@ There are three ways to manage your monitors in _Kuvasz_: through the **Web UI**
     !!!danger "Changing a monitor's name"
 
         **If you change the name** of an existing monitor in the YAML file, it will be treated as a new monitor, and the old one will be deleted. This also means that all of your previously recorded events and metrics (i.e. latency history, uptime checks, etc.) **will be lost for that monitor**.
+
+        If you only want to change how the monitor is shown, set its `display-name` instead, and keep its name. This way the monitor keeps its history (see the display name of [HTTP](../http-monitors.md#display-name), [push](../push-monitors.md#display-name), [ICMP](../icmp-monitors.md#display-name), [TCP](../tcp-monitors.md#display-name), [DNS](../dns-monitors.md#display-name) and [Docker](../docker-monitors.md#display-name) monitors).
 
 === "API (expert)"
  

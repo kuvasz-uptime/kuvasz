@@ -131,7 +131,9 @@ class DashboardOverviewUiTest(
                         val isResolved = type == IncidentType.DOCKER
                         IncidentDto(
                             monitorId = index.toLong(),
-                            monitorName = "${type.name} Monitor",
+                            monitorName = "${type.name.lowercase()}-monitor",
+                            // The incidents are found by it below, so it's shown instead of the unique name
+                            monitorDisplayName = "${type.name} Monitor",
                             isMonitorEnabled = true,
                             incidentType = type,
                             eventId = index * EVENT_ID_STEP,
@@ -170,7 +172,8 @@ class DashboardOverviewUiTest(
                     certificatesWithIssues = listOf(
                         HttpMonitorSummary(
                             id = CERTIFICATE_MONITOR_ID,
-                            name = "Expired Monitor",
+                            name = "expired-monitor",
+                            displayName = "Expired Monitor",
                             enabled = true,
                             category = null,
                             uptimeStatus = UptimeStatus.UP,
@@ -185,6 +188,8 @@ class DashboardOverviewUiTest(
 
             assertThat(dashboard.certificates.getByRole(AriaRole.LINK))
                 .hasAttribute("href", "/http-monitors/$CERTIFICATE_MONITOR_ID#http-monitor-details-ssl-events")
+            assertThat(dashboard.certificates).containsText("Expired Monitor")
+            assertThat(dashboard.certificates).not().containsText("expired-monitor")
         }
 
         "a least reliable monitor is listed with its current state and its figures" {
@@ -195,7 +200,8 @@ class DashboardOverviewUiTest(
                     leastReliableMonitors = listOf(
                         UnreliableMonitor(
                             id = NumericMonitorID(MonitorType.PUSH, UNRELIABLE_MONITOR_ID),
-                            name = "Flaky Monitor",
+                            name = "flaky-monitor",
+                            displayName = "Flaky Monitor",
                             uptimeStatus = UptimeStatus.DOWN,
                             inMaintenance = false,
                             history = HistoricalUptimeStatsDto(
@@ -215,6 +221,7 @@ class DashboardOverviewUiTest(
             assertThat(dashboard.statusDotOf(row)).hasClass(Pattern.compile(".*status-dot-animated.*"))
             assertThat(row.getByRole(AriaRole.LINK)).hasAttribute("href", "/push-monitors/$UNRELIABLE_MONITOR_ID")
             assertThat(row).containsText("Flaky Monitor")
+            assertThat(row).not().containsText("flaky-monitor")
             assertThat(row.getByLabel("Push")).hasClass(Pattern.compile(".*text-red-lt-fg.*"))
             assertThat(row.getByLabel("50.00% uptime")).isVisible()
             assertThat(row.getByLabel("Incidents: 2")).hasText("2")

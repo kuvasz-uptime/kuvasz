@@ -14,6 +14,8 @@ data class DockerMonitorDetailsDto(
     override val id: Long,
     @param:Schema(description = MonitorDocs.NAME, required = true)
     override val name: String,
+    @param:Schema(description = MonitorDocs.DISPLAY_NAME, required = true, nullable = true)
+    override val displayName: String?,
     @param:Schema(description = DockerMonitorDocs.DOCKER_HOST, required = true)
     val dockerHost: String,
     @param:Schema(description = DockerMonitorDocs.CONTAINER, required = true)

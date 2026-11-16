@@ -3,6 +3,10 @@ package com.kuvaszuptime.kuvasz.models.dto.monitor
 object MonitorDocs {
     const val ID = "Unique identifier of the monitor"
     const val NAME = "Unique name for the monitor, e.g., 'My Server Monitor'"
+    const val DISPLAY_NAME =
+        "Optional name of the monitor that is shown instead of its unique name, e.g. on the status pages and in " +
+            "the notifications. Unlike the name, it doesn't have to be unique, and it can be changed without " +
+            "losing anything, even if the monitor is managed through the YAML config"
     const val UPTIME_CHECK_INTERVAL = "The interval in seconds at which the monitor will be checked"
     const val FAILURE_COUNT_THRESHOLD = "The threshold for consecutive failures before the monitor is marked as DOWN"
     const val ENABLED = "Whether the monitor is enabled. If false, the monitor will not perform checks."

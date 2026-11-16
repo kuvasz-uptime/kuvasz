@@ -40,7 +40,8 @@ class ListReadOnlyView(
     }
 
     // Opens the entity's detail page via its name link in the row.
-    fun openDetails(name: String) {
-        row(name).byRole(AriaRole.LINK, name).click()
+    // The link shows the display name of the monitor, if it has one
+    fun openDetails(name: String, shownName: String = name) {
+        row(name).byRole(AriaRole.LINK, shownName).click()
     }
 }

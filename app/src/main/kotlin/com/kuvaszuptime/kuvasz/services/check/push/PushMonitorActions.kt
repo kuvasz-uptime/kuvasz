@@ -210,6 +210,7 @@ class PushMonitorActions(
         ) { monitor, uptime, _ ->
             StatusPagePushMonitorDetailsDto(
                 name = monitor.name,
+                displayName = monitor.displayName,
                 lastCheck = monitor.lastUptimeCheck,
                 uptimeRatio = uptime.uptimeRatio,
                 uptimeStatus = monitor.uptimeStatus,

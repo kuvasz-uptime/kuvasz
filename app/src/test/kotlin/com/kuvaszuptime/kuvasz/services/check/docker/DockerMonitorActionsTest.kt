@@ -43,6 +43,7 @@ class DockerMonitorActionsTest(
                     dockerMonitorRepository,
                     enabled = true,
                     monitorName = "enabled-monitor",
+                    displayName = "Enabled label",
                     metricsHistoryEnabled = true,
                 )
                 val enabledMonitor2 = createDockerMonitor(
@@ -116,6 +117,7 @@ class DockerMonitorActionsTest(
                     result shouldHaveSize 2
                     result.forOne { upMonitor ->
                         upMonitor.name shouldBe enabledMonitor.name
+                        upMonitor.displayName shouldBe "Enabled label"
                         upMonitor.lastCheck shouldBe enabledMonitorsUptimeEvent.updatedAt
                         upMonitor.uptimeRatio shouldBe 0.2312
                         upMonitor.uptimeStatus shouldBe UptimeStatus.UP

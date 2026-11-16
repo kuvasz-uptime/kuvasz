@@ -3,12 +3,14 @@ package com.kuvaszuptime.kuvasz.models.dto.monitor
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.monitor.WithDisplayName
 import java.time.OffsetDateTime
 
 @Suppress("ComplexInterface")
-sealed interface MonitorDetailsDto {
+sealed interface MonitorDetailsDto : WithDisplayName {
     val id: Long
-    val name: String
+    override val name: String
+    override val displayName: String?
     val enabled: Boolean
     val uptimeStatus: UptimeStatus?
     val uptimeStatusStartedAt: OffsetDateTime?

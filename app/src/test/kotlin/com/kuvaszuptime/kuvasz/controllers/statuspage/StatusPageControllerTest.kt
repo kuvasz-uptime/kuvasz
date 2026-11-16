@@ -489,6 +489,7 @@ class StatusPageControllerTest(
                     monitors = listOf(
                         StatusPageHttpMonitorDetailsDto(
                             name = "irrelevant",
+                            displayName = null,
                             lastCheck = getCurrentTimestamp().minusMinutes(5),
                             uptimeRatio = 0.97,
                             uptimeStatus = UptimeStatus.UP,
@@ -610,6 +611,7 @@ class StatusPageControllerTest(
                     monitors = listOf(
                         StatusPageHttpMonitorDetailsDto(
                             name = "irrelevant",
+                            displayName = null,
                             lastCheck = getCurrentTimestamp().minusMinutes(5),
                             uptimeRatio = 0.97,
                             uptimeStatus = UptimeStatus.UP,

@@ -91,6 +91,7 @@ class AppBootstrappingTcpMonitorYamlConfigTest : StringSpec({
 
         monitorsInDb.forOne { firstMonitor ->
             firstMonitor.name shouldBe "test1"
+            firstMonitor.displayName shouldBe "First label"
             firstMonitor.host shouldBe "127.0.0.1"
             firstMonitor.port shouldBe 5432
             firstMonitor.uptimeCheckInterval shouldBe 120
@@ -170,6 +171,8 @@ class AppBootstrappingTcpMonitorYamlConfigTest : StringSpec({
 
         monitorsInDb.forOne { firstMonitor ->
             firstMonitor.name shouldBe "test1"
+            // Only the display name changed, not the name, so it is still the same monitor
+            firstMonitor.displayName shouldBe "Renamed label"
             firstMonitor.host shouldBe "127.0.0.1"
             firstMonitor.port shouldBe 5433
             firstMonitor.uptimeCheckInterval shouldBe 180

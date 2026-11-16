@@ -28,6 +28,9 @@ data class HttpMonitorUpdateDto(
     @get:NotBlank(message = MonitorValidationMessages.NAME_NOT_BLANK)
     val name: String?,
 
+    @param:Schema(description = MonitorDocs.DISPLAY_NAME, required = false, nullable = true)
+    val displayName: String?,
+
     @param:Schema(description = HttpMonitorDocs.URL, required = false, nullable = false)
     @get:Pattern(regexp = URI_REGEX, message = MonitorValidationMessages.URL_PATTERN)
     @get:NotNull(message = MonitorValidationMessages.URL_NOT_NULL)

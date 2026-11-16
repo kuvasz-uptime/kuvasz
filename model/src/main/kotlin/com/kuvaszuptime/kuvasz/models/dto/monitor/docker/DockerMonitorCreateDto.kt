@@ -9,6 +9,8 @@ import io.swagger.v3.oas.annotations.media.Schema
 data class DockerMonitorCreateDto(
     @param:Schema(description = MonitorDocs.NAME, required = true)
     override val name: String,
+    @param:Schema(description = MonitorDocs.DISPLAY_NAME, required = false, nullable = true)
+    override val displayName: String? = null,
     @param:Schema(description = DockerMonitorDocs.DOCKER_HOST, required = true)
     override val dockerHost: String,
     @param:Schema(description = DockerMonitorDocs.CONTAINER, required = true)

@@ -181,6 +181,29 @@ class DockerMonitorV3ControllerTest(
                 }
             }
 
+            `when`("some of the monitors have a display name") {
+                val payments =
+                    createDockerMonitor(monitorRepository, monitorName = "svc-1", displayName = "Payments API")
+                val search = createDockerMonitor(monitorRepository, monitorName = "svc-2", displayName = "search")
+                val zulu = createDockerMonitor(monitorRepository, monitorName = "Zulu")
+                val alpha = createDockerMonitor(monitorRepository, monitorName = "alpha")
+
+                then("the name filter should match the display name too") {
+                    fetchPage(name = "PAYMENTS").result.map { it.id } shouldContainExactly listOf(payments.id)
+                    fetchPage(name = "svc").result.map { it.id } shouldContainExactlyInAnyOrder
+                        listOf(payments.id, search.id)
+                }
+
+                then("sorting by the name should use the display name of the ones that have one") {
+                    val ascending = fetchPage(sortedBy = DockerMonitorSortField.NAME).result
+                    val descending =
+                        fetchPage(sortedBy = DockerMonitorSortField.NAME, sortOrder = SortOrder.DESC).result
+
+                    ascending.map { it.id } shouldBe listOf(alpha.id, payments.id, search.id, zulu.id)
+                    descending.map { it.id } shouldBe listOf(zulu.id, search.id, payments.id, alpha.id)
+                }
+            }
+
             `when`("the other filters are combined with the paging") {
                 createDockerMonitor(monitorRepository, monitorName = "shop-1", category = "shop")
                 createDockerMonitor(monitorRepository, monitorName = "shop-2", category = "shop")

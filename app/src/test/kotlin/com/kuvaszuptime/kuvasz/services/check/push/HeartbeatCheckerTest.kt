@@ -116,22 +116,22 @@ class HeartbeatCheckerTest(
                 val mockMonitorList = listOf(
                     PushMonitorRecord().apply {
                         id = 1
-                        name = "monitor-1"
+                        setName("monitor-1")
                         failureCountThreshold = 1
                     },
                     PushMonitorRecord().apply {
                         id = 2
-                        name = "monitor-2"
+                        setName("monitor-2")
                         failureCountThreshold = 1
                     },
                     PushMonitorRecord().apply {
                         id = 3
-                        name = "monitor-3"
+                        setName("monitor-3")
                         failureCountThreshold = 2
                     },
                     PushMonitorRecord().apply {
                         id = 4
-                        name = "monitor-4"
+                        setName("monitor-4")
                         failureCountThreshold = 2
                     },
                 )
@@ -253,14 +253,14 @@ class HeartbeatCheckerTest(
                 // window may cover it through that instead of listing it explicitly
                 val maintainedMonitor = PushMonitorRecord().apply {
                     id = 10
-                    name = "maintained"
+                    setName("maintained")
                     // `WithCategory` exposes it as a val, so the record's own setter is the way in
                     setCategory("Payments")
                     failureCountThreshold = 1
                 }
                 val normalMonitor = PushMonitorRecord().apply {
                     id = 11
-                    name = "normal"
+                    setName("normal")
                     failureCountThreshold = 1
                 }
                 every { monitorRepoMock.fetchWithMissedHeartbeats(any()) } returns listOf(
@@ -293,13 +293,13 @@ class HeartbeatCheckerTest(
 
                 val suppressedMonitor = PushMonitorRecord().apply {
                     id = 20
-                    name = "suppressed"
+                    setName("suppressed")
                     failureCountThreshold = 1
                 }
                 // A monitor that opted out of the connectivity check, e.g. because its client is on the LAN
                 val optedOutMonitor = PushMonitorRecord().apply {
                     id = 21
-                    name = "opted-out"
+                    setName("opted-out")
                     failureCountThreshold = 1
                     ignoreConnectivityCheck = true
                 }

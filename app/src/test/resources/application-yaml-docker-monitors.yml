@@ -1,5 +1,6 @@
 docker-monitors:
   - name: test1
+    display-name: "  First label  "
     docker-host: local
     container: my-app
     uptime-check-interval: 120

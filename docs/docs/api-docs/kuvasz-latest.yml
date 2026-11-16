@@ -2740,8 +2740,8 @@ paths:
           nullable: true
       - name: name
         in: query
-        description: "Returns only the monitors whose name contains this text, without\
-          \ regard to the case of the letters"
+        description: "Returns only the monitors whose name or display name contains\
+          \ this text, without regard to the case of the letters"
         explode: false
         schema:
           type: string
@@ -2769,10 +2769,11 @@ paths:
           default: 25
       - name: sortedBy
         in: query
-        description: "The field to sort the monitors by, NAME if it's not given. Monitors\
-          \ with the same value are sorted by their ID. A monitor that has no value\
-          \ for the field yet (e.g. no UPTIME_STATUS before its first check) comes\
-          \ last, whatever the order is."
+        description: "The field to sort the monitors by, NAME if it's not given. NAME\
+          \ sorts by the display name of the monitors, or by their name if they have\
+          \ no display name. Monitors with the same value are sorted by their ID.\
+          \ A monitor that has no value for the field yet (e.g. no UPTIME_STATUS before\
+          \ its first check) comes last, whatever the order is."
         explode: false
         schema:
           nullable: true
@@ -2897,8 +2898,8 @@ paths:
           nullable: true
       - name: name
         in: query
-        description: "Returns only the monitors whose name contains this text, without\
-          \ regard to the case of the letters"
+        description: "Returns only the monitors whose name or display name contains\
+          \ this text, without regard to the case of the letters"
         explode: false
         schema:
           type: string
@@ -2926,10 +2927,11 @@ paths:
           default: 25
       - name: sortedBy
         in: query
-        description: "The field to sort the monitors by, NAME if it's not given. Monitors\
-          \ with the same value are sorted by their ID. A monitor that has no value\
-          \ for the field yet (e.g. no UPTIME_STATUS before its first check) comes\
-          \ last, whatever the order is."
+        description: "The field to sort the monitors by, NAME if it's not given. NAME\
+          \ sorts by the display name of the monitors, or by their name if they have\
+          \ no display name. Monitors with the same value are sorted by their ID.\
+          \ A monitor that has no value for the field yet (e.g. no UPTIME_STATUS before\
+          \ its first check) comes last, whatever the order is."
         explode: false
         schema:
           nullable: true
@@ -3068,8 +3070,8 @@ paths:
           nullable: true
       - name: name
         in: query
-        description: "Returns only the monitors whose name contains this text, without\
-          \ regard to the case of the letters"
+        description: "Returns only the monitors whose name or display name contains\
+          \ this text, without regard to the case of the letters"
         explode: false
         schema:
           type: string
@@ -3097,10 +3099,11 @@ paths:
           default: 25
       - name: sortedBy
         in: query
-        description: "The field to sort the monitors by, NAME if it's not given. Monitors\
-          \ with the same value are sorted by their ID. A monitor that has no value\
-          \ for the field yet (e.g. no UPTIME_STATUS before its first check) comes\
-          \ last, whatever the order is."
+        description: "The field to sort the monitors by, NAME if it's not given. NAME\
+          \ sorts by the display name of the monitors, or by their name if they have\
+          \ no display name. Monitors with the same value are sorted by their ID.\
+          \ A monitor that has no value for the field yet (e.g. no UPTIME_STATUS before\
+          \ its first check) comes last, whatever the order is."
         explode: false
         schema:
           nullable: true
@@ -3294,8 +3297,8 @@ paths:
           nullable: true
       - name: name
         in: query
-        description: "Returns only the monitors whose name contains this text, without\
-          \ regard to the case of the letters"
+        description: "Returns only the monitors whose name or display name contains\
+          \ this text, without regard to the case of the letters"
         explode: false
         schema:
           type: string
@@ -3323,10 +3326,11 @@ paths:
           default: 25
       - name: sortedBy
         in: query
-        description: "The field to sort the monitors by, NAME if it's not given. Monitors\
-          \ with the same value are sorted by their ID. A monitor that has no value\
-          \ for the field yet (e.g. no UPTIME_STATUS before its first check) comes\
-          \ last, whatever the order is."
+        description: "The field to sort the monitors by, NAME if it's not given. NAME\
+          \ sorts by the display name of the monitors, or by their name if they have\
+          \ no display name. Monitors with the same value are sorted by their ID.\
+          \ A monitor that has no value for the field yet (e.g. no UPTIME_STATUS before\
+          \ its first check) comes last, whatever the order is."
         explode: false
         schema:
           nullable: true
@@ -3449,8 +3453,8 @@ paths:
           nullable: true
       - name: name
         in: query
-        description: "Returns only the incidents whose monitor's name contains this\
-          \ text, without regard to the case of the letters"
+        description: "Returns only the incidents whose monitor's name or display name\
+          \ contains this text, without regard to the case of the letters"
         explode: false
         schema:
           type: string
@@ -3480,10 +3484,11 @@ paths:
         in: query
         description: "The field to sort the incidents by. Without sortedBy and sortOrder,\
           \ the latest started incidents come first (STARTED_AT, DESC). ID is the\
-          \ ID of the event of the incident. Incidents with the same value are sorted\
-          \ by their type and the ID of their event. When sorted by ENDED_AT, the\
-          \ ongoing incidents (which haven't ended yet) come last, whatever the order\
-          \ is."
+          \ ID of the event of the incident. MONITOR_NAME sorts by the display name\
+          \ of the monitors, or by their name if they have no display name. Incidents\
+          \ with the same value are sorted by their type and the ID of their event.\
+          \ When sorted by ENDED_AT, the ongoing incidents (which haven't ended yet)\
+          \ come last, whatever the order is."
         explode: false
         schema:
           nullable: true
@@ -3542,8 +3547,8 @@ paths:
           nullable: true
       - name: name
         in: query
-        description: "Returns only the incidents whose monitor's name contains this\
-          \ text, without regard to the case of the letters"
+        description: "Returns only the incidents whose monitor's name or display name\
+          \ contains this text, without regard to the case of the letters"
         explode: false
         schema:
           type: string
@@ -3573,10 +3578,11 @@ paths:
         in: query
         description: "The field to sort the incidents by. Without sortedBy and sortOrder,\
           \ the latest started incidents come first (STARTED_AT, DESC). ID is the\
-          \ ID of the event of the incident. Incidents with the same value are sorted\
-          \ by their type and the ID of their event. When sorted by ENDED_AT, the\
-          \ ongoing incidents (which haven't ended yet) come last, whatever the order\
-          \ is."
+          \ ID of the event of the incident. MONITOR_NAME sorts by the display name\
+          \ of the monitors, or by their name if they have no display name. Incidents\
+          \ with the same value are sorted by their type and the ID of their event.\
+          \ When sorted by ENDED_AT, the ongoing incidents (which haven't ended yet)\
+          \ come last, whatever the order is."
         explode: false
         schema:
           nullable: true
@@ -3703,8 +3709,8 @@ paths:
           nullable: true
       - name: name
         in: query
-        description: "Returns only the monitors whose name contains this text, without\
-          \ regard to the case of the letters"
+        description: "Returns only the monitors whose name or display name contains\
+          \ this text, without regard to the case of the letters"
         explode: false
         schema:
           type: string
@@ -3732,10 +3738,11 @@ paths:
           default: 25
       - name: sortedBy
         in: query
-        description: "The field to sort the monitors by, NAME if it's not given. Monitors\
-          \ with the same value are sorted by their ID. A monitor that has no value\
-          \ for the field yet (e.g. no UPTIME_STATUS before its first check) comes\
-          \ last, whatever the order is."
+        description: "The field to sort the monitors by, NAME if it's not given. NAME\
+          \ sorts by the display name of the monitors, or by their name if they have\
+          \ no display name. Monitors with the same value are sorted by their ID.\
+          \ A monitor that has no value for the field yet (e.g. no UPTIME_STATUS before\
+          \ its first check) comes last, whatever the order is."
         explode: false
         schema:
           nullable: true
@@ -3929,8 +3936,8 @@ paths:
           nullable: true
       - name: name
         in: query
-        description: "Returns only the monitors whose name contains this text, without\
-          \ regard to the case of the letters"
+        description: "Returns only the monitors whose name or display name contains\
+          \ this text, without regard to the case of the letters"
         explode: false
         schema:
           type: string
@@ -3958,10 +3965,11 @@ paths:
           default: 25
       - name: sortedBy
         in: query
-        description: "The field to sort the monitors by, NAME if it's not given. Monitors\
-          \ with the same value are sorted by their ID. A monitor that has no value\
-          \ for the field yet (e.g. no UPTIME_STATUS before its first check) comes\
-          \ last, whatever the order is."
+        description: "The field to sort the monitors by, NAME if it's not given. NAME\
+          \ sorts by the display name of the monitors, or by their name if they have\
+          \ no display name. Monitors with the same value are sorted by their ID.\
+          \ A monitor that has no value for the field yet (e.g. no UPTIME_STATUS before\
+          \ its first check) comes last, whatever the order is."
         explode: false
         schema:
           nullable: true
@@ -4293,6 +4301,13 @@ components:
           type: string
           description: "Unique name for the monitor, e.g., 'My Server Monitor'"
           x-size-message: Monitor name must not be blank
+        displayName:
+          type: string
+          description: "Optional name of the monitor that is shown instead of its\
+            \ unique name, e.g. on the status pages and in the notifications. Unlike\
+            \ the name, it doesn't have to be unique, and it can be changed without\
+            \ losing anything, even if the monitor is managed through the YAML config"
+          nullable: true
         host:
           minLength: 1
           type: string
@@ -4430,6 +4445,7 @@ components:
       required:
       - category
       - createdAt
+      - displayName
       - driftDetectionEnabled
       - driftRecordTypes
       - effectiveIntegrations
@@ -4467,6 +4483,13 @@ components:
         name:
           type: string
           description: "Unique name for the monitor, e.g., 'My Server Monitor'"
+        displayName:
+          type: string
+          description: "Optional name of the monitor that is shown instead of its\
+            \ unique name, e.g. on the status pages and in the notifications. Unlike\
+            \ the name, it doesn't have to be unique, and it can be changed without\
+            \ losing anything, even if the monitor is managed through the YAML config"
+          nullable: true
         host:
           type: string
           description: The name to query (e.g. example.com)
@@ -4624,6 +4647,7 @@ components:
       required:
       - category
       - createdAt
+      - displayName
       - driftDetectionEnabled
       - driftRecordTypes
       - enabled
@@ -4652,6 +4676,13 @@ components:
         name:
           type: string
           description: "Unique name for the monitor, e.g., 'My Server Monitor'"
+        displayName:
+          type: string
+          description: "Optional name of the monitor that is shown instead of its\
+            \ unique name, e.g. on the status pages and in the notifications. Unlike\
+            \ the name, it doesn't have to be unique, and it can be changed without\
+            \ losing anything, even if the monitor is managed through the YAML config"
+          nullable: true
         host:
           type: string
           description: The name to query (e.g. example.com)
@@ -4811,6 +4842,13 @@ components:
           description: "Unique name for the monitor, e.g., 'My Server Monitor'"
           nullable: false
           x-size-message: Monitor name must not be blank
+        displayName:
+          type: string
+          description: "Optional name of the monitor that is shown instead of its\
+            \ unique name, e.g. on the status pages and in the notifications. Unlike\
+            \ the name, it doesn't have to be unique, and it can be changed without\
+            \ losing anything, even if the monitor is managed through the YAML config"
+          nullable: true
         host:
           minLength: 1
           type: string
@@ -5158,6 +5196,13 @@ components:
           type: string
           description: "Unique name for the monitor, e.g., 'My Server Monitor'"
           x-size-message: Monitor name must not be blank
+        displayName:
+          type: string
+          description: "Optional name of the monitor that is shown instead of its\
+            \ unique name, e.g. on the status pages and in the notifications. Unlike\
+            \ the name, it doesn't have to be unique, and it can be changed without\
+            \ losing anything, even if the monitor is managed through the YAML config"
+          nullable: true
         dockerHost:
           minLength: 1
           type: string
@@ -5238,6 +5283,7 @@ components:
       - container
       - containerCreatedAt
       - createdAt
+      - displayName
       - dockerHost
       - effectiveIntegrations
       - enabled
@@ -5270,6 +5316,13 @@ components:
         name:
           type: string
           description: "Unique name for the monitor, e.g., 'My Server Monitor'"
+        displayName:
+          type: string
+          description: "Optional name of the monitor that is shown instead of its\
+            \ unique name, e.g. on the status pages and in the notifications. Unlike\
+            \ the name, it doesn't have to be unique, and it can be changed without\
+            \ losing anything, even if the monitor is managed through the YAML config"
+          nullable: true
         dockerHost:
           type: string
           description: The name of the configured Docker host the container runs on
@@ -5400,6 +5453,7 @@ components:
       - category
       - container
       - createdAt
+      - displayName
       - dockerHost
       - enabled
       - failureCountThreshold
@@ -5421,6 +5475,13 @@ components:
         name:
           type: string
           description: "Unique name for the monitor, e.g., 'My Server Monitor'"
+        displayName:
+          type: string
+          description: "Optional name of the monitor that is shown instead of its\
+            \ unique name, e.g. on the status pages and in the notifications. Unlike\
+            \ the name, it doesn't have to be unique, and it can be changed without\
+            \ losing anything, even if the monitor is managed through the YAML config"
+          nullable: true
         dockerHost:
           type: string
           description: The name of the configured Docker host the container runs on
@@ -5543,6 +5604,13 @@ components:
           description: "Unique name for the monitor, e.g., 'My Server Monitor'"
           nullable: false
           x-size-message: Monitor name must not be blank
+        displayName:
+          type: string
+          description: "Optional name of the monitor that is shown instead of its\
+            \ unique name, e.g. on the status pages and in the notifications. Unlike\
+            \ the name, it doesn't have to be unique, and it can be changed without\
+            \ losing anything, even if the monitor is managed through the YAML config"
+          nullable: true
         dockerHost:
           minLength: 1
           type: string
@@ -5782,6 +5850,7 @@ components:
       - eventDetails
       - monitorDetailsUrl
       - monitorId
+      - monitorLabel
       - monitorName
       - monitorUrn
       - timestamp
@@ -5794,6 +5863,8 @@ components:
         monitorUrn:
           type: string
         monitorName:
+          type: string
+        monitorLabel:
           type: string
         monitorDetailsUrl:
           type: string
@@ -5865,6 +5936,13 @@ components:
           type: string
           description: "Unique name for the monitor, e.g., 'My Server Monitor'"
           x-size-message: Monitor name must not be blank
+        displayName:
+          type: string
+          description: "Optional name of the monitor that is shown instead of its\
+            \ unique name, e.g. on the status pages and in the notifications. Unlike\
+            \ the name, it doesn't have to be unique, and it can be changed without\
+            \ losing anything, even if the monitor is managed through the YAML config"
+          nullable: true
         url:
           pattern: "^(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]"
           type: string
@@ -6026,6 +6104,7 @@ components:
       - category
       - createdAt
       - crossOriginHeaderPropagation
+      - displayName
       - effectiveIntegrations
       - enabled
       - expectedHeaders
@@ -6075,6 +6154,13 @@ components:
         name:
           type: string
           description: "Unique name for the monitor, e.g., 'My Server Monitor'"
+        displayName:
+          type: string
+          description: "Optional name of the monitor that is shown instead of its\
+            \ unique name, e.g. on the status pages and in the notifications. Unlike\
+            \ the name, it doesn't have to be unique, and it can be changed without\
+            \ losing anything, even if the monitor is managed through the YAML config"
+          nullable: true
         url:
           type: string
           description: "The URL that is monitored, must include the protocol (http(s)://)\
@@ -6288,6 +6374,7 @@ components:
       - category
       - createdAt
       - crossOriginHeaderPropagation
+      - displayName
       - enabled
       - expectedHeaders
       - expectedKeyword
@@ -6322,6 +6409,13 @@ components:
         name:
           type: string
           description: "Unique name for the monitor, e.g., 'My Server Monitor'"
+        displayName:
+          type: string
+          description: "Optional name of the monitor that is shown instead of its\
+            \ unique name, e.g. on the status pages and in the notifications. Unlike\
+            \ the name, it doesn't have to be unique, and it can be changed without\
+            \ losing anything, even if the monitor is managed through the YAML config"
+          nullable: true
         url:
           type: string
           description: "The URL that is monitored, must include the protocol (http(s)://)\
@@ -6507,6 +6601,13 @@ components:
           description: "Unique name for the monitor, e.g., 'My Server Monitor'"
           nullable: false
           x-size-message: Monitor name must not be blank
+        displayName:
+          type: string
+          description: "Optional name of the monitor that is shown instead of its\
+            \ unique name, e.g. on the status pages and in the notifications. Unlike\
+            \ the name, it doesn't have to be unique, and it can be changed without\
+            \ losing anything, even if the monitor is managed through the YAML config"
+          nullable: true
         url:
           pattern: "^(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]"
           type: string
@@ -6806,6 +6907,13 @@ components:
           type: string
           description: "Unique name for the monitor, e.g., 'My Server Monitor'"
           x-size-message: Monitor name must not be blank
+        displayName:
+          type: string
+          description: "Optional name of the monitor that is shown instead of its\
+            \ unique name, e.g. on the status pages and in the notifications. Unlike\
+            \ the name, it doesn't have to be unique, and it can be changed without\
+            \ losing anything, even if the monitor is managed through the YAML config"
+          nullable: true
         host:
           minLength: 1
           type: string
@@ -6893,6 +7001,7 @@ components:
       required:
       - category
       - createdAt
+      - displayName
       - effectiveIntegrations
       - enabled
       - failureCountThreshold
@@ -6924,6 +7033,13 @@ components:
         name:
           type: string
           description: "Unique name for the monitor, e.g., 'My Server Monitor'"
+        displayName:
+          type: string
+          description: "Optional name of the monitor that is shown instead of its\
+            \ unique name, e.g. on the status pages and in the notifications. Unlike\
+            \ the name, it doesn't have to be unique, and it can be changed without\
+            \ losing anything, even if the monitor is managed through the YAML config"
+          nullable: true
         host:
           type: string
           description: The hostname or IP address to ping
@@ -7034,6 +7150,7 @@ components:
       required:
       - category
       - createdAt
+      - displayName
       - enabled
       - failureCountThreshold
       - host
@@ -7056,6 +7173,13 @@ components:
         name:
           type: string
           description: "Unique name for the monitor, e.g., 'My Server Monitor'"
+        displayName:
+          type: string
+          description: "Optional name of the monitor that is shown instead of its\
+            \ unique name, e.g. on the status pages and in the notifications. Unlike\
+            \ the name, it doesn't have to be unique, and it can be changed without\
+            \ losing anything, even if the monitor is managed through the YAML config"
+          nullable: true
         host:
           type: string
           description: The hostname or IP address to ping
@@ -7175,6 +7299,13 @@ components:
           description: "Unique name for the monitor, e.g., 'My Server Monitor'"
           nullable: false
           x-size-message: Monitor name must not be blank
+        displayName:
+          type: string
+          description: "Optional name of the monitor that is shown instead of its\
+            \ unique name, e.g. on the status pages and in the notifications. Unlike\
+            \ the name, it doesn't have to be unique, and it can be changed without\
+            \ losing anything, even if the monitor is managed through the YAML config"
+          nullable: true
         host:
           minLength: 1
           type: string
@@ -7371,6 +7502,7 @@ components:
       - eventId
       - incidentType
       - isMonitorEnabled
+      - monitorDisplayName
       - monitorId
       - monitorName
       - startedAt
@@ -7385,6 +7517,13 @@ components:
         monitorName:
           type: string
           description: Name of the monitor this incident belongs to
+        monitorDisplayName:
+          type: string
+          description: "Optional name of the monitor that is shown instead of its\
+            \ unique name, e.g. on the status pages and in the notifications. Unlike\
+            \ the name, it doesn't have to be unique, and it can be changed without\
+            \ losing anything, even if the monitor is managed through the YAML config"
+          nullable: true
         isMonitorEnabled:
           type: boolean
           description: Whether the monitor related to the incident is enabled
@@ -8761,6 +8900,13 @@ components:
           type: string
           description: "Unique name for the monitor, e.g., 'My Server Monitor'"
           x-size-message: Monitor name must not be blank
+        displayName:
+          type: string
+          description: "Optional name of the monitor that is shown instead of its\
+            \ unique name, e.g. on the status pages and in the notifications. Unlike\
+            \ the name, it doesn't have to be unique, and it can be changed without\
+            \ losing anything, even if the monitor is managed through the YAML config"
+          nullable: true
         heartbeatInterval:
           minimum: 10
           type: integer
@@ -8823,6 +8969,7 @@ components:
       - category
       - clientSecret
       - createdAt
+      - displayName
       - effectiveIntegrations
       - enabled
       - failureCountThreshold
@@ -8851,6 +8998,13 @@ components:
         name:
           type: string
           description: "Unique name for the monitor, e.g., 'My Server Monitor'"
+        displayName:
+          type: string
+          description: "Optional name of the monitor that is shown instead of its\
+            \ unique name, e.g. on the status pages and in the notifications. Unlike\
+            \ the name, it doesn't have to be unique, and it can be changed without\
+            \ losing anything, even if the monitor is managed through the YAML config"
+          nullable: true
         heartbeatInterval:
           type: integer
           description: The interval in seconds at which the monitor expects to receive
@@ -8957,6 +9111,7 @@ components:
       - category
       - clientSecret
       - createdAt
+      - displayName
       - enabled
       - failureCountThreshold
       - gracePeriod
@@ -8976,6 +9131,13 @@ components:
         name:
           type: string
           description: "Unique name for the monitor, e.g., 'My Server Monitor'"
+        displayName:
+          type: string
+          description: "Optional name of the monitor that is shown instead of its\
+            \ unique name, e.g. on the status pages and in the notifications. Unlike\
+            \ the name, it doesn't have to be unique, and it can be changed without\
+            \ losing anything, even if the monitor is managed through the YAML config"
+          nullable: true
         heartbeatInterval:
           type: integer
           description: The interval in seconds at which the monitor expects to receive
@@ -9074,6 +9236,13 @@ components:
           description: "Unique name for the monitor, e.g., 'My Server Monitor'"
           nullable: false
           x-size-message: Monitor name must not be blank
+        displayName:
+          type: string
+          description: "Optional name of the monitor that is shown instead of its\
+            \ unique name, e.g. on the status pages and in the notifications. Unlike\
+            \ the name, it doesn't have to be unique, and it can be changed without\
+            \ losing anything, even if the monitor is managed through the YAML config"
+          nullable: true
         heartbeatInterval:
           minimum: 10
           type: integer
@@ -9960,6 +10129,9 @@ components:
       properties:
         name:
           type: string
+        displayName:
+          type: string
+          nullable: true
         type:
           type: string
         lastCheck:
@@ -10072,6 +10244,9 @@ components:
       properties:
         name:
           type: string
+        displayName:
+          type: string
+          nullable: true
         type:
           type: string
         lastCheck:
@@ -10116,6 +10291,9 @@ components:
       properties:
         name:
           type: string
+        displayName:
+          type: string
+          nullable: true
         type:
           type: string
         lastCheck:
@@ -10266,6 +10444,9 @@ components:
       properties:
         name:
           type: string
+        displayName:
+          type: string
+          nullable: true
         type:
           type: string
         lastCheck:
@@ -10292,6 +10473,8 @@ components:
         category:
           type: string
           nullable: true
+      allOf:
+      - $ref: "#/components/schemas/WithDisplayName"
       oneOf:
       - $ref: "#/components/schemas/StatusPagePushMonitorDetailsDto"
       - $ref: "#/components/schemas/StatusPageHttpMonitorDetailsDto"
@@ -10309,6 +10492,9 @@ components:
       properties:
         name:
           type: string
+        displayName:
+          type: string
+          nullable: true
         type:
           type: string
         lastCheck:
@@ -10362,6 +10548,9 @@ components:
       properties:
         name:
           type: string
+        displayName:
+          type: string
+          nullable: true
         type:
           type: string
         lastCheck:
@@ -10498,6 +10687,13 @@ components:
           type: string
           description: "Unique name for the monitor, e.g., 'My Server Monitor'"
           x-size-message: Monitor name must not be blank
+        displayName:
+          type: string
+          description: "Optional name of the monitor that is shown instead of its\
+            \ unique name, e.g. on the status pages and in the notifications. Unlike\
+            \ the name, it doesn't have to be unique, and it can be changed without\
+            \ losing anything, even if the monitor is managed through the YAML config"
+          nullable: true
         host:
           minLength: 1
           type: string
@@ -10589,6 +10785,7 @@ components:
       required:
       - category
       - createdAt
+      - displayName
       - effectiveIntegrations
       - enabled
       - failureCountThreshold
@@ -10621,6 +10818,13 @@ components:
         name:
           type: string
           description: "Unique name for the monitor, e.g., 'My Server Monitor'"
+        displayName:
+          type: string
+          description: "Optional name of the monitor that is shown instead of its\
+            \ unique name, e.g. on the status pages and in the notifications. Unlike\
+            \ the name, it doesn't have to be unique, and it can be changed without\
+            \ losing anything, even if the monitor is managed through the YAML config"
+          nullable: true
         host:
           type: string
           description: The hostname or IP address to connect to
@@ -10740,6 +10944,7 @@ components:
       required:
       - category
       - createdAt
+      - displayName
       - enabled
       - failureCountThreshold
       - host
@@ -10763,6 +10968,13 @@ components:
         name:
           type: string
           description: "Unique name for the monitor, e.g., 'My Server Monitor'"
+        displayName:
+          type: string
+          description: "Optional name of the monitor that is shown instead of its\
+            \ unique name, e.g. on the status pages and in the notifications. Unlike\
+            \ the name, it doesn't have to be unique, and it can be changed without\
+            \ losing anything, even if the monitor is managed through the YAML config"
+          nullable: true
         host:
           type: string
           description: The hostname or IP address to connect to
@@ -10885,6 +11097,13 @@ components:
           description: "Unique name for the monitor, e.g., 'My Server Monitor'"
           nullable: false
           x-size-message: Monitor name must not be blank
+        displayName:
+          type: string
+          description: "Optional name of the monitor that is shown instead of its\
+            \ unique name, e.g. on the status pages and in the notifications. Unlike\
+            \ the name, it doesn't have to be unique, and it can be changed without\
+            \ losing anything, even if the monitor is managed through the YAML config"
+          nullable: true
         host:
           minLength: 1
           type: string
@@ -11192,6 +11411,16 @@ components:
           allOf:
           - $ref: "#/components/schemas/WebhookHttpMethod"
           default: POST
+    WithDisplayName:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+        displayName:
+          type: string
+          nullable: true
   securitySchemes:
     apiKey:
       type: apiKey

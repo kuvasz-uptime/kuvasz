@@ -851,20 +851,22 @@ The generic webhook message (if you don't use a custom template) has the followi
       "monitorId": "234 (6)",
       "monitorUrn": "http:GitHub API (1)",
       "monitorName": "GitHub API (2)",
+      "monitorLabel": "GitHub (8)",
       "monitorDetailsUrl": "/http-monitors/1 (7)",
       "timestamp": "1777661064488 (3)", 
       "type": "HTTP_DOWN (4)",
-      "eventDetails": "Your monitor \"GitHub API\" (https://api.github.com) is DOWN. Reason: Connect Error: Connection refused: api.github.com (5)"
+      "eventDetails": "Your monitor \"GitHub\" (https://api.github.com) is DOWN. Reason: Connect Error: Connection refused: api.github.com (5)"
     }
     ```
     
     1. **monitorUrn**: A unique identifier of a monitor, formatted as 'type:name'.
-    2. **monitorName**: The name of the monitor, which must be unique.
+    2. **monitorName**: The name of the monitor, which must be unique. It doesn't change if the monitor gets a [display name](managing-monitors/index.md), so it's safe to use it to identify the monitor, e.g. in a URL.
     3. **timestamp**: The timestamp of the event that triggered the webhook, in milliseconds since the Unix epoch.
     4. **type**: The type of the event that triggered the webhook, which can be one of the following values: `HTTP_UP`, `HTTP_DOWN`, `PUSH_UP`, `PUSH_DOWN`, `ICMP_UP`, `ICMP_DOWN`, `TCP_UP`, `TCP_DOWN`, `DNS_UP`, `DNS_DOWN`, `DNS_RECORDS_CHANGED`, `DOCKER_UP`, `DOCKER_DOWN`, `DOCKER_CONTAINER_RESTARTED`, `SSL_VALID`, `SSL_INVALID`, `SSL_WILL_EXPIRE`.
     5. **eventDetails**: A human-readable message with more details about the event.
     6. **monitorId**: A unique, numeric ID of a monitor.
     7. **monitorDetailsUrl**: The relative URL to the monitor details page in the _Kuvasz_ web interface.
+    8. **monitorLabel**: The name of the monitor that is shown to people: its display name if it has one, its name otherwise. So it's never empty, and you can use it as it is in your messages.
 
 
 === "OpenAPI (YAML)"
@@ -875,6 +877,7 @@ The generic webhook message (if you don't use a custom template) has the followi
       - monitorId
       - monitorUrn
       - monitorName
+      - monitorLabel
       - monitorDetailsUrl
       - timestamp
       - type
@@ -887,6 +890,8 @@ The generic webhook message (if you don't use a custom template) has the followi
         monitorUrn:
           type: string
         monitorName:
+          type: string
+        monitorLabel:
           type: string
         monitorDetailsUrl:
           type: string
@@ -929,7 +934,7 @@ For further information on how to use Pebble templates, please refer to the [**o
 
 #### Available context variables
 
-The context variables are available in an object named `ctx`, and the structure is the **same as the generic webhook message** [described above](#webhooks), so for example you can use `{{ctx.monitorName}}` to include the name of the monitor in your payload, or `{{ctx.type}}` to include the type of the event that triggered the webhook.
+The context variables are available in an object named `ctx`, and the structure is the **same as the generic webhook message** [described above](#webhooks), so for example you can use `{{ctx.monitorName}}` to include the name of the monitor in your payload, `{{ctx.monitorLabel}}` to include the name that is shown to people (the display name of the monitor, or its name if it has none), or `{{ctx.type}}` to include the type of the event that triggered the webhook.
 
 !!! question "Having conflicting characters in your hard-coded headers?"
 

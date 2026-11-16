@@ -21,6 +21,8 @@ class HttpMonitorDetailsPage(private val page: Page) {
     // The badge in the header showing the monitor's category, if it has one
     val categoryBadge: Locator get() = page.getByTestId("monitor-category-badge")
 
+    val uniqueNameBadge: Locator get() = page.getByTestId("monitor-unique-name-badge")
+
     // The proxy the monitor is checked through, or the warning about one that is not configured anymore.
     val proxyBadge: Locator get() = page.locator("#http-monitor-detail-heading").getByTestId("proxy-badge")
 

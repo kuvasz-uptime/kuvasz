@@ -784,6 +784,26 @@ class TcpMonitorControllerTest(
         }
 
         given("DELETE /api/v2/tcp-monitors/{id}") {
+            `when`("it is called to update the display name of a monitor on a non-writable status page") {
+                val monitor = createTcpMonitor(monitorRepository, monitorName = "monitor1")
+                createStatusPage(
+                    dslContext,
+                    public = false,
+                    monitors = listOf(MonitorID(MonitorType.TCP, monitor.name))
+                )
+                appConfig.disableStatusPageExternalWrite()
+                val updateDto = JsonNodeFactory.instance.objectNode()
+                    .put(TcpMonitorUpdateDto::displayName.name, "Renamed monitor")
+
+                val updated = monitorClient.updateMonitor(monitor.id, updateDto)
+
+                then("it should let the update happen, because the status page references only the name") {
+                    updated.displayName shouldBe "Renamed monitor"
+                    updated.name shouldBe monitor.name
+                    appConfig.enableStatusPageExternalWrite()
+                }
+            }
+
             `when`("the monitor exists") {
                 val monitor = createTcpMonitor(monitorRepository)
 
@@ -1135,6 +1155,88 @@ class TcpMonitorControllerTest(
             }
         }
     
+        given("the display name of a TCP monitor") {
+            fun createWithDisplayName(displayName: String?, monitorName: String = randomClientSecret()) =
+                monitorClient.createMonitor(
+                    TcpMonitorCreateDto(
+                        name = monitorName,
+                        host = "127.0.0.1",
+                        port = 5432,
+                        uptimeCheckInterval = 60,
+                        displayName = displayName,
+                    )
+                )
+
+            `when`("it is set on creation") {
+                val created = createWithDisplayName("Payments API")
+
+                then("it should be returned and persisted next to the unique name") {
+                    created.displayName shouldBe "Payments API"
+                    monitorClient.getMonitorDetails(created.id).displayName shouldBe "Payments API"
+                    monitorRepository.findById(created.id, null).shouldNotBeNull().displayName shouldBe "Payments API"
+                }
+            }
+
+            `when`("several monitors have the same display name") {
+                val first = createWithDisplayName("Shared label")
+                val second = createWithDisplayName("Shared label")
+
+                then("it should be accepted, as only the name has to be unique") {
+                    first.displayName shouldBe "Shared label"
+                    second.displayName shouldBe "Shared label"
+                }
+            }
+
+            `when`("it is blank or padded on creation") {
+                val blank = createWithDisplayName("   ")
+                val padded = createWithDisplayName("  Payments API  ")
+
+                then("a blank one should be persisted as null and a padded one trimmed") {
+                    blank.displayName.shouldBeNull()
+                    padded.displayName shouldBe "Payments API"
+                }
+            }
+
+            `when`("it is changed on update") {
+                val monitor = createTcpMonitor(monitorRepository, displayName = "Old label")
+                val updateNode = mapper.createObjectNode().put("displayName", "  New label  ")
+                val updated = monitorClient.updateMonitor(monitor.id, updateNode)
+
+                then("it should be trimmed, and the name should stay intact") {
+                    updated.displayName shouldBe "New label"
+                    updated.name shouldBe monitor.name
+                }
+            }
+
+            `when`("it is blank on update") {
+                val monitor = createTcpMonitor(monitorRepository, displayName = "Old label")
+                val updateNode = mapper.createObjectNode().put("displayName", "   ")
+                val updated = monitorClient.updateMonitor(monitor.id, updateNode)
+
+                then("it should be cleared") {
+                    updated.displayName.shouldBeNull()
+                }
+            }
+
+            `when`("it is explicitly set to null on update") {
+                val monitor = createTcpMonitor(monitorRepository, displayName = "Old label")
+                val updated = monitorClient.updateMonitor(monitor.id, mapper.createObjectNode().putNull("displayName"))
+
+                then("it should be cleared") {
+                    updated.displayName.shouldBeNull()
+                }
+            }
+
+            `when`("it is not part of the update") {
+                val monitor = createTcpMonitor(monitorRepository, displayName = "Kept label")
+                val updated = monitorClient.updateMonitor(monitor.id, mapper.createObjectNode().put("enabled", false))
+
+                then("it should be kept") {
+                    updated.displayName shouldBe "Kept label"
+                }
+            }
+        }
+
         given("the category of a TCP monitor") {
             fun createWithCategory(category: String?, monitorName: String = randomClientSecret()) =
                 monitorClient.createMonitor(

@@ -22,6 +22,7 @@ import java.time.OffsetDateTime
 data class TcpMonitorSchema(
     val id: Long,
     val name: String,
+    val displayName: String?,
     val host: String,
     val port: Int,
     val uptimeCheckInterval: Int,
@@ -41,6 +42,7 @@ data class TcpMonitorSchema(
         fun fromDto(dto: TcpMonitorDto) = TcpMonitorSchema(
             id = dto.id,
             name = dto.name,
+            displayName = dto.displayName,
             host = dto.host,
             port = dto.port,
             uptimeCheckInterval = dto.uptimeCheckInterval,
@@ -65,6 +67,7 @@ data class TcpMonitorSchema(
 data class TcpMonitorDetailsSchema(
     val id: Long,
     val name: String,
+    val displayName: String?,
     val host: String,
     val port: Int,
     val uptimeCheckInterval: Int,
@@ -92,6 +95,7 @@ data class TcpMonitorDetailsSchema(
         fun fromDto(dto: TcpMonitorDetailsDto) = TcpMonitorDetailsSchema(
             id = dto.id,
             name = dto.name,
+            displayName = dto.displayName,
             host = dto.host,
             port = dto.port,
             uptimeCheckInterval = dto.uptimeCheckInterval,
@@ -123,6 +127,7 @@ data class TcpMonitorDetailsSchema(
 data class TcpMonitorSummarySchema(
     val id: Long,
     val name: String,
+    val displayName: String?,
     val host: String,
     val port: Int,
     val uptimeCheckInterval: Int,
@@ -139,6 +144,7 @@ data class TcpMonitorSummarySchema(
         fun fromDto(dto: TcpMonitorDetailsDto) = TcpMonitorSummarySchema(
             id = dto.id,
             name = dto.name,
+            displayName = dto.displayName,
             host = dto.host,
             port = dto.port,
             uptimeCheckInterval = dto.uptimeCheckInterval,
@@ -190,6 +196,7 @@ data class TcpMonitorStatsSchema(
 data class TcpMonitorCreatorSchema(
     @get:NotBlank
     val name: String,
+    val displayName: String? = null,
     @get:NotBlank
     val host: String,
     @get:Min(Validation.MIN_PORT)
@@ -209,6 +216,7 @@ data class TcpMonitorCreatorSchema(
 ) {
     fun toDto() = TcpMonitorCreateDto(
         name = name,
+        displayName = displayName,
         host = host,
         port = port,
         uptimeCheckInterval = uptimeCheckInterval,

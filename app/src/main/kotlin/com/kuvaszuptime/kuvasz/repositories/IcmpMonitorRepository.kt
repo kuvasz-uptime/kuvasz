@@ -20,6 +20,7 @@ import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.fetchPage
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import com.kuvaszuptime.kuvasz.util.nullIfBlank
 import com.kuvaszuptime.kuvasz.util.sortedIn
 import jakarta.inject.Singleton
 import org.jooq.Condition
@@ -51,6 +52,7 @@ class IcmpMonitorRepository(
         .select(
             ICMP_MONITOR.ID.`as`(IcmpMonitorSummary::id.name),
             ICMP_MONITOR.NAME.`as`(IcmpMonitorSummary::name.name),
+            ICMP_MONITOR.DISPLAY_NAME.`as`(IcmpMonitorSummary::displayName.name),
             ICMP_MONITOR.ENABLED.`as`(IcmpMonitorSummary::enabled.name),
             ICMP_MONITOR.CATEGORY.`as`(IcmpMonitorSummary::category.name),
             checkNotNull(latestUptimeEventSelect.field(ICMP_UPTIME_EVENT.STATUS))
@@ -117,7 +119,7 @@ class IcmpMonitorRepository(
     ): PagedResult<IcmpMonitorDetailsDto> {
         val condition = DSL.and(
             filterCondition(enabled, uptimeStatus, categoryFilter),
-            containsIgnoreCaseCondition(ICMP_MONITOR.NAME, name),
+            containsIgnoreCaseCondition(listOf(ICMP_MONITOR.NAME, ICMP_MONITOR.DISPLAY_NAME), name),
         )
         return monitorDetailsSelect()
             .and(condition)
@@ -160,7 +162,7 @@ class IcmpMonitorRepository(
 
     private fun IcmpMonitorSortField.toField(): Field<*> = when (this) {
         IcmpMonitorSortField.ID -> ICMP_MONITOR.ID
-        IcmpMonitorSortField.NAME -> ICMP_MONITOR.NAME
+        IcmpMonitorSortField.NAME -> effectiveNameField(ICMP_MONITOR.NAME, ICMP_MONITOR.DISPLAY_NAME)
         IcmpMonitorSortField.ENABLED -> ICMP_MONITOR.ENABLED
         IcmpMonitorSortField.UPTIME_STATUS -> checkNotNull(latestUptimeEventSelect.field(ICMP_UPTIME_EVENT.STATUS))
         IcmpMonitorSortField.UPTIME_STATUS_STARTED_AT ->
@@ -197,6 +199,7 @@ class IcmpMonitorRepository(
             (txCtx ?: dslContext)
                 .update(ICMP_MONITOR)
                 .set(ICMP_MONITOR.NAME, updatedMonitor.name)
+                .set(ICMP_MONITOR.DISPLAY_NAME, updatedMonitor.displayName.nullIfBlank())
                 .set(ICMP_MONITOR.HOST, updatedMonitor.host)
                 .set(ICMP_MONITOR.UPTIME_CHECK_INTERVAL, updatedMonitor.uptimeCheckInterval)
                 .set(ICMP_MONITOR.PACKET_COUNT, updatedMonitor.packetCount)
@@ -255,6 +258,7 @@ class IcmpMonitorRepository(
         .select(
             ICMP_MONITOR.ID.`as`(IcmpMonitorDetailsDto::id.name),
             ICMP_MONITOR.NAME.`as`(IcmpMonitorDetailsDto::name.name),
+            ICMP_MONITOR.DISPLAY_NAME.`as`(IcmpMonitorDetailsDto::displayName.name),
             ICMP_MONITOR.CATEGORY.`as`(IcmpMonitorDetailsDto::category.name),
             ICMP_MONITOR.IGNORE_CONNECTIVITY_CHECK
                 .`as`(IcmpMonitorDetailsDto::ignoreConnectivityCheck.name),

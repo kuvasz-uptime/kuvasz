@@ -60,14 +60,17 @@ class PushMonitorToolsTest(
             }
 
             `when`("list-push-monitors is called with monitors in the DB") {
-                val monitor = createPushMonitor(pushMonitorRepository)
+                val monitor = createPushMonitor(pushMonitorRepository, displayName = "Listed label")
                 val response = callToolWithMcpClient(LIST_PUSH_MONITORS)
 
                 then("it should return the list in both structured and text content") {
                     response.isError shouldBe false
 
                     val monitorList = response.structuredContentAs<PushMonitorListSchema>().shouldNotBeNull()
-                    monitorList.monitors.forOne { it.name shouldBe monitor.name }
+                    monitorList.monitors.forOne { listed ->
+                        listed.name shouldBe monitor.name
+                        listed.displayName shouldBe "Listed label"
+                    }
 
                     response.contentAs<PushMonitorListSchema>() shouldBe monitorList
                 }
@@ -77,7 +80,7 @@ class PushMonitorToolsTest(
         given("the get-push-monitor-details tool") {
 
             `when`("get-push-monitor-details is called with a valid ID") {
-                val monitor = createPushMonitor(pushMonitorRepository)
+                val monitor = createPushMonitor(pushMonitorRepository, displayName = "Details label")
                 val response = callToolWithMcpClient(GET_PUSH_MONITOR_DETAILS, mapOf("monitorId" to monitor.id))
 
                 then("it should return the details in both structured and text content") {
@@ -86,6 +89,7 @@ class PushMonitorToolsTest(
                     val details = response.structuredContentAs<PushMonitorDetailsSchema>().shouldNotBeNull()
                     details.id shouldBe monitor.id
                     details.name shouldBe monitor.name
+                    details.displayName shouldBe "Details label"
                     details.ignoreConnectivityCheck shouldBe monitor.ignoreConnectivityCheck
 
                     response.contentAs<PushMonitorDetailsSchema>() shouldBe details
@@ -125,6 +129,24 @@ class PushMonitorToolsTest(
         }
 
         given("the create-push-monitor tool") {
+
+            `when`("create-push-monitor is called with a display name") {
+                val response = callToolWithMcpClient(
+                    CREATE_PUSH_MONITOR,
+                    mapOf(
+                        "name" to "mcp-created-push-monitor-with-display-name",
+                        "heartbeatInterval" to 300,
+                        "clientSecret" to "test-secret-that-is-long-enough-abc123",
+                        "displayName" to "  MCP label  ",
+                    )
+                )
+
+                then("the created monitor should have the trimmed display name") {
+                    response.isError shouldBe false
+
+                    response.structuredContentAs<PushMonitorSchema>().shouldNotBeNull().displayName shouldBe "MCP label"
+                }
+            }
 
             `when`("create-push-monitor is called with a minimal, valid input") {
                 val response = callToolWithMcpClient(

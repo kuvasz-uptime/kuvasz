@@ -3,10 +3,12 @@ package com.kuvaszuptime.kuvasz.factories
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DnsMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.DockerMonitorRecord
 import com.kuvaszuptime.kuvasz.jooq.tables.records.HttpMonitorRecord
+import com.kuvaszuptime.kuvasz.jooq.tables.records.MaintenanceWindowRecord
 import com.kuvaszuptime.kuvasz.models.events.DnsRecordsChangedEvent
 import com.kuvaszuptime.kuvasz.models.events.DockerContainerRestartedEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.HttpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.events.MaintenanceWindowStartEvent
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationEventType
 import com.kuvaszuptime.kuvasz.models.monitor.dns.DnsRecordType
 import io.kotest.assertions.throwables.shouldThrowAny
@@ -30,7 +32,7 @@ class WebhookMessageFactoryTest(private val factory: WebhookMessageFactory) : Sh
                 event = HttpMonitorUpEvent(
                     monitor = HttpMonitorRecord().apply {
                         id = 23423
-                        name = "something"
+                        setName("something")
                         sensitiveUrl = false
                         url = "https://irrelevant"
                     },
@@ -44,7 +46,7 @@ class WebhookMessageFactoryTest(private val factory: WebhookMessageFactory) : Sh
                 event = HttpMonitorDownEvent(
                     monitor = HttpMonitorRecord().apply {
                         id = 23423
-                        name = "something"
+                        setName("something")
                         sensitiveUrl = false
                         url = "https://irrelevant"
                     },
@@ -68,7 +70,7 @@ class WebhookMessageFactoryTest(private val factory: WebhookMessageFactory) : Sh
             val testEvent = HttpMonitorUpEvent(
                 monitor = HttpMonitorRecord().apply {
                     id = 23423
-                    name = "something"
+                    setName("something")
                     sensitiveUrl = false
                     url = "https://irrelevant"
                 },
@@ -82,6 +84,36 @@ class WebhookMessageFactoryTest(private val factory: WebhookMessageFactory) : Sh
 
             defaultResult shouldContain "Your monitor &quot;something&quot;"
             jsEscapedResult shouldContain """Your monitor \"something\""""
+        }
+    }
+
+    context("the name of the monitor") {
+
+        should("expose the shown name of the monitor next to its unique name") {
+            val event = HttpMonitorUpEvent(
+                monitor = HttpMonitorRecord().apply {
+                    id = 23423
+                    setName("payments")
+                    setDisplayName("Payments API")
+                    sensitiveUrl = false
+                    url = "https://irrelevant"
+                },
+                status = HttpStatus.OK,
+                latency = 123,
+                previousEvent = null,
+            )
+
+            factory.fromEvent(event, "{{ ctx.monitorName }} | {{ ctx.monitorLabel }}") shouldBe
+                "payments | Payments API"
+        }
+
+        should("leave both of them blank for a maintenance event, which is not about a single monitor") {
+            val window = MaintenanceWindowRecord().setId(99).setName("test_window").setEnabled(true)
+
+            with(factory.fromEvent(MaintenanceWindowStartEvent(window))) {
+                monitorName shouldBe ""
+                monitorLabel shouldBe ""
+            }
         }
     }
 
@@ -100,6 +132,8 @@ class WebhookMessageFactoryTest(private val factory: WebhookMessageFactory) : Sh
             message.monitorId shouldBe 5555
             message.monitorUrn shouldBe "dns:my-dns"
             message.monitorName shouldBe "my-dns"
+            // Without a display name, the name is shown
+            message.monitorLabel shouldBe "my-dns"
             message.monitorDetailsUrl shouldBe "/dns-monitors/5555"
             message.eventDetails shouldBe "DNS records changed for monitor \"my-dns\"\nA: [1.1.1.1] → [2.2.2.2]"
         }
@@ -131,7 +165,7 @@ class WebhookMessageFactoryTest(private val factory: WebhookMessageFactory) : Sh
                 event = HttpMonitorUpEvent(
                     monitor = HttpMonitorRecord().apply {
                         id = 23423
-                        name = "something"
+                        setName("something")
                         sensitiveUrl = false
                         url = "https://irrelevant"
                     },
@@ -153,7 +187,7 @@ class WebhookMessageFactoryTest(private val factory: WebhookMessageFactory) : Sh
                 event = HttpMonitorUpEvent(
                     monitor = HttpMonitorRecord().apply {
                         id = 23423
-                        name = "something"
+                        setName("something")
                         sensitiveUrl = false
                         url = "https://irrelevant"
                     },

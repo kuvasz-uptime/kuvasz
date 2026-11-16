@@ -38,6 +38,7 @@ class GenericWebhookClientTest(
         monitorId = 123,
         monitorUrn = MonitorID(MonitorType.HTTP_SSL, "test").toString(),
         monitorName = "test",
+        monitorLabel = "Test monitor",
         monitorDetailsUrl = "/http-monitors/123",
         timestamp = 1278432,
         type = IntegrationEventType.HTTP_DOWN,
@@ -55,7 +56,7 @@ class GenericWebhookClientTest(
                 .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
                 .withBody(
                     JsonBody.json(
-                        """{"monitorId":123,"monitorUrn":"http:test","monitorName":"test","monitorDetailsUrl":"/http-monitors/123","timestamp":1278432,"type":"HTTP_DOWN","eventDetails":"nice details!"}"""
+                        """{"monitorId":123,"monitorUrn":"http:test","monitorName":"test","monitorLabel":"Test monitor","monitorDetailsUrl":"/http-monitors/123","timestamp":1278432,"type":"HTTP_DOWN","eventDetails":"nice details!"}"""
                     )
                 )
 

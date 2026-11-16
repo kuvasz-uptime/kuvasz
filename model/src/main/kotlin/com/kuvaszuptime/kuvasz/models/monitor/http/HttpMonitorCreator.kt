@@ -76,6 +76,7 @@ interface HttpMonitorCreator : MonitorCreator<HttpMonitorRecord> {
     override fun toMonitorRecord(validatedIntegrations: Set<IntegrationID>): HttpMonitorRecord =
         HttpMonitorRecord()
             .setName(name)
+            .setDisplayName(displayName.nullIfBlank())
             .setUrl(url)
             .setSensitiveUrl(sensitiveUrl)
             .setEnabled(enabled)
