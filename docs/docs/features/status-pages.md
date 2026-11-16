@@ -20,6 +20,7 @@ Both types supports the following features:
 - **Public incident notes**: the [**notes**](incidents.md#incident-notes) you mark as public are shown with their incidents, so your users can follow what's going on. Everything else about the incidents (e.g. the errors of the checks, the private notes, or the notified integrations) stays private. The incidents of SSL certificates are never shown on status pages.
 - **Server-side caching**: To improve performance, status pages are cached on the server-side. You can configure the cache duration to balance between performance and data freshness.
 - **Monitor categories**: If you assign a [category](../management/http-monitors.md#category) to your monitors (e.g. a product or service name), the status page groups them into one section per category, each with its own aggregated status.
+- **Display names**: If you give a [display name](../management/http-monitors.md#display-name) to a monitor, the status page shows that instead of the name of the monitor, so you can show a friendlier name to your users without changing the monitor.
 
 !!!tip 
 
