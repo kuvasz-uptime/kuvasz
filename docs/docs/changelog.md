@@ -1,4 +1,10 @@
-## 4.8.0 <small>2026-11-xx</small> { id="4.8.0" data-toc-label="4.8.0" }
+## 4.8.0 <small>2026-11-16</small> { id="4.8.0" data-toc-label="4.8.0" }
+
+!!! question "Make your voice heard!"
+
+    There is a **short questionnaire about Kuvasz** in general, which you can fill out anonymously. It takes only a few minutes, and your feedback is highly appreciated as it helps me to focus on the most important features and improvements in the future. You can find it [**here**](https://forms.gle/Lb1q6CmW8eUgVbNr9).
+
+    _Thanks, Adam_
 
 ### Features
 
@@ -13,12 +19,6 @@
 - **The minimum Helm version was wrong in the documentation**: the [**Helm deployment guide**](setup/helm-deployment.md#prerequisites) said that you need Helm 4, and the README of the chart said Helm 3.2.0. The chart is published to an OCI registry, and Helm can install charts from there without extra settings only from version 3.8.0. So the minimum version is **Helm 3.8.0** now in both places, and Helm 4 works too.
 
 ## 4.7.0 <small>2026-11-06</small> { id="4.7.0" data-toc-label="4.7.0" }
-
-!!! question "Make your voice heard!"
-
-    There is a **short questionnaire about Kuvasz** in general, which you can fill out anonymously. It takes only a few minutes, and your feedback is highly appreciated as it helps me to focus on the most important features and improvements in the future. You can find it [**here**](https://forms.gle/Lb1q6CmW8eUgVbNr9).
-
-    _Thanks, Adam_
 
 ### Features
 
