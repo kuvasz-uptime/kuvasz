@@ -176,7 +176,7 @@ class PlainTextMessageFormatterTest : BehaviorSpec(
 
             val pushMonitor = PushMonitorRecord().apply {
                 id = 222
-                name = "test_push_monitor"
+                setName("test_push_monitor")
             }
 
             `when`("it gets a PushMonitorUpEvent without a previousEvent") {

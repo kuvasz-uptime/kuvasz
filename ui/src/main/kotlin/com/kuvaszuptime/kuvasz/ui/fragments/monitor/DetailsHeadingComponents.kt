@@ -1,7 +1,9 @@
 package com.kuvaszuptime.kuvasz.ui.fragments.monitor
 
 import com.iodesystems.htmx.Htmx.Companion.hx
+import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.monitor.effectiveName
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
@@ -52,7 +54,7 @@ internal fun FlowContent.monitorDetailsHeading(
                 }
                 h2 {
                     classes(PAGE_TITLE, TEXT_WRAP, TEXT_BREAK)
-                    +monitor.name.abbreviate(MONITOR_NAME_MAX_LENGTH)
+                    +monitor.effectiveName.abbreviate(MONITOR_NAME_MAX_LENGTH)
                 }
                 div {
                     classes(TEXT_SECONDARY)
@@ -65,6 +67,17 @@ internal fun FlowContent.monitorDetailsHeading(
                                 icon = typeUiConfig.icon,
                                 color = typeUiConfig.color
                             )
+                        }
+                        // The unique name is what the YAML config and the status pages reference, so it's kept in sight
+                        if (monitor.displayName != null) {
+                            li {
+                                classes(LIST_INLINE_ITEM, ALIGN_MIDDLE)
+                                testId("monitor-unique-name-badge")
+                                inlineStatusBadge(
+                                    text = Messages.monitorUniqueName(monitor.name.abbreviate(MONITOR_NAME_MAX_LENGTH)),
+                                    color = Color.DEFAULT,
+                                )
+                            }
                         }
                         monitor.category?.let { category ->
                             li {

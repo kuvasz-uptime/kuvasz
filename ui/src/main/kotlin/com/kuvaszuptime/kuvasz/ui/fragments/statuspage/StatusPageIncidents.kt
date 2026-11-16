@@ -6,8 +6,8 @@ import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDataDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIncidentDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIncidentNoteDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageMonitorDetailsDto
-import com.kuvaszuptime.kuvasz.models.dto.statuspage.effectiveName
 import com.kuvaszuptime.kuvasz.models.label
+import com.kuvaszuptime.kuvasz.models.monitor.effectiveName
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*

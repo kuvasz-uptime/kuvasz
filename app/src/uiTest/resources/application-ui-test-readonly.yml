@@ -6,6 +6,7 @@ http-monitors:
     proxy: corporate-egress
 push-monitors:
   - name: yaml-push-monitor
+    display-name: YAML push label
     client-secret: yaml-push-monitor-secret-0123456789abc
     heartbeat-interval: 300
 icmp-monitors:

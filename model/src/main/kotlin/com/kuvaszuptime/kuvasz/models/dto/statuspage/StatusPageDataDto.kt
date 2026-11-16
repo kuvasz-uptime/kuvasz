@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.kuvaszuptime.kuvasz.jooq.enums.InvestigationStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentStatus
+import com.kuvaszuptime.kuvasz.models.monitor.WithDisplayName
 import com.kuvaszuptime.kuvasz.models.statuspage.SystemStatus
 import com.kuvaszuptime.kuvasz.models.theme.ThemeBase
 import io.swagger.v3.oas.annotations.media.Schema
@@ -70,9 +71,9 @@ data class StatusPageMaintenanceWindowDto(
     JsonSubTypes.Type(value = StatusPageDnsMonitorDetailsDto::class, name = "dns"),
     JsonSubTypes.Type(value = StatusPageDockerMonitorDetailsDto::class, name = "docker"),
 )
-sealed interface StatusPageMonitorDetailsDto {
-    val name: String
-    val displayName: String?
+sealed interface StatusPageMonitorDetailsDto : WithDisplayName {
+    override val name: String
+    override val displayName: String?
     val type: String
     val lastCheck: OffsetDateTime?
     val uptimeRatio: Double?
@@ -82,12 +83,6 @@ sealed interface StatusPageMonitorDetailsDto {
     val inMaintenance: Boolean
     val category: String?
 }
-
-/**
- * The label of the monitor that is shown to people: its display name if it has one, its unique name otherwise.
- */
-val StatusPageMonitorDetailsDto.effectiveName: String
-    get() = displayName ?: name
 
 sealed interface WithLatency {
     val averageLatencyInMs: Int?

@@ -18,7 +18,6 @@ import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.http.idWithName
 import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
-import com.kuvaszuptime.kuvasz.models.monitor.normalizeDisplayName
 import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
 import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
@@ -177,7 +176,7 @@ class HttpMonitorRepository(
             (txCtx ?: dslContext)
                 .update(HTTP_MONITOR)
                 .set(HTTP_MONITOR.NAME, updatedMonitor.name)
-                .set(HTTP_MONITOR.DISPLAY_NAME, normalizeDisplayName(updatedMonitor.displayName))
+                .set(HTTP_MONITOR.DISPLAY_NAME, updatedMonitor.displayName.nullIfBlank())
                 .set(HTTP_MONITOR.URL, updatedMonitor.url)
                 .set(HTTP_MONITOR.SENSITIVE_URL, updatedMonitor.sensitiveUrl)
                 .set(HTTP_MONITOR.UPTIME_CHECK_INTERVAL, updatedMonitor.uptimeCheckInterval)

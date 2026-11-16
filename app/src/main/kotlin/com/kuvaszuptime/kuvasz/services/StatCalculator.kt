@@ -9,7 +9,6 @@ import com.kuvaszuptime.kuvasz.models.dashboard.MonitorStateCounts
 import com.kuvaszuptime.kuvasz.models.dashboard.MonitorTypeUptimeStats
 import com.kuvaszuptime.kuvasz.models.dashboard.UnreliableMonitor
 import com.kuvaszuptime.kuvasz.models.dashboard.UptimeTimelineSlot
-import com.kuvaszuptime.kuvasz.models.dashboard.effectiveName
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentStatus
 import com.kuvaszuptime.kuvasz.models.dto.maintenance.MaintenanceWindowDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.monitor.HttpMonitorSummary
@@ -28,6 +27,7 @@ import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIncidentDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIncidentNoteDto
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.NumericMonitorID
+import com.kuvaszuptime.kuvasz.models.monitor.effectiveName
 import com.kuvaszuptime.kuvasz.models.uptimeIncidentType
 import com.kuvaszuptime.kuvasz.repositories.IncidentNoteRepository
 import com.kuvaszuptime.kuvasz.repositories.MonitorRepository

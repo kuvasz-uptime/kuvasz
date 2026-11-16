@@ -32,7 +32,7 @@ class WebhookMessageFactoryTest(private val factory: WebhookMessageFactory) : Sh
                 event = HttpMonitorUpEvent(
                     monitor = HttpMonitorRecord().apply {
                         id = 23423
-                        name = "something"
+                        setName("something")
                         sensitiveUrl = false
                         url = "https://irrelevant"
                     },
@@ -46,7 +46,7 @@ class WebhookMessageFactoryTest(private val factory: WebhookMessageFactory) : Sh
                 event = HttpMonitorDownEvent(
                     monitor = HttpMonitorRecord().apply {
                         id = 23423
-                        name = "something"
+                        setName("something")
                         sensitiveUrl = false
                         url = "https://irrelevant"
                     },
@@ -70,7 +70,7 @@ class WebhookMessageFactoryTest(private val factory: WebhookMessageFactory) : Sh
             val testEvent = HttpMonitorUpEvent(
                 monitor = HttpMonitorRecord().apply {
                     id = 23423
-                    name = "something"
+                    setName("something")
                     sensitiveUrl = false
                     url = "https://irrelevant"
                 },
@@ -89,12 +89,12 @@ class WebhookMessageFactoryTest(private val factory: WebhookMessageFactory) : Sh
 
     context("the name of the monitor") {
 
-        should("expose the display name of the monitor next to its unique name") {
+        should("expose the shown name of the monitor next to its unique name") {
             val event = HttpMonitorUpEvent(
                 monitor = HttpMonitorRecord().apply {
                     id = 23423
-                    name = "payments"
-                    displayName = "Payments API"
+                    setName("payments")
+                    setDisplayName("Payments API")
                     sensitiveUrl = false
                     url = "https://irrelevant"
                 },
@@ -103,7 +103,7 @@ class WebhookMessageFactoryTest(private val factory: WebhookMessageFactory) : Sh
                 previousEvent = null,
             )
 
-            factory.fromEvent(event, "{{ ctx.monitorName }} | {{ ctx.monitorDisplayName }}") shouldBe
+            factory.fromEvent(event, "{{ ctx.monitorName }} | {{ ctx.monitorLabel }}") shouldBe
                 "payments | Payments API"
         }
 
@@ -112,7 +112,7 @@ class WebhookMessageFactoryTest(private val factory: WebhookMessageFactory) : Sh
 
             with(factory.fromEvent(MaintenanceWindowStartEvent(window))) {
                 monitorName shouldBe ""
-                monitorDisplayName shouldBe ""
+                monitorLabel shouldBe ""
             }
         }
     }
@@ -133,7 +133,7 @@ class WebhookMessageFactoryTest(private val factory: WebhookMessageFactory) : Sh
             message.monitorUrn shouldBe "dns:my-dns"
             message.monitorName shouldBe "my-dns"
             // Without a display name, the name is shown
-            message.monitorDisplayName shouldBe "my-dns"
+            message.monitorLabel shouldBe "my-dns"
             message.monitorDetailsUrl shouldBe "/dns-monitors/5555"
             message.eventDetails shouldBe "DNS records changed for monitor \"my-dns\"\nA: [1.1.1.1] → [2.2.2.2]"
         }
@@ -165,7 +165,7 @@ class WebhookMessageFactoryTest(private val factory: WebhookMessageFactory) : Sh
                 event = HttpMonitorUpEvent(
                     monitor = HttpMonitorRecord().apply {
                         id = 23423
-                        name = "something"
+                        setName("something")
                         sensitiveUrl = false
                         url = "https://irrelevant"
                     },
@@ -187,7 +187,7 @@ class WebhookMessageFactoryTest(private val factory: WebhookMessageFactory) : Sh
                 event = HttpMonitorUpEvent(
                     monitor = HttpMonitorRecord().apply {
                         id = 23423
-                        name = "something"
+                        setName("something")
                         sensitiveUrl = false
                         url = "https://irrelevant"
                     },

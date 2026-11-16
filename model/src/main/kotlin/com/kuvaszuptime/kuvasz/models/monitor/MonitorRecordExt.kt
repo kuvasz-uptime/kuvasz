@@ -34,9 +34,3 @@ val MonitorRecord.relativeDetailsUrl: String
         is DockerMonitorRecord -> "/docker-monitors/${this.id}"
         else -> error("Unknown monitor type: ${this::class}")
     }
-
-/**
- * The label of the monitor that is shown to people: its display name if it has one, its unique name otherwise.
- */
-val MonitorRecord.effectiveName: String
-    get() = displayName ?: name

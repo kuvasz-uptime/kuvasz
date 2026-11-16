@@ -4,6 +4,7 @@ import com.iodesystems.htmx.Htmx.Companion.hx
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentDto
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentStatus
+import com.kuvaszuptime.kuvasz.models.dto.incident.effectiveMonitorName
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
@@ -53,7 +54,7 @@ internal fun FlowContent.incidentDetailsHeading(incident: IncidentDto) {
                 }
                 h2 {
                     classes(PAGE_TITLE, TEXT_WRAP, TEXT_BREAK)
-                    +incident.monitorName.abbreviate(MONITOR_NAME_MAX_LENGTH)
+                    +incident.effectiveMonitorName.abbreviate(MONITOR_NAME_MAX_LENGTH)
                 }
                 div {
                     classes(TEXT_SECONDARY)

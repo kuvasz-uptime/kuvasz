@@ -93,25 +93,25 @@ class GenericWebhookService(
 
     private val testHttpMonitorRecord = HttpMonitorRecord().apply {
         id = 1
-        name = "Test monitor"
+        setName("Test monitor")
         sensitiveUrl = false
         url = "https://test.monitor"
     }
     private val testPushMonitorRecord = PushMonitorRecord().apply {
         id = 2
-        name = "Test monitor"
+        setName("Test monitor")
     }
 
     @Suppress("MagicNumber")
     private val testIcmpMonitorRecord = IcmpMonitorRecord().apply {
         id = 3
-        name = "Test monitor"
+        setName("Test monitor")
     }
 
     @Suppress("MagicNumber")
     private val testTcpMonitorRecord = TcpMonitorRecord().apply {
         id = 4
-        name = "Test monitor"
+        setName("Test monitor")
         host = "test.monitor"
         port = 8080
     }
@@ -119,14 +119,14 @@ class GenericWebhookService(
     @Suppress("MagicNumber")
     private val testDnsMonitorRecord = DnsMonitorRecord().apply {
         id = 5
-        name = "Test monitor"
+        setName("Test monitor")
         host = "test.monitor"
     }
 
     @Suppress("MagicNumber")
     private val testDockerMonitorRecord = DockerMonitorRecord().apply {
         id = 6
-        name = "Test monitor"
+        setName("Test monitor")
         dockerHost = "local"
         container = "test-container"
     }

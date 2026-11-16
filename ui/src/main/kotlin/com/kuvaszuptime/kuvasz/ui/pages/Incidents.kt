@@ -6,6 +6,7 @@ import com.kuvaszuptime.kuvasz.models.IncidentType
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentDto
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentSortField
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentStatus
+import com.kuvaszuptime.kuvasz.models.dto.incident.effectiveMonitorName
 import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
 import com.kuvaszuptime.kuvasz.models.monitorType
 import com.kuvaszuptime.kuvasz.models.pagination.ListDefaults
@@ -214,7 +215,7 @@ private fun TBODY.incidentRow(incident: IncidentDto) {
             classes(TEXT_WRAP, TEXT_BREAK)
             a(href = incident.getMonitorUrl()) {
                 classes(TEXT_RESET)
-                +incident.monitorName.abbreviate(MONITOR_NAME_MAX_LENGTH)
+                +incident.effectiveMonitorName.abbreviate(MONITOR_NAME_MAX_LENGTH)
             }
         }
         // Type

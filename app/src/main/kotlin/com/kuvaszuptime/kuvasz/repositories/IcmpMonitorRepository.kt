@@ -15,12 +15,12 @@ import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.icmp.idWithName
 import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
-import com.kuvaszuptime.kuvasz.models.monitor.normalizeDisplayName
 import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
 import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.fetchPage
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import com.kuvaszuptime.kuvasz.util.nullIfBlank
 import com.kuvaszuptime.kuvasz.util.sortedIn
 import jakarta.inject.Singleton
 import org.jooq.Condition
@@ -199,7 +199,7 @@ class IcmpMonitorRepository(
             (txCtx ?: dslContext)
                 .update(ICMP_MONITOR)
                 .set(ICMP_MONITOR.NAME, updatedMonitor.name)
-                .set(ICMP_MONITOR.DISPLAY_NAME, normalizeDisplayName(updatedMonitor.displayName))
+                .set(ICMP_MONITOR.DISPLAY_NAME, updatedMonitor.displayName.nullIfBlank())
                 .set(ICMP_MONITOR.HOST, updatedMonitor.host)
                 .set(ICMP_MONITOR.UPTIME_CHECK_INTERVAL, updatedMonitor.uptimeCheckInterval)
                 .set(ICMP_MONITOR.PACKET_COUNT, updatedMonitor.packetCount)

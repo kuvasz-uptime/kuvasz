@@ -15,16 +15,15 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
-import com.kuvaszuptime.kuvasz.models.monitor.normalizeDisplayName
 import com.kuvaszuptime.kuvasz.models.monitor.push.idWithName
 import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
 import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.fetchPage
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import com.kuvaszuptime.kuvasz.util.nullIfBlank
 import com.kuvaszuptime.kuvasz.util.sortedIn
 import jakarta.inject.Singleton
-import java.time.OffsetDateTime
 import org.jooq.Condition
 import org.jooq.DSLContext
 import org.jooq.Field
@@ -37,6 +36,7 @@ import org.jooq.Table
 import org.jooq.exception.DataAccessException
 import org.jooq.impl.DSL
 import org.jooq.impl.SQLDataType
+import java.time.OffsetDateTime
 
 @Singleton
 @Suppress("TooManyFunctions")
@@ -213,7 +213,7 @@ class PushMonitorRepository(
             (txCtx ?: dslContext)
                 .update(PUSH_MONITOR)
                 .set(PUSH_MONITOR.NAME, updatedMonitor.name)
-                .set(PUSH_MONITOR.DISPLAY_NAME, normalizeDisplayName(updatedMonitor.displayName))
+                .set(PUSH_MONITOR.DISPLAY_NAME, updatedMonitor.displayName.nullIfBlank())
                 .set(PUSH_MONITOR.HEARTBEAT_INTERVAL, updatedMonitor.heartbeatInterval)
                 .set(PUSH_MONITOR.GRACE_PERIOD, updatedMonitor.gracePeriod)
                 .set(PUSH_MONITOR.ENABLED, updatedMonitor.enabled)

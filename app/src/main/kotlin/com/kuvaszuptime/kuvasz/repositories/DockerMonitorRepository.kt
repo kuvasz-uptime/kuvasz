@@ -15,12 +15,12 @@ import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.docker.idWithName
 import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
-import com.kuvaszuptime.kuvasz.models.monitor.normalizeDisplayName
 import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
 import com.kuvaszuptime.kuvasz.models.pagination.Sorting
 import com.kuvaszuptime.kuvasz.util.fetchOneOrThrow
 import com.kuvaszuptime.kuvasz.util.fetchPage
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
+import com.kuvaszuptime.kuvasz.util.nullIfBlank
 import com.kuvaszuptime.kuvasz.util.sortedIn
 import jakarta.inject.Singleton
 import org.jooq.Condition
@@ -201,7 +201,7 @@ class DockerMonitorRepository(
             (txCtx ?: dslContext)
                 .update(DOCKER_MONITOR)
                 .set(DOCKER_MONITOR.NAME, updatedMonitor.name)
-                .set(DOCKER_MONITOR.DISPLAY_NAME, normalizeDisplayName(updatedMonitor.displayName))
+                .set(DOCKER_MONITOR.DISPLAY_NAME, updatedMonitor.displayName.nullIfBlank())
                 .set(DOCKER_MONITOR.DOCKER_HOST, updatedMonitor.dockerHost)
                 .set(DOCKER_MONITOR.CONTAINER, updatedMonitor.container)
                 .set(DOCKER_MONITOR.UPTIME_CHECK_INTERVAL, updatedMonitor.uptimeCheckInterval)

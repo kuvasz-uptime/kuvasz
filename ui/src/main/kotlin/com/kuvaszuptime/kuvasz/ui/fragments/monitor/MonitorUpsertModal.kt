@@ -75,8 +75,8 @@ internal fun FlowContent.monitorUpsertModal(
                             xShow("!editTitle")
                             when {
                                 monitor == null -> +createTitle
-                                isReadOnlyMode -> +Messages.configurationOf(monitor.name)
-                                else -> +Messages.updateMonitor(monitor.name)
+                                isReadOnlyMode -> +Messages.configurationOf(monitor.nameWithUniqueName)
+                                else -> +Messages.updateMonitor(monitor.nameWithUniqueName)
                             }
                         }
                         // The title of a monitor opened from a list row, which is only known once it's opened
@@ -93,21 +93,31 @@ internal fun FlowContent.monitorUpsertModal(
                 // Modal body
                 div {
                     classes(MODAL_BODY, PB_0)
-                    // Name
-                    div {
-                        classes(MB_3)
-                        validatedInput(
-                            propName = "name",
-                            label = Messages.monitorNameLabel(),
-                            placeholder = Messages.monitorNamePlaceholder(),
-                            // Showing the tooltip only if the name is read-only but the rest of the form is editable
-                            description = if (isReadOnlyMode) null else Messages.monitorNameReadOnlyTooltip(),
-                            // The form tracks the lock, since a list opens monitors in the modal client-side
-                            descriptionShownIf = "isNameLocked",
-                            required = true,
-                            onInput = "validateName()",
-                            disabledIf = "$isReadOnlyMode || isNameLocked",
-                        )
+                    formRow {
+                        formCol(COL_LG_6) {
+                            validatedInput(
+                                propName = "name",
+                                label = Messages.monitorNameLabel(),
+                                placeholder = Messages.monitorNamePlaceholder(),
+                                // Showing the tooltip only if the name is locked, but the rest of the form isn't
+                                description = if (isReadOnlyMode) null else Messages.monitorNameReadOnlyTooltip(),
+                                // The form tracks the lock, since a list opens monitors in the modal client-side
+                                descriptionShownIf = "isNameLocked",
+                                required = true,
+                                onInput = "validateName()",
+                                disabledIf = "$isReadOnlyMode || isNameLocked",
+                            )
+                        }
+                        formCol(COL_LG_6) {
+                            // Not locked together with the name: the status pages reference the name only
+                            validatedInput(
+                                propName = "displayName",
+                                label = Messages.monitorDisplayNameLabel(),
+                                placeholder = Messages.monitorDisplayNamePlaceholder(),
+                                description = Messages.monitorDisplayNameDescription(),
+                                disabledIf = "$isReadOnlyMode",
+                            )
+                        }
                     }
                     // Category
                     div {

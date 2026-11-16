@@ -8,6 +8,7 @@ import com.microsoft.playwright.Page
 class TcpMonitorFormModal(page: Page) : ModalView(page) {
 
     val nameInput: Locator get() = modal.locator("#tcp-name-input")
+    val displayNameInput: Locator get() = modal.locator("#tcp-displayName-input")
     val hostInput: Locator get() = modal.locator("#tcp-host-input")
     val portInput: Locator get() = modal.locator("#tcp-port-input")
     val portIncrementButton: Locator get() = portButton("increment")
@@ -20,6 +21,11 @@ class TcpMonitorFormModal(page: Page) : ModalView(page) {
 
     fun setName(value: String): TcpMonitorFormModal {
         nameInput.fill(value)
+        return this
+    }
+
+    fun setDisplayName(value: String): TcpMonitorFormModal {
+        displayNameInput.fill(value)
         return this
     }
 

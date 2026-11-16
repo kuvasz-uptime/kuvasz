@@ -5,6 +5,7 @@ import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.jooq.tables.records.TcpMonitorRecord
 import com.kuvaszuptime.kuvasz.models.events.TcpMonitorDownEvent
 import com.kuvaszuptime.kuvasz.models.events.TcpMonitorUpEvent
+import com.kuvaszuptime.kuvasz.models.monitor.effectiveName
 import com.kuvaszuptime.kuvasz.repositories.PendingFailureRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMetricsLogRepository
 import com.kuvaszuptime.kuvasz.repositories.TcpMonitorRepository
@@ -75,7 +76,7 @@ class TcpUptimeChecker(
             val errorMessage = if (latencyExceeded) {
                 Messages.tcpLatencyThresholdError(latencyMs.toString(), latencyThreshold.toString())
             } else {
-                error ?: Messages.yourTcpMonitorIsDown(monitor.name)
+                error ?: Messages.yourTcpMonitorIsDown(monitor.effectiveName)
             }
             val event = TcpMonitorDownEvent(
                 monitor = monitor,

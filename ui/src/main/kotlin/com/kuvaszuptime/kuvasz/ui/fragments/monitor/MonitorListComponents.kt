@@ -4,6 +4,7 @@ import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.pagination.PagedResult
+import com.kuvaszuptime.kuvasz.models.monitor.effectiveName
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
@@ -11,6 +12,13 @@ import com.kuvaszuptime.kuvasz.ui.icons.*
 import com.kuvaszuptime.kuvasz.ui.utils.*
 import kotlinx.html.*
 import kotlinx.html.stream.*
+
+/**
+ * The display name of the monitor followed by its unique name, if it has a display name. Display names don't have to
+ * be unique, so this is what tells the monitors apart where it matters, e.g. before deleting one.
+ */
+internal val MonitorDetailsDto.nameWithUniqueName: String
+    get() = displayName?.let { "$it ($name)" } ?: name
 
 /** The cell linking to a monitor's details page, shared by every table that lists monitors. */
 internal fun TR.monitorNameCell(
@@ -25,10 +33,19 @@ internal fun TR.monitorNameCell(
             span {
                 classes(TEXT_WRAP, TEXT_BREAK)
                 tooltipTitle?.let { tooltip(title = it, location = TooltipLocation.RIGHT) }
-                +monitor.name.abbreviate(MONITOR_NAME_MAX_LENGTH)
+                +monitor.effectiveName.abbreviate(MONITOR_NAME_MAX_LENGTH)
             }
         }
         nameBadge()
+        // The unique name is what the YAML config and the status pages reference, so it's kept in sight
+        if (monitor.displayName != null) {
+            div {
+                classes(SMALL, TEXT_SECONDARY, TEXT_WRAP, TEXT_BREAK)
+                testId("monitor-unique-name")
+                tooltip(title = Messages.monitorUniqueName(monitor.name), location = TooltipLocation.RIGHT)
+                +monitor.name.abbreviate(MONITOR_NAME_MAX_LENGTH)
+            }
+        }
     }
 }
 
@@ -127,9 +144,9 @@ private fun <T : MonitorDetailsDto, F : Enum<F>> TBODY.monitorListRow(
     tr {
         testId(typeUiConfig.testId("row"))
         val editTitle = if (editabilityState.areMonitorsReadOnly(typeUiConfig.type)) {
-            Messages.configurationOf(monitor.name)
+            Messages.configurationOf(monitor.nameWithUniqueName)
         } else {
-            Messages.updateMonitor(monitor.name)
+            Messages.updateMonitor(monitor.nameWithUniqueName)
         }
         val isNameLocked = monitor.statusPages.isNotEmpty() && editabilityState.areStatusPagesReadOnly()
         xData(
@@ -197,7 +214,7 @@ private fun TR.monitorListRowActions(
             val isDeleteDisabled = monitor.statusPages.isNotEmpty() && editabilityState.areStatusPagesReadOnly()
             deleteMonitorModal(
                 modalId = deleteModalId,
-                monitorName = monitor.name,
+                monitorName = monitor.nameWithUniqueName,
                 isDeleteDisabled = isDeleteDisabled,
             )
         }

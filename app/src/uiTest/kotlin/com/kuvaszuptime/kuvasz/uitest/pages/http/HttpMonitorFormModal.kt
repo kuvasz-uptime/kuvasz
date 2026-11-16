@@ -11,6 +11,7 @@ import com.microsoft.playwright.Page
 class HttpMonitorFormModal(page: Page) : ModalView(page) {
 
     val nameInput: Locator get() = modal.locator("#http-name-input")
+    val displayNameInput: Locator get() = modal.locator("#http-displayName-input")
     val urlInput: Locator get() = modal.locator("#http-url-input")
     val uptimeCheckIntervalInput: Locator get() = modal.locator("#http-uptimeCheckInterval-input")
     val crossOriginHeaderPropagationToggle: Locator
@@ -29,6 +30,11 @@ class HttpMonitorFormModal(page: Page) : ModalView(page) {
 
     fun setName(value: String): HttpMonitorFormModal {
         nameInput.fill(value)
+        return this
+    }
+
+    fun setDisplayName(value: String): HttpMonitorFormModal {
+        displayNameInput.fill(value)
         return this
     }
 

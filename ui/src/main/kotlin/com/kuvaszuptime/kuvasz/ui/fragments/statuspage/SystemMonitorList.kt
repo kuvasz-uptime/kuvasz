@@ -14,7 +14,7 @@ import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPagePushMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageTcpMonitorDetailsDto
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.WithLatency
-import com.kuvaszuptime.kuvasz.models.dto.statuspage.effectiveName
+import com.kuvaszuptime.kuvasz.models.monitor.effectiveName
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*

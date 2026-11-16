@@ -6,7 +6,6 @@ import com.kuvaszuptime.kuvasz.models.dto.Validation
 import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorCreator
 import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
-import com.kuvaszuptime.kuvasz.models.monitor.normalizeDisplayName
 import com.kuvaszuptime.kuvasz.util.nullIfBlank
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
@@ -51,7 +50,7 @@ interface TcpMonitorCreator : MonitorCreator<TcpMonitorRecord> {
     override fun toMonitorRecord(validatedIntegrations: Set<IntegrationID>): TcpMonitorRecord =
         TcpMonitorRecord()
             .setName(name)
-            .setDisplayName(normalizeDisplayName(displayName))
+            .setDisplayName(displayName.nullIfBlank())
             .setHost(host)
             .setPort(port)
             .setUptimeCheckInterval(uptimeCheckInterval)

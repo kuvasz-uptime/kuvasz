@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.ui.pages.incident
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentDetailsDto
+import com.kuvaszuptime.kuvasz.models.dto.incident.effectiveMonitorName
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
@@ -20,7 +21,7 @@ private val AppGlobals.canEditIncidentNotes: Boolean
 fun renderIncidentDetailsPage(globals: AppGlobals, details: IncidentDetailsDto): String =
     withLayout(
         globals,
-        title = Messages.incidentOfMonitor(details.incident.monitorName.abbreviate(MONITOR_NAME_MAX_LENGTH)),
+        title = Messages.incidentOfMonitor(details.incident.effectiveMonitorName.abbreviate(MONITOR_NAME_MAX_LENGTH)),
         pageTitle = { incidentDetailsHeader(details, canEditNotes = globals.canEditIncidentNotes) },
     ) {
         incidentTimeline(details, canEditNotes = globals.canEditIncidentNotes, noteModalId = NOTE_MODAL_ID)

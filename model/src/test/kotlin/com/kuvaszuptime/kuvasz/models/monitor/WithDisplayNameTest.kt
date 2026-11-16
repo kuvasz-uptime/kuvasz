@@ -6,34 +6,11 @@ import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentDto
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentStatus
 import com.kuvaszuptime.kuvasz.models.dto.incident.effectiveMonitorName
 import com.kuvaszuptime.kuvasz.models.dto.monitor.PushMonitorSummary
-import com.kuvaszuptime.kuvasz.models.dto.monitor.effectiveName
 import com.kuvaszuptime.kuvasz.util.getCurrentTimestamp
 import io.kotest.core.spec.style.BehaviorSpec
-import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 
-class DisplayNameTest : BehaviorSpec({
-
-    given("normalizeDisplayName()") {
-
-        `when`("there is no display name") {
-            then("it stays null") {
-                normalizeDisplayName(null).shouldBeNull()
-            }
-        }
-
-        `when`("the display name is blank") {
-            then("it is taken as not set") {
-                normalizeDisplayName("  \n ").shouldBeNull()
-            }
-        }
-
-        `when`("the display name has surrounding whitespace") {
-            then("it is trimmed") {
-                normalizeDisplayName("  Payments API  ") shouldBe "Payments API"
-            }
-        }
-    }
+class WithDisplayNameTest : BehaviorSpec({
 
     given("the effective name of a monitor") {
 

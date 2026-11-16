@@ -3,6 +3,7 @@ package com.kuvaszuptime.kuvasz.ui.pages.monitor
 import com.kuvaszuptime.kuvasz.AppGlobals
 import com.kuvaszuptime.kuvasz.i18n.Messages
 import com.kuvaszuptime.kuvasz.models.dto.monitor.MonitorDetailsDto
+import com.kuvaszuptime.kuvasz.models.monitor.effectiveName
 import com.kuvaszuptime.kuvasz.ui.*
 import com.kuvaszuptime.kuvasz.ui.CSSClass.*
 import com.kuvaszuptime.kuvasz.ui.components.*
@@ -114,7 +115,7 @@ internal fun renderMonitorDetailsPage(
     content: HtmlBlockTag.() -> Unit,
 ): String = withLayout(
     globals,
-    title = monitor.name.abbreviate(MONITOR_NAME_MAX_LENGTH),
+    title = monitor.effectiveName.abbreviate(MONITOR_NAME_MAX_LENGTH),
     pageTitle = { monitorDetailsHeader(globals, monitor, typeUiConfig, heading, upsertModal) },
     content = content,
 )
@@ -166,7 +167,7 @@ private fun HtmlBlockTag.monitorDetailsHeader(
                         }
                         val isDeleteDisabled = monitor.statusPages.isNotEmpty() &&
                             globals.editabilityState.areStatusPagesReadOnly()
-                        deleteMonitorModal(deleteModalId, monitor.name, isDeleteDisabled)
+                        deleteMonitorModal(deleteModalId, monitor.nameWithUniqueName, isDeleteDisabled)
                     } else {
                         buttonWithIcon(Icon.SETTINGS, Messages.configuration()) {
                             modalOpener(updateModalId)

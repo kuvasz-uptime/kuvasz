@@ -30,7 +30,6 @@ import com.kuvaszuptime.kuvasz.models.handlers.pagerduty.PagerdutyResolveRequest
 import com.kuvaszuptime.kuvasz.models.handlers.pagerduty.PagerdutySeverity
 import com.kuvaszuptime.kuvasz.models.handlers.pagerduty.PagerdutyTriggerPayload
 import com.kuvaszuptime.kuvasz.models.handlers.pagerduty.PagerdutyTriggerRequest
-import com.kuvaszuptime.kuvasz.models.monitor.effectiveName
 import com.kuvaszuptime.kuvasz.services.EventDispatcher
 import com.kuvaszuptime.kuvasz.services.integrations.IntegrationRepository
 import com.kuvaszuptime.kuvasz.services.integrations.PagerdutyAPIClient
@@ -209,7 +208,8 @@ class PagerdutyEventHandler(
             dedupKey = deduplicationKey,
             payload = PagerdutyTriggerPayload(
                 summary = toStructuredMessage().summary,
-                source = monitor.effectiveName,
+                // The unique name, which doesn't change with the display name, so the routing rules keep matching
+                source = monitor.name,
                 severity = severity
             )
         )

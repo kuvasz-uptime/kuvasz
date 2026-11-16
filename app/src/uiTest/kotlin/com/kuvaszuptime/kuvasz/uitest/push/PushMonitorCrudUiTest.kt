@@ -40,10 +40,21 @@ class PushMonitorCrudUiTest(private val pushMonitorRepository: PushMonitorReposi
             assertThat(details.heading(updatedName)).isVisible()
             assertThat(details.categoryBadge).hasCount(0)
 
+            // The display name is shown instead of the name, which stays in sight, as it identifies the monitor
+            val displayName = "E2E Shown Label"
+            details.openConfigureModal().setDisplayName(displayName).save()
+            assertThat(details.heading(displayName)).isVisible()
+            assertThat(details.uniqueNameBadge).containsText(updatedName)
+
             list.navigate()
             assertThat(list.rowByName(updatedName)).isVisible()
+            assertThat(list.rowByName(updatedName).locator("td").first()).containsText(displayName)
+            assertThat(list.rowByName(updatedName).getByTestId("monitor-unique-name")).hasText(updatedName)
 
-            list.deleteMonitor(updatedName)
+            // Display names don't have to be unique, so the confirmation names the monitor by its name too
+            val deleteModal = list.openDeleteModal(updatedName)
+            assertThat(deleteModal).containsText(Messages.monitorDeleteQuestion("$displayName ($updatedName)"))
+            deleteModal.getByTestId("delete-confirm-button").click()
             assertThat(list.rowByName(updatedName)).hasCount(0)
             assertThat(list.emptyState).isVisible()
         }

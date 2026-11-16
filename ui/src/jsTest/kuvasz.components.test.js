@@ -2430,6 +2430,26 @@ test('monitor forms populate and reset the category', () => {
     });
 });
 
+test('monitor forms populate, reset and send the display name', () => {
+    const forms = [
+        upsertHttpMonitorForm(null, {}, 'category-select', false, 'select', [], 'proxy-select', [], '(not configured)', 0),
+        upsertPushMonitorForm(null, {}, 'category-select', false, 0),
+        upsertIcmpMonitorForm(null, {}, 'category-select', false, 0),
+        upsertTcpMonitorForm(null, {}, 'category-select', false, 'proxy-select', [], '(not configured)', 0),
+        upsertDnsMonitorForm(null, {}, 'category-select', false, 0),
+    ];
+    forms.forEach((form) => {
+        form.populateFrom({name: 'payments', displayName: 'Payments API'});
+        assert.equal(form.displayName, 'Payments API');
+        assert.equal(form.buildRequestBody().displayName, 'Payments API');
+        // A blank one is sent as null, which clears the display name of the monitor
+        form.displayName = '   ';
+        assert.equal(form.buildRequestBody().displayName, null);
+        form.populateFrom(null);
+        assert.equal(form.displayName, '');
+    });
+});
+
 test('validateCategory flags categories longer than 100 characters', () => {
     const form = upsertHttpMonitorForm(null, {categoryTooLong: 'too long'}, 'category-select', false, 'select', [], 'proxy-select', [], '(not configured)', 0);
     form.populateFrom(null);
@@ -2755,7 +2775,7 @@ test('upsert creates a monitor and redirects to its page', async (t) => {
     assert.equal(requests[0].url, '/api/v2/icmp-monitors');
     assert.equal(requests[0].method, 'POST');
     assert.deepEqual(requests[0].body, {
-        name: 'ping', failureCountThreshold: 1, integrations: [], category: null,
+        name: 'ping', displayName: null, failureCountThreshold: 1, integrations: [], category: null,
         ignoreConnectivityCheck: false, host: 'example.com',
         uptimeCheckInterval: 60, packetCount: 3, timeoutSeconds: 5, packetLossThreshold: 100,
         metricsHistoryEnabled: true, enabled: true,
@@ -2883,7 +2903,9 @@ test('submitForm only sends a valid form', async (t) => {
 });
 
 test('cloneFrom copies the source monitor under the new name, with a fresh client secret for push monitors', async (t) => {
-    const pushSource = {name: 'job', heartbeatInterval: 30, clientSecret: 'x'.repeat(36), category: 'Jobs'};
+    const pushSource = {
+        name: 'job', displayName: 'Nightly job', heartbeatInterval: 30, clientSecret: 'x'.repeat(36), category: 'Jobs',
+    };
     const icmpSource = {name: 'ping', host: 'example.com', packetCount: 5};
     const requests = stubRequests(t, jsonResponse(pushSource), jsonResponse(icmpSource));
     const pushForm = upsertPushMonitorForm(null, {}, 'category-select', false, 0);
@@ -2900,6 +2922,8 @@ test('cloneFrom copies the source monitor under the new name, with a fresh clien
     assert.equal(pushForm.name, 'job (copy)');
     assert.equal(pushForm.heartbeatInterval, 30);
     assert.equal(pushForm.category, 'Jobs');
+    // The clone would look exactly like its source wherever the monitors are shown, if it kept the display name
+    assert.equal(pushForm.displayName, '');
     assert.notEqual(pushForm.clientSecret, pushSource.clientSecret);
     assert.equal(icmpForm.name, 'ping (copy)');
     assert.equal(icmpForm.host, 'example.com');

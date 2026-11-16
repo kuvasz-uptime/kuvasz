@@ -35,7 +35,12 @@ class IncidentListUiTest(
             val now = getCurrentTimestamp()
             val httpIncident = createHttpUptimeEventRecord(
                 dslContext,
-                monitorId = createHttpMonitor(httpMonitorRepository, monitorName = "HTTP Incident Monitor").id,
+                // Its name would put it first when sorted by the monitor, but its display name is what is shown
+                monitorId = createHttpMonitor(
+                    httpMonitorRepository,
+                    monitorName = "a-http-incident-monitor",
+                    displayName = "HTTP Incident Monitor",
+                ).id,
                 status = UptimeStatus.DOWN,
                 startedAt = now.minusHours(1),
                 endedAt = null,
@@ -153,7 +158,7 @@ class IncidentListUiTest(
 
         "the incidents of a single monitor can be listed by its ID" {
             createIncidents()
-            val monitorId = httpMonitorRepository.findByName("HTTP Incident Monitor").shouldNotBeNull().id
+            val monitorId = httpMonitorRepository.findByName("a-http-incident-monitor").shouldNotBeNull().id
             createResolvedHttpIncident("Other HTTP Monitor", startedHoursAgo = 3)
 
             val page = newPage()
@@ -168,7 +173,7 @@ class IncidentListUiTest(
 
         "the monitor ID filter can be typed, stepped and emptied" {
             createIncidents()
-            val monitorId = httpMonitorRepository.findByName("HTTP Incident Monitor").shouldNotBeNull().id
+            val monitorId = httpMonitorRepository.findByName("a-http-incident-monitor").shouldNotBeNull().id
 
             val page = newPage()
             val incidents = IncidentListPage(page)
@@ -276,7 +281,7 @@ class IncidentListUiTest(
 
         "an incident in the incident list of a monitor leads to its details page" {
             val eventId = createIncidents()
-            val monitorId = httpMonitorRepository.findByName("HTTP Incident Monitor").shouldNotBeNull().id
+            val monitorId = httpMonitorRepository.findByName("a-http-incident-monitor").shouldNotBeNull().id
 
             val page = newPage()
             page.navigate("/http-monitors/$monitorId")

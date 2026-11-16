@@ -4,17 +4,18 @@ import com.kuvaszuptime.kuvasz.jooq.enums.SslStatus
 import com.kuvaszuptime.kuvasz.jooq.enums.UptimeStatus
 import com.kuvaszuptime.kuvasz.models.MonitorType
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
+import com.kuvaszuptime.kuvasz.models.monitor.WithDisplayName
 import java.time.OffsetDateTime
 
 /**
  * The few properties of a monitor that its statistics rely on, which are way cheaper to fetch than the whole
  * [MonitorDetailsDto], e.g. every time the dashboard is refreshed.
  */
-sealed class MonitorSummary {
+sealed class MonitorSummary : WithDisplayName {
     abstract val type: MonitorType
     abstract val id: Long
-    abstract val name: String
-    abstract val displayName: String?
+    abstract override val name: String
+    abstract override val displayName: String?
     abstract val enabled: Boolean
     abstract val category: String?
     abstract val uptimeStatus: UptimeStatus?
@@ -23,12 +24,6 @@ sealed class MonitorSummary {
     val monitorId: MonitorID
         get() = MonitorID(type, name)
 }
-
-/**
- * The label of the monitor that is shown to people: its display name if it has one, its unique name otherwise.
- */
-val MonitorSummary.effectiveName: String
-    get() = displayName ?: name
 
 data class HttpMonitorSummary(
     override val id: Long,

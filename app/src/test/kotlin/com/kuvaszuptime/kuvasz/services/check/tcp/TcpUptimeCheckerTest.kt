@@ -105,6 +105,25 @@ class TcpUptimeCheckerTest(
                 }
             }
 
+            `when`("the connection fails without telling why") {
+                val monitor =
+                    createTcpMonitor(monitorRepository, monitorName = "tcp-payments", displayName = "Payments DB")
+                val mock = getMock(connectExecutor)
+                every {
+                    mock.execute(monitor.host, monitor.port, monitor.timeoutMs)
+                } returns TcpCheckResult(isConnected = false, latencyMs = null, error = null)
+
+                val downSubscriber = TestSubscriber<TcpMonitorDownEvent>()
+                eventDispatcher.subscribeToTcpMonitorDownEvents { it.forwardToSubscriber(downSubscriber) }
+
+                uptimeChecker.check(monitor)
+
+                then("the error should name the monitor the same way as the rest of the notification") {
+                    downSubscriber.awaitCount(1)
+                    downSubscriber.values().single().error shouldBe Messages.yourTcpMonitorIsDown("Payments DB")
+                }
+            }
+
             `when`("the connection succeeds but latency exceeds the threshold") {
                 val monitor = createTcpMonitor(monitorRepository, latencyThresholdMs = 50)
                 val mock = getMock(connectExecutor)

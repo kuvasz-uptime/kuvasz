@@ -35,7 +35,11 @@ class IncidentDetailsUiTest(
     init {
         fun createIncident(endedAt: Boolean = false): Long {
             val now = getCurrentTimestamp()
-            val monitor = createHttpMonitor(httpMonitorRepository, monitorName = "Incident Monitor")
+            val monitor = createHttpMonitor(
+                httpMonitorRepository,
+                monitorName = "incident-monitor",
+                displayName = "Incident Monitor",
+            )
             val event = createHttpUptimeEventRecord(
                 dslContext,
                 monitorId = monitor.id,
@@ -76,6 +80,7 @@ class IncidentDetailsUiTest(
             val details = IncidentDetailsPage(page)
             details.navigate("http", eventId)
 
+            // The incident is shown with the display name of its monitor
             assertThat(details.heading).containsText("Incident Monitor")
             assertThat(details.statusIndicator).hasClass(Pattern.compile(".*status-green.*"))
             assertThat(details.startedEvent).containsText("Connection refused")

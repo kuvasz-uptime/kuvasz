@@ -53,12 +53,15 @@ class ReadOnlyConfigUiTest : UiTestSpec() {
             list.navigate()
             assertListIsReadOnly(list, "yaml-push-monitor")
 
+            // Its display name comes from the YAML too, so it can't be changed in the UI either
             assertConfigIsReadOnly(
                 page,
                 list,
                 "yaml-push-monitor",
                 "name" to "yaml-push-monitor",
+                "displayName" to "YAML push label",
                 "heartbeatInterval" to "300",
+                shownName = "YAML push label",
             )
         }
 
@@ -181,8 +184,13 @@ class ReadOnlyConfigUiTest : UiTestSpec() {
     }
 
     // Opens the entity's detail page, checks the read-only header, then opens the view-only "Configuration" modal.
-    private fun openConfigModalFrom(page: Page, list: ListReadOnlyView, name: String): UpsertModalReadOnlyView {
-        list.openDetails(name)
+    private fun openConfigModalFrom(
+        page: Page,
+        list: ListReadOnlyView,
+        name: String,
+        shownName: String,
+    ): UpsertModalReadOnlyView {
+        list.openDetails(name, shownName)
         val details = DetailsReadOnlyView(page)
         assertThat(details.configurationButton).isVisible()
         assertThat(details.configureButton).hasCount(0)
@@ -198,22 +206,26 @@ class ReadOnlyConfigUiTest : UiTestSpec() {
         list: ListReadOnlyView,
         name: String,
         vararg fields: Pair<String, String>,
+        // The display name of the monitor, if it has one, which the list shows instead of its name
+        shownName: String = name,
     ) {
+        // The title names the monitor by its name too, as display names don't have to be unique
+        val title = if (shownName == name) name else "$shownName ($name)"
         val fromList = list.openConfigurationModal(name)
-        assertModalIsReadOnly(fromList, name, fields)
+        assertModalIsReadOnly(fromList, title, fields)
         fromList.dismiss()
         page.url() shouldEndWith list.listPath
         assertThat(list.row(name)).isVisible()
 
-        assertModalIsReadOnly(openConfigModalFrom(page, list, name), name, fields)
+        assertModalIsReadOnly(openConfigModalFrom(page, list, name, shownName), title, fields)
     }
 
     private fun assertModalIsReadOnly(
         modal: UpsertModalReadOnlyView,
-        name: String,
+        titleName: String,
         fields: Array<out Pair<String, String>>,
     ) {
-        assertThat(modal.title).hasText(Messages.configurationOf(name))
+        assertThat(modal.title).hasText(Messages.configurationOf(titleName))
         fields.forEach { (propName, expectedValue) -> assertReadOnlyField(modal, propName, expectedValue) }
         assertCannotBeSaved(modal)
     }

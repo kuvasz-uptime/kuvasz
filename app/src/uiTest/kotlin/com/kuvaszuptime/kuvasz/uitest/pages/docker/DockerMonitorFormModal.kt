@@ -13,6 +13,7 @@ import com.microsoft.playwright.Page
 class DockerMonitorFormModal(page: Page) : ModalView(page) {
 
     val nameInput: Locator get() = modal.locator("#docker-name-input")
+    val displayNameInput: Locator get() = modal.locator("#docker-displayName-input")
 
     /** The connectivity-check toggle, which Docker is the only type to turn on by default. */
     val ignoreConnectivityCheckToggle: Locator
@@ -52,6 +53,11 @@ class DockerMonitorFormModal(page: Page) : ModalView(page) {
 
     fun setName(value: String): DockerMonitorFormModal {
         nameInput.fill(value)
+        return this
+    }
+
+    fun setDisplayName(value: String): DockerMonitorFormModal {
+        displayNameInput.fill(value)
         return this
     }
 

@@ -5849,8 +5849,8 @@ components:
       required:
       - eventDetails
       - monitorDetailsUrl
-      - monitorDisplayName
       - monitorId
+      - monitorLabel
       - monitorName
       - monitorUrn
       - timestamp
@@ -5864,7 +5864,7 @@ components:
           type: string
         monitorName:
           type: string
-        monitorDisplayName:
+        monitorLabel:
           type: string
         monitorDetailsUrl:
           type: string
@@ -10473,6 +10473,8 @@ components:
         category:
           type: string
           nullable: true
+      allOf:
+      - $ref: "#/components/schemas/WithDisplayName"
       oneOf:
       - $ref: "#/components/schemas/StatusPagePushMonitorDetailsDto"
       - $ref: "#/components/schemas/StatusPageHttpMonitorDetailsDto"
@@ -11409,6 +11411,16 @@ components:
           allOf:
           - $ref: "#/components/schemas/WebhookHttpMethod"
           default: POST
+    WithDisplayName:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+        displayName:
+          type: string
+          nullable: true
   securitySchemes:
     apiKey:
       type: apiKey

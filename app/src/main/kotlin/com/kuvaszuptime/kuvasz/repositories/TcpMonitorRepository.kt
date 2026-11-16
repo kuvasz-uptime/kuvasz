@@ -14,7 +14,6 @@ import com.kuvaszuptime.kuvasz.models.handlers.IntegrationID
 import com.kuvaszuptime.kuvasz.models.monitor.CategoryFilter
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorIDWithName
 import com.kuvaszuptime.kuvasz.models.monitor.normalizedCategory
-import com.kuvaszuptime.kuvasz.models.monitor.normalizeDisplayName
 import com.kuvaszuptime.kuvasz.models.monitor.tcp.idWithName
 import com.kuvaszuptime.kuvasz.models.pagination.PageRequest
 import com.kuvaszuptime.kuvasz.models.pagination.Sorting
@@ -207,7 +206,7 @@ class TcpMonitorRepository(
             (txCtx ?: dslContext)
                 .update(TCP_MONITOR)
                 .set(TCP_MONITOR.NAME, updatedMonitor.name)
-                .set(TCP_MONITOR.DISPLAY_NAME, normalizeDisplayName(updatedMonitor.displayName))
+                .set(TCP_MONITOR.DISPLAY_NAME, updatedMonitor.displayName.nullIfBlank())
                 .set(TCP_MONITOR.HOST, updatedMonitor.host)
                 .set(TCP_MONITOR.PORT, updatedMonitor.port)
                 .set(TCP_MONITOR.UPTIME_CHECK_INTERVAL, updatedMonitor.uptimeCheckInterval)

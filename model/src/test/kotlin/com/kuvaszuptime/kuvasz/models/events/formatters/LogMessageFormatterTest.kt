@@ -185,7 +185,7 @@ class LogMessageFormatterTest : BehaviorSpec({
 
         val pushMonitor = PushMonitorRecord().apply {
             id = 222
-            name = "test_push_monitor"
+            setName("test_push_monitor")
         }
 
         `when`("it gets a MonitorUpEvent without a previousEvent") {

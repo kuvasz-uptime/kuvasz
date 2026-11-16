@@ -25,7 +25,6 @@ import com.kuvaszuptime.kuvasz.models.dashboard.DashboardIncidentStats
 import com.kuvaszuptime.kuvasz.models.dashboard.DashboardUptimeStats
 import com.kuvaszuptime.kuvasz.models.dashboard.MonitorStateCounts
 import com.kuvaszuptime.kuvasz.models.dashboard.UptimeTimelineSlot
-import com.kuvaszuptime.kuvasz.models.dashboard.effectiveName
 import com.kuvaszuptime.kuvasz.models.dto.incident.IncidentStatus
 import com.kuvaszuptime.kuvasz.models.dto.monitor.DnsMonitorSummary
 import com.kuvaszuptime.kuvasz.models.dto.monitor.DockerMonitorSummary
@@ -39,6 +38,7 @@ import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageDefaults
 import com.kuvaszuptime.kuvasz.models.dto.statuspage.StatusPageIncidentDto
 import com.kuvaszuptime.kuvasz.models.monitor.MonitorID
 import com.kuvaszuptime.kuvasz.models.monitor.NumericMonitorID
+import com.kuvaszuptime.kuvasz.models.monitor.effectiveName
 import com.kuvaszuptime.kuvasz.repositories.DnsMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.DockerMonitorRepository
 import com.kuvaszuptime.kuvasz.repositories.HttpMonitorRepository
