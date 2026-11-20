@@ -6,7 +6,7 @@ dnsjava = "3.7.1"
 flywayPlugin = "13.12.2"
 gitVersion = "5.2.0"
 i18n4k = "0.11.2"
-jooq = "3.21.9"
+jooq = "3.21.10"
 jooqPlugin = "10.2.1"
 keycloakTestcontainers = "4.4.0"
 # @pin Better to move it together with the version that comes from Micronaut's BOM
