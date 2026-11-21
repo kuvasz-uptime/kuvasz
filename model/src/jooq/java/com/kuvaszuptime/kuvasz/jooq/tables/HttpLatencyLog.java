@@ -36,6 +36,7 @@ import org.jooq.TableOptions;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
 import org.jooq.impl.Internal;
+import org.jooq.impl.LazySchema;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 
@@ -86,7 +87,7 @@ public class HttpLatencyLog extends TableImpl<HttpLatencyLogRecord> {
     }
 
     private HttpLatencyLog(Name alias, Table<HttpLatencyLogRecord> aliased, Field<?>[] parameters, Condition where) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
+        super(alias, aliased == null ? new LazySchema(DSL.name("kuvasz"), DSL.comment(""), () -> Kuvasz.KUVASZ) : null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
     }
 
     /**
@@ -139,7 +140,7 @@ public class HttpLatencyLog extends TableImpl<HttpLatencyLogRecord> {
 
         @Override
         public HttpLatencyLogPath as(Table<?> alias) {
-            return new HttpLatencyLogPath(alias.getQualifiedName(), this);
+            return new HttpLatencyLogPath(alias.getUnqualifiedName(), this);
         }
     }
 
@@ -192,7 +193,7 @@ public class HttpLatencyLog extends TableImpl<HttpLatencyLogRecord> {
 
     @Override
     public HttpLatencyLog as(Table<?> alias) {
-        return new HttpLatencyLog(alias.getQualifiedName(), this);
+        return new HttpLatencyLog(alias.getUnqualifiedName(), this);
     }
 
     /**

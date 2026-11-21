@@ -36,6 +36,7 @@ import org.jooq.TableOptions;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
 import org.jooq.impl.Internal;
+import org.jooq.impl.LazySchema;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 
@@ -86,7 +87,7 @@ public class DnsMetricsLog extends TableImpl<DnsMetricsLogRecord> {
     }
 
     private DnsMetricsLog(Name alias, Table<DnsMetricsLogRecord> aliased, Field<?>[] parameters, Condition where) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
+        super(alias, aliased == null ? new LazySchema(DSL.name("kuvasz"), DSL.comment(""), () -> Kuvasz.KUVASZ) : null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
     }
 
     /**
@@ -139,7 +140,7 @@ public class DnsMetricsLog extends TableImpl<DnsMetricsLogRecord> {
 
         @Override
         public DnsMetricsLogPath as(Table<?> alias) {
-            return new DnsMetricsLogPath(alias.getQualifiedName(), this);
+            return new DnsMetricsLogPath(alias.getUnqualifiedName(), this);
         }
     }
 
@@ -192,7 +193,7 @@ public class DnsMetricsLog extends TableImpl<DnsMetricsLogRecord> {
 
     @Override
     public DnsMetricsLog as(Table<?> alias) {
-        return new DnsMetricsLog(alias.getQualifiedName(), this);
+        return new DnsMetricsLog(alias.getUnqualifiedName(), this);
     }
 
     /**

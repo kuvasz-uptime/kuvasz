@@ -38,6 +38,7 @@ import org.jooq.TableOptions;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
 import org.jooq.impl.Internal;
+import org.jooq.impl.LazySchema;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 
@@ -138,7 +139,7 @@ public class PushMonitor extends TableImpl<PushMonitorRecord> {
     }
 
     private PushMonitor(Name alias, Table<PushMonitorRecord> aliased, Field<?>[] parameters, Condition where) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
+        super(alias, aliased == null ? new LazySchema(DSL.name("kuvasz"), DSL.comment(""), () -> Kuvasz.KUVASZ) : null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
     }
 
     /**
@@ -191,7 +192,7 @@ public class PushMonitor extends TableImpl<PushMonitorRecord> {
 
         @Override
         public PushMonitorPath as(Table<?> alias) {
-            return new PushMonitorPath(alias.getQualifiedName(), this);
+            return new PushMonitorPath(alias.getUnqualifiedName(), this);
         }
     }
 
@@ -245,7 +246,7 @@ public class PushMonitor extends TableImpl<PushMonitorRecord> {
 
     @Override
     public PushMonitor as(Table<?> alias) {
-        return new PushMonitor(alias.getQualifiedName(), this);
+        return new PushMonitor(alias.getUnqualifiedName(), this);
     }
 
     /**

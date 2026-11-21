@@ -36,6 +36,7 @@ import org.jooq.TableOptions;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
 import org.jooq.impl.Internal;
+import org.jooq.impl.LazySchema;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 
@@ -86,7 +87,7 @@ public class TcpMetricsLog extends TableImpl<TcpMetricsLogRecord> {
     }
 
     private TcpMetricsLog(Name alias, Table<TcpMetricsLogRecord> aliased, Field<?>[] parameters, Condition where) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
+        super(alias, aliased == null ? new LazySchema(DSL.name("kuvasz"), DSL.comment(""), () -> Kuvasz.KUVASZ) : null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
     }
 
     /**
@@ -139,7 +140,7 @@ public class TcpMetricsLog extends TableImpl<TcpMetricsLogRecord> {
 
         @Override
         public TcpMetricsLogPath as(Table<?> alias) {
-            return new TcpMetricsLogPath(alias.getQualifiedName(), this);
+            return new TcpMetricsLogPath(alias.getUnqualifiedName(), this);
         }
     }
 
@@ -192,7 +193,7 @@ public class TcpMetricsLog extends TableImpl<TcpMetricsLogRecord> {
 
     @Override
     public TcpMetricsLog as(Table<?> alias) {
-        return new TcpMetricsLog(alias.getQualifiedName(), this);
+        return new TcpMetricsLog(alias.getUnqualifiedName(), this);
     }
 
     /**

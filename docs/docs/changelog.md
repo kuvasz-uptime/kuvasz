@@ -1,10 +1,20 @@
-## 4.8.0 <small>2026-11-16</small> { id="4.8.0" data-toc-label="4.8.0" }
+## 4.8.1 <small>2026-11-21</small> { id="4.8.1" data-toc-label="4.8.1" }
 
 !!! question "Make your voice heard!"
 
     There is a **short questionnaire about Kuvasz** in general, which you can fill out anonymously. It takes only a few minutes, and your feedback is highly appreciated as it helps me to focus on the most important features and improvements in the future. You can find it [**here**](https://forms.gle/Lb1q6CmW8eUgVbNr9).
 
     _Thanks, Adam_
+
+### Security
+
+- **Security fixes from the base image**: the Docker image is built on the latest version of its base image now, which contains the latest security fixes.
+
+### Improvements
+
+- **Dependency updates**: the third-party dependencies are updated to their latest versions, including Micronaut 5.2.7 and jOOQ 3.21.10.
+
+## 4.8.0 <small>2026-11-16</small> { id="4.8.0" data-toc-label="4.8.0" }
 
 ### Features
 

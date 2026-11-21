@@ -35,6 +35,7 @@ import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
 import org.jooq.impl.EnumConverter;
 import org.jooq.impl.Internal;
+import org.jooq.impl.LazySchema;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 
@@ -125,7 +126,7 @@ public class StatusPage extends TableImpl<StatusPageRecord> {
     }
 
     private StatusPage(Name alias, Table<StatusPageRecord> aliased, Field<?>[] parameters, Condition where) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
+        super(alias, aliased == null ? new LazySchema(DSL.name("kuvasz"), DSL.comment(""), () -> Kuvasz.KUVASZ) : null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
     }
 
     /**
@@ -186,7 +187,7 @@ public class StatusPage extends TableImpl<StatusPageRecord> {
 
     @Override
     public StatusPage as(Table<?> alias) {
-        return new StatusPage(alias.getQualifiedName(), this);
+        return new StatusPage(alias.getUnqualifiedName(), this);
     }
 
     /**

@@ -39,6 +39,7 @@ import org.jooq.TableOptions;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
 import org.jooq.impl.Internal;
+import org.jooq.impl.LazySchema;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 
@@ -124,7 +125,7 @@ public class DockerUptimeEvent extends TableImpl<DockerUptimeEventRecord> {
     }
 
     private DockerUptimeEvent(Name alias, Table<DockerUptimeEventRecord> aliased, Field<?>[] parameters, Condition where) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
+        super(alias, aliased == null ? new LazySchema(DSL.name("kuvasz"), DSL.comment(""), () -> Kuvasz.KUVASZ) : null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
     }
 
     /**
@@ -177,7 +178,7 @@ public class DockerUptimeEvent extends TableImpl<DockerUptimeEventRecord> {
 
         @Override
         public DockerUptimeEventPath as(Table<?> alias) {
-            return new DockerUptimeEventPath(alias.getQualifiedName(), this);
+            return new DockerUptimeEventPath(alias.getUnqualifiedName(), this);
         }
     }
 
@@ -236,7 +237,7 @@ public class DockerUptimeEvent extends TableImpl<DockerUptimeEventRecord> {
 
     @Override
     public DockerUptimeEvent as(Table<?> alias) {
-        return new DockerUptimeEvent(alias.getQualifiedName(), this);
+        return new DockerUptimeEvent(alias.getUnqualifiedName(), this);
     }
 
     /**

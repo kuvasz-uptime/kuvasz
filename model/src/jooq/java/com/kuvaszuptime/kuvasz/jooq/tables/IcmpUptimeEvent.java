@@ -39,6 +39,7 @@ import org.jooq.TableOptions;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
 import org.jooq.impl.Internal;
+import org.jooq.impl.LazySchema;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 
@@ -109,7 +110,7 @@ public class IcmpUptimeEvent extends TableImpl<IcmpUptimeEventRecord> {
     }
 
     private IcmpUptimeEvent(Name alias, Table<IcmpUptimeEventRecord> aliased, Field<?>[] parameters, Condition where) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
+        super(alias, aliased == null ? new LazySchema(DSL.name("kuvasz"), DSL.comment(""), () -> Kuvasz.KUVASZ) : null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
     }
 
     /**
@@ -162,7 +163,7 @@ public class IcmpUptimeEvent extends TableImpl<IcmpUptimeEventRecord> {
 
         @Override
         public IcmpUptimeEventPath as(Table<?> alias) {
-            return new IcmpUptimeEventPath(alias.getQualifiedName(), this);
+            return new IcmpUptimeEventPath(alias.getUnqualifiedName(), this);
         }
     }
 
@@ -220,7 +221,7 @@ public class IcmpUptimeEvent extends TableImpl<IcmpUptimeEventRecord> {
 
     @Override
     public IcmpUptimeEvent as(Table<?> alias) {
-        return new IcmpUptimeEvent(alias.getQualifiedName(), this);
+        return new IcmpUptimeEvent(alias.getUnqualifiedName(), this);
     }
 
     /**

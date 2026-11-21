@@ -26,6 +26,7 @@ import org.jooq.TableOptions;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
 import org.jooq.impl.Internal;
+import org.jooq.impl.LazySchema;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 
@@ -76,7 +77,7 @@ public class PendingFailure extends TableImpl<PendingFailureRecord> {
     }
 
     private PendingFailure(Name alias, Table<PendingFailureRecord> aliased, Field<?>[] parameters, Condition where) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
+        super(alias, aliased == null ? new LazySchema(DSL.name("kuvasz"), DSL.comment(""), () -> Kuvasz.KUVASZ) : null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
     }
 
     /**
@@ -122,7 +123,7 @@ public class PendingFailure extends TableImpl<PendingFailureRecord> {
 
     @Override
     public PendingFailure as(Table<?> alias) {
-        return new PendingFailure(alias.getQualifiedName(), this);
+        return new PendingFailure(alias.getUnqualifiedName(), this);
     }
 
     /**

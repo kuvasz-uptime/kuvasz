@@ -39,6 +39,7 @@ import org.jooq.TableOptions;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
 import org.jooq.impl.Internal;
+import org.jooq.impl.LazySchema;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 
@@ -109,7 +110,7 @@ public class TcpUptimeEvent extends TableImpl<TcpUptimeEventRecord> {
     }
 
     private TcpUptimeEvent(Name alias, Table<TcpUptimeEventRecord> aliased, Field<?>[] parameters, Condition where) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
+        super(alias, aliased == null ? new LazySchema(DSL.name("kuvasz"), DSL.comment(""), () -> Kuvasz.KUVASZ) : null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
     }
 
     /**
@@ -162,7 +163,7 @@ public class TcpUptimeEvent extends TableImpl<TcpUptimeEventRecord> {
 
         @Override
         public TcpUptimeEventPath as(Table<?> alias) {
-            return new TcpUptimeEventPath(alias.getQualifiedName(), this);
+            return new TcpUptimeEventPath(alias.getUnqualifiedName(), this);
         }
     }
 
@@ -220,7 +221,7 @@ public class TcpUptimeEvent extends TableImpl<TcpUptimeEventRecord> {
 
     @Override
     public TcpUptimeEvent as(Table<?> alias) {
-        return new TcpUptimeEvent(alias.getQualifiedName(), this);
+        return new TcpUptimeEvent(alias.getUnqualifiedName(), this);
     }
 
     /**

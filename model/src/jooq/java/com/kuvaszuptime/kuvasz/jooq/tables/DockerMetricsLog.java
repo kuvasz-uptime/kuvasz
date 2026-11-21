@@ -37,6 +37,7 @@ import org.jooq.TableOptions;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
 import org.jooq.impl.Internal;
+import org.jooq.impl.LazySchema;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 
@@ -112,7 +113,7 @@ public class DockerMetricsLog extends TableImpl<DockerMetricsLogRecord> {
     }
 
     private DockerMetricsLog(Name alias, Table<DockerMetricsLogRecord> aliased, Field<?>[] parameters, Condition where) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
+        super(alias, aliased == null ? new LazySchema(DSL.name("kuvasz"), DSL.comment(""), () -> Kuvasz.KUVASZ) : null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
     }
 
     /**
@@ -165,7 +166,7 @@ public class DockerMetricsLog extends TableImpl<DockerMetricsLogRecord> {
 
         @Override
         public DockerMetricsLogPath as(Table<?> alias) {
-            return new DockerMetricsLogPath(alias.getQualifiedName(), this);
+            return new DockerMetricsLogPath(alias.getUnqualifiedName(), this);
         }
     }
 
@@ -219,7 +220,7 @@ public class DockerMetricsLog extends TableImpl<DockerMetricsLogRecord> {
 
     @Override
     public DockerMetricsLog as(Table<?> alias) {
-        return new DockerMetricsLog(alias.getQualifiedName(), this);
+        return new DockerMetricsLog(alias.getUnqualifiedName(), this);
     }
 
     /**

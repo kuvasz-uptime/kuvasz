@@ -35,6 +35,7 @@ import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
 import org.jooq.impl.EnumConverter;
 import org.jooq.impl.Internal;
+import org.jooq.impl.LazySchema;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 
@@ -110,7 +111,7 @@ public class IncidentNote extends TableImpl<IncidentNoteRecord> {
     }
 
     private IncidentNote(Name alias, Table<IncidentNoteRecord> aliased, Field<?>[] parameters, Condition where) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
+        super(alias, aliased == null ? new LazySchema(DSL.name("kuvasz"), DSL.comment(""), () -> Kuvasz.KUVASZ) : null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
     }
 
     /**
@@ -173,7 +174,7 @@ public class IncidentNote extends TableImpl<IncidentNoteRecord> {
 
     @Override
     public IncidentNote as(Table<?> alias) {
-        return new IncidentNote(alias.getQualifiedName(), this);
+        return new IncidentNote(alias.getUnqualifiedName(), this);
     }
 
     /**

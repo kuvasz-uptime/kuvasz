@@ -33,6 +33,7 @@ import org.jooq.TableOptions;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
 import org.jooq.impl.Internal;
+import org.jooq.impl.LazySchema;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 import org.jooq.jackson3.extensions.converters.JSONBtoJacksonConverter;
@@ -81,7 +82,7 @@ public class DnsResolutionSnapshot extends TableImpl<DnsResolutionSnapshotRecord
     }
 
     private DnsResolutionSnapshot(Name alias, Table<DnsResolutionSnapshotRecord> aliased, Field<?>[] parameters, Condition where) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
+        super(alias, aliased == null ? new LazySchema(DSL.name("kuvasz"), DSL.comment(""), () -> Kuvasz.KUVASZ) : null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
     }
 
     /**
@@ -136,7 +137,7 @@ public class DnsResolutionSnapshot extends TableImpl<DnsResolutionSnapshotRecord
 
         @Override
         public DnsResolutionSnapshotPath as(Table<?> alias) {
-            return new DnsResolutionSnapshotPath(alias.getQualifiedName(), this);
+            return new DnsResolutionSnapshotPath(alias.getUnqualifiedName(), this);
         }
     }
 
@@ -179,7 +180,7 @@ public class DnsResolutionSnapshot extends TableImpl<DnsResolutionSnapshotRecord
 
     @Override
     public DnsResolutionSnapshot as(Table<?> alias) {
-        return new DnsResolutionSnapshot(alias.getQualifiedName(), this);
+        return new DnsResolutionSnapshot(alias.getUnqualifiedName(), this);
     }
 
     /**

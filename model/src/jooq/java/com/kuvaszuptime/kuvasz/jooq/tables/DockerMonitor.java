@@ -39,6 +39,7 @@ import org.jooq.TableOptions;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
 import org.jooq.impl.Internal;
+import org.jooq.impl.LazySchema;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 
@@ -149,7 +150,7 @@ public class DockerMonitor extends TableImpl<DockerMonitorRecord> {
     }
 
     private DockerMonitor(Name alias, Table<DockerMonitorRecord> aliased, Field<?>[] parameters, Condition where) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
+        super(alias, aliased == null ? new LazySchema(DSL.name("kuvasz"), DSL.comment(""), () -> Kuvasz.KUVASZ) : null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
     }
 
     /**
@@ -202,7 +203,7 @@ public class DockerMonitor extends TableImpl<DockerMonitorRecord> {
 
         @Override
         public DockerMonitorPath as(Table<?> alias) {
-            return new DockerMonitorPath(alias.getQualifiedName(), this);
+            return new DockerMonitorPath(alias.getUnqualifiedName(), this);
         }
     }
 
@@ -269,7 +270,7 @@ public class DockerMonitor extends TableImpl<DockerMonitorRecord> {
 
     @Override
     public DockerMonitor as(Table<?> alias) {
-        return new DockerMonitor(alias.getQualifiedName(), this);
+        return new DockerMonitor(alias.getUnqualifiedName(), this);
     }
 
     /**

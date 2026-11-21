@@ -44,6 +44,7 @@ import org.jooq.TableOptions;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
 import org.jooq.impl.Internal;
+import org.jooq.impl.LazySchema;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 import org.jooq.jackson3.extensions.converters.JSONBtoJacksonConverter;
@@ -187,7 +188,7 @@ public class DnsMonitor extends TableImpl<DnsMonitorRecord> {
     }
 
     private DnsMonitor(Name alias, Table<DnsMonitorRecord> aliased, Field<?>[] parameters, Condition where) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
+        super(alias, aliased == null ? new LazySchema(DSL.name("kuvasz"), DSL.comment(""), () -> Kuvasz.KUVASZ) : null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
     }
 
     /**
@@ -240,7 +241,7 @@ public class DnsMonitor extends TableImpl<DnsMonitorRecord> {
 
         @Override
         public DnsMonitorPath as(Table<?> alias) {
-            return new DnsMonitorPath(alias.getQualifiedName(), this);
+            return new DnsMonitorPath(alias.getUnqualifiedName(), this);
         }
     }
 
@@ -320,7 +321,7 @@ public class DnsMonitor extends TableImpl<DnsMonitorRecord> {
 
     @Override
     public DnsMonitor as(Table<?> alias) {
-        return new DnsMonitor(alias.getQualifiedName(), this);
+        return new DnsMonitor(alias.getUnqualifiedName(), this);
     }
 
     /**

@@ -41,6 +41,7 @@ import org.jooq.TableOptions;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
 import org.jooq.impl.Internal;
+import org.jooq.impl.LazySchema;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 import org.jooq.jackson3.extensions.converters.JSONBtoJacksonConverter;
@@ -224,7 +225,7 @@ public class HttpMonitor extends TableImpl<HttpMonitorRecord> {
     }
 
     private HttpMonitor(Name alias, Table<HttpMonitorRecord> aliased, Field<?>[] parameters, Condition where) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
+        super(alias, aliased == null ? new LazySchema(DSL.name("kuvasz"), DSL.comment(""), () -> Kuvasz.KUVASZ) : null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
     }
 
     /**
@@ -277,7 +278,7 @@ public class HttpMonitor extends TableImpl<HttpMonitorRecord> {
 
         @Override
         public HttpMonitorPath as(Table<?> alias) {
-            return new HttpMonitorPath(alias.getQualifiedName(), this);
+            return new HttpMonitorPath(alias.getUnqualifiedName(), this);
         }
     }
 
@@ -357,7 +358,7 @@ public class HttpMonitor extends TableImpl<HttpMonitorRecord> {
 
     @Override
     public HttpMonitor as(Table<?> alias) {
-        return new HttpMonitor(alias.getQualifiedName(), this);
+        return new HttpMonitor(alias.getUnqualifiedName(), this);
     }
 
     /**

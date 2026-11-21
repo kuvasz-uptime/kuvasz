@@ -39,6 +39,7 @@ import org.jooq.TableOptions;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
 import org.jooq.impl.Internal;
+import org.jooq.impl.LazySchema;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 
@@ -154,7 +155,7 @@ public class TcpMonitor extends TableImpl<TcpMonitorRecord> {
     }
 
     private TcpMonitor(Name alias, Table<TcpMonitorRecord> aliased, Field<?>[] parameters, Condition where) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
+        super(alias, aliased == null ? new LazySchema(DSL.name("kuvasz"), DSL.comment(""), () -> Kuvasz.KUVASZ) : null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
     }
 
     /**
@@ -207,7 +208,7 @@ public class TcpMonitor extends TableImpl<TcpMonitorRecord> {
 
         @Override
         public TcpMonitorPath as(Table<?> alias) {
-            return new TcpMonitorPath(alias.getQualifiedName(), this);
+            return new TcpMonitorPath(alias.getUnqualifiedName(), this);
         }
     }
 
@@ -274,7 +275,7 @@ public class TcpMonitor extends TableImpl<TcpMonitorRecord> {
 
     @Override
     public TcpMonitor as(Table<?> alias) {
-        return new TcpMonitor(alias.getQualifiedName(), this);
+        return new TcpMonitor(alias.getUnqualifiedName(), this);
     }
 
     /**
