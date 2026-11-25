@@ -8,7 +8,7 @@ gitVersion = "5.2.0"
 i18n4k = "0.11.2"
 jooq = "3.21.10"
 jooqPlugin = "10.2.1"
-keycloakTestcontainers = "4.4.0"
+keycloakTestcontainers = "4.4.1"
 # @pin Better to move it together with the version that comes from Micronaut's BOM
 kotest = "6.2.5"
 kotlin = "2.4.21"
