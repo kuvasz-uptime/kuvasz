@@ -87,6 +87,55 @@ class WebhookMessageFactoryTest(private val factory: WebhookMessageFactory) : Sh
         }
     }
 
+    context("method access in templates") {
+
+        val event = HttpMonitorUpEvent(
+            monitor = HttpMonitorRecord().apply {
+                id = 23423
+                setName("payments")
+                setDisplayName("Payments API")
+                sensitiveUrl = false
+                url = "https://irrelevant"
+            },
+            status = HttpStatus.OK,
+            latency = 123,
+            previousEvent = null,
+        )
+
+        should("allow reading every field of the context") {
+            val template = listOf(
+                "monitorId",
+                "monitorUrn",
+                "monitorName",
+                "monitorLabel",
+                "monitorDetailsUrl",
+                "type",
+            ).joinToString("|") { "{{ ctx.$it }}" }
+
+            factory.fromEvent(event, template) shouldBe
+                "23423|http:payments|payments|Payments API|/http-monitors/23423|HTTP_UP"
+            factory.fromEvent(event, "{{ ctx.timestamp > 0 }}") shouldBe "true"
+            factory.fromEvent(event, "{{ ctx.eventDetails | raw }}") shouldContain "Your monitor \"Payments API\""
+        }
+
+        should("allow calling methods on the values of the context's fields") {
+            val template =
+                "{{ ctx.monitorName.length }}|{{ ctx.monitorLabel.toUpperCase() }}|" +
+                    "{{ ctx.monitorId.toString() }}|{{ ctx.type.name }}|{{ ctx.type.ordinal }}"
+
+            factory.fromEvent(event, template) shouldBe
+                "8|PAYMENTS API|23423|HTTP_UP|${IntegrationEventType.HTTP_UP.ordinal}"
+        }
+
+        should("deny calling methods that are not allowed") {
+            val exception = shouldThrowAny {
+                factory.fromEvent(event, "{{ ctx.getClass() }}")
+            }
+
+            exception.message shouldContain "access to public final native java.lang.Class java.lang.Object.getClass()"
+        }
+    }
+
     context("the name of the monitor") {
 
         should("expose the shown name of the monitor next to its unique name") {
